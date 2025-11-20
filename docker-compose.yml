@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    container_name: orchidlab_fe
+    restart: unless-stopped
+    networks: 
+    - sep-orchid-lab-network
+
+networks:
+  sep-orchid-lab-network:
+    external: true

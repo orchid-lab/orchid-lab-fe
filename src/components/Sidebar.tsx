@@ -1,23 +1,18 @@
 import { NavLink } from "react-router-dom";
-import {
-  FaFlask,
-  FaTasks,
-  FaBook,
-  FaSeedling,
-  FaChartBar,
-} from "react-icons/fa";
+import { FaTasks, FaBook, FaSeedling, FaChartBar } from "react-icons/fa";
+import { PiBlueprintFill } from "react-icons/pi";
 
 const tabs = [
-  { name: "Method", path: "/method", icon: <FaFlask /> },
-  { name: "Tasks", path: "/tasks", icon: <FaTasks /> },
-  { name: "Experiment Log", path: "/experiment-log", icon: <FaBook /> },
-  { name: "Seedlings", path: "/seedlings", icon: <FaSeedling /> },
-  { name: "Reports", path: "/reports", icon: <FaChartBar /> },
+  { name: "Phương pháp lai", path: "/method", icon: <PiBlueprintFill /> },
+  { name: "Nhiệm vụ", path: "/tasks", icon: <FaTasks /> },
+  { name: "Nhật ký thí nghiệm", path: "/experiment-log", icon: <FaBook /> },
+  { name: "Cây giống", path: "/seedlings", icon: <FaSeedling /> },
+  { name: "Báo cáo", path: "/reports", icon: <FaChartBar /> },
 ];
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 shadow flex flex-col bg-green-800">
+    <aside className="w-64 h-screen fixed top-0 left-0 z-30 shadow flex flex-col bg-green-800">
       <div className="h-16 flex items-center justify-center font-bold text-xl text-white border-b border-white/40">
         OrchidLab
       </div>
