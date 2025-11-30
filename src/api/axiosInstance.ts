@@ -6,7 +6,7 @@ interface RefreshTokenResponse {
 }
 
 const axiosInstance = axios.create({
-  baseURL: "https://net-api.orchid-lab.systems",
+  baseURL: "https://localhost:7059/",
 });
 
 // Request interceptor: Gắn accessToken vào header nếu có
