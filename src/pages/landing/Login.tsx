@@ -46,7 +46,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
-      {/* Animated Background với gradient overlay */}
       <div className="absolute inset-0 -z-10">
         <div 
           className="absolute inset-0 animate-pulse-slow"
@@ -73,17 +72,13 @@ export default function Login() {
       <div className="absolute bottom-1/3 left-2/3 w-2 h-2 bg-green-300 rounded-full animate-sparkle" style={{animationDelay: '1s'}} />
       
       <div className="relative z-10 animate-fade-in-up">
-        {/* Main Card với shadow animation */}
         <div className="w-[900px] h-[520px] bg-white rounded-[40px] shadow-2xl flex overflow-hidden border border-gray-200/50 relative hover:shadow-3xl transition-all duration-500 animate-slide-in">
-          {/* Left: Login Form */}
           <div className="w-1/2 bg-gradient-to-br from-[#d8eddb] to-[#c5e5ca] flex flex-col justify-center px-12 py-10 relative overflow-hidden">
-            {/* Decorative circles */}
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-            
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />         
             <div className="relative z-10">
-              <div className="mb-8 overflow-hidden">
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-green-700 via-emerald-600 to-green-800 bg-clip-text text-transparent mb-1 leading-tight animate-slide-in-left hover:scale-105 transition-transform duration-300 cursor-default inline-block">
+              <div className="mb-8 overflow-visible relative">
+                <h1 className="text-5xl font-extrabold mb-1 leading-tight animate-slide-in-left hover:scale-105 transition-transform duration-300 cursor-default inline-block relative text-title-glow">
                   <span className="inline-block animate-letter-float" style={{animationDelay: '0s'}}>D</span>
                   <span className="inline-block animate-letter-float" style={{animationDelay: '0.1s'}}>a</span>
                   <span className="inline-block animate-letter-float" style={{animationDelay: '0.2s'}}>L</span>
@@ -96,13 +91,15 @@ export default function Login() {
                   <span className="inline-block animate-letter-float" style={{animationDelay: '0.9s'}}>i</span>
                   <span className="inline-block animate-letter-float" style={{animationDelay: '1s'}}>d</span>
                 </h1>
-                <h1 className="text-5xl font-bold bg-gradient-to-r from-emerald-700 via-green-600 to-teal-700 bg-clip-text text-transparent leading-tight animate-slide-in-left-delayed hover:scale-105 transition-transform duration-300 cursor-default inline-block relative">
+                <h1 className="text-6xl font-extrabold leading-tight animate-slide-in-left-delayed hover:scale-105 transition-transform duration-300 cursor-default inline-block relative text-title-glow-teal">
                   <span className="inline-block animate-letter-bounce" style={{animationDelay: '0s'}}>L</span>
                   <span className="inline-block animate-letter-bounce" style={{animationDelay: '0.15s'}}>a</span>
                   <span className="inline-block animate-letter-bounce" style={{animationDelay: '0.3s'}}>b</span>
-                  <span className="absolute -right-2 top-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                  <span className="absolute -right-2 top-0 w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="absolute -right-2 top-0 w-3 h-3 bg-emerald-400 rounded-full animate-ping shadow-lg shadow-emerald-400/50"></span>
+                  <span className="absolute -right-2 top-0 w-3 h-3 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50"></span>
                 </h1>
+                {/* Glow effect behind text */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-green-400/20 via-emerald-400/20 to-teal-400/20 blur-2xl -z-10 animate-pulse-slow rounded-3xl" />
               </div>
               
               <form
