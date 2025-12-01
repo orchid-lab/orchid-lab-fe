@@ -11,7 +11,6 @@ const tabs = [
 export default function SidebarTechnician() {
   return (
     <aside className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden">
-      {/* Decorative circles background */}
       <div className="absolute top-10 -left-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 -right-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl"></div>
       
