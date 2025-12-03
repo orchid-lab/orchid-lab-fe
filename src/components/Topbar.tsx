@@ -140,7 +140,7 @@ export default function Topbar() {
                   }}
                 >
                   <FaUserCircle className="text-gray-600 mr-3 group-hover:text-green-600 transition-colors duration-200" />
-                  <span className="text-gray-700 group-hover:text-green-700 font-medium">Profile</span>
+                  <span className="text-gray-700 group-hover:text-green-700 font-medium">Thông tin</span>
                 </button>
                 <div className="my-1 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
                 <button
