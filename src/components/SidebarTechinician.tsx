@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaChartBar, FaFlask } from "react-icons/fa";
 import { GiMicroscope } from "react-icons/gi";
@@ -9,8 +10,27 @@ const tabs = [
 ];
 
 export default function SidebarTechnician() {
+  const [mouseY, setMouseY] = useState(0);
+
+  const handleMouseMove = (e: { currentTarget: { getBoundingClientRect: () => any; }; clientY: number; }) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMouseY(e.clientY - rect.top);
+  };
+
   return (
-    <aside className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden group/sidebar">
+    <aside 
+      className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden group/sidebar"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Spotlight effect theo chuột */}
+      <div 
+        className="absolute left-1/2 w-64 h-64 bg-green-400/20 rounded-full blur-3xl pointer-events-none opacity-0 group-hover/sidebar:opacity-100 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          top: `${mouseY}px`,
+          transition: 'opacity 0.3s'
+        }}
+      ></div>
+
       <div className="absolute top-10 -left-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl group-hover/sidebar:bg-green-500/20 transition-all duration-700"></div>
       <div className="absolute bottom-20 -right-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl group-hover/sidebar:bg-green-500/20 transition-all duration-700"></div>
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-white/5 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-700"></div>
