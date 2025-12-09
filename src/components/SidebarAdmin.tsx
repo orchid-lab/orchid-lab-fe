@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import {
   FaTasks,
   FaClipboardList,
@@ -13,7 +14,6 @@ import { GiMicroscope } from "react-icons/gi";
 
 export default function SidebarDemo() {
   const [mouseY, setMouseY] = useState(0);
-  const [activeItem, setActiveItem] = useState("user");
 
   const handleMouseMove = (e: { currentTarget: { getBoundingClientRect: () => any; }; clientY: number; }) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -21,15 +21,15 @@ export default function SidebarDemo() {
   };
 
   const menuItems = [
-    { id: "user", icon: FaUser, label: "Người dùng" },
-    { id: "tasks", icon: FaTasks, label: "Nhiệm vụ" },
-    { id: "experiment-log", icon: FaClipboardList, label: "Nhật ký thí nghiệm" },
-    { id: "labroom", icon: GiMicroscope, label: "Phòng thực nghiệm" },
-    { id: "tissue-culture", icon: FaVials, label: "Lô cấy mô" },
-    { id: "report", icon: FaChartBar, label: "Báo cáo" },
-    { id: "method", icon: PiBlueprintFill, label: "Phương pháp lai" },
-    { id: "seedling", icon: FaSeedling, label: "Cây giống" },
-    { id: "element", icon: FaFlask, label: "Nguyên vật liệu" },
+    { path: "/admin/user", icon: FaUser, label: "Người dùng" },
+    { path: "/admin/tasks", icon: FaTasks, label: "Nhiệm vụ" },
+    { path: "/admin/experiment-log", icon: FaClipboardList, label: "Nhật ký thí nghiệm" },
+    { path: "/admin/labroom", icon: GiMicroscope, label: "Phòng thực nghiệm" },
+    { path: "/admin/tissue-culture-batches", icon: FaVials, label: "Lô cấy mô" },
+    { path: "/admin/report", icon: FaChartBar, label: "Báo cáo" },
+    { path: "/admin/method", icon: PiBlueprintFill, label: "Phương pháp lai" },
+    { path: "/admin/seedling", icon: FaSeedling, label: "Cây giống" },
+    { path: "/admin/element", icon: FaFlask, label: "Nguyên vật liệu" },
   ];
 
   return (
@@ -41,7 +41,7 @@ export default function SidebarDemo() {
           '--mouse-y': `${mouseY}px`
         } as React.CSSProperties}
       >
-        {/* Spotlight effect theo chuột - Di chuyển theo phương thẳng đứng */}
+        {/* Spotlight effect */}
         <div 
           className="absolute left-1/2 w-64 h-64 bg-green-400/20 rounded-full blur-3xl pointer-events-none opacity-0 group-hover/sidebar:opacity-100 -translate-x-1/2 -translate-y-1/2"
           style={{
@@ -70,25 +70,30 @@ export default function SidebarDemo() {
         <nav className="flex-1 py-6 text-white relative z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.id;
             
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveItem(item.id)}
-                className={`w-full flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 hover:translate-x-1 transition-all duration-300 mb-1 group relative overflow-hidden ${
-                  isActive ? "bg-white/25 font-semibold shadow-lg" : ""
-                }`}
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) => 
+                  `w-full flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 hover:translate-x-1 transition-all duration-300 mb-1 group relative overflow-hidden ${
+                    isActive ? "bg-white/25 font-semibold shadow-lg" : ""
+                  }`
+                }
               >
-                {isActive && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <span className="text-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative z-10">
+                      <Icon />
+                    </span>
+                    <span className="relative z-10">{item.label}</span>
+                  </>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <span className="text-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative z-10">
-                  <Icon />
-                </span>
-                <span className="relative z-10">{item.label}</span>
-              </button>
+              </NavLink>
             );
           })}
         </nav>
