@@ -82,6 +82,15 @@ const STATUS_COLORS: Record<StatusType, string> = {
   Cancel: "text-red-700",
 };
 
+const STATUS_BG_COLORS: Record<StatusType, string> = {
+  Assigned: "bg-blue-50 border-blue-200",
+  Taken: "bg-purple-50 border-purple-200",
+  InProcess: "bg-yellow-50 border-yellow-200",
+  DoneInTime: "bg-green-50 border-green-200",
+  DoneInLate: "bg-orange-50 border-orange-200",
+  Cancel: "bg-red-50 border-red-200",
+};
+
 export default function AdminTasks() {
   const navigate = useNavigate();
 
@@ -110,7 +119,6 @@ export default function AdminTasks() {
 
   const [timeMode, setTimeMode] = useState<"day" | "week" | "month">("day");
 
-  // Chart 2 filter cụ thể
   const [filterMode, setFilterMode] = useState<"day" | "week" | "month">("day");
   const [filterDate, setFilterDate] = useState<string>("");
 
@@ -178,7 +186,6 @@ export default function AdminTasks() {
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
-  // Chart 1: tổng hợp toàn bộ task và nhiệm vụ hoàn thành đúng hạn
   const chartStats = useMemo(() => {
     const grouped: Record<string, { total: number; completedOnTime: number }> =
       {};
@@ -227,7 +234,6 @@ export default function AdminTasks() {
     ],
   };
 
-  // Chart 2: theo lựa chọn cụ thể
   const filteredChartStats = useMemo(() => {
     if (!filterDate) return [];
     const grouped: Record<
@@ -235,7 +241,6 @@ export default function AdminTasks() {
       { created: number; completedOnTime: number }
     > = {};
 
-    // Lọc các task theo ngày/tuần/tháng được chọn
     const filteredTasks = allTasks.filter((task) => {
       if (!task.create_at) return false;
       const date = new Date(task.create_at);
@@ -258,7 +263,6 @@ export default function AdminTasks() {
       return false;
     });
 
-    // Nhóm các task theo ngày/tuần/tháng hiển thị
     filteredTasks.forEach((task) => {
       const date = new Date(task.create_at!);
       let key = "";
@@ -305,32 +309,136 @@ export default function AdminTasks() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Thống kê tổng nhiệm vụ được tạo và hoàn thành đúng hạn
-          </h1>
-          <select
-            value={timeMode}
-            onChange={(e) =>
-              setTimeMode(e.target.value as "day" | "week" | "month")
-            }
-            className="border px-3 py-2 rounded-lg"
-          >
-            <option value="day">Theo ngày</option>
-            <option value="week">Theo tuần</option>
-            <option value="month">Theo tháng</option>
-          </select>
-        </div>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <Bar data={chartData} />
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+        }
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .animate-scale-in {
+          animation: scaleIn 0.5s ease-out forwards;
+        }
+
+        .animate-slide-in-left {
+          animation: slideInLeft 0.5s ease-out forwards;
+        }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+        .stagger-6 { animation-delay: 0.6s; opacity: 0; }
+
+        .hover-lift {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-shine {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .card-shine::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          transition: left 0.5s;
+        }
+
+        .card-shine:hover::before {
+          left: 100%;
+        }
+
+        .row-hover {
+          transition: all 0.2s ease;
+        }
+
+        .row-hover:hover {
+          transform: scale(1.01);
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+        }
+      `}</style>
+
+      <div className="space-y-6">
+        {/* Header with Chart 1 */}
+        <div className="animate-fade-in-up">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              Thống kê tổng nhiệm vụ được tạo và hoàn thành đúng hạn
+            </h1>
+            <select
+              value={timeMode}
+              onChange={(e) =>
+                setTimeMode(e.target.value as "day" | "week" | "month")
+              }
+              className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="day">Theo ngày</option>
+              <option value="week">Theo tuần</option>
+              <option value="month">Theo tháng</option>
+            </select>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 hover-lift card-shine">
+            <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: true }} />
+          </div>
         </div>
 
         {/* Chart 2 */}
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <div className="flex items-center gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-6 space-y-4 animate-fade-in-up stagger-1 hover-lift card-shine">
+          <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">
               Thống kê nhiệm vụ được tạo và hoàn thành đúng hạn cụ thể
             </h1>
@@ -339,7 +447,7 @@ export default function AdminTasks() {
               onChange={(e) =>
                 setFilterMode(e.target.value as "day" | "week" | "month")
               }
-              className="border px-3 py-2 rounded-lg"
+              className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="day">Theo ngày</option>
               <option value="week">Theo tuần</option>
@@ -349,42 +457,24 @@ export default function AdminTasks() {
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="border px-3 py-2 rounded-lg"
+              className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          <Bar data={filteredChartData} />
+          <Bar data={filteredChartData} options={{ responsive: true, maintainAspectRatio: true }} />
         </div>
 
-        {/* Chart 3: nhiệm vụ hoàn thành đúng hạn */}
-        {/* <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Thống kê nhiệm vụ hoàn thành đúng hạn
-            </h1>
-            <select
-              value={completedOnTimeMode}
-              onChange={(e) => setCompletedOnTimeMode(e.target.value as any)}
-              className="border px-3 py-2 rounded-lg"
-            >
-              <option value="day">Theo ngày</option>
-              <option value="week">Theo tuần</option>
-              <option value="month">Theo tháng</option>
-            </select>
-          </div>
-          <Bar data={completedOnTimeChartData} />
-        </div> */}
-
+        {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries(STATUS_SUMMARY_LABELS).map(([key, label]) => (
+          {Object.entries(STATUS_SUMMARY_LABELS).map(([key, label], index) => (
             <div
               key={key}
-              className="rounded-lg border border-gray-200 bg-white px-6 py-4 flex flex-col items-center"
+              className={`rounded-xl border ${STATUS_BG_COLORS[key as StatusType]} px-6 py-4 flex flex-col items-center animate-scale-in hover-lift card-shine stagger-${index + 1}`}
             >
-              <span className="text-sm text-gray-600 mb-1">{label}</span>
+              <span className="text-sm text-gray-600 mb-2 font-medium">{label}</span>
               <span
-                className={`text-2xl font-semibold ${
+                className={`text-3xl font-bold ${
                   STATUS_COLORS[key as StatusType]
-                }`}
+                } transition-all duration-300`}
               >
                 {statusCounts[key as StatusType]}
               </span>
@@ -392,10 +482,11 @@ export default function AdminTasks() {
           ))}
         </div>
 
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <div className="flex flex-wrap items-center gap-4 mb-3">
+        {/* Filters */}
+        <div className="bg-white p-6 rounded-xl shadow-lg animate-slide-in-left card-shine">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-gray-700 font-semibold">
                 Trạng thái:
               </span>
               <select
@@ -403,7 +494,7 @@ export default function AdminTasks() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusType | "Tất cả")
                 }
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm"
+                className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="Tất cả">Tất cả</option>
                 {Object.entries(STATUS_LABELS).map(([key, label]) => (
@@ -414,13 +505,13 @@ export default function AdminTasks() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-gray-700 font-semibold">
                 Người tạo:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm"
+                className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="Tất cả">Tất cả</option>
                 {allResearchers.map((r) => (
@@ -433,85 +524,101 @@ export default function AdminTasks() {
             <div className="flex-1 min-w-[200px]">
               <input
                 type="text"
-                placeholder="Tìm kiếm nhiệm vụ..."
+                placeholder="🔍 Tìm kiếm nhiệm vụ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm"
+                className="w-full border border-gray-300 rounded-full px-6 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
+        {/* Table */}
         {loading ? (
-          <div className="text-center py-6 text-gray-500">
-            Đang tải dữ liệu...
+          <div className="text-center py-12">
+            <div className="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600 font-medium">Đang tải dữ liệu...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-6 text-red-500">{error}</div>
+          <div className="text-center py-12">
+            <div className="text-red-500 text-lg font-medium">{error}</div>
+          </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="text-left p-4 font-medium text-gray-900">
-                    Tên nhiệm vụ
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-900">
-                    Người tạo nhiệm vụ
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-900">
-                    Nhật ký thí nghiệm
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-900">
-                    Thời hạn
-                  </th>
-                  <th className="text-left p-4 font-medium text-gray-900">
-                    Trạng thái
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                   <tr>
-                    <td colSpan={4} className="text-center p-6 text-gray-500">
-                      Không có nhiệm vụ nào
-                    </td>
+                    <th className="text-left p-4 font-semibold text-gray-900">
+                      Tên nhiệm vụ
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-900">
+                      Người tạo nhiệm vụ
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-900">
+                      Nhật ký thí nghiệm
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-900">
+                      Thời hạn
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-900">
+                      Trạng thái
+                    </th>
                   </tr>
-                ) : (
-                  tasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="border-b hover:bg-green-50 cursor-pointer"
-                      onClick={() => void navigate(`/admin/tasks/${task.id}`)}
-                    >
-                      <td className="p-4">{task.name}</td>
-                      <td className="p-4">{task.researcher}</td>
-                      <td className="p-4">
-                        {task.experimentLogName ?? "Không có"}
-                      </td>
-                      <td className="p-4">
-                        {task.end_date
-                          ? new Date(task.end_date).toLocaleDateString("vi-VN")
-                          : ""}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            STATUS_COLORS[task.status]
-                          }`}
-                        >
-                          {STATUS_LABELS[task.status]}
-                        </span>
+                </thead>
+                <tbody>
+                  {tasks.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center p-12 text-gray-500">
+                        <div className="text-6xl mb-4">📋</div>
+                        <div className="text-lg font-medium">Không có nhiệm vụ nào</div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    tasks.map((task, index) => (
+                      <tr
+                        key={task.id}
+                        className="border-b hover:bg-gradient-to-r hover:from-green-50 hover:to-blue-50 cursor-pointer row-hover"
+                        onClick={() => void navigate(`/admin/tasks/${task.id}`)}
+                        style={{ animationDelay: `${index * 0.05}s` }}
+                      >
+                        <td className="p-4 font-medium text-gray-900">{task.name}</td>
+                        <td className="p-4 text-gray-700">{task.researcher}</td>
+                        <td className="p-4 text-gray-700">
+                          {task.experimentLogName ?? "Không có"}
+                        </td>
+                        <td className="p-4 text-gray-700">
+                          {task.end_date
+                            ? new Date(task.end_date).toLocaleDateString("vi-VN")
+                            : ""}
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                              STATUS_COLORS[task.status]
+                            } bg-opacity-10 border transition-all duration-200 hover:scale-105`}
+                            style={{
+                              backgroundColor: STATUS_BG_COLORS[task.status].includes('blue') ? '#dbeafe' :
+                                STATUS_BG_COLORS[task.status].includes('purple') ? '#f3e8ff' :
+                                STATUS_BG_COLORS[task.status].includes('yellow') ? '#fef3c7' :
+                                STATUS_BG_COLORS[task.status].includes('green') ? '#d1fae5' :
+                                STATUS_BG_COLORS[task.status].includes('orange') ? '#fed7aa' :
+                                '#fee2e2'
+                            }}
+                          >
+                            {STATUS_LABELS[task.status]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {totalPages > 1 && (
-              <div className="flex justify-between items-center text-sm text-gray-600 mt-4 p-4">
-                <span>
+              <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+                <span className="font-medium">
                   Hiển thị {tasks.length} nhiệm vụ trên tổng số {totalCount}{" "}
                   nhiệm vụ
                 </span>
@@ -520,7 +627,7 @@ export default function AdminTasks() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage - 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm hover:shadow"
                     >
                       ←
                     </button>
@@ -543,10 +650,10 @@ export default function AdminTasks() {
                         type="button"
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1 rounded-lg ${
+                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                           currentPage === pageNum
-                            ? "bg-green-700 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
+                            ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg scale-105"
+                            : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 shadow-sm hover:shadow"
                         }`}
                       >
                         {pageNum}
@@ -557,7 +664,7 @@ export default function AdminTasks() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage + 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm hover:shadow"
                     >
                       →
                     </button>
