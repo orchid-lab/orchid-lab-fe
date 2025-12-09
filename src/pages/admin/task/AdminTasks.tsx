@@ -415,7 +415,7 @@ export default function AdminTasks() {
         {/* Header with Chart 1 */}
         <div className="animate-fade-in-up">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
               Thống kê tổng nhiệm vụ được tạo và hoàn thành đúng hạn
             </h1>
             <select
