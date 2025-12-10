@@ -31,7 +31,6 @@ export default function DashboardAdmin() {
   const { user } = useAuth();
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [statusFilter] = useState<string>("");
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
@@ -277,12 +276,6 @@ export default function DashboardAdmin() {
             {technicianCount}
           </div>
         </div>
-        {/* <div className="bg-yellow-50 p-4 rounded-lg">
-          <div className="text-yellow-600 text-sm font-medium">
-            KHÔNG HOẠT ĐỘNG
-          </div>
-          <div className="text-2xl font-bold text-yellow-700">{inactive}</div>
-        </div> */}
       </div>
       {/* Table */}
       <div className="px-6 pb-6">
@@ -373,19 +366,6 @@ export default function DashboardAdmin() {
                           })
                         : ""}
                     </td>
-                    {/* <td className="px-3 py-2 whitespace-nowrap text-sm">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold status-badge ${
-                          user. === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {user.status === "active"
-                          ? "Hoạt động"
-                          : "Không hoạt động"}
-                      </span>
-                    </td> */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm flex gap-1">
                       <button
                         className="action-btn btn-edit bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition"
