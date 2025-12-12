@@ -6,7 +6,7 @@ interface RefreshTokenResponse {
 }
 
 const axiosInstance = axios.create({
-  baseURL: "https://localhost:7059/",
+  baseURL: "https://net-api.tissuex.me/",
 });
 
 // Request interceptor: Gắn accessToken vào header nếu có
