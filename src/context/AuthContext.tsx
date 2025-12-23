@@ -37,13 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthReady(true);
   }, []);
 
-  //Api logout
   const handleLogoutApi = async () => {
-      const res = await axiosInstance.post("/api/user/logout", {
+      const res = await axiosInstance.post("/api/authentication/logout", {
         refreshToken: refreshToken,
       });
       if (res.status !== 200) {
-        throw new Error("Logout failed");
+        throw new Error("Đăng xuất không thành công");
       }
   };
 

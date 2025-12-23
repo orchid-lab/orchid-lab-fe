@@ -19,7 +19,7 @@ export default function Login() {
     setError("");
     setIsLoading(true);
     try {
-      const res = await axiosInstance.post("/api/user/login", {
+      const res = await axiosInstance.post("/api/authentication/login", {
         email,
         password,
       });
