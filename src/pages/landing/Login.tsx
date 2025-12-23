@@ -1,18 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; 
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 import type { LoginResponse } from "../../types/Auth";
-import LoginBackground from "../../assets/LoginBackground.jpg";
 import "./Login.css";
+
+
+import LoginBackground  from "../../assets/LoginBackground.jpg";
+import LoginBackground2 from "../../assets/LoginBackground2.jpg";
+import LoginBackground3 from "../../assets/LoginBackground3.jpg";
+import LoginBackground4 from "../../assets/LoginBackground4.jpg";
+import LoginBackground5 from "../../assets/LoginBackground5.jpg";
+import LoginBackground6 from "../../assets/LoginBackground6.jpg"; 
+import LoginBackground7 from "../../assets/LoginBackground7.jpg";
+import LoginBackground8 from "../../assets/LoginBackground8.jpg";
+import LoginBackground9 from "../../assets/LoginBackground9.jpg";
+import LoginBackground10 from "../../assets/LoginBackground10.jpg";
+
+
+const backgroundImages = [
+  LoginBackground,
+  LoginBackground2,
+  LoginBackground3,
+  LoginBackground4,
+  LoginBackground5,
+  LoginBackground6,
+  LoginBackground7,
+  LoginBackground8,
+  LoginBackground9,
+  LoginBackground10,
+];
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [nextBgIndex, setNextBgIndex] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setIsTransitioning(true);
+      setNextBgIndex((prevIndex) => 
+        prevIndex === backgroundImages.length - 1 ? 0 : prevIndex + 1
+      );
+      
+      setTimeout(() => {
+        setCurrentBgIndex(nextBgIndex);
+        setIsTransitioning(false);
+      }, 1000); //đơn vị ms :v
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [nextBgIndex]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,29 +93,44 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
-      {/* Enhanced animated background */}
+      {/* Enhanced animated background với crossfade mượt */}
       <div className="absolute inset-0 -z-10">
+        {/* Background hiện tại */}
         <div 
-          className="absolute inset-0 animate-pulse-slow"
+          className="absolute inset-0 transition-opacity duration-1000"
           style={{
-            backgroundImage: `url(${LoginBackground})`,
+            backgroundImage: `url(${backgroundImages[currentBgIndex]})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            opacity: 0.3
+            opacity: isTransitioning ? 0 : 0.5,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-green-50/80 via-emerald-50/70 to-teal-50/80" />
+        
+        {/* Background tiếp theo cho crossfade */}
+        <div 
+          className="absolute inset-0 transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${backgroundImages[nextBgIndex]})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            opacity: isTransitioning ? 0.5 : 0,
+          }}
+        />
+        
+        {/* Overlay gradient với độ tối hơn */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/40 via-emerald-900/35 to-teal-900/40" />
         
         {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-green-400/10 via-transparent to-emerald-400/10 animate-gradient" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-green-600/15 via-transparent to-emerald-600/15 animate-gradient" />
       </div>
 
       {/* Enhanced floating decoration elements */}
-      <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-green-300/40 to-emerald-300/40 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-br from-emerald-300/40 to-teal-300/40 rounded-full blur-3xl animate-float-delayed" />
-      <div className="absolute top-1/3 right-1/4 w-28 h-28 bg-gradient-to-br from-teal-300/30 to-green-300/30 rounded-full blur-3xl animate-float-slow" />
-      <div className="absolute bottom-1/4 left-1/4 w-36 h-36 bg-gradient-to-br from-green-200/30 to-emerald-200/30 rounded-full blur-3xl animate-float-reverse" />
+      <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-br from-emerald-500/30 to-teal-500/30 rounded-full blur-3xl animate-float-delayed" />
+      <div className="absolute top-1/3 right-1/4 w-28 h-28 bg-gradient-to-br from-teal-500/25 to-green-500/25 rounded-full blur-3xl animate-float-slow" />
+      <div className="absolute bottom-1/4 left-1/4 w-36 h-36 bg-gradient-to-br from-green-400/25 to-emerald-400/25 rounded-full blur-3xl animate-float-reverse" />
       
       {/* Enhanced sparkle effects */}
       <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-green-400 rounded-full animate-sparkle shadow-lg shadow-green-400/50" />
@@ -211,3 +272,9 @@ export default function Login() {
     </div>
   );
 }
+
+// Cơ chế hoạt động background animation:
+
+// Luôn có 2 background images render cùng lúc
+// Khi chuyển: background cũ fade ra, background mới fade vào
+// Sau khi transition hoàn tất, cập nhật index
