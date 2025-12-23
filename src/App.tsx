@@ -70,6 +70,8 @@ import AdminElement from "./pages/admin/element/AdminElement";
 import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchList";
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
+import { LoadingProvider } from "./context/LoadingContext";
+import LoadingPopup from "./components/LoadingPopup";
 
 // --- MODIFIED FOR DEV: Tạo ProtectedRoute giả để cho phép truy cập mọi trang ---
 const ProtectedRoute = ({ children }) => {
@@ -462,17 +464,20 @@ function AppLayout() {
 function App() {
   return (
     <AuthProvider>
-      <SnackbarProvider
-        maxSnack={3}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Router>
-          <Routes>
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/*" element={<AppLayout />} />
-          </Routes>
-        </Router>
-      </SnackbarProvider>
+      <LoadingProvider>
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <LoadingPopup />
+          <Router>
+            <Routes>
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/*" element={<AppLayout />} />
+            </Routes>
+          </Router>
+        </SnackbarProvider>
+      </LoadingProvider>
     </AuthProvider>
   );
 }
