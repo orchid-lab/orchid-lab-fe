@@ -20,7 +20,7 @@ import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContai
 import SelectTechnicianContainer from "./pages/researcher/task/create/SelectTechnicianContainer";
 import ConfirmTaskContainer from "./pages/researcher/task/create/ConfirmTaskContainer";
 import TaskDetailPage from "./pages/researcher/task/TaskDetailPage";
-// import EditTask from "./pages/CreateTask/EditTask"; 
+// import EditTask from "./pages/CreateTask/EditTask"; // This file seems to be missing in new structure
 import CreateExperimentStep1 from "./pages/researcher/experimentlog/create/CreateExperimentStep1";
 import CreateExperimentStep2 from "./pages/researcher/experimentlog/create/CreateExperimentStep2";
 import CreateExperimentStep3 from "./pages/researcher/experimentlog/create/CreateExperimentStep3";
@@ -36,7 +36,7 @@ import SidebarAdmin from "./components/SidebarAdmin";
 import Login from "./pages/landing/Login";
 import DashboardAdmin from "./pages/admin/dashboard/DashboardAdmin";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-// import ProtectedRoute from "./components/ProtectedRoute"; // --- MODIFIED FOR DEV: Comment dòng này ---
+import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/landing/Unauthorized";
 import { CreateTaskProvider } from "./context/CreateTaskContext";
 import TaskTemplateList from "./pages/researcher/task/template/TaskTemplateList";
@@ -70,28 +70,14 @@ import AdminElement from "./pages/admin/element/AdminElement";
 import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchList";
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
-import { LoadingProvider } from "./context/LoadingContext";
-import LoadingPopup from "./components/LoadingPopup";
-
-// --- MODIFIED FOR DEV: Tạo ProtectedRoute giả để cho phép truy cập mọi trang ---
-const ProtectedRoute = ({ children }) => {
-  return <>{children}</>;
-};
 
 function AppLayout() {
-  // const { user, isAuthReady } = useAuth(); // --- MODIFIED FOR DEV: Comment dòng này ---
-  
-  // --- MODIFIED FOR DEV: Fake User để không bị lỗi null và chỉnh Sidebar ---
-  const isAuthReady = true;
-  // Sửa roleID thành 1 (Admin), 2 (Researcher), hoặc 3 (Technician) để test giao diện Sidebar tương ứng
-  const user = { roleID: 1, fullName: "Developer Mode" }; 
-
+  const { user, isAuthReady } = useAuth();
   const location = useLocation();
 
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
-  
-  // Logic chọn Sidebar giữ nguyên, nó sẽ hiển thị dựa trên cái `user` mình fake ở trên
+  // const role = user?.roleID === 1 ? "admin" : user ? "User" : null;
   let sidebar = <Sidebar />;
   if (user?.roleID === 1) sidebar = <SidebarAdmin />;
   else if (user?.roleID === 3) sidebar = <SidebarTechnician />;
@@ -100,7 +86,6 @@ function AppLayout() {
     return <div>Đang tải...</div>;
   }
 
-  // --- MODIFIED FOR DEV: Tạm thời cho phép truy cập Login page nhưng không bắt buộc redirect ---
   if (isLoginPage) {
     return (
       <Routes>
@@ -109,10 +94,9 @@ function AppLayout() {
     );
   }
 
-  // --- MODIFIED FOR DEV: Comment đoạn check login này để không bị đẩy về login ---
-  // if (!user) {
-  //   return <Navigate to="/login" replace />;
-  // }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (isUnauthorizedPage) {
     return <Unauthorized />;
@@ -125,7 +109,6 @@ function AppLayout() {
         <Topbar />
         <main className="flex-1 p-8">
           <Routes>
-            {/* Các Routes bên dưới giữ nguyên, ProtectedRoute giờ đã bị "vô hiệu hóa" bởi component giả ở trên */}
             <Route
               path="/admin/tissue-culture-batches"
               element={
@@ -134,7 +117,6 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            {/* ... (Giữ nguyên toàn bộ phần còn lại của Routes) ... */}
             <Route
               path="/admin/tissue-culture-batches/create"
               element={
@@ -464,20 +446,17 @@ function AppLayout() {
 function App() {
   return (
     <AuthProvider>
-      <LoadingProvider>
-        <SnackbarProvider
-          maxSnack={3}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <LoadingPopup />
-          <Router>
-            <Routes>
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="/*" element={<AppLayout />} />
-            </Routes>
-          </Router>
-        </SnackbarProvider>
-      </LoadingProvider>
+      <SnackbarProvider
+        maxSnack={3}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Router>
+          <Routes>
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/*" element={<AppLayout />} />
+          </Routes>
+        </Router>
+      </SnackbarProvider>
     </AuthProvider>
   );
 }
