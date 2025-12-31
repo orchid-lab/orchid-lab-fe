@@ -4,8 +4,6 @@ import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 import type { LoginResponse } from "../../types/Auth";
 import "./Login.css";
-
-
 import LoginBackground  from "../../assets/LoginBackground.jpg";
 import LoginBackground2 from "../../assets/LoginBackground2.jpg";
 import LoginBackground3 from "../../assets/LoginBackground3.jpg";
@@ -16,7 +14,6 @@ import LoginBackground7 from "../../assets/LoginBackground7.jpg";
 import LoginBackground8 from "../../assets/LoginBackground8.jpg";
 import LoginBackground9 from "../../assets/LoginBackground9.jpg";
 import LoginBackground10 from "../../assets/LoginBackground10.jpg";
-
 
 const backgroundImages = [
   LoginBackground,
