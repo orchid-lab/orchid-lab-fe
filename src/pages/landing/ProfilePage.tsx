@@ -52,12 +52,10 @@ export default function ProfilePage() {
         editUser.email !== user?.email ||
         editUser.phoneNumber !== user?.phoneNumber;
 
-      // 1. Nếu có chỉnh sửa thông tin, gọi PUT /api/user
       if (infoChanged) {
         await axiosInstance.put("/api/user", editUser);
       }
 
-      // 2. Nếu có cập nhật avatar, gọi POST /api/user/avatar
       if (avatarFile) {
         const formData = new FormData();
         formData.append("userId", editUser.id);
@@ -193,22 +191,6 @@ export default function ProfilePage() {
                 } rounded-lg px-3 py-2 transition-colors`}
               />
             </div>
-            {/* <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Tên người dùng
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={user?.userName ?? ""}
-                readOnly
-                className="w-full border border-transparent bg-gray-100 rounded-lg px-3 py-2 text-gray-500"
-              />
-            </div> */}
             <div>
               <label
                 htmlFor="email"
