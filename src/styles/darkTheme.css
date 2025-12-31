@@ -1,0 +1,360 @@
+/* Global Dark Theme Styles for Ant Design and Material-UI */
+
+/* Ant Design Dark Theme */
+.dark .ant-btn-primary {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.dark .ant-btn-primary:hover {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
+.dark .ant-table {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+.dark .ant-table-thead > tr > th {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #f3f4f6;
+}
+
+.dark .ant-table-tbody > tr {
+  border-bottom: 1px solid #374151;
+}
+
+.dark .ant-table-tbody > tr > td {
+  color: #d1d5db;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: #1f2937;
+}
+
+.dark .ant-input,
+.dark .ant-input-number,
+.dark .ant-select-selector {
+  background-color: #1f2937;
+  border-color: #374151;
+  color: #f3f4f6;
+}
+
+.dark .ant-input::placeholder,
+.dark .ant-input-number::placeholder {
+  color: #6b7280;
+}
+
+.dark .ant-input:focus,
+.dark .ant-input-number:focus,
+.dark .ant-select-focused .ant-select-selector {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.dark .ant-picker {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .ant-picker-input {
+  color: #f3f4f6;
+}
+
+.dark .ant-select-dropdown {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .ant-select-item {
+  color: #d1d5db;
+}
+
+.dark .ant-select-item:hover {
+  background-color: #374151;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+.dark .ant-modal {
+  background-color: #111827;
+}
+
+.dark .ant-modal-header {
+  background-color: #1f2937;
+  border-bottom-color: #374151;
+}
+
+.dark .ant-modal-title {
+  color: #f3f4f6;
+}
+
+.dark .ant-modal-content {
+  background-color: #111827;
+}
+
+.dark .ant-form-item-label > label {
+  color: #d1d5db;
+}
+
+.dark .ant-form-item-label > label::after {
+  color: #ef4444;
+}
+
+.dark .ant-checkbox-inner {
+  background-color: #1f2937;
+  border-color: #4b5563;
+}
+
+.dark .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.dark .ant-radio-inner {
+  background-color: #1f2937;
+  border-color: #4b5563;
+}
+
+.dark .ant-radio-checked .ant-radio-inner {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.dark .ant-switch {
+  background-color: #374151;
+}
+
+.dark .ant-switch-checked {
+  background-color: #16a34a;
+}
+
+.dark .ant-pagination-item-active {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.dark .ant-pagination-item:hover {
+  border-color: #4b5563;
+  color: #4ade80;
+}
+
+.dark .ant-message-notice-content {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  box-shadow: 0 10px 15px -3px rgba(17, 24, 39, 0.5);
+}
+
+.dark .ant-notification-notice {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+.dark .ant-notification-notice-description {
+  color: #9ca3af;
+}
+
+.dark .ant-dropdown {
+  background-color: #1f2937;
+}
+
+.dark .ant-menu {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.dark .ant-menu-item {
+  color: #d1d5db;
+}
+
+.dark .ant-menu-item:hover {
+  color: #4ade80;
+}
+
+.dark .ant-menu-item-selected {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.dark .ant-menu-submenu-title {
+  color: #d1d5db;
+}
+
+.dark .ant-menu-submenu-title:hover {
+  color: #4ade80;
+}
+
+.dark .ant-breadcrumb-link {
+  color: #d1d5db;
+}
+
+.dark .ant-breadcrumb-link:hover {
+  color: #4ade80;
+}
+
+.dark .ant-tree-node-content-wrapper:hover {
+  background-color: #374151;
+}
+
+.dark .ant-tree-selected {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+/* Material-UI Dark Theme */
+.dark .MuiPaper-root {
+  background-color: #111827;
+}
+
+.dark .MuiButton-root {
+  color: #f3f4f6;
+}
+
+.dark .MuiButton-contained {
+  background-color: #16a34a;
+}
+
+.dark .MuiButton-contained:hover {
+  background-color: #15803d;
+}
+
+.dark .MuiInput-root {
+  color: #f3f4f6;
+}
+
+.dark .MuiOutlinedInput-root {
+  color: #f3f4f6;
+}
+
+.dark .MuiOutlinedInput-notchedOutline {
+  border-color: #374151;
+}
+
+.dark .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #4b5563;
+}
+
+.dark .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #22c55e;
+}
+
+.dark .MuiInputBase-input::placeholder {
+  color: #6b7280;
+  opacity: 0.75;
+}
+
+.dark .MuiFormLabel-root {
+  color: #9ca3af;
+}
+
+.dark .MuiDataGrid-root {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+.dark .MuiDataGrid-columnHeader {
+  background-color: #1f2937;
+}
+
+.dark .MuiDataGrid-cell {
+  border-bottom: 1px solid #374151;
+}
+
+/* Chart.js Dark Theme */
+.dark [data-chart-js-theme="dark"] {
+  --chart-text-color: rgba(229, 231, 235, 1);
+  --chart-border-color: rgba(64, 64, 64, 1);
+  --chart-grid-color: rgba(55, 65, 81, 1);
+}
+
+/* Scrollbar Styling */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background-color: #111827;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #374151;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+}
+
+/* Loading and Skeleton */
+.dark .ant-skeleton-paragraph > li {
+  background-color: #374151;
+}
+
+.dark .ant-spin-dot i {
+  background-color: #22c55e;
+}
+
+/* Badges and Tags */
+.dark .ant-tag {
+  background-color: #374151;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+.dark .ant-tag-green {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border-color: #166534;
+}
+
+.dark .ant-tag-red {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: #991b1b;
+}
+
+.dark .ant-tag-blue {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-color: #1e40af;
+}
+
+.dark .ant-tag-orange {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border-color: #9a3412;
+}
+
+/* Tooltip */
+.dark .ant-tooltip-inner {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+.dark .ant-tooltip-arrow-content {
+  background-color: #1f2937;
+}
+
+/* Popover */
+.dark .ant-popover-inner {
+  background-color: #111827;
+}
+
+.dark .ant-popover-arrow-content {
+  background-color: #111827;
+}
+
+/* Text Selection */
+.dark ::selection {
+  background-color: rgba(34, 197, 94, 0.5);
+  color: #f3f4f6;
+}
+
+.dark ::-moz-selection {
+  background-color: rgba(34, 197, 94, 0.5);
+  color: #f3f4f6;
+}

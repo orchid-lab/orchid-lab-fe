@@ -48,6 +48,7 @@ import ReportList from "./pages/researcher/report/Reports";
 import ReportsTechnician from "./pages/technician/report/Reports";
 import SidebarTechnician from "./components/SidebarTechinician";
 import ListTask from "./pages/technician/task/listTask";
+import { ThemeProvider } from "./context/ThemeContext";
 import TechDetailTask from "./pages/technician/task/TechDetailTask";
 import ListSample from "./pages/technician/sample/ListSample";
 import TechDetailSample from "./pages/technician/sample/TechDetailSample";
@@ -103,7 +104,7 @@ function AppLayout() {
   }
 
   return (
-    <div className="flex bg-gray-100 ">
+    <div className="flex bg-gray-100 dark:bg-gray-900">
       {sidebar}
       <div className="flex-1 flex flex-col">
         <Topbar />
@@ -445,19 +446,21 @@ function AppLayout() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SnackbarProvider
-        maxSnack={3}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Router>
-          <Routes>
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="/*" element={<AppLayout />} />
-          </Routes>
-        </Router>
-      </SnackbarProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <Router>
+            <Routes>
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/*" element={<AppLayout />} />
+            </Routes>
+          </Router>
+        </SnackbarProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
