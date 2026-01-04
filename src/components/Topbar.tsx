@@ -75,14 +75,14 @@ export default function Topbar() {
       {/* Right side - User section */}
       <div className="flex items-center gap-4">
         {/* Notification bell */}
-        <button className="relative p-2 rounded-lg hover:bg-green-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group">
-          <FaBell className="text-gray-600 dark:text-gray-300 text-xl group-hover:text-green-600 transition-colors duration-300 group-hover:rotate-12 transform" />
+        <button className="relative p-2 rounded-lg hover:bg-green-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
+          <FaBell className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors duration-300 group-hover:rotate-12 transform" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
         </button>
 
         {/* Messages */}
-        <button className="relative p-2 rounded-lg hover:bg-green-100/50 dark:hover:bg-gray-700/50 transition-all duration-300 group">
-          <FaEnvelope className="text-gray-600 dark:text-gray-300 text-xl group-hover:text-green-600 transition-colors duration-300" />
+        <button className="relative p-2 rounded-lg hover:bg-green-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
+          <FaEnvelope className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors duration-300" />
         </button>
 
         {/* Theme Toggle */}
@@ -98,9 +98,9 @@ export default function Topbar() {
             <img
               src={user?.avatarUrl ?? "https://i.pravatar.cc/40"}
               alt="User avatar"
-              className="relative w-10 h-10 rounded-full border-2 border-white shadow-md transition-transform duration-300 group-hover:scale-110"
+              className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md transition-transform duration-300 group-hover:scale-110"
             />
-            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.roleID ?? 0)} rounded-full border-2 border-white`}></div>
+            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.roleID ?? 0)} rounded-full border-2 border-white dark:border-gray-700`}></div>
           </div>
 
           <div className="relative" ref={dropdownRef}>
@@ -143,8 +143,8 @@ export default function Topbar() {
                     void navigate("/profile");
                   }}
                 >
-                  <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-green-600 transition-colors duration-200" />
-                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 font-medium">Thông tin</span>
+                  <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200" />
+                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 font-medium">Thông tin</span>
                 </button>
                 <div className="my-1 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-600 to-transparent"></div>
                 <button

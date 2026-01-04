@@ -25,7 +25,7 @@ function getRoleName(roleID: number) {
   }
 }
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 export default function DashboardAdmin() {
   const { user } = useAuth();

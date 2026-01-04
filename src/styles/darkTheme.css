@@ -1,360 +1,327 @@
-/* Global Dark Theme Styles for Ant Design and Material-UI */
-
-/* Ant Design Dark Theme */
-.dark .ant-btn-primary {
-  background-color: #16a34a;
-  border-color: #16a34a;
+/* ==================== LIGHT THEME ==================== */
+:root[data-theme='light'] {
+  /* Background */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9ecef;
+  
+  /* Text */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-tertiary: #adb5bd;
+  
+  /* Card */
+  --card-bg: #ffffff;
+  --card-border: #dee2e6;
+  --card-shadow: rgba(0, 0, 0, 0.05);
+  
+  /* Table */
+  --table-header-bg: #f8f9fa;
+  --table-row-hover: #f1f3f5;
+  --table-border: #dee2e6;
+  
+  /* Border & Other */
+  --border-color: #dee2e6;
+  --accent-color: #198754;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
 }
 
-.dark .ant-btn-primary:hover {
-  background-color: #15803d;
-  border-color: #15803d;
+/* ==================== DARK THEME ==================== */
+:root[data-theme='dark'] {
+  /* Background - Gradient tối sang */
+  --bg-primary: #1a1f2e;
+  --bg-secondary: #242b3d;
+  --bg-tertiary: #2d3548;
+  
+  /* Text - Contrast cao hơn */
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  
+  /* Card - Nổi bật hơn background */
+  --card-bg: #242b3d;
+  --card-border: #374151;
+  --card-shadow: rgba(0, 0, 0, 0.3);
+  
+  /* Table */
+  --table-header-bg: #2d3548;
+  --table-row-hover: #374151;
+  --table-border: #374151;
+  
+  /* Border & Other */
+  --border-color: #374151;
+  --accent-color: #22c55e;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
 }
 
-.dark .ant-table {
-  background-color: #111827;
-  color: #f3f4f6;
+/* ==================== GLOBAL STYLES ==================== */
+body {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.dark .ant-table-thead > tr > th {
-  background-color: #1f2937;
-  border-color: #374151;
-  color: #f3f4f6;
+/* ==================== LIGHT MODE ICON FIX ==================== */
+:root[data-theme='light'] .text-gray-900,
+:root[data-theme='light'] .text-gray-800 {
+  color: #1f2937 !important;
 }
 
-.dark .ant-table-tbody > tr {
-  border-bottom: 1px solid #374151;
+:root[data-theme='light'] .text-gray-600,
+:root[data-theme='light'] .text-gray-700 {
+  color: #4b5563 !important;
 }
 
-.dark .ant-table-tbody > tr > td {
-  color: #d1d5db;
+:root[data-theme='light'] .text-gray-500 {
+  color: #6b7280 !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
-  background-color: #1f2937;
+/* Icon hover effect for light mode */
+:root[data-theme='light'] button:hover svg,
+:root[data-theme='light'] a:hover svg {
+  color: #059669 !important;
+  transition: color 0.2s ease;
 }
 
-.dark .ant-input,
-.dark .ant-input-number,
-.dark .ant-select-selector {
-  background-color: #1f2937;
-  border-color: #374151;
-  color: #f3f4f6;
+/* ==================== DARK MODE OVERRIDES ==================== */
+/* Override Tailwind classes */
+.dark .bg-gray-100 {
+  background-color: var(--bg-primary) !important;
 }
 
-.dark .ant-input::placeholder,
-.dark .ant-input-number::placeholder {
-  color: #6b7280;
+.dark .bg-white {
+  background-color: var(--bg-secondary) !important;
 }
 
-.dark .ant-input:focus,
-.dark .ant-input-number:focus,
-.dark .ant-select-focused .ant-select-selector {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+.dark .bg-gray-50 {
+  background-color: var(--bg-tertiary) !important;
 }
 
-.dark .ant-picker {
-  background-color: #1f2937;
-  border-color: #374151;
+.dark .text-gray-900 {
+  color: var(--text-primary) !important;
 }
 
-.dark .ant-picker-input {
-  color: #f3f4f6;
+.dark .text-gray-600,
+.dark .text-gray-700 {
+  color: var(--text-secondary) !important;
 }
 
-.dark .ant-select-dropdown {
-  background-color: #1f2937;
-  border-color: #374151;
+.dark .text-gray-500 {
+  color: var(--text-tertiary) !important;
 }
 
-.dark .ant-select-item {
-  color: #d1d5db;
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--border-color) !important;
 }
 
-.dark .ant-select-item:hover {
-  background-color: #374151;
+/* Card styling */
+.dark .shadow,
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg {
+  box-shadow: 0 4px 12px var(--card-shadow) !important;
 }
 
-.dark .ant-select-item-option-selected {
-  background-color: rgba(34, 197, 94, 0.2);
+/* Table styling */
+.dark table {
+  background-color: var(--card-bg) !important;
+  border-color: var(--table-border) !important;
 }
 
-.dark .ant-modal {
-  background-color: #111827;
+.dark thead {
+  background-color: var(--table-header-bg) !important;
+  color: var(--text-primary) !important;
 }
 
-.dark .ant-modal-header {
-  background-color: #1f2937;
-  border-bottom-color: #374151;
+.dark tbody tr:hover {
+  background-color: var(--table-row-hover) !important;
 }
 
-.dark .ant-modal-title {
-  color: #f3f4f6;
+/* Table header gradient override for dark mode */
+.dark .bg-gradient-to-r.from-green-50.to-blue-50 {
+  background: linear-gradient(to right, #1e3a2f, #1e3a4a) !important;
 }
 
-.dark .ant-modal-content {
-  background-color: #111827;
+/* Input fields */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
 }
 
-.dark .ant-form-item-label > label {
-  color: #d1d5db;
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-tertiary) !important;
 }
 
-.dark .ant-form-item-label > label::after {
-  color: #ef4444;
+/* Buttons */
+.dark button:not(.bg-green-600):not(.bg-red-500):not(.bg-blue-500) {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
 }
 
-.dark .ant-checkbox-inner {
-  background-color: #1f2937;
-  border-color: #4b5563;
+/* Hover states for dark mode */
+.dark .hover\:bg-green-50:hover {
+  background-color: #1e3a2f !important;
 }
 
-.dark .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #16a34a;
-  border-color: #16a34a;
+.dark .hover\:border-green-500:hover {
+  border-color: var(--accent-color) !important;
 }
 
-.dark .ant-radio-inner {
-  background-color: #1f2937;
-  border-color: #4b5563;
+/* Status cards background colors for dark mode */
+.dark .bg-blue-50 {
+  background-color: #1e3a4a !important;
 }
 
-.dark .ant-radio-checked .ant-radio-inner {
-  background-color: #16a34a;
-  border-color: #16a34a;
+.dark .bg-purple-50 {
+  background-color: #2d1e3a !important;
 }
 
-.dark .ant-switch {
-  background-color: #374151;
+.dark .bg-yellow-50 {
+  background-color: #3a3020 !important;
 }
 
-.dark .ant-switch-checked {
-  background-color: #16a34a;
+.dark .bg-green-50 {
+  background-color: #1e3a2f !important;
 }
 
-.dark .ant-pagination-item-active {
-  background-color: #16a34a;
-  border-color: #16a34a;
+.dark .bg-orange-50 {
+  background-color: #3a2a1e !important;
 }
 
-.dark .ant-pagination-item:hover {
-  border-color: #4b5563;
-  color: #4ade80;
+.dark .bg-red-50 {
+  background-color: #3a1e1e !important;
 }
 
-.dark .ant-message-notice-content {
-  background-color: #1f2937;
-  color: #f3f4f6;
-  box-shadow: 0 10px 15px -3px rgba(17, 24, 39, 0.5);
+/* Border colors for status cards */
+.dark .border-blue-200 {
+  border-color: #3b5a7a !important;
 }
 
-.dark .ant-notification-notice {
-  background-color: #1f2937;
-  color: #f3f4f6;
+.dark .border-purple-200 {
+  border-color: #5a3b7a !important;
 }
 
-.dark .ant-notification-notice-description {
-  color: #9ca3af;
+.dark .border-yellow-200 {
+  border-color: #7a6a3b !important;
 }
 
-.dark .ant-dropdown {
-  background-color: #1f2937;
+.dark .border-green-200 {
+  border-color: #3b7a5a !important;
 }
 
-.dark .ant-menu {
-  background-color: #1f2937;
-  border-color: #374151;
+.dark .border-orange-200 {
+  border-color: #7a5a3b !important;
 }
 
-.dark .ant-menu-item {
-  color: #d1d5db;
+.dark .border-red-200 {
+  border-color: #7a3b3b !important;
 }
 
-.dark .ant-menu-item:hover {
-  color: #4ade80;
-}
-
-.dark .ant-menu-item-selected {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-
-.dark .ant-menu-submenu-title {
-  color: #d1d5db;
-}
-
-.dark .ant-menu-submenu-title:hover {
-  color: #4ade80;
-}
-
-.dark .ant-breadcrumb-link {
-  color: #d1d5db;
-}
-
-.dark .ant-breadcrumb-link:hover {
-  color: #4ade80;
-}
-
-.dark .ant-tree-node-content-wrapper:hover {
-  background-color: #374151;
-}
-
-.dark .ant-tree-selected {
-  background-color: rgba(34, 197, 94, 0.2);
-}
-
-/* Material-UI Dark Theme */
-.dark .MuiPaper-root {
-  background-color: #111827;
-}
-
-.dark .MuiButton-root {
-  color: #f3f4f6;
-}
-
-.dark .MuiButton-contained {
-  background-color: #16a34a;
-}
-
-.dark .MuiButton-contained:hover {
-  background-color: #15803d;
-}
-
-.dark .MuiInput-root {
-  color: #f3f4f6;
-}
-
-.dark .MuiOutlinedInput-root {
-  color: #f3f4f6;
-}
-
-.dark .MuiOutlinedInput-notchedOutline {
-  border-color: #374151;
-}
-
-.dark .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: #4b5563;
-}
-
-.dark .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #22c55e;
-}
-
-.dark .MuiInputBase-input::placeholder {
-  color: #6b7280;
-  opacity: 0.75;
-}
-
-.dark .MuiFormLabel-root {
-  color: #9ca3af;
-}
-
-.dark .MuiDataGrid-root {
-  background-color: #111827;
-  color: #f3f4f6;
-}
-
-.dark .MuiDataGrid-columnHeader {
-  background-color: #1f2937;
-}
-
-.dark .MuiDataGrid-cell {
-  border-bottom: 1px solid #374151;
-}
-
-/* Chart.js Dark Theme */
-.dark [data-chart-js-theme="dark"] {
-  --chart-text-color: rgba(229, 231, 235, 1);
-  --chart-border-color: rgba(64, 64, 64, 1);
-  --chart-grid-color: rgba(55, 65, 81, 1);
-}
-
-/* Scrollbar Styling */
+/* Scrollbar */
 .dark ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background-color: #111827;
+  background: var(--bg-tertiary);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #374151;
-  border-radius: 9999px;
+  background: var(--border-color);
+  border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #4b5563;
+  background: var(--text-tertiary);
 }
 
-/* Loading and Skeleton */
-.dark .ant-skeleton-paragraph > li {
-  background-color: #374151;
+/* ==================== TOPBAR ==================== */
+/* Force topbar background for light mode */
+:root[data-theme='light'] header {
+  background: linear-gradient(to right, #f0fdf4, #ffffff, #f0fdf4) !important;
+  border-bottom-color: #d1fae5 !important;
 }
 
-.dark .ant-spin-dot i {
-  background-color: #22c55e;
+/* Force topbar background for dark mode */
+:root[data-theme='dark'] header {
+  background: linear-gradient(to right, #1f2937, #111827, #1f2937) !important;
+  border-bottom-color: #374151 !important;
 }
 
-/* Badges and Tags */
-.dark .ant-tag {
-  background-color: #374151;
-  color: #d1d5db;
-  border-color: #4b5563;
+/* ==================== LIGHT MODE SPECIFIC ICON FIX ==================== */
+/* Fix cho icons trong topbar/header */
+:root[data-theme='light'] header svg,
+:root[data-theme='light'] header button svg {
+  color: #3a5137 !important;
+  opacity: 1 !important;
 }
 
-.dark .ant-tag-green {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border-color: #166534;
+/* Fix cho notification icon */
+:root[data-theme='light'] button[aria-label*="notification"] svg,
+:root[data-theme='light'] button[aria-label*="Notification"] svg,
+:root[data-theme='light'] .notification-icon svg {
+  color: #1f2937 !important;
+  opacity: 1 !important;
 }
 
-.dark .ant-tag-red {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border-color: #991b1b;
+/* Fix cho mail/message icon */
+:root[data-theme='light'] button[aria-label*="mail"] svg,
+:root[data-theme='light'] button[aria-label*="message"] svg,
+:root[data-theme='light'] .mail-icon svg {
+  color: #1f2937 !important;
+  opacity: 1 !important;
 }
 
-.dark .ant-tag-blue {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-  border-color: #1e40af;
+/* Fix chung cho tất cả SVG icons */
+:root[data-theme='light'] svg {
+  opacity: 1 !important;
 }
 
-.dark .ant-tag-orange {
-  background-color: rgba(249, 115, 22, 0.2);
-  color: #fb923c;
-  border-color: #9a3412;
+/* Override cho class text-gray-400 (thường là màu icons) */
+:root[data-theme='light'] .text-gray-400 {
+  color: #4b5563 !important; 
 }
 
-/* Tooltip */
-.dark .ant-tooltip-inner {
-  background-color: #1f2937;
-  color: #f3f4f6;
+:root[data-theme='light'] .text-gray-300 {
+  color: #6b7280 !important;
 }
 
-.dark .ant-tooltip-arrow-content {
-  background-color: #1f2937;
+/* ==================== MAIN BACKGROUND GRADIENT ==================== */
+/* Fix cho main content background */
+:root[data-theme='light'] main {
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6) !important;
 }
 
-/* Popover */
-.dark .ant-popover-inner {
-  background-color: #111827;
+:root[data-theme='dark'] main {
+  background: linear-gradient(to bottom right, #1a1f2e, #0f172a) !important;
 }
 
-.dark .ant-popover-arrow-content {
-  background-color: #111827;
+/* Override bg-gray-50 trong light mode */
+:root[data-theme='light'] .bg-gray-50 {
+  background-color: #f8f9fa !important;
 }
 
-/* Text Selection */
-.dark ::selection {
-  background-color: rgba(34, 197, 94, 0.5);
-  color: #f3f4f6;
+/* ==================== GRADIENT TEXT FIX ==================== */
+/* Gradient text vẫn giữ nguyên cho cả 2 mode */
+.bg-gradient-to-r.from-green-600.to-blue-600 {
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
-.dark ::-moz-selection {
-  background-color: rgba(34, 197, 94, 0.5);
-  color: #f3f4f6;
+/* Dark mode - làm gradient sáng hơn */
+.dark .bg-gradient-to-r.from-green-600.to-blue-600 {
+  background-image: linear-gradient(to right, #22c55e, #3b82f6) !important;
 }

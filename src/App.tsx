@@ -1,10 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import {BrowserRouter as Router,Routes,Route,Navigate,useLocation,} from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Method from "./pages/researcher/method/Method";
@@ -20,7 +14,6 @@ import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContai
 import SelectTechnicianContainer from "./pages/researcher/task/create/SelectTechnicianContainer";
 import ConfirmTaskContainer from "./pages/researcher/task/create/ConfirmTaskContainer";
 import TaskDetailPage from "./pages/researcher/task/TaskDetailPage";
-// import EditTask from "./pages/CreateTask/EditTask"; // This file seems to be missing in new structure
 import CreateExperimentStep1 from "./pages/researcher/experimentlog/create/CreateExperimentStep1";
 import CreateExperimentStep2 from "./pages/researcher/experimentlog/create/CreateExperimentStep2";
 import CreateExperimentStep3 from "./pages/researcher/experimentlog/create/CreateExperimentStep3";
@@ -78,7 +71,6 @@ function AppLayout() {
 
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
-  // const role = user?.roleID === 1 ? "admin" : user ? "User" : null;
   let sidebar = <Sidebar />;
   if (user?.roleID === 1) sidebar = <SidebarAdmin />;
   else if (user?.roleID === 3) sidebar = <SidebarTechnician />;

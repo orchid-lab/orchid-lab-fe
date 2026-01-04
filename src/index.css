@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./styles/darkTheme.css";
 
+
 body {
   font-family: "Space Grotesk", sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }

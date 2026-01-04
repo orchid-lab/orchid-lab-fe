@@ -4,6 +4,9 @@ import "./index.css";
 import "./styles/darkTheme.css";
 import App from "./App.tsx";
 
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

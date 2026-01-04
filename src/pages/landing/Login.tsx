@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
-import { extractUserFromJWT, getRedirectPath } from "../../utils/JWTHelper";
+import { extractUserFromJWT, getRedirectPath } from "../../utils/jwtHelper";
 import "./Login.css";
 import LoginBackground from "../../assets/LoginBackground.jpg";
 import LoginBackground2 from "../../assets/LoginBackground2.jpg";
