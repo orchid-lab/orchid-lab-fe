@@ -8,7 +8,6 @@ import Seedlings from "./pages/researcher/seeding/Seedlings";
 import ReportsDetails from "./pages/researcher/report/ReportsDetails";
 import ReportsFollowUpDetails from "./pages/researcher/report/ReportsFollowUpDetails";
 import SeedlingDetail from "./pages/researcher/seeding/SeedlingDetail";
-
 import { SeedlingFormProvider } from "./context/SeedlingFormContext";
 import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContainer";
 import SelectTechnicianContainer from "./pages/researcher/task/create/SelectTechnicianContainer";
@@ -72,8 +71,8 @@ function AppLayout() {
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
   let sidebar = <Sidebar />;
-  if (user?.roleID === 1) sidebar = <SidebarAdmin />;
-  else if (user?.roleID === 3) sidebar = <SidebarTechnician />;
+  if (user?.role === "Admin") sidebar = <SidebarAdmin />;
+  else if (user?.role === "Lab Technician") sidebar = <SidebarTechnician />;
 
   if (!isAuthReady) {
     return <div>Đang tải...</div>;
@@ -105,7 +104,7 @@ function AppLayout() {
             <Route
               path="/admin/tissue-culture-batches"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminTissueCultureBatchList />
                 </ProtectedRoute>
               }
@@ -113,7 +112,7 @@ function AppLayout() {
             <Route
               path="/admin/tissue-culture-batches/create"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminTissueCultureBatchCreate />
                 </ProtectedRoute>
               }
@@ -121,7 +120,7 @@ function AppLayout() {
             <Route
               path="/admin/tissue-culture-batches/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminTissueCultureBatchDetail />
                 </ProtectedRoute>
               }
@@ -129,7 +128,7 @@ function AppLayout() {
             <Route
               path="/admin/user"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <DashboardAdmin />
                 </ProtectedRoute>
               }
@@ -137,7 +136,7 @@ function AppLayout() {
             <Route
               path="/method"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <Method />
                 </ProtectedRoute>
               }
@@ -145,7 +144,7 @@ function AppLayout() {
             <Route
               path="/method/:id"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <MethodDetail />
                 </ProtectedRoute>
               }
@@ -153,7 +152,7 @@ function AppLayout() {
             <Route
               path="/method/new"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <MethodCreate />
                 </ProtectedRoute>
               }
@@ -163,7 +162,7 @@ function AppLayout() {
             <Route
               path="/seedlings"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <Seedlings />
                 </ProtectedRoute>
               }
@@ -171,7 +170,7 @@ function AppLayout() {
             <Route
               path="/seedlings/:id"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <SeedlingDetail />
                 </ProtectedRoute>
               }
@@ -179,7 +178,7 @@ function AppLayout() {
             <Route
               path="/seedlings/new/*"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <SeedlingFormProvider>
                     <Routes>
                       <Route path="" element={<SeedlingDetailsForm />} />
@@ -196,7 +195,7 @@ function AppLayout() {
             <Route
               path="/reports"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <ReportList />
                 </ProtectedRoute>
               }
@@ -204,7 +203,7 @@ function AppLayout() {
             <Route
               path="/technician/tasks"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <ListTask />
                 </ProtectedRoute>
               }
@@ -212,7 +211,7 @@ function AppLayout() {
             <Route
               path="/technician/samples"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <ListSample />
                 </ProtectedRoute>
               }
@@ -220,7 +219,7 @@ function AppLayout() {
             <Route
               path="/technician/reports"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <ReportsTechnician />
                 </ProtectedRoute>
               }
@@ -228,7 +227,7 @@ function AppLayout() {
             <Route
               path="/reports/:id"
               element={
-                <ProtectedRoute requiredRole={[2, 3]}>
+                <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
                   <ReportsDetails />
                 </ProtectedRoute>
               }
@@ -236,7 +235,7 @@ function AppLayout() {
             <Route
               path="/reports/:id/follow-up"
               element={
-                <ProtectedRoute requiredRole={2}>
+                <ProtectedRoute requiredRole="Researcher">
                   <ReportsFollowUpDetails />
                 </ProtectedRoute>
               }
@@ -244,7 +243,7 @@ function AppLayout() {
             <Route
               path="/reports/new"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <ReportsCreate />
                 </ProtectedRoute>
               }
@@ -269,7 +268,7 @@ function AppLayout() {
             <Route
               path="/technician/tasks/:id"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <TechDetailTask />
                 </ProtectedRoute>
               }
@@ -277,7 +276,7 @@ function AppLayout() {
             <Route
               path="/technician/samples/:id"
               element={
-                <ProtectedRoute requiredRole={3}>
+                <ProtectedRoute requiredRole="Lab Technician">
                   <TechDetailSample />
                 </ProtectedRoute>
               }
@@ -320,7 +319,7 @@ function AppLayout() {
             <Route
               path="/admin/tasks"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminTasks />
                 </ProtectedRoute>
               }
@@ -328,7 +327,7 @@ function AppLayout() {
             <Route
               path="/admin/tasks/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminTaskDetail />
                 </ProtectedRoute>
               }
@@ -336,7 +335,7 @@ function AppLayout() {
             <Route
               path="/admin/experiment-log"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminExperimentLog />
                 </ProtectedRoute>
               }
@@ -344,7 +343,7 @@ function AppLayout() {
             <Route
               path="/admin/experiment-log/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminExperimentLogDetail />
                 </ProtectedRoute>
               }
@@ -352,7 +351,7 @@ function AppLayout() {
             <Route
               path="/admin/labroom"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminLabRoomList />
                 </ProtectedRoute>
               }
@@ -360,7 +359,7 @@ function AppLayout() {
             <Route
               path="/admin/labroom/new"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminLabRoomCreate />
                 </ProtectedRoute>
               }
@@ -368,7 +367,7 @@ function AppLayout() {
             <Route
               path="/admin/labroom/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminLabRoomDetail />
                 </ProtectedRoute>
               }
@@ -376,7 +375,7 @@ function AppLayout() {
             <Route
               path="/admin/seedling"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminSeedlings />
                 </ProtectedRoute>
               }
@@ -384,7 +383,7 @@ function AppLayout() {
             <Route
               path="/admin/seedling/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminSeedlingDetail />
                 </ProtectedRoute>
               }
@@ -392,7 +391,7 @@ function AppLayout() {
             <Route
               path="/admin/method"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminMethod />
                 </ProtectedRoute>
               }
@@ -400,7 +399,7 @@ function AppLayout() {
             <Route
               path="/admin/method/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminMethodDetail />
                 </ProtectedRoute>
               }
@@ -408,7 +407,7 @@ function AppLayout() {
             <Route
               path="/admin/report"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminReport />
                 </ProtectedRoute>
               }
@@ -416,7 +415,7 @@ function AppLayout() {
             <Route
               path="/admin/report/:id"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminReportsDetails />
                 </ProtectedRoute>
               }
@@ -424,7 +423,7 @@ function AppLayout() {
             <Route
               path="/admin/element"
               element={
-                <ProtectedRoute requiredRole={1}>
+                <ProtectedRoute requiredRole="Admin">
                   <AdminElement />
                 </ProtectedRoute>
               }

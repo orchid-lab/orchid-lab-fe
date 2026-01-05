@@ -12,19 +12,6 @@ const roleOptions: { value: string; label: string }[] = [
   { value: "Technician", label: "Technician" },
 ];
 
-function getRoleName(roleID: number) {
-  switch (roleID) {
-    case 1:
-      return "Admin";
-    case 2:
-      return "Researcher";
-    case 3:
-      return "Technician";
-    default:
-      return "Khác";
-  }
-}
-
 const PAGE_SIZE = 10;
 
 export default function DashboardAdmin() {
@@ -44,7 +31,7 @@ export default function DashboardAdmin() {
     name: "",
     email: "",
     phoneNumber: "",
-    roleID: 0,
+    role: "Researcher", 
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -71,6 +58,7 @@ export default function DashboardAdmin() {
       setLoading(false);
     }
   };
+  
   useEffect(() => {
     void fetchUsers();
   }, [page]);
@@ -79,21 +67,16 @@ export default function DashboardAdmin() {
     .filter((u) => u.id !== user?.id)
     .filter((u) => {
       const matchesSearch =
-        (u.userName ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (u.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (u.email ?? "").toLowerCase().includes(search.toLowerCase());
-      const matchesRole = !roleFilter || getRoleName(u.roleID) === roleFilter;
-      // Nếu có status thực tế thì sửa lại dòng dưới
+      const matchesRole = !roleFilter || u.role === roleFilter;
       const matchesStatus = !statusFilter || statusFilter === "active";
       return matchesSearch && matchesRole && matchesStatus;
     });
 
-  // Stats
-  // const active = users.length; // Nếu có status thực tế thì filter theo status
-  // const inactive = 0; // Nếu có status thực tế thì filter theo status
-  const adminCount = users.filter((u) => u.roleID === 1).length;
-  const researcherCount = users.filter((u) => u.roleID === 2).length;
-  const technicianCount = users.filter((u) => u.roleID === 3).length;
+  const adminCount = users.filter((u) => u.role === "Admin").length;
+  const researcherCount = users.filter((u) => u.role === "Researcher").length;
+  const technicianCount = users.filter((u) => u.role === "Lab Technician").length;
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteTarget({ id, name });
@@ -112,7 +95,7 @@ export default function DashboardAdmin() {
       setShowEditModal(false);
       setEditUser(null);
       await fetchUsers();
-      setPage(1); // Reload lại danh sách
+      setPage(1);
       enqueueSnackbar("Cập nhật người dùng thành công!", {
         variant: "success",
         autoHideDuration: 3000,
@@ -139,12 +122,12 @@ export default function DashboardAdmin() {
       });
     }
   };
+  
   const handleAddUser = async () => {
     try {
-      await axiosInstance.post("/api/user", newUser);
+      await axiosInstance.post("/api/authentication/register", newUser);
       setShowAddModal(false);
-      setNewUser({ name: "", email: "", phoneNumber: "", roleID: 0 });
-      // Reload lại danh sách
+      setNewUser({ name: "", email: "", phoneNumber: "", role: "Researcher" });
       await fetchUsers();
       setPage(1);
       enqueueSnackbar("Tạo người dùng thành công!", {
@@ -210,6 +193,21 @@ export default function DashboardAdmin() {
     }
   };
 
+  // lấy màu badge theo role
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case "Admin":
+        return "bg-purple-100 text-purple-700";
+      case "Researcher":
+        return "bg-blue-100 text-blue-700";
+      case "Technician":
+      case "Lab Technician":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50">
       {/* Header */}
@@ -270,7 +268,7 @@ export default function DashboardAdmin() {
             {researcherCount}
           </div>
         </div>
-        <div className="bg-blue-50 p-4 rounded-lg">
+        <div className="bg-green-50 p-4 rounded-lg">
           <div className="text-green-600 text-sm font-medium">TECHNICIANS</div>
           <div className="text-2xl font-bold text-green-700">
             {technicianCount}
@@ -286,7 +284,6 @@ export default function DashboardAdmin() {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tên
                 </th>
-
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
@@ -299,12 +296,14 @@ export default function DashboardAdmin() {
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày tạo
                 </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hành động
+                </th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                  // eslint-disable-next-line react-x/no-array-index-key
                   <tr key={idx} className="border-t animate-pulse">
                     <td className="py-3 px-4">
                       <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -321,43 +320,39 @@ export default function DashboardAdmin() {
                     <td className="px-4">
                       <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                     </td>
+                    <td className="px-4">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </td>
                   </tr>
                 ))
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-400">
+                  <td colSpan={6} className="text-center py-8 text-gray-400">
                     Không có người dùng nào phù hợp.
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={user.id} className="hover:bg-gray-50 border-t">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {user.name}
                     </td>
-
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                       {user.email}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                       {user.phoneNumber ?? "Chưa có số điện thoại"}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold role-badge ${
-                          user.roleID === 1
-                            ? "bg-purple-100 text-purple-700"
-                            : user.roleID === 2
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(user.role)}`}
                       >
-                        {getRoleName(user.roleID)}
+                        {user.role}
                       </span>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {user.create_at
-                        ? new Date(user.create_at).toLocaleDateString("vi-VN", {
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                      {user.createdDate
+                        ? new Date(user.createdDate).toLocaleDateString("vi-VN", {
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
@@ -366,25 +361,25 @@ export default function DashboardAdmin() {
                           })
                         : ""}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm flex gap-1">
-                      <button
-                        className="action-btn btn-edit bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition"
-                        title="Chỉnh sửa"
-                        onClick={() => handleEdit(user)}
-                        type="button"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="action-btn btn-delete bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-2 py-1 rounded transition"
-                        title="Xóa"
-                        onClick={() =>
-                          void handleDeleteClick(user.id, user.name)
-                        }
-                        type="button"
-                      >
-                        <FaTrash />
-                      </button>
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          className="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition"
+                          title="Chỉnh sửa"
+                          onClick={() => handleEdit(user)}
+                          type="button"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition"
+                          title="Xóa"
+                          onClick={() => handleDeleteClick(user.id, user.name)}
+                          type="button"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -393,14 +388,13 @@ export default function DashboardAdmin() {
           </table>
         </div>
         {/* Pagination */}
-        {totalPages >= 1 && (
+        {totalPages > 1 && (
           <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
             <span>
               Hiển thị {filteredUsers.length} người dùng trên tổng số {total}{" "}
               người dùng
             </span>
             <div className="flex gap-2">
-              {/* Previous button */}
               {page > 1 && (
                 <button
                   type="button"
@@ -411,7 +405,6 @@ export default function DashboardAdmin() {
                 </button>
               )}
 
-              {/* Page numbers (tối đa 5 số, giống task) */}
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                 let pageNum;
                 if (totalPages <= 5) {
@@ -439,7 +432,6 @@ export default function DashboardAdmin() {
                 );
               })}
 
-              {/* Next button */}
               {page < totalPages && (
                 <button
                   type="button"
@@ -471,14 +463,11 @@ export default function DashboardAdmin() {
               placeholder="Email"
               value={editUser.email}
               disabled
-              onChange={(e) =>
-                setEditUser((u) => (u ? { ...u, email: e.target.value } : u))
-              }
             />
             <input
               className="border rounded px-3 py-2 w-full mb-2"
               placeholder="Số điện thoại"
-              value={editUser.phoneNumber}
+              value={editUser.phoneNumber || ""}
               onChange={(e) =>
                 setEditUser((u) =>
                   u ? { ...u, phoneNumber: e.target.value } : u
@@ -487,28 +476,27 @@ export default function DashboardAdmin() {
             />
             <select
               className="border rounded px-3 py-2 w-full mb-4"
-              value={editUser.roleID}
+              value={editUser.role}
               onChange={(e) =>
                 setEditUser((u) =>
-                  u ? { ...u, roleID: Number(e.target.value) } : u
+                  u ? { ...u, role: e.target.value } : u
                 )
               }
             >
-              <option value={1}>Admin</option>
-              <option value={2}>Researcher</option>
-              <option value={3}>Technician</option>
+              <option value="Researcher">Researcher</option>
+              <option value="Lab Technician">Lab Technician</option>
             </select>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
-                className="px-4 py-2 bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowEditModal(false)}
               >
                 Hủy
               </button>
               <button
                 type="button"
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 onClick={() => {
                   void handleSaveEdit();
                 }}
@@ -550,27 +538,26 @@ export default function DashboardAdmin() {
             />
             <select
               className="border rounded px-3 py-2 w-full mb-4"
-              value={newUser.roleID}
+              value={newUser.role}
               onChange={(e) =>
-                setNewUser((u) => ({ ...u, roleID: Number(e.target.value) }))
+                setNewUser((u) => ({ ...u, role: e.target.value }))
               }
             >
-              <option value={0}>Chọn vai trò</option>
-              <option value={1}>Admin</option>
-              <option value={2}>Researcher</option>
-              <option value={3}>Technician</option>
+              <option value="">Chọn vai trò</option>
+              <option value="Researcher">Researcher</option>
+              <option value="Lab Technician">Lab Technician</option>
             </select>
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
-                className="px-4 py-2 bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowAddModal(false)}
               >
                 Hủy
               </button>
               <button
                 type="button"
-                className="px-4 py-2 bg-green-600 text-white rounded"
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 onClick={() => {
                   void handleAddUser();
                 }}
@@ -581,6 +568,7 @@ export default function DashboardAdmin() {
           </div>
         </div>
       )}
+      {/* Delete Modal */}
       {showDeleteModal && deleteTarget && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[350px]">
@@ -594,14 +582,14 @@ export default function DashboardAdmin() {
             <div className="flex gap-2 justify-end mt-6">
               <button
                 type="button"
-                className="px-4 py-2 bg-gray-200 rounded"
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowDeleteModal(false)}
               >
                 Hủy
               </button>
               <button
                 type="button"
-                className="px-4 py-2 bg-red-600 text-white rounded"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 onClick={() => {
                   void handleDeleteUser();
                 }}

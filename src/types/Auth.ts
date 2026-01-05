@@ -2,26 +2,32 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
-  userName: string | null;
-  phoneNumber: string;
-  roleID: number;
-  role: string;
-  create_at: string;
-  create_by: string | null;
-  avatarUrl: string | null;
+  password?: string;
+  phoneNumber?: string;
+  role: string; 
+  createdDate?: string; 
+  createdBy?: string;
+  deletedDate?: string;
+  deletedBy?: string;
+  updatedDate?: string;
+  updatedBy?: string;
+  avatarUrl?: string;
 }
 
 export interface UserApiResponse {
+  data: User[];
   totalCount: number;
   pageCount: number;
-  pageSize: number;
   pageNumber: number;
-  data: User[];
+  pageSize: number;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface LoginResponse {
-  message: string;
   accessToken: string;
   refreshToken: string;
   user: User;

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
 import { extractUserFromJWT, getRedirectPath } from "../../utils/jwtHelper";
+import type { User } from "../../types/Auth";
 import "./Login.css";
 import LoginBackground from "../../assets/LoginBackground.jpg";
 import LoginBackground2 from "../../assets/LoginBackground2.jpg";
@@ -27,6 +28,13 @@ const backgroundImages = [
   LoginBackground9,
   LoginBackground10,
 ];
+
+interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  // user có thể có hoặc không trong response
+  user?: User;
+}
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -63,29 +71,31 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const res = await axiosInstance.post("/api/authentication/login", {
+      const res = await axiosInstance.post<LoginResponse>("/api/authentication/login", {
         email,
         password,
       });
       
-      const { accessToken, refreshToken } = res.data;
+      const { accessToken, refreshToken, user: apiUser } = res.data;
       
       if (!accessToken || !refreshToken) {
         throw new Error("Invalid response structure");
       }
       
-      // Extract user from JWT
-      const user = extractUserFromJWT(accessToken, email);
+      // Nếu API trả về user thì dùng, không thì extract từ JWT
+      const user = apiUser || extractUserFromJWT(accessToken, email);
       
       if (!user) {
-        throw new Error("Failed to extract user information");
+        throw new Error("Failed to get user information");
       }
+      
+      console.log("Login successful, user data:", user);
       
       // Save to context and localStorage
       login({ accessToken, refreshToken, user });
       
       // Navigate based on role
-      navigate(getRedirectPath(user.roleID), { replace: true });
+      navigate(getRedirectPath(user.role), { replace: true });
       
     } catch (error: any) {
       console.error("Login error:", error);

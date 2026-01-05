@@ -17,58 +17,39 @@ export function decodeJWT(token: string): any {
   }
 }
 
-function getRoleID(roleName: string | undefined): number {
-  if (!roleName) return 0;
-  
-  const roleMap: Record<string, number> = {
-    'Admin': 1,
-    'Method': 2,
-    'Technician': 3,
-  };
-  
-  return roleMap[roleName] || 0;
-}
-
 export function extractUserFromJWT(token: string, email: string): User | null {
   const decoded = decodeJWT(token);
   if (!decoded) return null;
   
-  let roleID = 0;
+  let role = "Researcher"; // default role
   
-  if (decoded.RoleID && typeof decoded.RoleID === 'number') {
-    roleID = decoded.RoleID;
-  } else if (decoded.roleID && typeof decoded.roleID === 'number') {
-    roleID = decoded.roleID;
-  } else if (decoded.RoleName) {
-    roleID = getRoleID(decoded.RoleName);
-  } else if (decoded.role) {
-    roleID = getRoleID(decoded.role);
-  }
-  
-  if (!roleID) {
-    console.error("Could not determine roleID from JWT");
-    return null;
+  // Try to extract role from various possible fields
+  if (decoded.role && typeof decoded.role === 'string') {
+    role = decoded.role;
+  } else if (decoded.Role && typeof decoded.Role === 'string') {
+    role = decoded.Role;
+  } else if (decoded.RoleName && typeof decoded.RoleName === 'string') {
+    role = decoded.RoleName;
   }
   
   return {
     id: decoded.sub || decoded.userID || decoded.UserID || email,
     email: email,
     name: decoded.name || decoded.Name || decoded.fullName || decoded.FullName || "User",
-    userName: decoded.userName || null,
     password: "", // Not stored in JWT
-    phoneNumber: decoded.phoneNumber || "",
-    roleID: roleID,
-    create_at: new Date().toISOString(),
-    create_by: null,
-    avatarUrl: decoded.avatarUrl || null,
+    phoneNumber: decoded.phoneNumber || decoded.PhoneNumber || "",
+    role: role, // Changed from roleID to role
+    createdDate: decoded.createdDate || new Date().toISOString(), // Changed from create_at
+    createdBy: decoded.createdBy || null,
+    avatarUrl: decoded.avatarUrl || decoded.AvatarUrl || null,
   };
 }
 
-export function getRedirectPath(roleID: number): string {
-  const paths: Record<number, string> = {
-    1: "/admin/user",
-    2: "/method",
-    3: "/technician/tasks",
+export function getRedirectPath(role: string): string {
+  const paths: Record<string, string> = {
+    'Admin': "/dashboard",
+    'Researcher': "/tasks",
+    'Technician': "/tasks",
   };
-  return paths[roleID] || "/";
+  return paths[role] || "/tasks";
 }

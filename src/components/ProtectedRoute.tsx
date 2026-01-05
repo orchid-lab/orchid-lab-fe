@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 interface Props {
   children: React.ReactNode;
-  requiredRole?: number | number[];
+  requiredRole?: string | string[];
 }
 
 const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
@@ -13,9 +13,10 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
   if (!isAuthReady) return null;
 
   if (!user) return <Navigate to="/login" />;
+  
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!roles.includes(user.roleID)) {
+    if (!roles.includes(user.role)) {
       return <Navigate to="/unauthorized" />;
     }
   }
