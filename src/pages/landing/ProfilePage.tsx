@@ -1,38 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axiosInstance";
 import type { User } from "../../types/Auth";
 import { useSnackbar } from "notistack";
 
-function getRoleName(role: string | number | undefined) {
-  if (typeof role === 'string') {
-    return role;
-  }
-  
-  switch (role) {
-    case 1:
-      return "Quản trị viên";
-    case 2:
-      return "Nhà nghiên cứu";
-    case 3:
-      return "Kỹ thuật viên";
-    default:
-      return "Khác";
-  }
+function getRoleName(role: string | undefined): string {
+  return role || 'User';
 }
 
 export default function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user: authUser, updateUser, isAuthReady } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editUser, setEditUser] = useState({
-    id: user?.id ?? "",
-    name: user?.name ?? "",
-    email: user?.email ?? "",
-    phoneNumber: user?.phoneNumber ?? "",
+    id: "",
+    name: "",
+    email: "",
+    phoneNumber: "",
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
+
+  // Fetch user data from API khi component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log('Fetching user data for ID:', authUser.id);
+        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        console.log('User data from API:', response.data);
+        setUser(response.data);
+        setEditUser({
+          id: response.data.id ?? "",
+          name: response.data.name ?? "",
+          email: response.data.email ?? "",
+          phoneNumber: response.data.phoneNumber ?? "",
+        });
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        enqueueSnackbar("Không thể tải thông tin người dùng", {
+          variant: "error",
+          autoHideDuration: 3000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthReady) {
+      fetchUserData();
+    }
+  }, [authUser?.id, isAuthReady, enqueueSnackbar]);
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -72,8 +96,10 @@ export default function ProfilePage() {
         });
       }
 
+      // Refresh user data from API
       const userRes = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
       const updatedUser = userRes.data;
+      setUser(updatedUser);
       updateUser(updatedUser);
 
       setIsEditing(false);
@@ -117,6 +143,47 @@ export default function ProfilePage() {
       phoneNumber: user?.phoneNumber ?? "",
     });
   };
+
+  // Loading state
+  if (!isAuthReady || isLoading) {
+    return (
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+              <p className="ml-4 text-gray-600">Đang tải thông tin...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // No user data
+  if (!user) {
+    return (
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
+            <div className="text-center py-12">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">Không tìm thấy thông tin người dùng</h3>
+              <p className="mt-2 text-sm text-gray-500">Vui lòng đăng nhập lại để tiếp tục.</p>
+              <button
+                onClick={() => window.location.href = '/login'}
+                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Đăng nhập
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
@@ -217,15 +284,15 @@ export default function ProfilePage() {
                     className="w-full h-full flex items-center justify-center relative cursor-pointer group"
                     title="Thay đổi ảnh đại diện"
                   >
-                    {previewUrl || user?.avatarUrl ? (
+                    {previewUrl || user.avatarUrl ? (
                       <img
-                        src={previewUrl || user?.avatarUrl}
+                        src={previewUrl || user.avatarUrl || ""}
                         alt="Ảnh đại diện"
                         className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                       />
                     ) : (
                       <span className="select-none">
-                        {user?.name?.charAt(0).toUpperCase()}
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
                       </span>
                     )}
                     <input
@@ -256,7 +323,7 @@ export default function ProfilePage() {
                       </svg>
                     </div>
                   </label>
-                ) : user?.avatarUrl ? (
+                ) : user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
                     alt="Ảnh đại diện"
@@ -264,7 +331,7 @@ export default function ProfilePage() {
                   />
                 ) : (
                   <span className="select-none">
-                    {user?.name?.charAt(0).toUpperCase()}
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 )}
               </div>
@@ -273,14 +340,14 @@ export default function ProfilePage() {
             {/* User Info */}
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                {user?.name}
+                {user.name || 'Không có tên'}
               </h2>
-              <p className="text-sm text-gray-600 mb-4">{user?.email}</p>
+              <p className="text-sm text-gray-600 mb-4">{user.email || 'Không có email'}</p>
               
               <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-md px-4 py-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm font-medium text-green-700">
-                  {getRoleName(user?.role ?? user?.roleID)}
+                  {getRoleName(user.role)}
                 </span>
               </div>
             </div>
@@ -306,7 +373,7 @@ export default function ProfilePage() {
                   type="text"
                   id="name"
                   name="name"
-                  value={editUser?.name ?? ""}
+                  value={editUser.name}
                   onChange={handleChange}
                   readOnly={!isEditing}
                   className={`w-full border ${
@@ -329,7 +396,7 @@ export default function ProfilePage() {
                   type="text"
                   id="phoneNumber"
                   name="phoneNumber"
-                  value={editUser?.phoneNumber ?? ""}
+                  value={editUser.phoneNumber}
                   onChange={handleChange}
                   readOnly={!isEditing}
                   className={`w-full border ${
@@ -352,7 +419,7 @@ export default function ProfilePage() {
                   type="email"
                   id="email"
                   name="email"
-                  value={editUser?.email ?? ""}
+                  value={editUser.email}
                   readOnly
                   className="w-full border border-gray-200 bg-gray-50 rounded-md px-4 py-2.5 text-sm text-gray-600"
                 />

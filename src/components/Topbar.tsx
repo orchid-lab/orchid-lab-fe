@@ -3,27 +3,20 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { FaSignOutAlt, FaUserCircle, FaBell, FaEnvelope } from "react-icons/fa";
 import ThemeToggle from "./ThemeToggle";
+import axiosInstance from "../api/axiosInstance";
+import type { User } from "../types/Auth";
 
-function getRoleName(roleID: number) {
-  switch (roleID) {
-    case 1:
-      return "Admin";
-    case 2:
-      return "Researcher";
-    case 3:
-      return "Technician";
-    default:
-      return "Khác";
-  }
+function getRoleName(role: string | undefined) {
+  return role || "Khác";
 }
 
-function getRoleBadgeColor(roleID: number) {
-  switch (roleID) {
-    case 1:
+function getRoleBadgeColor(role: string | undefined) {
+  switch (role?.toLowerCase()) {
+    case "admin":
       return "bg-red-500";
-    case 2:
+    case "researcher":
       return "bg-blue-500";
-    case 3:
+    case "technician":
       return "bg-green-500";
     default:
       return "bg-gray-500";
@@ -31,10 +24,29 @@ function getRoleBadgeColor(roleID: number) {
 }
 
 export default function Topbar() {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) return;
+
+      try {
+        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        setUser(response.data);
+      } catch (error) {
+        console.error('Error fetching user data in Topbar:', error);
+        // Fallback to authUser if API fails
+        setUser(authUser);
+      }
+    };
+
+    fetchUserData();
+  }, [authUser]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -95,12 +107,18 @@ export default function Topbar() {
         <div className="flex items-center gap-3">
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-            <img
-              src={user?.avatarUrl ?? "https://i.pravatar.cc/40"}
-              alt="User avatar"
-              className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md transition-transform duration-300 group-hover:scale-110"
-            />
-            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.roleID ?? 0)} rounded-full border-2 border-white dark:border-gray-700`}></div>
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt="User avatar"
+                className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md transition-transform duration-300 group-hover:scale-110 object-cover"
+              />
+            ) : (
+              <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-700 font-semibold transition-transform duration-300 group-hover:scale-110">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+            )}
+            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}></div>
           </div>
 
           <div className="relative" ref={dropdownRef}>
@@ -110,7 +128,7 @@ export default function Topbar() {
             >
               <div className="flex items-center gap-2">
                 <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-300">
-                  {user?.name}
+                  {user?.name || 'Loading...'}
                 </span>
                 <svg 
                   className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
@@ -122,7 +140,7 @@ export default function Topbar() {
                 </svg>
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-xs">
-                {getRoleName(user?.roleID ?? 0)}
+                {getRoleName(user?.role)}
               </span>
             </div>
 

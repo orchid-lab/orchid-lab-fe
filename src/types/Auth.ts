@@ -6,6 +6,7 @@ export interface User {
   userName: string | null;
   phoneNumber: string;
   roleID: number;
+  role: string;
   create_at: string;
   create_by: string | null;
   avatarUrl: string | null;
