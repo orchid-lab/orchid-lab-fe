@@ -4,18 +4,22 @@ import type { User, UserApiResponse } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
+import { useTranslation } from 'react-i18next';
 
-const roleOptions: { value: string; label: string }[] = [
-  { value: "", label: "Tất cả vai trò" },
-  { value: "Admin", label: "Admin" },
-  { value: "Researcher", label: "Researcher" },
-  { value: "Technician", label: "Technician" },
-];
+function getRoleOptions(t: (key: string) => string): { value: string; label: string }[] {
+  return [
+    { value: "", label: t('roles.allRoles') },
+    { value: "Admin", label: t('roles.admin') },
+    { value: "Researcher", label: t('roles.researcher') },
+    { value: "Technician", label: t('roles.technician') },
+  ];
+}
 
 const PAGE_SIZE = 10;
 
 export default function DashboardAdmin() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [search, setSearch] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [statusFilter] = useState<string>("");
@@ -96,7 +100,7 @@ export default function DashboardAdmin() {
       setEditUser(null);
       await fetchUsers();
       setPage(1);
-      enqueueSnackbar("Cập nhật người dùng thành công!", {
+      enqueueSnackbar(t('user.userUpdated'), {
         variant: "success",
         autoHideDuration: 3000,
         preventDuplicate: true,
@@ -113,7 +117,7 @@ export default function DashboardAdmin() {
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Cập nhật người dùng thất bại!";
+        t('user.userUpdateFailed');
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -130,7 +134,7 @@ export default function DashboardAdmin() {
       setNewUser({ name: "", email: "", phoneNumber: "", role: "Researcher" });
       await fetchUsers();
       setPage(1);
-      enqueueSnackbar("Tạo người dùng thành công!", {
+      enqueueSnackbar(t('user.userAdded'), {
         variant: "success",
         autoHideDuration: 3000,
         preventDuplicate: true,
@@ -146,7 +150,7 @@ export default function DashboardAdmin() {
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Tạo người dùng thất bại!";
+        t('user.userAddFailed');
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -166,7 +170,7 @@ export default function DashboardAdmin() {
       setShowDeleteModal(false);
       setDeleteTarget(null);
       await fetchUsers();
-      enqueueSnackbar("Xóa người dùng thành công!", {
+      enqueueSnackbar(t('user.userDeleted'), {
         variant: "success",
         autoHideDuration: 3000,
         preventDuplicate: true,
@@ -183,7 +187,7 @@ export default function DashboardAdmin() {
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Xóa người dùng thất bại!";
+        t('user.userDeleteFailed');
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -214,7 +218,7 @@ export default function DashboardAdmin() {
       <div className="bg-white shadow-sm border-b">
         <div className="px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            Quản lý Người dùng
+            {t('user.userManagement')}
           </h1>
         </div>
         {/* Controls */}
@@ -224,7 +228,7 @@ export default function DashboardAdmin() {
             <input
               type="text"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:border-transparent"
-              placeholder="Tìm kiếm theo tên hoặc email..."
+              placeholder={t('common.search') + " " + t('common.name').toLowerCase() + " " + t('common.or').toLowerCase() + " " + t('common.email').toLowerCase() + "..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -234,7 +238,7 @@ export default function DashboardAdmin() {
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
           >
-            {roleOptions.map((opt) => (
+            {getRoleOptions(t).map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -246,7 +250,7 @@ export default function DashboardAdmin() {
             onClick={() => setShowAddModal(true)}
             type="button"
           >
-            <FaPlus /> Thêm người dùng
+            <FaPlus /> {t('user.addUser')}
           </button>
         </div>
       </div>
@@ -254,22 +258,22 @@ export default function DashboardAdmin() {
       <div className="px-6 py-6 grid grid-cols-4 gap-4">
         <div className="bg-green-50 p-4 rounded-lg">
           <div className="text-green-600 text-sm font-medium">
-            TỔNG NGƯỜI DÙNG
+            {t('user.totalUsers')}
           </div>
           <div className="text-2xl font-bold text-green-700">{total}</div>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg">
-          <div className="text-purple-600 text-sm font-medium">ADMINS</div>
+          <div className="text-purple-600 text-sm font-medium">{t('user.admins')}</div>
           <div className="text-2xl font-bold text-purple-700">{adminCount}</div>
         </div>
         <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-blue-600 text-sm font-medium">RESEARCHERS</div>
+          <div className="text-blue-600 text-sm font-medium">{t('user.researchers')}</div>
           <div className="text-2xl font-bold text-blue-700">
             {researcherCount}
           </div>
         </div>
         <div className="bg-green-50 p-4 rounded-lg">
-          <div className="text-green-600 text-sm font-medium">TECHNICIANS</div>
+          <div className="text-green-600 text-sm font-medium">{t('user.technicians')}</div>
           <div className="text-2xl font-bold text-green-700">
             {technicianCount}
           </div>
@@ -297,7 +301,7 @@ export default function DashboardAdmin() {
                   Ngày tạo
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hành động
+                  {t('common.action')}
                 </th>
               </tr>
             </thead>
@@ -328,7 +332,7 @@ export default function DashboardAdmin() {
               ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-400">
-                    Không có người dùng nào phù hợp.
+                    {t('common.noData')}
                   </td>
                 </tr>
               ) : (
@@ -341,7 +345,7 @@ export default function DashboardAdmin() {
                       {user.email}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {user.phoneNumber ?? "Chưa có số điện thoại"}
+                      {user.phoneNumber ?? t('common.noPhoneNumber')}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-sm">
                       <span
@@ -449,10 +453,10 @@ export default function DashboardAdmin() {
       {showEditModal && editUser && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[350px]">
-            <h2 className="text-lg font-bold mb-4">Chỉnh sửa người dùng</h2>
+            <h2 className="text-lg font-bold mb-4">{t('user.editUser')}</h2>
             <input
               className="border rounded px-3 py-2 w-full mb-2"
-              placeholder="Tên"
+              placeholder={t('common.name')}
               value={editUser.name}
               onChange={(e) =>
                 setEditUser((u) => (u ? { ...u, name: e.target.value } : u))
@@ -460,13 +464,13 @@ export default function DashboardAdmin() {
             />
             <input
               className="border bg-gray-200 rounded px-3 py-2 w-full mb-2"
-              placeholder="Email"
+              placeholder={t('common.email')}
               value={editUser.email}
               disabled
             />
             <input
               className="border rounded px-3 py-2 w-full mb-2"
-              placeholder="Số điện thoại"
+              placeholder={t('common.phone')}
               value={editUser.phoneNumber || ""}
               onChange={(e) =>
                 setEditUser((u) =>
@@ -492,7 +496,7 @@ export default function DashboardAdmin() {
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowEditModal(false)}
               >
-                Hủy
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -501,7 +505,7 @@ export default function DashboardAdmin() {
                   void handleSaveEdit();
                 }}
               >
-                Lưu
+                {t('common.save')}
               </button>
             </div>
           </div>
@@ -511,10 +515,10 @@ export default function DashboardAdmin() {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[350px]">
-            <h2 className="text-lg font-bold mb-4">Thêm người dùng mới</h2>
+            <h2 className="text-lg font-bold mb-4">{t('user.addUser')}</h2>
             <input
               className="border rounded px-3 py-2 w-full mb-2"
-              placeholder="Tên"
+              placeholder={t('common.name')}
               value={newUser.name}
               onChange={(e) =>
                 setNewUser((u) => ({ ...u, name: e.target.value }))
@@ -522,7 +526,7 @@ export default function DashboardAdmin() {
             />
             <input
               className="border rounded px-3 py-2 w-full mb-2"
-              placeholder="Email"
+              placeholder={t('common.email')}
               value={newUser.email}
               onChange={(e) =>
                 setNewUser((u) => ({ ...u, email: e.target.value }))
@@ -530,7 +534,7 @@ export default function DashboardAdmin() {
             />
             <input
               className="border rounded px-3 py-2 w-full mb-2"
-              placeholder="Số điện thoại"
+              placeholder={t('common.phone')}
               value={newUser.phoneNumber}
               onChange={(e) =>
                 setNewUser((u) => ({ ...u, phoneNumber: e.target.value }))
@@ -543,7 +547,7 @@ export default function DashboardAdmin() {
                 setNewUser((u) => ({ ...u, role: e.target.value }))
               }
             >
-              <option value="">Chọn vai trò</option>
+              <option value="">{t('common.selectRole')}</option>
               <option value="Researcher">Researcher</option>
               <option value="Lab Technician">Lab Technician</option>
             </select>
@@ -576,8 +580,7 @@ export default function DashboardAdmin() {
               Xác nhận xóa
             </h2>
             <p>
-              Bạn có chắc muốn xóa{" "}
-              <span className="font-semibold">{deleteTarget.name}</span> không?
+              {t('common.confirm')} {t('common.delete').toLowerCase()} <span className="font-semibold">{deleteTarget.name}</span>?
             </p>
             <div className="flex gap-2 justify-end mt-6">
               <button
@@ -585,7 +588,7 @@ export default function DashboardAdmin() {
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowDeleteModal(false)}
               >
-                Hủy
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -594,7 +597,7 @@ export default function DashboardAdmin() {
                   void handleDeleteUser();
                 }}
               >
-                Xóa
+                {t('common.delete')}
               </button>
             </div>
           </div>

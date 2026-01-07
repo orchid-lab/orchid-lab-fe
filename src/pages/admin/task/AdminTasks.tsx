@@ -11,6 +11,7 @@ import {
   CategoryScale,
   LinearScale,
 } from "chart.js";
+import { useTranslation } from 'react-i18next';
 
 ChartJS.register(
   Title,
@@ -55,23 +56,17 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   );
 }
 
-const STATUS_LABELS: Record<StatusType, string> = {
-  Assigned: "Đã giao",
-  Taken: "Đã nhận",
-  InProcess: "Đang thực hiện",
-  DoneInTime: "Hoàn thành đúng hạn",
-  DoneInLate: "Hoàn thành trễ hạn",
-  Cancel: "Bị hủy",
-};
-
-const STATUS_SUMMARY_LABELS: Record<StatusType, string> = {
-  Assigned: "Nhiệm vụ đã giao",
-  Taken: "Nhiệm vụ đã nhận",
-  InProcess: "Nhiệm vụ đang thực hiện",
-  DoneInTime: "Nhiệm vụ hoàn thành đúng hạn",
-  DoneInLate: "Nhiệm vụ hoàn thành trễ hạn",
-  Cancel: "Nhiệm vụ bị hủy",
-};
+function getStatusLabel(status: StatusType, t: (key: string) => string): string {
+  const labels: Record<StatusType, string> = {
+    Assigned: t('status.taskAssigned'),
+    Taken: t('status.taskTaken'),
+    InProcess: t('status.taskInProcess'),
+    DoneInTime: t('status.taskDoneInTime'),
+    DoneInLate: t('status.taskDoneInLate'),
+    Cancel: t('status.taskCancelled'),
+  };
+  return labels[status] || status;
+}
 
 const STATUS_COLORS: Record<StatusType, string> = {
   Assigned: "text-blue-700",
@@ -93,6 +88,7 @@ const STATUS_BG_COLORS: Record<StatusType, string> = {
 
 export default function AdminTasks() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -101,10 +97,10 @@ export default function AdminTasks() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [statusFilter, setStatusFilter] = useState<StatusType | "Tất cả">(
-    "Tất cả"
+  const [statusFilter, setStatusFilter] = useState<StatusType | string>(
+    t('common.all')
   );
-  const [researcherFilter, setResearcherFilter] = useState<string>("Tất cả");
+  const [researcherFilter, setResearcherFilter] = useState<string>(t('common.all'));
   const [searchTerm, setSearchTerm] = useState("");
 
   const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
@@ -222,12 +218,12 @@ export default function AdminTasks() {
     labels: chartStats.map((item) => item.label),
     datasets: [
       {
-        label: "Tổng số nhiệm vụ được tạo",
+        label: t('task.totalTasksCreated'),
         data: chartStats.map((item) => item.total),
         backgroundColor: "#3b82f6",
       },
       {
-        label: "Nhiệm vụ hoàn thành đúng hạn",
+        label: t('task.tasksCompletedOnTime'),
         data: chartStats.map((item) => item.completedOnTime),
         backgroundColor: "#22c55e",
       },
@@ -416,7 +412,7 @@ export default function AdminTasks() {
         <div className="animate-fade-in-up">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Thống kê tổng nhiệm vụ được tạo và hoàn thành đúng hạn
+              {t('task.taskStatisticsTitle')}
             </h1>
             <select
               value={timeMode}
@@ -425,9 +421,9 @@ export default function AdminTasks() {
               }
               className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="day">Theo ngày</option>
-              <option value="week">Theo tuần</option>
-              <option value="month">Theo tháng</option>
+              <option value="day">{t('common.byDay')}</option>
+              <option value="week">{t('common.byWeek')}</option>
+              <option value="month">{t('common.byMonth')}</option>
             </select>
           </div>
 
@@ -440,7 +436,7 @@ export default function AdminTasks() {
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4 animate-fade-in-up stagger-1 hover-lift card-shine">
           <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">
-              Thống kê nhiệm vụ được tạo và hoàn thành đúng hạn cụ thể
+              {t('task.specificTaskStatistics')}
             </h1>
             <select
               value={filterMode}
@@ -449,9 +445,9 @@ export default function AdminTasks() {
               }
               className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="day">Theo ngày</option>
-              <option value="week">Theo tuần</option>
-              <option value="month">Theo tháng</option>
+              <option value="day">{t('common.byDay')}</option>
+              <option value="week">{t('common.byWeek')}</option>
+              <option value="month">{t('common.byMonth')}</option>
             </select>
             <input
               type="date"
@@ -465,12 +461,12 @@ export default function AdminTasks() {
 
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries(STATUS_SUMMARY_LABELS).map(([key, label], index) => (
+          {Object.keys(STATUS_COLORS).map((key, index) => (
             <div
               key={key}
               className={`rounded-xl border ${STATUS_BG_COLORS[key as StatusType]} px-6 py-4 flex flex-col items-center animate-scale-in hover-lift card-shine stagger-${index + 1}`}
             >
-              <span className="text-sm text-gray-600 mb-2 font-medium">{label}</span>
+              <span className="text-sm text-gray-600 mb-2 font-medium">{getStatusLabel(key as StatusType, t)}</span>
               <span
                 className={`text-3xl font-bold ${
                   STATUS_COLORS[key as StatusType]
@@ -492,28 +488,28 @@ export default function AdminTasks() {
               <select
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(e.target.value as StatusType | "Tất cả")
+                  setStatusFilter(e.target.value)
                 }
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">Tất cả</option>
-                {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                <option value={t('common.all')}>{t('common.all')}</option>
+                {Object.keys(STATUS_COLORS).map((key) => (
                   <option key={key} value={key}>
-                    {label}
+                    {getStatusLabel(key as StatusType, t)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-semibold">
-                Người tạo:
+                {t('task.taskCreator')}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">Tất cả</option>
+                <option value={t('common.all')}>{t('common.all')}</option>
                 {allResearchers.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -524,7 +520,7 @@ export default function AdminTasks() {
             <div className="flex-1 min-w-[200px]">
               <input
                 type="text"
-                placeholder="🔍 Tìm kiếm nhiệm vụ..."
+                placeholder={`🔍 ${t('task.searchTasks')}`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-300 rounded-full px-6 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -537,7 +533,7 @@ export default function AdminTasks() {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600 font-medium">Đang tải dữ liệu...</p>
+            <p className="mt-4 text-gray-600 font-medium">{t('common.loadingData')}</p>
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -550,19 +546,19 @@ export default function AdminTasks() {
                 <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                   <tr>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      Tên nhiệm vụ
+                      {t('task.taskName')}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      Người tạo nhiệm vụ
+                      {t('task.taskCreator')}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      Nhật ký thí nghiệm
+                      {t('task.experimentLog')}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      Thời hạn
+                      {t('task.deadline')}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      Trạng thái
+                      {t('common.status')}
                     </th>
                   </tr>
                 </thead>
@@ -606,7 +602,7 @@ export default function AdminTasks() {
                                 '#fee2e2'
                             }}
                           >
-                            {STATUS_LABELS[task.status]}
+                            {getStatusLabel(task.status, t)}
                           </span>
                         </td>
                       </tr>
@@ -619,8 +615,8 @@ export default function AdminTasks() {
             {totalPages > 1 && (
               <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
                 <span className="font-medium">
-                  Hiển thị {tasks.length} nhiệm vụ trên tổng số {totalCount}{" "}
-                  nhiệm vụ
+                  {t('common.showing')} {tasks.length} {t('task.tasks')} {t('common.on')} {t('common.total')} {totalCount}{" "}
+                  {t('task.tasks')}
                 </span>
                 <div className="flex gap-2">
                   {currentPage > 1 && (

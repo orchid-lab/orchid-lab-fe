@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { extractUserFromJWT, getRedirectPath } from "../../utils/jwtHelper";
 import type { User } from "../../types/Auth";
 import "./Login.css";
+import { useTranslation } from 'react-i18next';
 import LoginBackground from "../../assets/LoginBackground.jpg";
 import LoginBackground2 from "../../assets/LoginBackground2.jpg";
 import LoginBackground3 from "../../assets/LoginBackground3.jpg";
@@ -48,6 +49,7 @@ export default function Login() {
   
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -197,7 +199,7 @@ export default function Login() {
                 <div className="relative group">
                   <input
                     type="text"
-                    placeholder="Email"
+                    placeholder={t('auth.username')}
                     className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-green-500 focus:bg-white transition-all duration-300 hover:border-green-300 hover:shadow-lg hover:shadow-green-100/50"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -210,7 +212,7 @@ export default function Login() {
                 <div className="relative group">
                   <input
                     type="password"
-                    placeholder="Mật khẩu"
+                    placeholder={t('auth.password')}
                     className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-green-500 focus:bg-white transition-all duration-300 hover:border-green-300 hover:shadow-lg hover:shadow-green-100/50"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -235,10 +237,10 @@ export default function Login() {
                     {isLoading ? (
                       <>
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Đang đăng nhập...
+                        {t('common.loading')}
                       </>
                     ) : (
-                      "Đăng nhập"
+                      t('auth.loginButton')
                     )}
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />

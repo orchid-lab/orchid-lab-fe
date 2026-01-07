@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
+import { useTranslation } from 'react-i18next';
 
 type StatusType =
   | "Assigned"
@@ -47,6 +48,19 @@ const AdminTaskDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
+
+  const getStatusLabel = (status: StatusType): string => {
+    const labels: Record<StatusType, string> = {
+      Assigned: t('status.taskAssigned'),
+      Taken: t('status.taskTaken'),
+      InProcess: t('status.taskInProcess'),
+      DoneInTime: t('status.taskDoneInTime'),
+      DoneInLate: t('status.taskDoneInLate'),
+      Cancel: t('status.taskCancelled'),
+    };
+    return labels[status] || status;
+  };
   const [taskData, setTaskData] = useState<TaskData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +82,9 @@ const AdminTaskDetail: React.FC = () => {
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu";
+          err instanceof Error ? err.message : t('common.errorLoading');
         setError(errorMessage);
-        enqueueSnackbar("Không thể tải chi tiết nhiệm vụ", {
+        enqueueSnackbar(t('task.taskDetailLoadError'), {
           variant: "error",
         });
         console.error("Error fetching task detail:", err);
@@ -105,25 +119,6 @@ const AdminTaskDetail: React.FC = () => {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "Assigned":
-        return "Đã giao";
-      case "Taken":
-        return "Đã nhận";
-      case "InProcess":
-        return "Đang thực hiện";
-      case "DoneInTime":
-        return "Hoàn thành đúng hạn";
-      case "DoneInLate":
-        return "Hoàn thành trễ hạn";
-      case "Cancel":
-        return "Bị hủy";
-      default:
-        return status;
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -148,12 +143,12 @@ const AdminTaskDetail: React.FC = () => {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Lỗi: {error}</p>
+          <p className="text-red-600 mb-4">{t('common.error')}: {error}</p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
           >
-            Quay lại
+            {t('common.back')}
           </button>
         </div>
       </main>
@@ -164,12 +159,12 @@ const AdminTaskDetail: React.FC = () => {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Không tìm thấy dữ liệu nhiệm vụ</p>
+          <p className="text-gray-600 mb-4">{t('task.taskDataNotFound')}</p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
           >
-            Quay lại
+            {t('common.back')}
           </button>
         </div>
       </main>
@@ -181,13 +176,13 @@ const AdminTaskDetail: React.FC = () => {
       <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[900px] mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">
-            Chi tiết Task: {taskData.name || "Không có"}
+            {t('task.taskDetails')}: {taskData.name || t('common.none')}
           </h2>
         </div>
 
         {/* Status */}
         <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Trạng thái</label>
+          <label className="font-medium mb-1.5">{t('common.status')}</label>
           <span
             className={`px-3 py-2 rounded-md text-sm font-medium w-fit ${getStatusColor(
               taskData.status
@@ -199,29 +194,29 @@ const AdminTaskDetail: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên nhiệm vụ</label>
+            <label className="font-medium mb-1.5">{t('task.taskName')}</label>
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {taskData.name || "Không có"}
+              {taskData.name || t('common.none')}
             </div>
           </div>
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên researcher</label>
+            <label className="font-medium mb-1.5">{t('task.taskCreator')}</label>
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {taskData.researcher || "Không có"}
+              {taskData.researcher || t('common.none')}
             </div>
           </div>
         </div>
 
         <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Mô tả nhiệm vụ</label>
+          <label className="font-medium mb-1.5">{t('task.taskDescription')}</label>
           <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 min-h-[80px]">
-            {taskData.description || "Không có"}
+            {taskData.description || t('common.none')}
           </div>
         </div>
 
         {/* Nguyên vật liệu */}
         <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Nguyên vật liệu</label>
+          <label className="font-medium mb-1.5">{t('task.materials')}</label>
           {taskData.attributeDTOs && taskData.attributeDTOs.length > 0 ? (
             <div className="space-y-2">
               {/* Header */}
@@ -254,37 +249,37 @@ const AdminTaskDetail: React.FC = () => {
             </div>
           ) : (
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 italic">
-              Không có nguyên vật liệu nào được ghi nhận
+              {t('task.noMaterialsRecorded')}
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Ngày bắt đầu</label>
+            <label className="font-medium mb-1.5">{t('common.startDate')}</label>
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
               {taskData.start_date
                 ? formatDate(taskData.start_date)
-                : "Không có"}
+                : t('common.none')}
             </div>
           </div>
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Ngày kết thúc</label>
+            <label className="font-medium mb-1.5">{t('task.deadline')}</label>
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {taskData.end_date ? formatDate(taskData.end_date) : "Không có"}
+              {taskData.end_date ? formatDate(taskData.end_date) : t('common.none')}
             </div>
           </div>
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Ngày tạo</label>
+            <label className="font-medium mb-1.5">{t('common.createdAt')}</label>
             <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {taskData.create_at ? formatDate(taskData.create_at) : "Không có"}
+              {taskData.create_at ? formatDate(taskData.create_at) : t('common.none')}
             </div>
           </div>
         </div>
 
         {/* Kỹ thuật viên được giao */}
         <div className="flex flex-col mb-8">
-          <label className="font-medium mb-1.5">Kỹ thuật viên được giao</label>
+          <label className="font-medium mb-1.5">{t('task.assignedTechnicians')}</label>
           {taskData.assignDTOs && taskData.assignDTOs.length > 0 ? (
             <div className="space-y-2">
               {taskData.assignDTOs.map((assign, idx) => (
@@ -296,7 +291,7 @@ const AdminTaskDetail: React.FC = () => {
                     TV
                   </span>
                   <span className="flex-1">
-                    {assign.technicianName || "Không có"}
+                    {assign.technicianName || t('common.none')}
                   </span>
                   <span
                     className={`text-[0.98em] ml-2.5 flex-shrink-0 px-2 py-1 rounded-full text-xs ${
@@ -348,10 +343,10 @@ const AdminTaskDetail: React.FC = () => {
           <label className="font-medium mb-1.5">Loại nhiệm vụ</label>
           <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
             {taskData.isDaily === true
-              ? "Lặp lại hằng ngày tới ngày kết thúc"
+              ? t('task.repeatDailyUntilEndDate')
               : taskData.isDaily === false
-              ? "Thực hiện một lần"
-              : "Không có"}
+              ? t('task.oneTimeExecution')
+              : t('common.none')}
           </div>
         </div>
 
@@ -361,7 +356,7 @@ const AdminTaskDetail: React.FC = () => {
             className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
             onClick={handleBack}
           >
-            Quay lại
+            {t('common.back')}
           </button>
         </div>
       </div>

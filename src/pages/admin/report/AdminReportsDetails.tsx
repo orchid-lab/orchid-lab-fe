@@ -164,7 +164,7 @@ export default function AdminReportsDetails() {
           className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-6 hover:bg-green-800 hover:text-white transition"
           onClick={() =>
             void navigate(
-              user?.roleID === 1
+              user?.role === "Admin"
                 ? `/admin/report?page=${page}`
                 : `/reports?page=${page}`
             )

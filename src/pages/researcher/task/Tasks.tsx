@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
+import { useTranslation } from 'react-i18next';
 
 interface Task {
   id: string;
@@ -37,23 +38,17 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   );
 }
 
-const STATUS_LABELS: Record<StatusType, string> = {
-  Assigned: "Đã giao",
-  Taken: "Đã nhận",
-  InProcess: "Đang thực hiện",
-  DoneInTime: "Hoàn thành đúng hạn",
-  DoneInLate: "Hoàn thành trễ hạn",
-  Cancel: "Bị hủy",
-};
-
-const STATUS_SUMMARY_LABELS: Record<StatusType, string> = {
-  Assigned: "Nhiệm vụ đã giao",
-  Taken: "Nhiệm vụ đã nhận",
-  InProcess: "Nhiệm vụ đang thực hiện",
-  DoneInTime: "Nhiệm vụ hoàn thành đúng hạn",
-  DoneInLate: "Nhiệm vụ hoàn thành trễ hạn",
-  Cancel: "Nhiệm vụ bị hủy",
-};
+function getStatusLabel(status: StatusType, t: (key: string) => string): string {
+  const labels: Record<StatusType, string> = {
+    Assigned: t('status.assigned'),
+    Taken: t('status.taken'),
+    InProcess: t('status.inProcess'),
+    DoneInTime: t('status.doneInTime'),
+    DoneInLate: t('status.doneInLate'),
+    Cancel: t('status.cancel'),
+  };
+  return labels[status] || status;
+}
 
 const STATUS_COLORS: Record<StatusType, string> = {
   Assigned: "text-blue-700",
@@ -67,6 +62,7 @@ const STATUS_COLORS: Record<StatusType, string> = {
 export default function Tasks() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
   // State cho pagination và data
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -364,7 +360,14 @@ export default function Tasks() {
 
         {/* 6 ô tổng hợp */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries(STATUS_SUMMARY_LABELS).map(([key, label]) => (
+          {Object.entries({
+            Assigned: t('status.taskAssigned'),
+            Taken: t('status.taskTaken'),
+            InProcess: t('status.taskInProcess'),
+            DoneInTime: t('status.taskDoneInTime'),
+            DoneInLate: t('status.taskDoneInLate'),
+            Cancel: t('status.taskCancelled'),
+          }).map(([key, label]) => (
             <div
               key={key}
               className="rounded-lg border border-gray-200 bg-white px-6 py-4 flex flex-col justify-between min-w-[150px] items-center"
@@ -381,12 +384,12 @@ export default function Tasks() {
           ))}
         </div>
 
-        {/* Bộ lọc */}
+        {/* {t('common.filter')} */}
         <div className="bg-white p-4 rounded-lg shadow-sm">
           <div className="flex flex-wrap items-center gap-4 mb-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-medium">
-                Trạng thái:
+                {t('common.status')}:
               </span>
               <select
                 value={statusFilter}
@@ -395,8 +398,15 @@ export default function Tasks() {
                 }
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">Tất cả</option>
-                {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                <option value="Tất cả">{t('common.all')}</option>
+                {Object.entries({
+                  Assigned: t('status.assigned'),
+                  Taken: t('status.taken'),
+                  InProcess: t('status.inProcess'),
+                  DoneInTime: t('status.doneInTime'),
+                  DoneInLate: t('status.doneInLate'),
+                  Cancel: t('status.cancel'),
+                }).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
                   </option>
@@ -405,14 +415,14 @@ export default function Tasks() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-medium">
-                Người tạo:
+                {t('task.researcher')}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">Tất cả</option>
+                <option value="Tất cả">{t('common.all')}</option>
                 {allResearchers.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -438,7 +448,7 @@ export default function Tasks() {
               }}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
             >
-              Xóa bộ lọc
+              {t('common.clear')} {t('common.filter').toLowerCase()}
             </button>
           </div>
 
@@ -448,16 +458,16 @@ export default function Tasks() {
             searchTerm.trim()) && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
               <span className="text-xs text-gray-500">
-                Bộ lọc đang áp dụng:
+                {t('common.filter')} {t('common.selected').toLowerCase()}:
               </span>
               {statusFilter !== "Tất cả" && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  Trạng thái: {STATUS_LABELS[statusFilter]}
+                  {t('common.status')}: {getStatusLabel(statusFilter, t)}
                 </span>
               )}
               {researcherFilter !== "Tất cả" && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                  Người tạo: {researcherFilter}
+                  {t('task.researcher')}: {researcherFilter}
                 </span>
               )}
               {searchTerm.trim() && (
@@ -473,7 +483,7 @@ export default function Tasks() {
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center gap-2 text-gray-500">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-              Đang tải danh sách nhiệm vụ...
+              Đang tải {t('task.taskList').toLowerCase()}...
             </div>
           </div>
         ) : error ? (
@@ -485,19 +495,19 @@ export default function Tasks() {
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Tên nhiệm vụ
+                      {t('task.taskName')}
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Người tạo nhiệm vụ
+                      {t('task.taskCreator')}
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Nhật ký thí nghiệm
+                      {t('task.experimentLog')}
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Thời hạn
+                      {t('task.deadline')}
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Trạng thái
+                      {t('common.status')}
                     </th>
                   </tr>
                 </thead>
@@ -537,7 +547,7 @@ export default function Tasks() {
                               STATUS_COLORS[task.status]
                             }`}
                           >
-                            {STATUS_LABELS[task.status]}
+                            {getStatusLabel(task.status, t)}
                           </span>
                         </td>
                       </tr>
