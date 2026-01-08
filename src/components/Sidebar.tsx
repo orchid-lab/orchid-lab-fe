@@ -2,16 +2,18 @@ import { NavLink } from "react-router-dom";
 import { FaTasks, FaBook, FaSeedling, FaChartBar } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
+import { useTranslation } from "react-i18next";
 
 const tabs = [
-  { name: "Phương pháp lai", path: "/method", icon: <PiBlueprintFill /> },
-  { name: "Nhiệm vụ", path: "/tasks", icon: <FaTasks /> },
-  { name: "Nhật ký thí nghiệm", path: "/experiment-log", icon: <FaBook /> },
-  { name: "Cây giống", path: "/seedlings", icon: <FaSeedling /> },
-  { name: "Báo cáo", path: "/reports", icon: <FaChartBar /> },
+  { nameKey: "navigation.method", path: "/method", icon: <PiBlueprintFill /> },
+  { nameKey: "navigation.task", path: "/tasks", icon: <FaTasks /> },
+  { nameKey: "navigation.experimentLog", path: "/experiment-log", icon: <FaBook /> },
+  { nameKey: "navigation.seedling", path: "/seedlings", icon: <FaSeedling /> },
+  { nameKey: "navigation.report", path: "/reports", icon: <FaChartBar /> },
 ];
 
 export default function Sidebar() {
+  const { t } = useTranslation();
   return (
     <aside className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden">
       <div className="absolute top-10 -left-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl"></div>
@@ -33,7 +35,7 @@ export default function Sidebar() {
       <nav className="flex-1 py-6 text-white relative z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         {tabs.map((tab) => (
           <NavLink
-            key={tab.name}
+            key={tab.nameKey}
             to={tab.path}
             className={({ isActive }) =>
               `flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 hover:translate-x-1 transition-all duration-300 mb-1 group relative overflow-hidden ${
@@ -49,7 +51,7 @@ export default function Sidebar() {
                 <span className="text-lg group-hover:scale-110 transition-transform duration-300">
                   {tab.icon}
                 </span>
-                <span>{tab.name}</span>
+                <span>{t(tab.nameKey)}</span>
               </>
             )}
           </NavLink>

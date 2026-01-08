@@ -11,8 +11,10 @@ import {
 } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
+import { useTranslation } from "react-i18next";
 
 export default function SidebarDemo() {
+  const { t } = useTranslation();
   const [mouseY, setMouseY] = useState(0);
 
   const handleMouseMove = (e: { currentTarget: { getBoundingClientRect: () => any; }; clientY: number; }) => {
@@ -21,15 +23,15 @@ export default function SidebarDemo() {
   };
 
   const menuItems = [
-    { path: "/admin/user", icon: FaUser, label: "Người dùng" },
-    { path: "/admin/tasks", icon: FaTasks, label: "Nhiệm vụ" },
-    { path: "/admin/experiment-log", icon: FaClipboardList, label: "Nhật ký thí nghiệm" },
-    { path: "/admin/labroom", icon: GiMicroscope, label: "Phòng thực nghiệm" },
-    { path: "/admin/tissue-culture-batches", icon: FaVials, label: "Lô cấy mô" },
-    { path: "/admin/report", icon: FaChartBar, label: "Báo cáo" },
-    { path: "/admin/method", icon: PiBlueprintFill, label: "Phương pháp lai" },
-    { path: "/admin/seedling", icon: FaSeedling, label: "Cây giống" },
-    { path: "/admin/element", icon: FaFlask, label: "Nguyên vật liệu" },
+    { path: "/admin/user", icon: FaUser, labelKey: "user.userManagement" },
+    { path: "/admin/tasks", icon: FaTasks, labelKey: "navigation.task" },
+    { path: "/admin/experiment-log", icon: FaClipboardList, labelKey: "navigation.experimentLog" },
+    { path: "/admin/labroom", icon: GiMicroscope, labelKey: "navigation.labRoom" },
+    { path: "/admin/tissue-culture-batches", icon: FaVials, labelKey: "navigation.tissueCultureBatch" },
+    { path: "/admin/report", icon: FaChartBar, labelKey: "navigation.report" },
+    { path: "/admin/method", icon: PiBlueprintFill, labelKey: "navigation.method" },
+    { path: "/admin/seedling", icon: FaSeedling, labelKey: "navigation.seedling" },
+    { path: "/admin/element", icon: FaFlask, labelKey: "navigation.element" },
   ];
 
   return (
@@ -43,7 +45,7 @@ export default function SidebarDemo() {
       >
         {/* Spotlight effect */}
         <div 
-          className="absolute left-1/2 w-64 h-64 bg-green-400/20 rounded-full blur-3xl pointer-events-none opacity-0 group-hover/sidebar:opacity-100 -translate-x-1/2 -translate-y-1/2"
+          className="absolute left-1/2 w-70 h-64 bg-green-400/20 rounded-full blur-3xl pointer-events-none opacity-0 group-hover/sidebar:opacity-100 -translate-x-1/2 -translate-y-1/2"
           style={{
             top: `${mouseY}px`,
             transition: 'opacity 0.3s'
@@ -76,7 +78,7 @@ export default function SidebarDemo() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => 
-                  `w-full flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 hover:translate-x-1 transition-all duration-300 mb-1 group relative overflow-hidden ${
+                  `flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 transition-all duration-300 mb-1 group relative overflow-hidden ${
                     isActive ? "bg-white/25 font-semibold shadow-lg" : ""
                   }`
                 }
@@ -90,7 +92,7 @@ export default function SidebarDemo() {
                     <span className="text-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative z-10">
                       <Icon />
                     </span>
-                    <span className="relative z-10">{item.label}</span>
+                    <span className="relative z-10">{t(item.labelKey)}</span>
                   </>
                 )}
               </NavLink>

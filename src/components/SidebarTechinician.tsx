@@ -2,14 +2,16 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaChartBar, FaFlask } from "react-icons/fa";
 import { GiMicroscope } from "react-icons/gi";
+import { useTranslation } from "react-i18next";
 
 const tabs = [
-  { name: "Nhiệm vụ", path: "/technician/tasks", icon: <FaTasks /> },
-  { name: "Mẫu thí nghiệm", path: "/technician/samples", icon: <FaFlask /> },
-  { name: "Báo cáo", path: "/technician/reports", icon: <FaChartBar /> },
+  { nameKey: "navigation.task", path: "/technician/tasks", icon: <FaTasks /> },
+  { nameKey: "navigation.sample", path: "/technician/samples", icon: <FaFlask /> },
+  { nameKey: "navigation.report", path: "/technician/reports", icon: <FaChartBar /> },
 ];
 
 export default function SidebarTechnician() {
+  const { t } = useTranslation();
   const [mouseY, setMouseY] = useState(0);
 
   const handleMouseMove = (e: { currentTarget: { getBoundingClientRect: () => any; }; clientY: number; }) => {
@@ -51,7 +53,7 @@ export default function SidebarTechnician() {
       <nav className="flex-1 py-6 text-white relative z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         {tabs.map((tab) => (
           <NavLink
-            key={tab.name}
+            key={tab.nameKey}
             to={tab.path}
             className={({ isActive }) =>
               `flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 hover:translate-x-1 transition-all duration-300 mb-1 group relative overflow-hidden ${
@@ -68,7 +70,7 @@ export default function SidebarTechnician() {
                 <span className="text-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative z-10">
                   {tab.icon}
                 </span>
-                <span className="relative z-10">{tab.name}</span>
+                <span className="relative z-10">{t(tab.nameKey)}</span>
               </>
             )}
           </NavLink>

@@ -3,12 +3,11 @@ import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axiosInstance";
 import type { User } from "../../types/Auth";
 import { useSnackbar } from "notistack";
-
-function getRoleName(role: string | undefined): string {
-  return role || 'User';
-}
+import { useTranslation } from 'react-i18next';
+import { getRoleName } from '../../utils/jwtHelper';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user: authUser, updateUser, isAuthReady } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
-  // Fetch user data from API khi component mount
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) {
@@ -44,7 +42,7 @@ export default function ProfilePage() {
         });
       } catch (error) {
         console.error('Error fetching user data:', error);
-        enqueueSnackbar("Không thể tải thông tin người dùng", {
+        enqueueSnackbar(t('profile.cannotLoadUserInfo'), {
           variant: "error",
           autoHideDuration: 3000,
         });
@@ -56,7 +54,7 @@ export default function ProfilePage() {
     if (isAuthReady) {
       fetchUserData();
     }
-  }, [authUser?.id, isAuthReady, enqueueSnackbar]);
+  }, [authUser?.id, isAuthReady, enqueueSnackbar, t]);
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -96,7 +94,6 @@ export default function ProfilePage() {
         });
       }
 
-      // Refresh user data from API
       const userRes = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
       const updatedUser = userRes.data;
       setUser(updatedUser);
@@ -105,7 +102,7 @@ export default function ProfilePage() {
       setIsEditing(false);
       setAvatarFile(null);
       setPreviewUrl(null);
-      enqueueSnackbar("Cập nhật thông tin hồ sơ thành công", {
+      enqueueSnackbar(t('profile.updateSuccess'), {
         variant: "success",
         preventDuplicate: true,
         autoHideDuration: 2000,
@@ -122,7 +119,7 @@ export default function ProfilePage() {
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Cập nhật thông tin hồ sơ thất bại";
+        t('profile.updateFailed');
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -144,7 +141,6 @@ export default function ProfilePage() {
     });
   };
 
-  // Loading state
   if (!isAuthReady || isLoading) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
@@ -152,7 +148,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-              <p className="ml-4 text-gray-600">Đang tải thông tin...</p>
+              <p className="ml-4 text-gray-600">{t('profile.loadingInfo')}</p>
             </div>
           </div>
         </div>
@@ -160,7 +156,6 @@ export default function ProfilePage() {
     );
   }
 
-  // No user data
   if (!user) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
@@ -170,13 +165,13 @@ export default function ProfilePage() {
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Không tìm thấy thông tin người dùng</h3>
-              <p className="mt-2 text-sm text-gray-500">Vui lòng đăng nhập lại để tiếp tục.</p>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">{t('profile.noUserFound')}</h3>
+              <p className="mt-2 text-sm text-gray-500">{t('profile.pleaseLoginAgain')}</p>
               <button
                 onClick={() => window.location.href = '/login'}
                 className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
               >
-                Đăng nhập
+                {t('common.login')}
               </button>
             </div>
           </div>
@@ -266,10 +261,10 @@ export default function ProfilePage() {
           {/* Header Section */}
           <div className="border-b border-gray-200 pb-6 mb-8 animate-slide-in">
             <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-              Thông tin hồ sơ cá nhân
+              {t('profile.title')}
             </h1>
             <p className="text-sm text-gray-600">
-              Quản lý và cập nhật thông tin tài khoản của bạn tại Orchid Lab
+              {t('profile.subtitle')}
             </p>
           </div>
 
@@ -282,12 +277,12 @@ export default function ProfilePage() {
                 {isEditing ? (
                   <label
                     className="w-full h-full flex items-center justify-center relative cursor-pointer group"
-                    title="Thay đổi ảnh đại diện"
+                    title={t('profile.changeAvatar')}
                   >
                     {previewUrl || user.avatarUrl ? (
                       <img
                         src={previewUrl || user.avatarUrl || ""}
-                        alt="Ảnh đại diện"
+                        alt={t('profile.avatar')}
                         className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
                       />
                     ) : (
@@ -326,7 +321,7 @@ export default function ProfilePage() {
                 ) : user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
-                    alt="Ảnh đại diện"
+                    alt={t('profile.avatar')}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -340,14 +335,14 @@ export default function ProfilePage() {
             {/* User Info */}
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                {user.name || 'Không có tên'}
+                {user.name || t('profile.noName')}
               </h2>
-              <p className="text-sm text-gray-600 mb-4">{user.email || 'Không có email'}</p>
+              <p className="text-sm text-gray-600 mb-4">{user.email || t('profile.noEmail')}</p>
               
               <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-md px-4 py-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-sm font-medium text-green-700">
-                  {getRoleName(user.role)}
+                  {user.role || getRoleName(user.roleId) || 'Undefined'}
                 </span>
               </div>
             </div>
@@ -356,7 +351,7 @@ export default function ProfilePage() {
           {/* Form Section */}
           <div className="space-y-6 mb-8 animate-slide-in delay-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Thông tin chi tiết
+              {t('profile.detailedInfo')}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -367,7 +362,7 @@ export default function ProfilePage() {
                   htmlFor="name"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Họ và tên
+                  {t('profile.fullName')}
                 </label>
                 <input
                   type="text"
@@ -390,7 +385,7 @@ export default function ProfilePage() {
                   htmlFor="phoneNumber"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Số điện thoại
+                  {t('profile.phoneNumber')}
                 </label>
                 <input
                   type="text"
@@ -413,7 +408,7 @@ export default function ProfilePage() {
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  Địa chỉ email
+                  {t('profile.emailAddress')}
                 </label>
                 <input
                   type="email"
@@ -424,7 +419,7 @@ export default function ProfilePage() {
                   className="w-full border border-gray-200 bg-gray-50 rounded-md px-4 py-2.5 text-sm text-gray-600"
                 />
                 <p className="mt-1.5 text-xs text-gray-500">
-                  Email không thể thay đổi và được sử dụng để đăng nhập vào hệ thống
+                  {t('profile.emailNote')}
                 </p>
               </div>
             </div>
@@ -439,7 +434,7 @@ export default function ProfilePage() {
                   onClick={handleCancel}
                   className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium button-transition"
                 >
-                  Hủy bỏ
+                  {t('profile.cancelEdit')}
                 </button>
                 <button
                   type="button"
@@ -448,7 +443,7 @@ export default function ProfilePage() {
                   }}
                   className="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium button-transition shadow-sm"
                 >
-                  Lưu thay đổi
+                  {t('profile.saveChanges')}
                 </button>
               </>
             ) : (
@@ -457,7 +452,7 @@ export default function ProfilePage() {
                 onClick={() => setIsEditing(true)}
                 className="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium button-transition shadow-sm"
               >
-                Chỉnh sửa thông tin
+                {t('profile.editInfo')}
               </button>
             )}
           </div>

@@ -216,7 +216,7 @@ export default function ReportsDetails() {
           className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-6 hover:bg-green-800 hover:text-white transition"
           onClick={() =>
             void navigate(
-              user?.role === "Technician"
+              user?.roleId === 3
                 ? `/technician/reports?page=${page}`
                 : `/reports?page=${page}`
             )
@@ -421,7 +421,7 @@ export default function ReportsDetails() {
           )}
 
           {/* Nút tạo task mới */}
-          {sample && user?.role === "Researcher" && (
+          {sample && user?.roleId === 2 && (
             <div className="mt-6">
               <button
                 type="button"
@@ -436,7 +436,7 @@ export default function ReportsDetails() {
           )}
 
           {/* Form đánh giá báo cáo cho researcher (roleID 2) */}
-          {user?.role === "Researcher" && (
+          {user?.roleId === 2 && (
             <div className="mt-6">
               <h3 className="font-semibold text-green-800 mb-2">
                 Đánh giá báo cáo

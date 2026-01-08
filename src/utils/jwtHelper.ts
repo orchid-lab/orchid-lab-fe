@@ -17,39 +17,107 @@ export function decodeJWT(token: string): any {
   }
 }
 
+export function getRoleName(roleId: number): string {
+  const roleNames: Record<number, string> = {
+    1: "Admin",
+    2: "Researcher",
+    3: "Lab Technician",
+  };
+  return roleNames[roleId] || "Researcher";
+}
+
 export function extractUserFromJWT(token: string, email: string): User | null {
   const decoded = decodeJWT(token);
   if (!decoded) return null;
   
-  let role = "Researcher"; // default role
+  let roleId = 2; // default to Researcher
+  let roleString = "";
   
-  // Try to extract role from various possible fields
-  if (decoded.role && typeof decoded.role === 'string') {
-    role = decoded.role;
-  } else if (decoded.Role && typeof decoded.Role === 'string') {
-    role = decoded.Role;
-  } else if (decoded.RoleName && typeof decoded.RoleName === 'string') {
-    role = decoded.RoleName;
+  // PRIORITY 1: Try to extract RoleName (the definitive role name from backend)
+  if (decoded.RoleName && typeof decoded.RoleName === 'string') {
+    roleString = decoded.RoleName;
+    
+    // Convert RoleName to roleId for consistency
+    switch (roleString.toLowerCase().trim()) {
+      case 'admin':
+        roleId = 1;
+        break;
+      case 'researcher':
+        roleId = 2;
+        break;
+      case 'lab technician':
+      case 'technician':
+        roleId = 3;
+        break;
+      default:
+        roleId = 2;
+    }
+  }
+  // PRIORITY 2: Try Role or role string
+  else if (decoded.Role && typeof decoded.Role === 'string') {
+    roleString = decoded.Role;
+    
+    switch (roleString.toLowerCase().trim()) {
+      case 'admin':
+        roleId = 1;
+        break;
+      case 'researcher':
+        roleId = 2;
+        break;
+      case 'lab technician':
+      case 'technician':
+        roleId = 3;
+        break;
+      default:
+        roleId = 2;
+    }
+  } else if (decoded.role && typeof decoded.role === 'string') {
+    roleString = decoded.role;
+    
+    switch (roleString.toLowerCase().trim()) {
+      case 'admin':
+        roleId = 1;
+        break;
+      case 'researcher':
+        roleId = 2;
+        break;
+      case 'lab technician':
+      case 'technician':
+        roleId = 3;
+        break;
+      default:
+        roleId = 2;
+    }
+  }
+  // PRIORITY 3: Fall back to numeric roleId only if no role string found
+  else if (decoded.roleId && typeof decoded.roleId === 'number') {
+    roleId = decoded.roleId;
+    roleString = getRoleName(roleId);
+  } else if (decoded.RoleId && typeof decoded.RoleId === 'number') {
+    roleId = decoded.RoleId;
+    roleString = getRoleName(roleId);
+  } else if (decoded.role_id && typeof decoded.role_id === 'number') {
+    roleId = decoded.role_id;
+    roleString = getRoleName(roleId);
+  } else if (decoded.role && typeof decoded.role === 'number') {
+    roleId = decoded.role;
+    roleString = getRoleName(roleId);
+  } else if (decoded.Role && typeof decoded.Role === 'number') {
+    roleId = decoded.Role;
+    roleString = getRoleName(roleId);
   }
   
-  return {
+  const user: User = {
     id: decoded.sub || decoded.userID || decoded.UserID || email,
     email: email,
     name: decoded.name || decoded.Name || decoded.fullName || decoded.FullName || "User",
-    password: "", // Not stored in JWT
     phoneNumber: decoded.phoneNumber || decoded.PhoneNumber || "",
-    role: role, // Changed from roleID to role
-    createdDate: decoded.createdDate || new Date().toISOString(), // Changed from create_at
-    createdBy: decoded.createdBy || null,
-    avatarUrl: decoded.avatarUrl || decoded.AvatarUrl || null,
+    roleId: roleId,
+    role: roleString, 
+    createdDate: decoded.createdDate || new Date().toISOString(),
+    createdBy: decoded.createdBy,
+    avatarUrl: decoded.avatarUrl || decoded.AvatarUrl,
   };
-}
-
-export function getRedirectPath(role: string): string {
-  const paths: Record<string, string> = {
-    'Admin': "/dashboard",
-    'Researcher': "/tasks",
-    'Technician': "/tasks",
-  };
-  return paths[role] || "/tasks";
+  
+  return user;
 }

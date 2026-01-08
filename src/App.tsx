@@ -64,18 +64,39 @@ import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminT
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
 
+function getUserRole(user: any): string {
+  const roleValue = user?.role || user?.Role;
+  if (roleValue && typeof roleValue === 'string') {
+    return roleValue.toLowerCase().trim();
+  }
+  
+  switch (user?.roleId) {
+    case 1: return "admin";
+    case 2: return "researcher";
+    case 3: return "lab technician";
+    default: return "researcher";
+  }
+}
+
 function AppLayout() {
   const { user, isAuthReady } = useAuth();
   const location = useLocation();
 
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
-  let sidebar = <Sidebar />;
-  if (user?.role === "Admin") sidebar = <SidebarAdmin />;
-  else if (user?.role === "Lab Technician") sidebar = <SidebarTechnician />;
-
+  
   if (!isAuthReady) {
     return <div>Đang tải...</div>;
+  }
+  
+  const userRole = getUserRole(user);
+  
+  let sidebar = <Sidebar />;
+  
+  if (userRole === "admin") {
+    sidebar = <SidebarAdmin />;
+  } else if (userRole === "lab technician") {
+    sidebar = <SidebarTechnician />;
   }
 
   if (isLoginPage) {
@@ -281,7 +302,6 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            {/* <Route path="/tasks/:id/edit" element={<EditTask />} /> */}
             <Route path="/task-templates" element={<TaskTemplateList />} />
             <Route
               path="/task-templates/new"
@@ -291,7 +311,6 @@ function AppLayout() {
               path="/task-templates/:id"
               element={<TaskTemplateDetail />}
             />
-            {/* Experiment Log Creation Routes */}
             <Route
               path="/experiment-log/create/*"
               element={
@@ -315,7 +334,6 @@ function AppLayout() {
               element={<ExperimentLogDetail />}
             />
 
-            {/* Admin Routes */}
             <Route
               path="/admin/tasks"
               element={

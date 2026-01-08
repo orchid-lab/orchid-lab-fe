@@ -4,7 +4,7 @@ export interface User {
   email: string;
   password?: string;
   phoneNumber?: string;
-  role: string; 
+  roleId: number;
   createdDate?: string; 
   createdBy?: string;
   deletedDate?: string;
@@ -12,6 +12,7 @@ export interface User {
   updatedDate?: string;
   updatedBy?: string;
   avatarUrl?: string;
+  role?: string; 
 }
 
 export interface UserApiResponse {

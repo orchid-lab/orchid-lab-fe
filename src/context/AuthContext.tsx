@@ -55,6 +55,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshToken: string;
     user: User;
   }) => {
+    // Clear old data first to avoid stale cache
+    localStorage.clear();
+    
+    // Normalize role to lowercase for consistent checking
+    // Check 'Role' (capital R from API) first, then 'role' (lowercase r)
+    const roleFromApi = (user as any).Role || (user as any).role;
+    
+    if (roleFromApi && typeof roleFromApi === 'string') {
+      // Store normalized lowercase role
+      user.role = roleFromApi.toLowerCase().trim();
+    } else if (user.roleId) {
+      // Fallback to roleId mapping
+      // IMPORTANT: Verify these roleId mappings match your database
+      switch (user.roleId) {
+        case 1:
+          user.role = "researcher";
+          break;
+        case 2:
+          user.role = "admin";
+          break;
+        case 3:
+          user.role = "lab technician";
+          break;
+        default:
+          user.role = "researcher";
+      }
+    }
+    
     setUser(user);
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
@@ -78,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
   };
+  
   const updateUser = (user: User) => {
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));

@@ -58,7 +58,9 @@
     "createdAt": "Created At",
     "updatedAt": "Updated At",
     "noPhoneNumber": "No phone number",
-    "startDate": "Start Date"
+    "startDate": "Start Date",
+    "other": "Other",
+    "profileInfo": "Profile Info"
   },
   "navigation": {
     "home": "Home",
@@ -72,7 +74,8 @@
     "report": "Report",
     "experimentLog": "Experiment Log",
     "tissueCultureBatch": "Tissue Culture Batch",
-    "sample": "Sample"
+    "sample": "Sample",
+    "element": "Element"
   },
   "auth": {
     "username": "Username",
@@ -130,7 +133,10 @@
     "totalUsers": "TOTAL USERS",
     "admins": "ADMINS",
     "researchers": "RESEARCHERS",
-    "technicians": "TECHNICIANS"
+    "technicians": "TECHNICIANS",
+    "showing": "Showing",
+    "usersOutOf": "users out of",
+    "users": "users"
   },
   "task": {
     "taskManagement": "Task Management",
@@ -155,12 +161,34 @@
     "searchTasks": "Search tasks...",
     "taskDetailLoadError": "Unable to load task details",
     "taskDataNotFound": "Task data not found",
+    "taskDescription": "Task Description",
     "materials": "Materials",
     "noMaterialsRecorded": "No materials recorded",
     "assignedTechnicians": "Assigned Technicians",
     "repeatDailyUntilEndDate": "Repeat daily until end date",
-    "oneTimeExecution": "One-time execution",
-    "taskDescription": "Task Description"
+    "oneTimeExecution": "One-time execution"
+  },
+  "profile": {
+    "title": "Personal Profile Information",
+    "subtitle": "Manage and update your account information at Orchid Lab",
+    "avatar": "Avatar",
+    "changeAvatar": "Change avatar",
+    "fullName": "Full Name",
+    "phoneNumber": "Phone Number",
+    "emailAddress": "Email Address",
+    "emailNote": "Email cannot be changed and is used to log in to the system",
+    "detailedInfo": "Detailed Information",
+    "editInfo": "Edit Information",
+    "saveChanges": "Save Changes",
+    "cancelEdit": "Cancel",
+    "updateSuccess": "Profile information updated successfully",
+    "updateFailed": "Profile information update failed",
+    "loadingInfo": "Loading information...",
+    "noUserFound": "User information not found",
+    "pleaseLoginAgain": "Please log in again to continue.",
+    "noName": "No name",
+    "noEmail": "No email",
+    "cannotLoadUserInfo": "Cannot load user information"
   },
   "sample": {
     "sampleManagement": "Sample Management",

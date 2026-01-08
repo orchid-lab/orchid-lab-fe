@@ -6,10 +6,10 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
-function getRoleName(role: string | undefined) {
-  return role || "Khác";
+function getRoleName(role: string | undefined, t: any) {
+  return role || t("common.other");
 }
 
 function getRoleBadgeColor(role: string | undefined) {
@@ -26,8 +26,8 @@ function getRoleBadgeColor(role: string | undefined) {
 }
 
 export default function Topbar() {
+  const { t } = useTranslation();
   const { user: authUser, logout } = useAuth();
-  const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -78,7 +78,7 @@ export default function Topbar() {
           <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
         </div>
         <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-          {new Date().toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { 
+          {new Date().toLocaleDateString("vi-VN", { 
             weekday: "long", 
             year: "numeric", 
             month: "long", 
@@ -134,7 +134,7 @@ export default function Topbar() {
             >
               <div className="flex items-center gap-2">
                 <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-300">
-                  {user?.name || 'Loading...'}
+                  {user?.name || t('common.loading')}
                 </span>
                 <svg 
                   className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
@@ -146,7 +146,7 @@ export default function Topbar() {
                 </svg>
               </div>
               <span className="text-gray-500 dark:text-gray-400 text-xs">
-                {getRoleName(user?.role)}
+                {getRoleName(user?.role, t)}
               </span>
             </div>
 
@@ -168,7 +168,7 @@ export default function Topbar() {
                   }}
                 >
                   <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200" />
-                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 font-medium">{t('common.profile')}</span>
+                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 font-medium">{t('common.profileInfo')}</span>
                 </button>
                 <div className="my-1 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-600 to-transparent"></div>
                 <button

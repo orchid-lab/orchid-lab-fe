@@ -5,14 +5,25 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
 import { useTranslation } from 'react-i18next';
+import { getRoleName } from "../../../utils/jwtHelper";
 
 function getRoleOptions(t: (key: string) => string): { value: string; label: string }[] {
   return [
     { value: "", label: t('roles.allRoles') },
     { value: "Admin", label: t('roles.admin') },
     { value: "Researcher", label: t('roles.researcher') },
-    { value: "Technician", label: t('roles.technician') },
+    { value: "Lab Technician", label: t('roles.technician') },
   ];
+}
+
+// Helper function to get user role name (prioritize role string over roleId)
+function getUserRoleName(user: User): string {
+  // Priority 1: Use role string if available
+  if (user.role && typeof user.role === 'string') {
+    return user.role;
+  }
+  // Priority 2: Fall back to roleId
+  return getRoleName(user.roleId);
 }
 
 const PAGE_SIZE = 10;
@@ -35,7 +46,7 @@ export default function DashboardAdmin() {
     name: "",
     email: "",
     phoneNumber: "",
-    role: "Researcher", 
+    roleId: 2, 
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -73,14 +84,14 @@ export default function DashboardAdmin() {
       const matchesSearch =
         (u.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
         (u.email ?? "").toLowerCase().includes(search.toLowerCase());
-      const matchesRole = !roleFilter || u.role === roleFilter;
+      const matchesRole = !roleFilter || getUserRoleName(u) === roleFilter;
       const matchesStatus = !statusFilter || statusFilter === "active";
       return matchesSearch && matchesRole && matchesStatus;
     });
 
-  const adminCount = users.filter((u) => u.role === "Admin").length;
-  const researcherCount = users.filter((u) => u.role === "Researcher").length;
-  const technicianCount = users.filter((u) => u.role === "Lab Technician").length;
+  const adminCount = users.filter((u) => getUserRoleName(u).toLowerCase() === 'admin').length;
+  const researcherCount = users.filter((u) => getUserRoleName(u).toLowerCase() === 'researcher').length;
+  const technicianCount = users.filter((u) => getUserRoleName(u).toLowerCase() === 'lab technician').length;
 
   const handleDeleteClick = (id: string, name: string) => {
     setDeleteTarget({ id, name });
@@ -131,7 +142,7 @@ export default function DashboardAdmin() {
     try {
       await axiosInstance.post("/api/authentication/register", newUser);
       setShowAddModal(false);
-      setNewUser({ name: "", email: "", phoneNumber: "", role: "Researcher" });
+      setNewUser({ name: "", email: "", phoneNumber: "", roleId: 2 });
       await fetchUsers();
       setPage(1);
       enqueueSnackbar(t('user.userAdded'), {
@@ -197,19 +208,16 @@ export default function DashboardAdmin() {
     }
   };
 
-  // lấy màu badge theo role
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case "Admin":
-        return "bg-purple-100 text-purple-700";
-      case "Researcher":
-        return "bg-blue-100 text-blue-700";
-      case "Technician":
-      case "Lab Technician":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+  const getRoleBadgeClass = (roleName: string) => {
+    const normalized = roleName.toLowerCase();
+    if (normalized === 'admin') {
+      return "bg-purple-100 text-purple-700";
+    } else if (normalized === 'researcher') {
+      return "bg-blue-100 text-blue-700";
+    } else if (normalized === 'lab technician' || normalized === 'technician') {
+      return "bg-green-100 text-green-700";
     }
+    return "bg-gray-100 text-gray-700";
   };
 
   return (
@@ -228,7 +236,7 @@ export default function DashboardAdmin() {
             <input
               type="text"
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:border-transparent"
-              placeholder={t('common.search') + " " + t('common.name').toLowerCase() + " " + t('common.or').toLowerCase() + " " + t('common.email').toLowerCase() + "..."}
+              placeholder={`${t('common.search')} ${t('common.name').toLowerCase()} ${t('common.or').toLowerCase()} ${t('common.email').toLowerCase()}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -286,19 +294,19 @@ export default function DashboardAdmin() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tên
+                  {t('common.name')}
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
+                  {t('common.email')}
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số điện thoại
+                  {t('common.phone')}
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Vai trò
+                  {t('common.role')}
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày tạo
+                  {t('common.createdAt')}
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t('common.action')}
@@ -349,9 +357,9 @@ export default function DashboardAdmin() {
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-sm">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(user.role)}`}
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(getUserRoleName(user))}`}
                       >
-                        {user.role}
+                        {getUserRoleName(user)}
                       </span>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -369,7 +377,7 @@ export default function DashboardAdmin() {
                       <div className="flex gap-2">
                         <button
                           className="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition"
-                          title="Chỉnh sửa"
+                          title={t('common.edit')}
                           onClick={() => handleEdit(user)}
                           type="button"
                         >
@@ -377,7 +385,7 @@ export default function DashboardAdmin() {
                         </button>
                         <button
                           className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition"
-                          title="Xóa"
+                          title={t('common.delete')}
                           onClick={() => handleDeleteClick(user.id, user.name)}
                           type="button"
                         >
@@ -395,8 +403,8 @@ export default function DashboardAdmin() {
         {totalPages > 1 && (
           <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
             <span>
-              Hiển thị {filteredUsers.length} người dùng trên tổng số {total}{" "}
-              người dùng
+              {t('user.showing')} {filteredUsers.length} {t('user.usersOutOf')} {total}{" "}
+              {t('user.users')}
             </span>
             <div className="flex gap-2">
               {page > 1 && (
@@ -480,15 +488,15 @@ export default function DashboardAdmin() {
             />
             <select
               className="border rounded px-3 py-2 w-full mb-4"
-              value={editUser.role}
+              value={editUser.roleId}
               onChange={(e) =>
                 setEditUser((u) =>
-                  u ? { ...u, role: e.target.value } : u
+                  u ? { ...u, roleId: parseInt(e.target.value) } : u
                 )
               }
             >
-              <option value="Researcher">Researcher</option>
-              <option value="Lab Technician">Lab Technician</option>
+              <option value={2}>{t('roles.researcher')}</option>
+              <option value={3}>{t('roles.technician')}</option>
             </select>
             <div className="flex gap-2 justify-end">
               <button
@@ -542,14 +550,14 @@ export default function DashboardAdmin() {
             />
             <select
               className="border rounded px-3 py-2 w-full mb-4"
-              value={newUser.role}
+              value={newUser.roleId}
               onChange={(e) =>
-                setNewUser((u) => ({ ...u, role: e.target.value }))
+                setNewUser((u) => ({ ...u, roleId: parseInt(e.target.value) }))
               }
             >
-              <option value="">{t('common.selectRole')}</option>
-              <option value="Researcher">Researcher</option>
-              <option value="Lab Technician">Lab Technician</option>
+              <option value={0}>{t('common.selectRole')}</option>
+              <option value={2}>{t('roles.researcher')}</option>
+              <option value={3}>{t('roles.technician')}</option>
             </select>
             <div className="flex gap-2 justify-end">
               <button
@@ -557,7 +565,7 @@ export default function DashboardAdmin() {
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
                 onClick={() => setShowAddModal(false)}
               >
-                Hủy
+                {t('common.cancel')}
               </button>
               <button
                 type="button"
@@ -566,7 +574,7 @@ export default function DashboardAdmin() {
                   void handleAddUser();
                 }}
               >
-                Thêm
+                {t('common.add')}
               </button>
             </div>
           </div>
@@ -577,11 +585,12 @@ export default function DashboardAdmin() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-[350px]">
             <h2 className="text-lg font-bold mb-4 text-red-700">
-              Xác nhận xóa
+              {t('user.deleteUser')}
             </h2>
             <p>
-              {t('common.confirm')} {t('common.delete').toLowerCase()} <span className="font-semibold">{deleteTarget.name}</span>?
+              {t('user.deleteUserConfirm')}
             </p>
+            <p className="font-semibold mt-2">{deleteTarget.name}</p>
             <div className="flex gap-2 justify-end mt-6">
               <button
                 type="button"

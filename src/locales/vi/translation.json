@@ -58,7 +58,31 @@
     "createdAt": "Ngày tạo",
     "updatedAt": "Ngày cập nhật",
     "noPhoneNumber": "Chưa có số điện thoại",
-    "startDate": "Ngày bắt đầu"
+    "startDate": "Ngày bắt đầu",
+    "other": "Khác",
+    "profileInfo": "Thông tin"
+  },
+  "profile": {
+    "title": "Hồ sơ cá nhân",
+    "subtitle": "Quản lý thông tin cá nhân của bạn",
+    "detailedInfo": "Thông tin chi tiết",
+    "fullName": "Họ và tên",
+    "phoneNumber": "Số điện thoại",
+    "emailAddress": "Địa chỉ email",
+    "emailNote": "Email không thể thay đổi",
+    "editInfo": "Chỉnh sửa thông tin",
+    "saveChanges": "Lưu thay đổi",
+    "cancelEdit": "Hủy chỉnh sửa",
+    "avatar": "Ảnh đại diện",
+    "changeAvatar": "Thay đổi ảnh đại diện",
+    "loadingInfo": "Đang tải thông tin...",
+    "noUserFound": "Không tìm thấy thông tin người dùng",
+    "pleaseLoginAgain": "Vui lòng đăng nhập lại",
+    "noName": "Chưa có tên",
+    "noEmail": "Chưa có email",
+    "updateSuccess": "Cập nhật thông tin thành công",
+    "updateFailed": "Cập nhật thông tin thất bại",
+    "cannotLoadUserInfo": "Không thể tải thông tin người dùng"
   },
   "navigation": {
     "home": "Trang chủ",
@@ -72,7 +96,8 @@
     "report": "Báo cáo",
     "experimentLog": "Nhật ký thí nghiệm",
     "tissueCultureBatch": "Lô nuôi cấy mô",
-    "sample": "Mẫu"
+    "sample": "Mẫu",
+    "element": "Nguyên vật liệu"
   },
   "auth": {
     "username": "Tên đăng nhập",
@@ -130,7 +155,10 @@
     "totalUsers": "TỔNG NGƯỜI DÙNG",
     "admins": "ADMINS",
     "researchers": "RESEARCHERS",
-    "technicians": "TECHNICIANS"
+    "technicians": "TECHNICIANS",
+    "showing": "Hiển thị",
+    "usersOutOf": "người dùng trên tổng số",
+    "users": "người dùng"
   },
   "task": {
     "taskManagement": "Quản lý nhiệm vụ",

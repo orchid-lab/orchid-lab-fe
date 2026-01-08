@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { useAuth } from "../../context/AuthContext";
-import { extractUserFromJWT, getRedirectPath } from "../../utils/jwtHelper";
+import { extractUserFromJWT } from "../../utils/jwtHelper";
 import type { User } from "../../types/Auth";
 import "./Login.css";
 import { useTranslation } from 'react-i18next';
@@ -97,7 +97,8 @@ export default function Login() {
       login({ accessToken, refreshToken, user });
       
       // Navigate based on role
-      navigate(getRedirectPath(user.role), { replace: true });
+      const roleBasedPath = user.roleId === 1 ? "/admin" : user.roleId === 2 ? "/doctor" : "/patient";
+      navigate(roleBasedPath, { replace: true });
       
     } catch (error: any) {
       console.error("Login error:", error);
