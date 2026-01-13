@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
-import { FaSignOutAlt, FaUserCircle, FaBell, FaEnvelope } from "react-icons/fa";
+import { FaUserCircle, FaBell, FaEnvelope } from "react-icons/fa";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import axiosInstance from "../api/axiosInstance";
@@ -19,7 +19,7 @@ function getRoleBadgeColor(role: string | undefined) {
     case "researcher":
       return "bg-blue-500";
     case "technician":
-      return "bg-green-500";
+      return "bg-blue-500";
     default:
       return "bg-gray-500";
   }
@@ -27,7 +27,7 @@ function getRoleBadgeColor(role: string | undefined) {
 
 export default function Topbar() {
   const { t } = useTranslation();
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -69,13 +69,13 @@ export default function Topbar() {
   }, [open]);
 
   return (
-    <header className="h-16 fixed top-0 left-64 right-0 z-20 bg-gradient-to-r from-white via-green-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-green-100 dark:border-gray-700">
+    <header className="h-16 fixed top-0 left-64 right-0 z-20 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-blue-100 dark:border-gray-700">
       {/* Left side - Decorative elements */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-          <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+          <div className="w-2 h-2 bg-blue-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
         </div>
         <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
           {new Date().toLocaleDateString("vi-VN", { 
@@ -90,14 +90,14 @@ export default function Topbar() {
       {/* Right side - User section */}
       <div className="flex items-center gap-4">
         {/* Notification bell */}
-        <button className="relative p-2 rounded-lg hover:bg-green-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
-          <FaBell className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors duration-300 group-hover:rotate-12 transform" />
+        <button className="relative p-2 rounded-lg hover:bg-blue-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
+          <FaBell className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-300 group-hover:rotate-12 transform" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
         </button>
 
         {/* Messages */}
-        <button className="relative p-2 rounded-lg hover:bg-green-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
-          <FaEnvelope className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors duration-300" />
+        <button className="relative p-2 rounded-lg hover:bg-blue-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
+          <FaEnvelope className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-300" />
         </button>
 
         {/* Theme Toggle */}
@@ -112,7 +112,7 @@ export default function Topbar() {
         {/* User section */}
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -120,7 +120,7 @@ export default function Topbar() {
                 className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md transition-transform duration-300 group-hover:scale-110 object-cover"
               />
             ) : (
-              <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center text-green-700 font-semibold transition-transform duration-300 group-hover:scale-110">
+              <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-700 font-semibold transition-transform duration-300 group-hover:scale-110">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
@@ -129,11 +129,11 @@ export default function Topbar() {
 
           <div className="relative" ref={dropdownRef}>
             <div
-              className="flex flex-col cursor-pointer hover:bg-green-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
+              className="flex flex-col cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
               onClick={() => setOpen((v) => !v)}
             >
               <div className="flex items-center gap-2">
-                <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors duration-300">
+                <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
                   {user?.name || t('common.loading')}
                 </span>
                 <svg 
@@ -161,26 +161,14 @@ export default function Topbar() {
               <div className="p-2">
                 <button
                   type="button"
-                  className="flex items-center w-full text-left px-4 py-2.5 hover:bg-green-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 group"
+                  className="flex items-center w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 group"
                   onClick={() => {
                     setOpen(false);
                     void navigate("/profile");
                   }}
                 >
-                  <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors duration-200" />
-                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-green-700 dark:group-hover:text-green-400 font-medium">{t('common.profileInfo')}</span>
-                </button>
-                <div className="my-1 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-600 to-transparent"></div>
-                <button
-                  type="button"
-                  className="flex items-center w-full text-left px-4 py-2.5 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 group"
-                  onClick={() => {
-                    setOpen(false);
-                    logout();
-                  }}
-                >
-                  <FaSignOutAlt className="text-red-500 mr-3 group-hover:text-red-600 transition-colors duration-200" />
-                  <span className="text-red-600 group-hover:text-red-700 font-medium">{t('common.logout')}</span>
+                  <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200" />
+                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 font-medium">{t('common.profileInfo')}</span>
                 </button>
               </div>
             </div>

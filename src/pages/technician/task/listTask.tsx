@@ -63,7 +63,7 @@ const STATUS_COLORS: Record<StatusType, string> = {
   Assigned: "text-blue-700",
   Taken: "text-purple-700",
   InProcess: "text-yellow-700",
-  DoneInTime: "text-green-700",
+  DoneInTime: "text-blue-700",
   DoneInLate: "text-orange-700",
   Cancel: "text-red-700",
 };
@@ -344,7 +344,7 @@ export default function ListTask() {
             <p className="text-gray-600 mt-1">
               Theo dõi và quản lý các nhiệm vụ được giao
             </p>
-            <p className="text-sm text-green-600 mt-1">
+            <p className="text-sm text-blue-600 mt-1">
               📅 Sắp xếp theo thời gian tạo mới nhất
             </p>
           </div>
@@ -355,7 +355,7 @@ export default function ListTask() {
           {/* Chart trạng thái */}
           <div className="flex justify-center">
             <div className="bg-white rounded-lg shadow p-4 w-full md:w-[340px]">
-              <h3 className="text-center text-green-700 font-semibold mb-2 text-sm">
+              <h3 className="text-center text-blue-700 font-semibold mb-2 text-sm">
                 Biểu đồ thống kê nhiệm vụ ngày hôm nay
               </h3>
               <Doughnut data={chartData} options={chartOptions} />
@@ -364,11 +364,11 @@ export default function ListTask() {
 
           {/* Số liệu thống kê */}
           <div className="flex flex-wrap justify-center md:justify-start gap-4">
-            <div className="bg-green-50 p-4 rounded-lg w-40">
-              <div className="text-green-600 text-sm font-medium">
+            <div className="bg-blue-50 p-4 rounded-lg w-40">
+              <div className="text-blue-600 text-sm font-medium">
                 NHIỆM VỤ HÔM NAY
               </div>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-blue-700">
                 {stats.totalToday}
               </div>
             </div>
@@ -380,11 +380,11 @@ export default function ListTask() {
                 {stats.inProgress}
               </div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg w-40">
-              <div className="text-green-600 text-sm font-medium">
+            <div className="bg-blue-50 p-4 rounded-lg w-40">
+              <div className="text-blue-600 text-sm font-medium">
                 NHIỆM VỤ ĐÃ HOÀN THÀNH
               </div>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-blue-700">
                 {stats.completed}
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function ListTask() {
                 onClick={() => setTodayFilter(!todayFilter)}
                 className={`px-3 py-2 text-sm rounded-full border ${
                   todayFilter
-                    ? "bg-green-100 border-green-500 text-green-700"
+                    ? "bg-blue-100 border-blue-500 text-blue-700"
                     : "border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
@@ -451,7 +451,7 @@ export default function ListTask() {
                 placeholder="Tìm kiếm nhiệm vụ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <button
@@ -479,7 +479,7 @@ export default function ListTask() {
                 </span>
               )}
               {todayFilter && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                   Task hôm nay
                 </span>
               )}
@@ -532,7 +532,7 @@ export default function ListTask() {
                     tasks.map((task) => (
                       <tr
                         key={task.id}
-                        className="border-b hover:bg-green-50 cursor-pointer transition"
+                        className="border-b hover:bg-blue-50 cursor-pointer transition"
                         onClick={() => {
                           void navigate(`/technician/tasks/${task.id}`);
                         }}

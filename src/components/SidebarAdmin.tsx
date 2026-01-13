@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FaTasks,
@@ -8,19 +8,56 @@ import {
   FaSeedling,
   FaVials,
   FaUser,
+  FaSignOutAlt,
+  FaSearch,
 } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../api/axiosInstance";
+import type { User } from "../types/Auth";
+
+function getRoleName(role: string | undefined, t: any) {
+  return role || t("common.other");
+}
+
+function getRoleBadgeColor(role: string | undefined) {
+  switch (role?.toLowerCase()) {
+    case "admin":
+      return "bg-red-500";
+    case "researcher":
+      return "bg-blue-500";
+    case "technician":
+      return "bg-blue-500";
+    default:
+      return "bg-gray-500";
+  }
+}
 
 export default function SidebarDemo() {
   const { t } = useTranslation();
-  const [mouseY, setMouseY] = useState(0);
+  const { user: authUser, logout } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleMouseMove = (e: { currentTarget: { getBoundingClientRect: () => any; }; clientY: number; }) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMouseY(e.clientY - rect.top);
-  };
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) return;
+
+      try {
+        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        setUser(response.data);
+      } catch (error) {
+        console.error('Error fetching user data in Sidebar:', error);
+        // Fallback to authUser if API fails
+        setUser(authUser);
+      }
+    };
+
+    fetchUserData();
+  }, [authUser]);
 
   const menuItems = [
     { path: "/admin/user", icon: FaUser, labelKey: "user.userManagement" },
@@ -34,43 +71,49 @@ export default function SidebarDemo() {
     { path: "/admin/element", icon: FaFlask, labelKey: "navigation.element" },
   ];
 
+  const filteredItems = menuItems.filter(item =>
+    t(item.labelKey).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <aside 
-        className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden group/sidebar"
-        onMouseMove={handleMouseMove}
-        style={{
-          '--mouse-y': `${mouseY}px`
-        } as React.CSSProperties}
-      >
-        {/* Spotlight effect */}
-        <div 
-          className="absolute left-1/2 w-70 h-64 bg-green-400/20 rounded-full blur-3xl pointer-events-none opacity-0 group-hover/sidebar:opacity-100 -translate-x-1/2 -translate-y-1/2"
-          style={{
-            top: `${mouseY}px`,
-            transition: 'opacity 0.3s'
-          }}
-        ></div>
-
-        <div className="absolute top-10 -left-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl transition-all duration-700"></div>
-        <div className="absolute bottom-20 -right-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl transition-all duration-700"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-white/5 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-700"></div>
-        
+      <aside className="w-64 h-screen fixed top-0 left-0 z-30 flex flex-col bg-[#1a1d29] text-gray-300">
         {/* Header */}
-        <div className="h-16 flex items-center justify-center font-bold text-2xl text-white border-b border-white/20 backdrop-blur-sm relative z-10 group/header">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm group-hover/header:rotate-12 group-hover/header:scale-110 group-hover/header:bg-white/30 transition-all duration-300">
-              <GiMicroscope className="text-white text-xl" />
+        <div className="h-16 flex items-center px-6 border-b border-gray-700/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <GiMicroscope className="text-white text-lg" />
             </div>
-            <span className="bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent group-hover/header:from-green-50 group-hover/header:to-white transition-all duration-300">
+            <span className="text-white text-xl font-bold tracking-tight">
               OrchidLab
             </span>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-6 text-white relative z-10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-          {menuItems.map((item) => {
+        {/* Search Bar */}
+        <div className="px-4 py-4">
+          <div className="relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
+            <input
+              type="text"
+              placeholder="What to search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#252836] text-gray-300 text-sm rounded-lg pl-9 pr-3 py-2.5 border border-transparent focus:border-gray-600 focus:outline-none placeholder-gray-500"
+            />
+          </div>
+        </div>
+
+        {/* Navigation Section */}
+        <div className="px-4 pt-4 pb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">
+            Navigation
+          </p>
+        </div>
+
+        {/* Navigation Links */}
+        <nav className="flex-1 px-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          {filteredItems.map((item) => {
             const Icon = item.icon;
             
             return (
@@ -78,27 +121,76 @@ export default function SidebarDemo() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) => 
-                  `flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-white/15 transition-all duration-300 mb-1 group relative overflow-hidden ${
-                    isActive ? "bg-white/25 font-semibold shadow-lg" : ""
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 mb-0.5 group ${
+                    isActive 
+                      ? "bg-[#252836] text-white" 
+                      : "text-white hover:bg-[#252836] hover:text-white"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <span className="text-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 relative z-10">
+                    <span className={`text-base ${isActive ? "text-blue-500" : ""}`}>
                       <Icon />
                     </span>
-                    <span className="relative z-10">{t(item.labelKey)}</span>
+                    <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                    {isActive && (
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    )}
                   </>
                 )}
               </NavLink>
             );
           })}
         </nav>
+
+        {/* Access Controls Section */}
+        <div className="px-4 pt-4 pb-2 border-t border-gray-700/50">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">
+            Access Controls
+          </p>
+        </div>
+
+        {/* User Profile */}
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#252836] relative">
+            <div className="relative">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="User avatar"
+                  className="w-9 h-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-[#252836]`}></div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                {user?.name || t('common.loading')}
+              </p>
+              <p className="text-xs text-gray-500">
+                {getRoleName(user?.role, t)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="px-4 pb-4">
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 w-full group"
+          >
+            <span className="text-base">
+              <FaSignOutAlt />
+            </span>
+            <span className="text-sm font-medium">{t('common.logout')}</span>
+          </button>
+        </div>
       </aside>
     </div>
   );

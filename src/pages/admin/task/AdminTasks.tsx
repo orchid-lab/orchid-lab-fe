@@ -292,12 +292,12 @@ export default function AdminTasks() {
     labels: filteredChartStats.map((item) => item.label),
     datasets: [
       {
-        label: "Nhiệm vụ được tạo",
+        label: "Được tạo",
         data: filteredChartStats.map((item) => item.created),
         backgroundColor: "#3b82f6",
       },
       {
-        label: "Nhiệm vụ hoàn thành đúng hạn",
+        label: "Hoàn thành đúng hạn",
         data: filteredChartStats.map((item) => item.completedOnTime),
         backgroundColor: "#22c55e",
       },
@@ -377,26 +377,6 @@ export default function AdminTasks() {
           box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.15);
         }
 
-        .card-shine {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .card-shine::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-          transition: left 0.5s;
-        }
-
-        .card-shine:hover::before {
-          left: 100%;
-        }
-
         .row-hover {
           transition: all 0.2s ease;
         }
@@ -427,13 +407,13 @@ export default function AdminTasks() {
             </select>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 hover-lift card-shine">
+          <div className="bg-white rounded-xl shadow-lg p-6 hover-lift">
             <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: true }} />
           </div>
         </div>
 
         {/* Chart 2 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 space-y-4 animate-fade-in-up stagger-1 hover-lift card-shine">
+        <div className="bg-white rounded-xl shadow-lg p-6 space-y-4 animate-fade-in-up stagger-1 hover-lift">
           <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">
               {t('task.specificTaskStatistics')}
@@ -464,7 +444,7 @@ export default function AdminTasks() {
           {Object.keys(STATUS_COLORS).map((key, index) => (
             <div
               key={key}
-              className={`rounded-xl border ${STATUS_BG_COLORS[key as StatusType]} px-6 py-4 flex flex-col items-center animate-scale-in hover-lift card-shine stagger-${index + 1}`}
+              className={`rounded-xl border ${STATUS_BG_COLORS[key as StatusType]} px-6 py-4 flex flex-col items-center animate-scale-in hover-lift stagger-${index + 1}`}
             >
               <span className="text-sm text-gray-600 mb-2 font-medium">{getStatusLabel(key as StatusType, t)}</span>
               <span
@@ -479,7 +459,7 @@ export default function AdminTasks() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-6 rounded-xl shadow-lg animate-slide-in-left card-shine">
+        <div className="bg-white p-6 rounded-xl shadow-lg animate-slide-in-left">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-semibold">

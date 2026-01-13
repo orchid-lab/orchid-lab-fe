@@ -100,7 +100,7 @@ const TechDetailTask: React.FC = () => {
       case "InProcess":
         return "bg-yellow-100 text-yellow-800";
       case "DoneInTime":
-        return "bg-green-100 text-green-800";
+        return "bg-blue-100 text-blue-800";
       case "DoneInLate":
         return "bg-orange-100 text-orange-800";
       case "Cancel":
@@ -438,7 +438,7 @@ const TechDetailTask: React.FC = () => {
               disabled={!canCompleteTask() || updatingStatus}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 canCompleteTask()
-                  ? "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
@@ -696,7 +696,7 @@ const TechDetailTask: React.FC = () => {
                 disabled={
                   submittingReport || !selectedFile || !reportInformation
                 }
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
               </button>

@@ -1,8 +1,9 @@
 import { NavLink } from "react-router-dom";
-import { FaTasks, FaBook, FaSeedling, FaChartBar } from "react-icons/fa";
+import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
 
 const tabs = [
   { nameKey: "navigation.method", path: "/method", icon: <PiBlueprintFill /> },
@@ -14,6 +15,7 @@ const tabs = [
 
 export default function Sidebar() {
   const { t } = useTranslation();
+  const { logout } = useAuth();
   return (
     <aside className="w-64 h-screen fixed top-0 left-0 z-30 shadow-2xl flex flex-col bg-gradient-to-b from-green-800 via-green-800 to-green-900 overflow-hidden">
       <div className="absolute top-10 -left-10 w-40 h-40 bg-green-600/10 rounded-full blur-3xl"></div>
@@ -57,6 +59,19 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Logout Button */}
+      <div className="p-6 border-t border-white/20 relative z-10">
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-6 py-3.5 mx-3 rounded-xl hover:bg-red-500/20 hover:translate-x-1 transition-all duration-300 w-full text-left group"
+        >
+          <span className="text-lg group-hover:scale-110 transition-transform duration-300">
+            <FaSignOutAlt />
+          </span>
+          <span>{t('common.logout')}</span>
+        </button>
+      </div>
 
     </aside>
   );

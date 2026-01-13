@@ -142,27 +142,27 @@ export default function Login() {
       <div className="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-green-500/30 to-emerald-500/30 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-br from-emerald-500/30 to-teal-500/30 rounded-full blur-3xl animate-float-delayed" />
       <div className="absolute top-1/3 right-1/4 w-28 h-28 bg-gradient-to-br from-teal-500/25 to-green-500/25 rounded-full blur-3xl animate-float-slow" />
-      <div className="absolute bottom-1/4 left-1/4 w-36 h-36 bg-gradient-to-br from-green-400/25 to-emerald-400/25 rounded-full blur-3xl animate-float-reverse" />
+      <div className="absolute bottom-1/4 left-1/4 w-36 h-36 bg-gradient-to-br from-blue-400/25 to-blue-400/25 rounded-full blur-3xl animate-float-reverse" />
       
       {/* Enhanced sparkle effects */}
-      <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-green-400 rounded-full animate-sparkle shadow-lg shadow-green-400/50" />
-      <div className="absolute top-2/3 left-1/4 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-sparkle-delayed shadow-lg shadow-emerald-400/50" />
-      <div className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-teal-400 rounded-full animate-sparkle-slow shadow-lg shadow-teal-400/50" />
-      <div className="absolute bottom-1/3 left-2/3 w-3 h-3 bg-green-300 rounded-full animate-sparkle shadow-lg shadow-green-300/50" style={{animationDelay: '1s'}} />
-      <div className="absolute top-1/5 right-1/5 w-2 h-2 bg-emerald-500 rounded-full animate-sparkle-delayed shadow-lg shadow-emerald-500/50" style={{animationDelay: '1.5s'}} />
+      <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-blue-400 rounded-full animate-sparkle shadow-lg shadow-blue-400/50" />
+      <div className="absolute top-2/3 left-1/4 w-2.5 h-2.5 bg-blue-400 rounded-full animate-sparkle-delayed shadow-lg shadow-blue-400/50" />
+      <div className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-blue-400 rounded-full animate-sparkle-slow shadow-lg shadow-blue-400/50" />
+      <div className="absolute bottom-1/3 left-2/3 w-3 h-3 bg-blue-300 rounded-full animate-sparkle shadow-lg shadow-blue-300/50" style={{animationDelay: '1s'}} />
+      <div className="absolute top-1/5 right-1/5 w-2 h-2 bg-blue-500 rounded-full animate-sparkle-delayed shadow-lg shadow-blue-500/50" style={{animationDelay: '1.5s'}} />
       
       {/* Orbiting particles */}
       <div className="absolute top-1/2 left-1/2 w-96 h-96 -translate-x-1/2 -translate-y-1/2">
-        <div className="absolute top-0 left-1/2 w-3 h-3 bg-green-400/60 rounded-full animate-orbit shadow-lg shadow-green-400/50" />
-        <div className="absolute top-0 left-1/2 w-2 h-2 bg-emerald-400/60 rounded-full animate-orbit-reverse shadow-lg shadow-emerald-400/50" />
-        <div className="absolute top-0 left-1/2 w-2.5 h-2.5 bg-teal-400/60 rounded-full animate-orbit-slow shadow-lg shadow-teal-400/50" />
+        <div className="absolute top-0 left-1/2 w-3 h-3 bg-blue-400/60 rounded-full animate-orbit shadow-lg shadow-blue-400/50" />
+        <div className="absolute top-0 left-1/2 w-2 h-2 bg-blue-400/60 rounded-full animate-orbit-reverse shadow-lg shadow-blue-400/50" />
+        <div className="absolute top-0 left-1/2 w-2.5 h-2.5 bg-blue-400/60 rounded-full animate-orbit-slow shadow-lg shadow-blue-400/50" />
       </div>
       
       <div className="relative z-10 animate-fade-in-up">
         <div className="w-[900px] h-[520px] bg-white rounded-[40px] shadow-2xl flex overflow-hidden border border-gray-200/50 relative hover:shadow-3xl transition-all duration-500 animate-slide-in group">
-          <div className="absolute inset-0 rounded-[40px] bg-gradient-to-r from-green-400/20 via-emerald-400/20 to-teal-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-rotate-gradient pointer-events-none" style={{padding: '2px'}} />
+          <div className="absolute inset-0 rounded-[40px] bg-gradient-to-r from-blue-400/20 via-blue-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-rotate-gradient pointer-events-none" style={{padding: '2px'}} />
           
-          <div className="w-1/2 bg-gradient-to-br from-[#d8eddb] to-[#c5e5ca] flex flex-col justify-center px-12 py-10 relative overflow-hidden">
+          <div className="w-1/2 bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] flex flex-col justify-center px-12 py-10 relative overflow-hidden">
             <div className="absolute -top-10 -left-10 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse-slow" />
             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/20 rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '2s'}} />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-radial from-white/10 to-transparent rounded-full blur-2xl animate-pulse-slow" />
@@ -192,8 +192,8 @@ export default function Login() {
                   <span className="absolute -right-2 top-0 w-3 h-3 bg-emerald-400 rounded-full animate-ping shadow-lg shadow-emerald-400/50"></span>
                   <span className="absolute -right-2 top-0 w-3 h-3 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50"></span>
                 </h1>
-                <div className="absolute -inset-6 bg-gradient-to-r from-green-400/30 via-emerald-400/30 to-teal-400/30 blur-3xl -z-10 animate-pulse-slow rounded-3xl" />
-                <div className="absolute -inset-8 bg-gradient-to-br from-green-300/20 via-transparent to-emerald-300/20 blur-2xl -z-10 animate-rotate-gradient rounded-3xl" />
+                <div className="absolute -inset-6 bg-gradient-to-r from-blue-400/30 via-blue-400/30 to-blue-400/30 blur-3xl -z-10 animate-pulse-slow rounded-3xl" />
+                <div className="absolute -inset-8 bg-gradient-to-br from-blue-300/20 via-transparent to-blue-300/20 blur-2xl -z-10 animate-rotate-gradient rounded-3xl" />
               </div>
               
               <form onSubmit={handleLogin} className="flex flex-col gap-4 animate-fade-in-delayed">
@@ -201,25 +201,25 @@ export default function Login() {
                   <input
                     type="text"
                     placeholder={t('auth.username')}
-                    className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-green-500 focus:bg-white transition-all duration-300 hover:border-green-300 hover:shadow-lg hover:shadow-green-100/50"
+                    className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/50"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoFocus
                   />
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-400/0 via-green-400/10 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-400 rounded-full opacity-0 group-focus-within:opacity-100 animate-pulse" />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/0 via-blue-400/10 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full opacity-0 group-focus-within:opacity-100 animate-pulse" />
                 </div>
                 
                 <div className="relative group">
                   <input
                     type="password"
                     placeholder={t('auth.password')}
-                    className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-green-500 focus:bg-white transition-all duration-300 hover:border-green-300 hover:shadow-lg hover:shadow-green-100/50"
+                    className="w-full rounded-xl border-2 bg-white/90 border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100/50"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-400/0 via-green-400/10 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-400 rounded-full opacity-0 group-focus-within:opacity-100 animate-pulse" />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/0 via-blue-400/10 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full opacity-0 group-focus-within:opacity-100 animate-pulse" />
                 </div>
                 
                 {error && (

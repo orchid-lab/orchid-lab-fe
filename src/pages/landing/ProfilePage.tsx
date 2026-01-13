@@ -147,7 +147,7 @@ export default function ProfilePage() {
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-8">
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               <p className="ml-4 text-gray-600">{t('profile.loadingInfo')}</p>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function ProfilePage() {
               <p className="mt-2 text-sm text-gray-500">{t('profile.pleaseLoginAgain')}</p>
               <button
                 onClick={() => window.location.href = '/login'}
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 {t('common.login')}
               </button>
@@ -273,7 +273,7 @@ export default function ProfilePage() {
             
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 flex items-center justify-center text-green-700 text-3xl font-semibold relative overflow-hidden avatar-container">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 flex items-center justify-center text-blue-700 text-3xl font-semibold relative overflow-hidden avatar-container">
                 {isEditing ? (
                   <label
                     className="w-full h-full flex items-center justify-center relative cursor-pointer group"
@@ -339,9 +339,9 @@ export default function ProfilePage() {
               </h2>
               <p className="text-sm text-gray-600 mb-4">{user.email || t('profile.noEmail')}</p>
               
-              <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-md px-4 py-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-green-700">
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-md px-4 py-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm font-medium text-blue-700">
                   {user.role || getRoleName(user.roleId) || 'Undefined'}
                 </span>
               </div>
@@ -373,7 +373,7 @@ export default function ProfilePage() {
                   readOnly={!isEditing}
                   className={`w-full border ${
                     isEditing
-                      ? "border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      ? "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       : "border-gray-200 bg-gray-50 text-gray-600"
                   } rounded-md px-4 py-2.5 text-sm input-transition`}
                 />
@@ -396,7 +396,7 @@ export default function ProfilePage() {
                   readOnly={!isEditing}
                   className={`w-full border ${
                     isEditing
-                      ? "border-gray-300 focus:border-green-500 focus:ring-green-500"
+                      ? "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       : "border-gray-200 bg-gray-50 text-gray-600"
                   } rounded-md px-4 py-2.5 text-sm input-transition`}
                 />
@@ -441,7 +441,7 @@ export default function ProfilePage() {
                   onClick={() => {
                     void handleSave();
                   }}
-                  className="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium button-transition shadow-sm"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium button-transition shadow-sm"
                 >
                   {t('profile.saveChanges')}
                 </button>
@@ -450,7 +450,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="px-5 py-2.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium button-transition shadow-sm"
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium button-transition shadow-sm"
               >
                 {t('profile.editInfo')}
               </button>
