@@ -97,7 +97,7 @@ export default function Login() {
       login({ accessToken, refreshToken, user });
       
       // Navigate based on role
-      const roleBasedPath = user.roleId === 1 ? "/admin" : user.roleId === 2 ? "/doctor" : "/patient";
+      const roleBasedPath = user.roleId === 1 ? "/admin/user" : user.roleId === 2 ? "/researcher" : "/technician";
       navigate(roleBasedPath, { replace: true });
       
     } catch (error: any) {
