@@ -22,8 +22,6 @@ export default function AdminReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // --- CHỈNH SỬA TẠI ĐÂY ---
-        // Sử dụng relative path và params object của axios
         const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
           params: {
             pageNumber: page,
@@ -31,7 +29,7 @@ export default function AdminReport() {
           },
         });
         
-        const json = res.data; // Dữ liệu đã có type nhờ Generic ở trên
+        const json = res.data; 
         setData(json.value.data || []);
         setTotal(json.value.totalCount || 0);
         setTotalPages(json.value.pageCount || 1);

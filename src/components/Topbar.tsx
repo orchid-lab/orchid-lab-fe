@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useRef, useState } from "react";
-import { FaUserCircle, FaBell, FaEnvelope } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { FaBell, FaEnvelope } from "react-icons/fa";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import axiosInstance from "../api/axiosInstance";
@@ -29,9 +29,7 @@ export default function Topbar() {
   const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch user data from API
   useEffect(() => {
@@ -51,22 +49,9 @@ export default function Topbar() {
     fetchUserData();
   }, [authUser]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [open]);
+  const handleAvatarClick = () => {
+    navigate("/profile");
+  };
 
   return (
     <header className="h-16 fixed top-0 left-64 right-0 z-20 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-blue-100 dark:border-gray-700">
@@ -110,7 +95,10 @@ export default function Topbar() {
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
 
         {/* User section */}
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
+          onClick={handleAvatarClick}
+        >
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
             {user?.avatarUrl ? (
@@ -127,51 +115,13 @@ export default function Topbar() {
             <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}></div>
           </div>
 
-          <div className="relative" ref={dropdownRef}>
-            <div
-              className="flex flex-col cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
-              onClick={() => setOpen((v) => !v)}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
-                  {user?.name || t('common.loading')}
-                </span>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">
-                {getRoleName(user?.role, t)}
-              </span>
-            </div>
-
-            {/* Dropdown menu with animation */}
-            <div
-              className={`absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-2xl z-50 overflow-hidden transition-all duration-300 origin-top-right ${
-                open 
-                  ? "opacity-100 scale-100 translate-y-0" 
-                  : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-              }`}
-            >
-              <div className="p-2">
-                <button
-                  type="button"
-                  className="flex items-center w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 group"
-                  onClick={() => {
-                    setOpen(false);
-                    void navigate("/profile");
-                  }}
-                >
-                  <FaUserCircle className="text-gray-600 dark:text-gray-300 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200" />
-                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 font-medium">{t('common.profileInfo')}</span>
-                </button>
-              </div>
-            </div>
+          <div className="flex flex-col">
+            <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
+              {user?.name || t('common.loading')}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs">
+              {getRoleName(user?.role, t)}
+            </span>
           </div>
         </div>
       </div>
