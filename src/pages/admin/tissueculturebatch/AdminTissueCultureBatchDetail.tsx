@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 interface TCB {
   id: string;
@@ -17,6 +18,7 @@ interface LabRoom {
 }
 
 const AdminTissueCultureBatchDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState<TCB | null>(null);
@@ -39,7 +41,7 @@ const AdminTissueCultureBatchDetail = () => {
         setData(tcb);
         setName((tcb as TCB).name);
         setDescription((tcb as TCB).description ?? "");
-        setSelectedLab(""); // will be chosen on update
+        setSelectedLab("");
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -58,7 +60,7 @@ const AdminTissueCultureBatchDetail = () => {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm("Bạn có chắc muốn xóa lô cấy mô này?")) return;
+    if (!confirm(t("tissueCultureBatch.deleteConfirm"))) return;
     await axiosInstance.delete("/api/tissue-culture-batch", { data: { id } });
     navigate("/admin/tissue-culture-batches");
   };
@@ -75,7 +77,6 @@ const AdminTissueCultureBatchDetail = () => {
         description,
       });
       setEditing(false);
-      // refetch
       const res = await axiosInstance.get(`/api/tissue-culture-batch/${id}`);
       const tcb = (res.data as any)?.value ?? res.data;
       setData(tcb);
@@ -84,28 +85,30 @@ const AdminTissueCultureBatchDetail = () => {
     }
   };
 
-  if (loading) return <div className="ml-64 mt-16 p-8">Đang tải...</div>;
-  if (!data) return <div className="ml-64 mt-16 p-8">Không tìm thấy!</div>;
+  if (loading) return <div className="ml-64 mt-16 p-8">{t("common.loadingData")}</div>;
+  if (!data) return <div className="ml-64 mt-16 p-8">{t("common.noData")}</div>;
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Chi tiết lô cấy mô</h1>
+          <h1 className="text-2xl font-bold">
+            {t("tissueCultureBatch.tissueCultureBatchDetails")}
+          </h1>
           <div className="flex gap-2">
             {!editing && (
               <button
                 className="px-4 py-2 rounded bg-gray-600 text-white"
                 onClick={() => setEditing(true)}
               >
-                Cập nhật
+                {t("tissueCultureBatch.updateBatch")}
               </button>
             )}
             <button
               className="px-4 py-2 rounded bg-red-600 text-white"
               onClick={handleDelete}
             >
-              Xóa
+              {t("tissueCultureBatch.deleteBatch")}
             </button>
           </div>
         </div>
@@ -113,26 +116,30 @@ const AdminTissueCultureBatchDetail = () => {
         {!editing ? (
           <div className="space-y-2">
             <p>
-              <b>Tên:</b> {data.name}
+              <b>{t("common.name")}:</b> {data.name}
             </p>
             <p>
-              <b>Phòng thí nghiệm:</b> {data.labName ?? "-"}
+              <b>{t("tissueCultureBatch.labRoom")}:</b> {data.labName ?? "-"}
             </p>
             <p>
-              <b>Mô tả:</b> {data.description ?? "-"}
+              <b>{t("common.description")}:</b> {data.description ?? "-"}
             </p>
             <p>
-              <b>Đang sử dụng trong:</b> {data.inUse ?? "-"}
+              <b>{t("tissueCultureBatch.usedIn")}:</b> {data.inUse ?? "-"}
             </p>
             <p>
-              <b>Trạng thái:</b>{" "}
-              {data.status ? "Còn hoạt động" : "Ngừng hoạt động"}
+              <b>{t("common.status")}:</b>{" "}
+              {data.status
+                ? t("tissueCultureBatch.operating")
+                : t("tissueCultureBatch.notOperating")}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Tên</label>
+              <label className="block text-sm font-medium mb-1">
+                {t("common.name")}
+              </label>
               <input
                 className="w-full border rounded px-3 py-2"
                 value={name}
@@ -141,14 +148,14 @@ const AdminTissueCultureBatchDetail = () => {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                Phòng thí nghiệm mới
+                {t("tissueCultureBatch.newLabRoom")}
               </label>
               <select
                 className="w-full border rounded px-3 py-2"
                 value={selectedLab}
                 onChange={(e) => setSelectedLab(e.target.value)}
               >
-                <option value="">Giữ nguyên</option>
+                <option value="">{t("tissueCultureBatch.keepCurrent")}</option>
                 {labRooms.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.name}
@@ -157,7 +164,9 @@ const AdminTissueCultureBatchDetail = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Mô tả</label>
+              <label className="block text-sm font-medium mb-1">
+                {t("common.description")}
+              </label>
               <textarea
                 className="w-full border rounded px-3 py-2"
                 rows={4}
@@ -170,14 +179,14 @@ const AdminTissueCultureBatchDetail = () => {
                 className="px-4 py-2 rounded border"
                 onClick={() => setEditing(false)}
               >
-                Hủy
+                {t("common.cancel")}
               </button>
               <button
                 className="px-4 py-2 rounded bg-green-600 text-white"
                 onClick={handleSave}
                 disabled={saving}
               >
-                {saving ? "Đang lưu..." : "Hoàn thành"}
+                {saving ? t("tissueCultureBatch.saving") : t("tissueCultureBatch.complete")}
               </button>
             </div>
           </div>

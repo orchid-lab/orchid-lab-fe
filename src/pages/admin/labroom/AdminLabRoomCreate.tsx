@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 const AdminLabRoomCreate: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -20,7 +22,7 @@ const AdminLabRoomCreate: React.FC = () => {
     try {
       setSubmitting(true);
       await axiosInstance.post("/api/labroom", { name, description });
-      enqueueSnackbar("Tạo phòng thực nghiệm thành công", {
+      enqueueSnackbar(t("labRoom.createSuccess"), {
         variant: "success",
       });
       navigate("/admin/labroom");
@@ -36,7 +38,7 @@ const AdminLabRoomCreate: React.FC = () => {
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Tạo phòng thực nghiệm thất bại!";
+        t("labRoom.createFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -52,24 +54,24 @@ const AdminLabRoomCreate: React.FC = () => {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-8">
       <div className="max-w-xl mx-auto bg-white rounded shadow p-8">
         <h1 className="text-2xl font-bold text-green-800 mb-6">
-          Tạo phòng thực nghiệm
+          {t("labRoom.createLabRoomTitle")}
         </h1>
         <form onSubmit={handleCreate} className="space-y-5">
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên</label>
+            <label className="font-medium mb-1.5">{t("common.name")}</label>
             <input
               type="text"
               className="border rounded px-3 py-2"
-              placeholder="Nhập tên phòng thực nghiệm"
+              placeholder={t("labRoom.enterLabRoomName")}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Mô tả</label>
+            <label className="font-medium mb-1.5">{t("common.description")}</label>
             <textarea
               className="border rounded px-3 py-2 min-h-[100px]"
-              placeholder="Nhập mô tả"
+              placeholder={t("labRoom.enterDescription")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -80,7 +82,7 @@ const AdminLabRoomCreate: React.FC = () => {
               className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
               onClick={() => navigate(-1)}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -91,7 +93,7 @@ const AdminLabRoomCreate: React.FC = () => {
                   : "bg-green-700 hover:bg-green-800"
               }`}
             >
-              {submitting ? "Đang tạo..." : "Tạo mới"}
+              {submitting ? t("labRoom.creating") : t("labRoom.createNew")}
             </button>
           </div>
         </form>

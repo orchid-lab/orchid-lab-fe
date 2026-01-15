@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 interface LabRoom {
   id: string;
@@ -13,6 +14,7 @@ interface LabRoomResponse {
 }
 
 const AdminTissueCultureBatchCreate = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -55,11 +57,13 @@ const AdminTissueCultureBatchCreate = () => {
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-4">Tạo lô cấy mô</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          {t("tissueCultureBatch.createBatch")}
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Tên lô cấy mô
+              {t("tissueCultureBatch.batchName")}
             </label>
             <input
               value={name}
@@ -70,7 +74,7 @@ const AdminTissueCultureBatchCreate = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Phòng thí nghiệm
+              {t("tissueCultureBatch.labRoom")}
             </label>
             <select
               value={selectedLab}
@@ -78,7 +82,7 @@ const AdminTissueCultureBatchCreate = () => {
               className="w-full border rounded px-3 py-2"
               required
             >
-              <option value="">Chọn phòng thí nghiệm</option>
+              <option value="">{t("tissueCultureBatch.selectLabRoom")}</option>
               {labRooms.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -87,7 +91,9 @@ const AdminTissueCultureBatchCreate = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Mô tả</label>
+            <label className="block text-sm font-medium mb-1">
+              {t("common.description")}
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -101,14 +107,14 @@ const AdminTissueCultureBatchCreate = () => {
               className="px-4 py-2 rounded border"
               onClick={() => navigate("/admin/tissue-culture-batches")}
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 rounded bg-green-600 text-white"
             >
-              {loading ? "Đang tạo..." : "Tạo"}
+              {loading ? t("tissueCultureBatch.creating") : t("tissueCultureBatch.create")}
             </button>
           </div>
         </form>

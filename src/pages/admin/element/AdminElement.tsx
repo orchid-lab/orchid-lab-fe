@@ -3,15 +3,15 @@ import type { Element, ElementApiResponse } from "../../../types/Element";
 import { useSnackbar } from "notistack";
 import axiosInstance from "../../../api/axiosInstance";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 5;
 
 export default function AdminElement() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  //   const [filterType, setFilterType] = useState("");
   const [data, setData] = useState<Element[]>([]);
   const [total, setTotal] = useState(0);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -62,11 +62,11 @@ export default function AdminElement() {
     el.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Phân trang trên dữ liệu đã lọc
   const pagedData = filteredData.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE
   );
+
   const handleAddElement = async () => {
     setAddLoading(true);
     try {
@@ -75,8 +75,8 @@ export default function AdminElement() {
         newElement
       );
       if (res.status < 200 || res.status >= 300)
-        throw new Error("Thêm thất bại");
-      enqueueSnackbar("Thêm nguyên vật liệu thành công!", {
+        throw new Error(t("element.elementAddFailed"));
+      enqueueSnackbar(t("element.elementAdded"), {
         variant: "success",
         preventDuplicate: true,
         autoHideDuration: 2000,
@@ -87,16 +87,13 @@ export default function AdminElement() {
     } catch (error) {
       console.error(error);
       const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Thêm nguyên vật liệu thất bại!";
+        t("element.elementAddFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -122,8 +119,8 @@ export default function AdminElement() {
         payload
       );
       if (res.status < 200 || res.status >= 300)
-        throw new Error("Sửa thất bại");
-      enqueueSnackbar("Sửa nguyên vật liệu thành công!", {
+        throw new Error(t("element.elementUpdateFailed"));
+      enqueueSnackbar(t("element.elementUpdated"), {
         variant: "success",
         preventDuplicate: true,
         autoHideDuration: 2000,
@@ -133,16 +130,13 @@ export default function AdminElement() {
     } catch (error) {
       console.error(error);
       const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Sửa nguyên vật liệu thất bại!";
+        t("element.elementUpdateFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -165,8 +159,8 @@ export default function AdminElement() {
         }
       );
       if (res.status < 200 || res.status >= 300)
-        throw new Error("Xóa thất bại");
-      enqueueSnackbar("Xóa nguyên vật liệu thành công!", {
+        throw new Error(t("element.elementDeleteFailed"));
+      enqueueSnackbar(t("element.elementDeleted"), {
         variant: "success",
         preventDuplicate: true,
         autoHideDuration: 2000,
@@ -176,16 +170,13 @@ export default function AdminElement() {
     } catch (error) {
       console.error(error);
       const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
         apiError.response?.data ??
         apiError.message ??
-        "Xóa nguyên vật liệu thất bại!";
+        t("element.elementDeleteFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -201,14 +192,14 @@ export default function AdminElement() {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-green-800">
-          Quản lý nguyên vật liệu
+          {t("element.elementManagement")}
         </h1>
         <button
           type="button"
           className="bg-green-800 text-white px-5 py-2 rounded-full font-semibold hover:bg-green-950 transition cursor-pointer"
           onClick={() => setShowAdd(true)}
         >
-          Thêm mới
+          {t("common.addNew")}
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -217,7 +208,7 @@ export default function AdminElement() {
             <input
               type="text"
               className="w-full border border-gray-300 rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-green-800"
-              placeholder="Tìm kiếm theo tên..."
+              placeholder={t("element.searchByName")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -240,17 +231,16 @@ export default function AdminElement() {
         <table className="w-full text-left table-fixed">
           <thead>
             <tr className="bg-green-50 text-green-800 font-semibold">
-              <th className="py-3 px-4 w-1/4">Tên</th>
-              <th className="px-4 w-3/8">Mô tả</th>
-              <th className="px-4 w-1/8">Trạng thái</th>
-              <th className="px-4 w-1/8">Dùng trong (Giai đoạn)</th>
+              <th className="py-3 px-4 w-1/4">{t("common.name")}</th>
+              <th className="px-4 w-3/8">{t("common.description")}</th>
+              <th className="px-4 w-1/8">{t("common.status")}</th>
+              <th className="px-4 w-1/8">{t("element.usedInStage")}</th>
               <th className="px-4 w-1/8"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                // eslint-disable-next-line react-x/no-array-index-key
                 <tr key={`skeleton-${idx}`} className="border-t animate-pulse">
                   <td colSpan={5} className="py-4">
                     <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
@@ -260,7 +250,7 @@ export default function AdminElement() {
             ) : filteredData.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-400">
-                  Không có dữ liệu
+                  {t("common.noData")}
                 </td>
               </tr>
             ) : (
@@ -269,14 +259,16 @@ export default function AdminElement() {
                   <td className="py-3 px-4">{m.name}</td>
                   <td className="px-4">{m.description}</td>
                   <td className="px-4">
-                    {m.status == true ? "Active" : "Inactive"}
+                    {m.status == true
+                      ? t("status.active")
+                      : t("status.inactive")}
                   </td>
                   <td className="px-13">{m.currentInStage}</td>
                   <td className="px-4">
                     <button
                       type="button"
                       className="action-btn btn-edit bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-2 py-1 rounded transition"
-                      title="Chỉnh sửa"
+                      title={t("common.edit")}
                       onClick={() => setEditElement(m)}
                     >
                       <FaEdit />
@@ -284,7 +276,7 @@ export default function AdminElement() {
                     <button
                       type="button"
                       className="action-btn btn-delete bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-2 py-1 rounded transition"
-                      title="Xóa"
+                      title={t("common.delete")}
                       onClick={() => setDeleteId(m.id)}
                     >
                       <FaTrash />
@@ -300,7 +292,7 @@ export default function AdminElement() {
       <div className="flex gap-4 mt-6 mb-2">
         <div className="bg-green-100 rounded p-4 w-1/4">
           <div className="font-semibold text-green-800">
-            Tổng số nguyên vật liệu
+            {t("element.totalElements")}
           </div>
           <div className="text-2xl font-bold text-green-800">{total}</div>
         </div>
@@ -309,11 +301,10 @@ export default function AdminElement() {
       {totalPages > 1 && (
         <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
           <span>
-            Hiển thị {pagedData.length} nguyên vật liệu trên tổng số {total}{" "}
-            nguyên vật liệu{" "}
+            {t("common.showing")} {pagedData.length} {t("element.elementsOutOf")}{" "}
+            {total} {t("element.elements")}
           </span>
           <div className="flex gap-2">
-            {/* Previous button */}
             {page > 1 && (
               <button
                 type="button"
@@ -324,7 +315,6 @@ export default function AdminElement() {
               </button>
             )}
 
-            {/* Page numbers (tối đa 5 số, giống task) */}
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
@@ -352,7 +342,6 @@ export default function AdminElement() {
               );
             })}
 
-            {/* Next button */}
             {page < totalPages && (
               <button
                 type="button"
@@ -370,11 +359,11 @@ export default function AdminElement() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
             <h2 className="font-bold mb-4 text-green-800">
-              Thêm nguyên vật liệu
+              {t("element.addElement")}
             </h2>
             <input
               className="border rounded px-2 py-1 w-full mb-3 break-words"
-              placeholder="Tên"
+              placeholder={t("common.name")}
               value={newElement.name}
               onChange={(e) =>
                 setNewElement({ ...newElement, name: e.target.value })
@@ -382,20 +371,19 @@ export default function AdminElement() {
             />
             <input
               className="border rounded px-2 py-1 w-full mb-3 break-words"
-              placeholder="Mô tả"
+              placeholder={t("common.description")}
               value={newElement.description}
               onChange={(e) =>
                 setNewElement({ ...newElement, description: e.target.value })
               }
             />
-            {/* Hiển thị lỗi chỉ khi bấm Lưu mà thiếu thông tin */}
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
                 className="px-4 py-2 rounded bg-gray-200"
                 onClick={() => setShowAdd(false)}
               >
-                Hủy
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -406,7 +394,7 @@ export default function AdminElement() {
                     !newElement.name.trim() ||
                     !newElement.description.trim()
                   ) {
-                    enqueueSnackbar("Vui lòng nhập đầy đủ tên và mô tả!", {
+                    enqueueSnackbar(t("element.pleaseEnterNameAndDescription"), {
                       variant: "error",
                       preventDuplicate: true,
                       autoHideDuration: 2000,
@@ -416,7 +404,7 @@ export default function AdminElement() {
                   void handleAddElement();
                 }}
               >
-                {addLoading ? "Đang lưu..." : "Lưu"}
+                {addLoading ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>
@@ -428,11 +416,11 @@ export default function AdminElement() {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
             <h2 className="font-bold mb-4 text-green-800">
-              Sửa nguyên vật liệu
+              {t("element.editElement")}
             </h2>
             <input
               className="border rounded px-2 py-1 w-full mb-3 break-words"
-              placeholder="Tên"
+              placeholder={t("common.name")}
               value={editElement.name}
               onChange={(e) =>
                 setEditElement({ ...editElement, name: e.target.value })
@@ -440,12 +428,12 @@ export default function AdminElement() {
             />
             {!editElement.name.trim() && (
               <div className="text-red-500 text-xs mb-2">
-                Vui lòng nhập tên!
+                {t("element.pleaseEnterName")}
               </div>
             )}
             <input
               className="border rounded px-2 py-1 w-full mb-3 break-words"
-              placeholder="Mô tả"
+              placeholder={t("common.description")}
               value={editElement.description}
               onChange={(e) =>
                 setEditElement({ ...editElement, description: e.target.value })
@@ -453,7 +441,7 @@ export default function AdminElement() {
             />
             {!editElement?.description?.trim() && (
               <div className="text-red-500 text-xs mb-2">
-                Vui lòng nhập mô tả!
+                {t("element.pleaseEnterDescription")}
               </div>
             )}
             <div className="flex gap-2 justify-end">
@@ -462,7 +450,7 @@ export default function AdminElement() {
                 className="px-4 py-2 rounded bg-gray-200"
                 onClick={() => setEditElement(null)}
               >
-                Hủy
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -472,7 +460,7 @@ export default function AdminElement() {
                   void handleEditElement();
                 }}
               >
-                {editLoading ? "Đang lưu..." : "Lưu"}
+                {editLoading ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>
@@ -482,15 +470,17 @@ export default function AdminElement() {
       {deleteId && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
-            <h2 className="font-bold mb-4 text-red-700">Xác nhận xóa</h2>
-            <p>Bạn có chắc muốn xóa nguyên vật liệu này?</p>
+            <h2 className="font-bold mb-4 text-red-700">
+              {t("common.confirm")}
+            </h2>
+            <p>{t("element.deleteElementConfirm")}</p>
             <div className="flex gap-2 justify-end mt-4">
               <button
                 type="button"
                 className="px-4 py-2 rounded bg-gray-200"
                 onClick={() => setDeleteId(null)}
               >
-                Hủy
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -500,7 +490,7 @@ export default function AdminElement() {
                   void handleDeleteElement();
                 }}
               >
-                {deleteLoading ? "Đang xóa..." : "Xóa"}
+                {deleteLoading ? t("common.deleting") : t("common.delete")}
               </button>
             </div>
           </div>

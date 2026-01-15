@@ -2,10 +2,12 @@ import { useState, useMemo, useEffect } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { Report, ReportApiResponse } from "../../../types/Report";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 5;
 
 export default function ReportList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
@@ -24,9 +26,7 @@ export default function ReportList() {
           pageNumber: String(page),
           pageSize: String(PAGE_SIZE),
         });
-        const res = await axiosInstance.get(
-          `https://net-api.orchid-lab.systems/api/report?${params}`
-        );
+        const res = await axiosInstance.get(`/api/report?${params}`);
         const json = res.data as ReportApiResponse;
         setData(json.value.data || []);
         setTotal(json.value.totalCount || 0);
@@ -42,7 +42,6 @@ export default function ReportList() {
     void fetchData();
   }, [page]);
 
-  // Lọc dữ liệu
   const filteredReports = useMemo(() => {
     return data.filter((r) => {
       const matchSearch =
@@ -56,16 +55,16 @@ export default function ReportList() {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="w-full">
         <h1 className="text-2xl font-bold mb-4 text-green-800">
-          Quản lý báo cáo
+          {t("report.reportManagement")}
         </h1>
-        {/* Thanh tìm kiếm */}
+        {/* Search bar */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="flex-1">
             <div className="relative">
               <input
                 type="text"
                 className="w-full border border-gray-300 rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-green-800"
-                placeholder="Tìm kiếm theo tên báo cáo, kỹ thuật viên..."
+                placeholder={t("report.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -84,22 +83,21 @@ export default function ReportList() {
             </div>
           </div>
         </div>
-        {/* Bảng danh sách */}
+        {/* Table */}
         <div className="bg-white rounded shadow p-0 overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-green-50 text-green-800 font-semibold">
-                <th className="py-3 px-4">Tên task</th>
-                <th className="px-4">Mô tả</th>
-                <th className="px-4">Người viết</th>
-                <th className="px-4">Trạng thái</th>
-                <th className="px-4">Hành động</th>
+                <th className="py-3 px-4">{t("report.taskName")}</th>
+                <th className="px-4">{t("common.description")}</th>
+                <th className="px-4">{t("report.writer")}</th>
+                <th className="px-4">{t("common.status")}</th>
+                <th className="px-4">{t("common.action")}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                  // eslint-disable-next-line react-x/no-array-index-key
                   <tr key={idx} className="border-t animate-pulse">
                     <td className="py-3 px-4">
                       <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -118,7 +116,7 @@ export default function ReportList() {
               ) : filteredReports.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-6 text-gray-500">
-                    Không có báo cáo phù hợp.
+                    {t("report.noReports")}
                   </td>
                 </tr>
               ) : (
@@ -135,7 +133,7 @@ export default function ReportList() {
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {r.status === "Seen" ? "Đã xem" : "Chưa xem"}
+                        {r.status === "Seen" ? t("report.seen") : t("report.notSeen")}
                       </span>
                     </td>
                     <td className="px-4">
@@ -146,7 +144,7 @@ export default function ReportList() {
                           void navigate(`/reports/${r.id}?page=${page}`)
                         }
                       >
-                        Chi tiết
+                        {t("common.details")}
                       </button>
                     </td>
                   </tr>
@@ -158,7 +156,9 @@ export default function ReportList() {
         {/* Summary cards */}
         <div className="flex gap-4 mt-6 mb-2">
           <div className="bg-green-100 rounded p-4 w-1/4">
-            <div className="font-semibold text-green-800">Tổng số báo cáo</div>
+            <div className="font-semibold text-green-800">
+              {t("report.totalReports")}
+            </div>
             <div className="text-2xl font-bold text-green-800">{total}</div>
           </div>
         </div>
@@ -166,11 +166,10 @@ export default function ReportList() {
         {totalPages > 1 && (
           <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
             <span>
-              Hiển thị {filteredReports.length} báo cáo trên tổng số {total} báo
-              cáo
+              {t("common.showing")} {filteredReports.length}{" "}
+              {t("report.reportsOutOf")} {total} {t("report.reports")}
             </span>
             <div className="flex gap-2">
-              {/* Previous button */}
               {page > 1 && (
                 <button
                   type="button"
@@ -207,7 +206,6 @@ export default function ReportList() {
                 );
               })}
 
-              {/* Next button */}
               {page < totalPages && (
                 <button
                   type="button"

@@ -2,16 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Method, MethodApiResponse } from "../../../types/Method";
 import axiosInstance from "../../../api/axiosInstance";
-
-const methodTypes = [
-  { label: "Tất cả", value: "" },
-  { label: "Nhân giống vô tính", value: "Clonal" },
-  { label: "Nhân giống hữu tính", value: "Sexual" },
-];
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 5;
 
 export default function AdminMethod() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
@@ -23,12 +19,18 @@ export default function AdminMethod() {
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
 
+  const methodTypes = [
+    { label: t("method.allMethods"), value: "" },
+    { label: t("method.clonal"), value: "Clonal" },
+    { label: t("method.sexual"), value: "Sexual" },
+  ];
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const res = await axiosInstance.get(
-          `https://net-api.orchid-lab.systems/api/method?pageNumber=${page}&pageSize=${PAGE_SIZE}`
+          `/api/method?pageNumber=${page}&pageSize=${PAGE_SIZE}`
         );
         const json = res.data as MethodApiResponse;
         setData(json.value.data || []);
@@ -61,7 +63,7 @@ export default function AdminMethod() {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-green-800">
-          Quản lý phương pháp cấy lan
+          {t("method.methodManagement")}
         </h1>
       </div>
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -70,7 +72,7 @@ export default function AdminMethod() {
             <input
               type="text"
               className="w-full border border-gray-300 rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-green-800"
-              placeholder="Tìm kiếm theo tên hoặc loại phương pháp..."
+              placeholder={t("method.searchPlaceholder")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -107,16 +109,15 @@ export default function AdminMethod() {
         <table className="w-full text-left table-fixed">
           <thead>
             <tr className="bg-green-50 text-green-800 font-semibold">
-              <th className="py-3 px-4">Tên phương pháp</th>
-              <th className="px-4">Loại</th>
-              <th className="px-4">Trạng thái</th>
-              <th className="px-4">Hành động</th>
+              <th className="py-3 px-4">{t("method.methodName")}</th>
+              <th className="px-4">{t("method.methodType")}</th>
+              <th className="px-4">{t("common.status")}</th>
+              <th className="px-4">{t("common.action")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                // eslint-disable-next-line react-x/no-array-index-key
                 <tr key={`skeleton-${idx}`} className="border-t animate-pulse">
                   <td colSpan={5} className="py-4">
                     <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
@@ -126,7 +127,7 @@ export default function AdminMethod() {
             ) : filtered.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-400">
-                  Không có dữ liệu
+                  {t("common.noData")}
                 </td>
               </tr>
             ) : (
@@ -135,13 +136,13 @@ export default function AdminMethod() {
                   <td className="py-3 px-4">{m.name}</td>
                   <td className="px-4">
                     {m.type === "Clonal"
-                      ? "Vô tính"
+                      ? t("method.asexual")
                       : m.type === "Sexual"
-                      ? "Hữu tính"
+                      ? t("method.sexual")
                       : m.type}
                   </td>
                   <td className="px-4">
-                    {m.status == true ? "Active" : "Inactive"}
+                    {m.status == true ? t("status.active") : t("status.inactive")}
                   </td>
                   <td className="px-4">
                     <button
@@ -149,9 +150,9 @@ export default function AdminMethod() {
                       className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
                       onClick={() =>
                         void navigate(`/admin/method/${m.id}?page=${page}`)
-                      } // Nếu có trang chi tiết
+                      }
                     >
-                      Chi tiết
+                      {t("common.details")}
                     </button>
                   </td>
                 </tr>
@@ -164,19 +165,19 @@ export default function AdminMethod() {
       <div className="flex gap-4 mt-6 mb-2">
         <div className="bg-green-100 rounded p-4 w-1/4">
           <div className="font-semibold text-green-800">
-            Tổng số phương pháp
+            {t("method.totalMethods")}
           </div>
           <div className="text-2xl font-bold text-green-800">{total}</div>
         </div>
         <div className="bg-green-100 rounded p-4 w-1/4">
           <div className="font-semibold text-green-800">
-            Phương pháp vô tính
+            {t("method.clonalMethods")}
           </div>
           <div className="text-2xl font-bold text-green-800">{clonalCount}</div>
         </div>
         <div className="bg-green-100 rounded p-4 w-1/4">
           <div className="font-semibold text-green-800">
-            Phương pháp hữu tính
+            {t("method.sexualMethods")}
           </div>
           <div className="text-2xl font-bold text-green-800">{sexualCount}</div>
         </div>
@@ -185,11 +186,10 @@ export default function AdminMethod() {
       {totalPages > 1 && (
         <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
           <span>
-            Hiển thị {filtered.length} phương pháp trên tổng số {total} phương
-            pháp
+            {t("common.showing")} {filtered.length} {t("method.methodsOutOf")}{" "}
+            {total} {t("method.methods")}
           </span>
           <div className="flex gap-2">
-            {/* Previous button */}
             {page > 1 && (
               <button
                 type="button"
@@ -200,7 +200,6 @@ export default function AdminMethod() {
               </button>
             )}
 
-            {/* Page numbers (tối đa 5 số, giống task) */}
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
               if (totalPages <= 5) {
@@ -228,7 +227,6 @@ export default function AdminMethod() {
               );
             })}
 
-            {/* Next button */}
             {page < totalPages && (
               <button
                 type="button"

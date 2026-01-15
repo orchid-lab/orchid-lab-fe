@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import axiosInstance from "../../../api/axiosInstance";
 import type { Report } from "../../../types/Report";
+import { useTranslation } from "react-i18next";
 
 interface Sample {
   id: string;
@@ -21,6 +22,7 @@ interface AnalyzeResult {
 }
 
 export default function AdminReportsDetails() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,39 +40,39 @@ export default function AdminReportsDetails() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
   const diseaseNameMap: Record<string, string> = {
-    Anthracnose: "Thán thư",
-    "Bacterial Wilt": "Héo vi khuẩn",
-    Blackrot: "Thối đen",
-    Brownspots: "Đốm nâu",
-    "Mold Bacterial": "Mốc vi khuẩn",
-    "Mold Fungus": "Mốc nấm",
-    "Soft Rot": "Thối mềm",
-    "Stem Rot": "Thối thân",
-    "Withered Yellow Root": "Vàng rễ héo",
-    healthy: "Khỏe mạnh",
-    Oxidation: "Oxy hóa",
-    Virus: "Virus",
+    Anthracnose: t("diseases.anthracnose") || "Thán thư",
+    "Bacterial Wilt": t("diseases.bacterialWilt") || "Héo vi khuẩn",
+    Blackrot: t("diseases.blackrot") || "Thối đen",
+    Brownspots: t("diseases.brownspots") || "Đốm nâu",
+    "Mold Bacterial": t("diseases.moldBacterial") || "Mốc vi khuẩn",
+    "Mold Fungus": t("diseases.moldFungus") || "Mốc nấm",
+    "Soft Rot": t("diseases.softRot") || "Thối mềm",
+    "Stem Rot": t("diseases.stemRot") || "Thối thân",
+    "Withered Yellow Root": t("diseases.witheredYellowRoot") || "Vàng rễ héo",
+    healthy: t("diseases.healthy") || "Khỏe mạnh",
+    Oxidation: t("diseases.oxidation") || "Oxy hóa",
+    Virus: t("diseases.virus") || "Virus",
   };
 
   const stageNameMap: Record<string, string> = {
-    coppice: "Giai đoạn chồi",
-    tree: "Giai đoạn cây con",
-    tissue: "Giai đoạn mô",
+    coppice: t("stages.coppice") || "Giai đoạn chồi",
+    tree: t("stages.tree") || "Giai đoạn cây con",
+    tissue: t("stages.tissue") || "Giai đoạn mô",
   };
 
   const predictNameMap: Record<string, string> = {
-    brownspots: "Đốm nâu",
-    anthracnose: "Thán thư",
-    blackrot: "Thối đen",
-    bacterialwilt: "Héo vi khuẩn",
-    moldbacterial: "Mốc vi khuẩn",
-    moldfungus: "Mốc nấm",
-    softrot: "Thối mềm",
-    stemrot: "Thối thân",
-    witheredyellowroot: "Vàng rễ héo",
-    healthy: "Khỏe mạnh",
-    oxidation: "Oxy hóa",
-    virus: "Virus",
+    brownspots: t("diseases.brownspots") || "Đốm nâu",
+    anthracnose: t("diseases.anthracnose") || "Thán thư",
+    blackrot: t("diseases.blackrot") || "Thối đen",
+    bacterialwilt: t("diseases.bacterialWilt") || "Héo vi khuẩn",
+    moldbacterial: t("diseases.moldBacterial") || "Mốc vi khuẩn",
+    moldfungus: t("diseases.moldFungus") || "Mốc nấm",
+    softrot: t("diseases.softRot") || "Thối mềm",
+    stemrot: t("diseases.stemRot") || "Thối thân",
+    witheredyellowroot: t("diseases.witheredYellowRoot") || "Vàng rễ héo",
+    healthy: t("diseases.healthy") || "Khỏe mạnh",
+    oxidation: t("diseases.oxidation") || "Oxy hóa",
+    virus: t("diseases.virus") || "Virus",
   };
 
   function getPredictVietnamese(predict: string) {
@@ -130,19 +132,19 @@ export default function AdminReportsDetails() {
       });
       setAnalyzeResult(res.data as AnalyzeResult);
     } catch {
-      setAnalyzeError("Phân tích thất bại. Vui lòng thử lại.");
+      setAnalyzeError(t("report.analysisFailed"));
     } finally {
       setAnalyzeLoading(false);
     }
   };
 
   const getStatusDisplay = (status?: string) => {
-    if (!status) return "Chưa xác định";
+    if (!status) return t("common.noData");
 
     const statusMap: Record<string, string> = {
-      Process: "Đang xử lý",
-      Suspended: "Tạm dừng",
-      Destroyed: "Đã hủy",
+      Process: t("status.inProgress"),
+      Suspended: t("experimentLog.suspended"),
+      Destroyed: t("experimentLog.destroyed"),
     };
 
     return statusMap[status] || status;
@@ -151,7 +153,7 @@ export default function AdminReportsDetails() {
   if (loading) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
-        <div className="text-lg text-gray-500">Đang tải dữ liệu...</div>
+        <div className="text-lg text-gray-500">{t("common.loadingData")}</div>
       </main>
     );
   }
@@ -170,23 +172,29 @@ export default function AdminReportsDetails() {
             )
           }
         >
-          &larr; Trở về
+          &larr; {t("report.backToList")}
         </button>
         <h1 className="text-3xl font-bold mb-6 text-green-900">
-          Chi tiết báo cáo
+          {t("report.reportDetails")}
         </h1>
         <div className="bg-white rounded-xl shadow p-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Tên task</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("report.taskName")}
+              </div>
               <div className="text-lg">{report?.name}</div>
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Người viết</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("report.writer")}
+              </div>
               <div>{report?.technician}</div>
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Trạng thái</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("report.status")}
+              </div>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                   report?.status === "Seen"
@@ -194,12 +202,12 @@ export default function AdminReportsDetails() {
                     : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                {report?.status === "Seen" ? "Đã xem" : "Chưa xem"}
+                {report?.status === "Seen" ? t("report.seen") : t("report.notSeen")}
               </span>
             </div>
             <div>
               <div className="font-semibold text-gray-700 mb-1">
-                Thông tin thuộc tính
+                {t("report.attributeInfo")}
               </div>
               {report?.reportAttributes.map((attr, idx) => (
                 <div key={idx} className="flex justify-between">
@@ -207,10 +215,10 @@ export default function AdminReportsDetails() {
                     {attr.name}-({attr.measurementUnit}):
                   </span>
                   <span>
-                    Kỳ vọng: {attr.valueFrom} - {attr.valueTo}
+                    {t("report.expected")}: {attr.valueFrom} - {attr.valueTo}
                   </span>
                   <span className="ml-2">
-                    Thực tế:{" "}
+                    {t("report.actual")}:{" "}
                     <span
                       className={
                         attr.value < attr.valueFrom || attr.value > attr.valueTo
@@ -227,7 +235,7 @@ export default function AdminReportsDetails() {
           </div>
           <div className="mb-6">
             <h3 className="font-semibold text-green-800 mb-2">
-              Nội dung báo cáo
+              {t("report.reportContent")}
             </h3>
             <div className="bg-gray-50 p-4 rounded text-gray-800 whitespace-pre-line">
               {report?.description}
@@ -238,7 +246,7 @@ export default function AdminReportsDetails() {
           {report?.reviewReport && (
             <div className="mb-6">
               <h3 className="font-semibold text-green-800 mb-2">
-                Đánh giá báo cáo
+                {t("report.reportReview")}
               </h3>
               <div className="bg-blue-50 p-4 rounded text-gray-800 whitespace-pre-line">
                 {report.reviewReport}
@@ -247,12 +255,11 @@ export default function AdminReportsDetails() {
           )}
 
           {/* Hình ảnh đính kèm nếu có */}
-
           <div className="mb-6">
             <h3 className="font-semibold text-green-800 mb-2">
-              Hình ảnh đính kèm{" "}
+              {t("report.attachedImages")}{" "}
               <span className="text-sm font-normal text-gray-500">
-                (* Chọn ảnh để phân tích)
+                {t("report.selectImageToAnalyze")}
               </span>
             </h3>
             <div className="flex gap-4 flex-wrap">
@@ -280,7 +287,7 @@ export default function AdminReportsDetails() {
                   disabled={!selectedImg || analyzeLoading}
                   onClick={() => void analyzeImageFromUrl(selectedImg)}
                 >
-                  {analyzeLoading ? "Đang phân tích..." : "Phân tích bệnh"}
+                  {analyzeLoading ? t("report.analyzing") : t("report.analyzeDisease")}
                 </button>
               </div>
             )}
@@ -290,18 +297,18 @@ export default function AdminReportsDetails() {
             {analyzeResult && (
               <div className="mt-4 bg-gray-50 p-4 rounded">
                 <div className="font-semibold mb-2 text-green-700">
-                  Kết quả phân tích
+                  {t("report.analysisResult")}
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold">Giai đoạn:</span>{" "}
+                  <span className="font-semibold">{t("report.stage")}:</span>{" "}
                   {stageNameMap[analyzeResult.stage] || analyzeResult.stage}
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold">Dự đoán bệnh:</span>{" "}
+                  <span className="font-semibold">{t("report.predictedDisease")}:</span>{" "}
                   {getPredictVietnamese(analyzeResult.disease.predict)}
                 </div>
                 <div>
-                  <span className="font-semibold">Xác suất các bệnh:</span>
+                  <span className="font-semibold">{t("report.diseaseProbabilities")}:</span>
                   <ul className="mt-2">
                     {Object.entries(analyzeResult.disease.probability)
                       .filter(([, value]) => value > 0.0001)
@@ -322,25 +329,27 @@ export default function AdminReportsDetails() {
         {/* Thông tin mẫu vật */}
         <div className="bg-white rounded-xl shadow p-8">
           <h2 className="text-xl font-bold text-green-900 mb-4">
-            Thông tin mẫu vật
+            {t("report.sampleInfo")}
           </h2>
           {sample ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="font-semibold text-gray-700 mb-1">
-                  Tên mẫu vật
+                  {t("report.sampleName")}
                 </div>
                 <div className="text-lg">{sample.name}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700 mb-1">Ngày tạo</div>
+                <div className="font-semibold text-gray-700 mb-1">
+                  {t("report.createdDate")}
+                </div>
                 <div>
                   {sample.dob ? new Date(sample.dob).toLocaleDateString() : ""}
                 </div>
               </div>
               <div>
                 <div className="font-semibold text-gray-700 mb-1">
-                  Trạng thái
+                  {t("report.status")}
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full font-semibold text-xs ${
@@ -357,17 +366,19 @@ export default function AdminReportsDetails() {
                 </span>
               </div>
               <div className="md:col-span-2">
-                <div className="font-semibold text-gray-700 mb-1">Mô tả</div>
+                <div className="font-semibold text-gray-700 mb-1">
+                  {t("report.description")}
+                </div>
                 <div className="bg-gray-50 p-3 rounded text-gray-800 whitespace-pre-line">
                   {sample.description ?? (
-                    <span className="text-gray-400">Không có mô tả</span>
+                    <span className="text-gray-400">{t("report.noDescription")}</span>
                   )}
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-gray-500">
-              Không tìm thấy thông tin mẫu vật.
+              {t("report.noSampleInfo")}
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import type { Report } from "../../../types/Report";
 import axiosInstance from "../../../api/axiosInstance";
 import { useAuth } from "../../../context/AuthContext";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 
 interface Sample {
   id: string;
@@ -22,6 +23,7 @@ interface AnalyzeResult {
 }
 
 export default function ReportsDetails() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,12 +35,11 @@ export default function ReportsDetails() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(
-    null
-  );
+  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<string>("");
 
+  // Disease names - keep in Vietnamese as they're technical terms
   const diseaseNameMap: Record<string, string> = {
     Anthracnose: "Thán thư",
     "Bacterial Wilt": "Héo vi khuẩn",
@@ -85,9 +86,7 @@ export default function ReportsDetails() {
     const fetchDetail = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.get(
-          `https://net-api.orchid-lab.systems/api/report/${id}?id=${id}`
-        );
+        const res = await axiosInstance.get(`/api/report/${id}?id=${id}`);
         const data = res.data as { value: Report };
         setReport(data.value || null);
 
@@ -133,16 +132,11 @@ export default function ReportsDetails() {
     } catch (error) {
       console.error("Error analyzing image:", error);
       const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ??
-        apiError.message ??
-        "Lỗi khi phân tích hình!";
+        apiError.response?.data ?? apiError.message ?? t("report.analyzeError");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -155,12 +149,12 @@ export default function ReportsDetails() {
   };
 
   const getStatusDisplay = (status?: string) => {
-    if (!status) return "Chưa xác định";
+    if (!status) return t("experimentLog.notAvailable");
 
     const statusMap: Record<string, string> = {
-      Process: "Đang xử lý",
-      Suspended: "Tạm dừng",
-      Destroyed: "Đã hủy",
+      Process: t("experimentLog.processing"),
+      Suspended: t("experimentLog.suspended"),
+      Destroyed: t("experimentLog.destroyed"),
     };
 
     return statusMap[status] || status;
@@ -174,23 +168,16 @@ export default function ReportsDetails() {
         reviewReportText: evaluation,
       });
 
-      setReport((prev) =>
-        prev ? { ...prev, reviewReport: evaluation } : prev
-      );
-      enqueueSnackbar("Đánh giá đã được gửi thành công!", {
-        variant: "success",
-      });
+      setReport((prev) => (prev ? { ...prev, reviewReport: evaluation } : prev));
+      enqueueSnackbar(t("report.evaluationSent"), { variant: "success" });
     } catch (error) {
-      console.error("Lỗi khi gửi đánh giá:", error);
+      console.error("Error sending review:", error);
       const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ?? apiError.message ?? "Đánh giá gửi thất bại!";
+        apiError.response?.data ?? apiError.message ?? t("report.evaluationFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -203,7 +190,7 @@ export default function ReportsDetails() {
   if (loading) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
-        <div className="text-lg text-gray-500">Đang tải dữ liệu...</div>
+        <div className="text-lg text-gray-500">{t("common.loadingData")}</div>
       </main>
     );
   }
@@ -222,23 +209,29 @@ export default function ReportsDetails() {
             )
           }
         >
-          &larr; Trở về
+          &larr; {t("common.back")}
         </button>
         <h1 className="text-3xl font-bold mb-6 text-green-900">
-          Chi tiết báo cáo
+          {t("report.reportDetails")}
         </h1>
         <div className="bg-white rounded-xl shadow p-8 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Tên task</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("report.taskName")}
+              </div>
               <div className="text-lg">{report?.name}</div>
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Người viết</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("report.writer")}
+              </div>
               <div>{report?.technician}</div>
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-1">Trạng thái</div>
+              <div className="font-semibold text-gray-700 mb-1">
+                {t("common.status")}
+              </div>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                   report?.status === "Seen"
@@ -246,13 +239,13 @@ export default function ReportsDetails() {
                     : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                {report?.status === "Seen" ? "Đã xem" : "Chưa xem"}
+                {report?.status === "Seen" ? t("report.seen") : t("report.notSeen")}
               </span>
             </div>
 
             <div>
               <div className="font-semibold text-gray-700 mb-1">
-                Thông tin thuộc tính
+                {t("report.attributeInfo")}
               </div>
               {report?.reportAttributes.map((attr, idx) => (
                 <div key={idx} className="flex justify-between">
@@ -260,10 +253,10 @@ export default function ReportsDetails() {
                     {attr.name}-({attr.measurementUnit}):
                   </span>
                   <span>
-                    Kỳ vọng: {attr.valueFrom} - {attr.valueTo}
+                    {t("report.expected")}: {attr.valueFrom} - {attr.valueTo}
                   </span>
                   <span className="ml-2">
-                    Thực tế:{" "}
+                    {t("report.actual")}:{" "}
                     <span
                       className={
                         attr.value < attr.valueFrom || attr.value > attr.valueTo
@@ -280,18 +273,17 @@ export default function ReportsDetails() {
           </div>
           <div className="mb-6">
             <h3 className="font-semibold text-green-800 mb-2">
-              Nội dung báo cáo
+              {t("report.reportContent")}
             </h3>
             <div className="bg-gray-50 p-4 rounded text-gray-800 whitespace-pre-line">
               {report?.description}
             </div>
           </div>
 
-          {/* Đánh giá báo cáo - hiển thị cho cả roleID 2 và 3 */}
           {report?.reviewReport && (
             <div className="mb-6">
               <h3 className="font-semibold text-green-800 mb-2">
-                Đánh giá báo cáo
+                {t("report.reportEvaluation")}
               </h3>
               <div className="bg-gray-50 p-4 rounded text-gray-800 whitespace-pre-line">
                 {report.reviewReport}
@@ -299,12 +291,11 @@ export default function ReportsDetails() {
             </div>
           )}
 
-          {/* Hình ảnh đính kèm nếu có */}
           <div className="mb-6">
             <h3 className="font-semibold text-green-800 mb-2">
-              Hình ảnh đính kèm{" "}
+              {t("report.attachedImages")}{" "}
               <span className="text-sm font-normal text-gray-500">
-                (* Chọn ảnh để phân tích)
+                {t("report.selectImageNote")}
               </span>
             </h3>
             <div className="flex gap-4 flex-wrap">
@@ -313,13 +304,9 @@ export default function ReportsDetails() {
                   key={idx}
                   src={img}
                   alt={`report-img-${idx}`}
-                  className={`w-32 h-32 object-cover rounded border cursor-pointer transition
-          ${
-            selectedImg === img
-              ? "border-4 border-green-600 scale-105"
-              : "border"
-          }
-        `}
+                  className={`w-32 h-32 object-cover rounded border cursor-pointer transition ${
+                    selectedImg === img ? "border-4 border-green-600 scale-105" : "border"
+                  }`}
                   onClick={() => setSelectedImg(img)}
                 />
               ))}
@@ -332,25 +319,25 @@ export default function ReportsDetails() {
                   disabled={!selectedImg || analyzeLoading}
                   onClick={() => void analyzeImageFromUrl(selectedImg)}
                 >
-                  {analyzeLoading ? "Đang phân tích..." : "Phân tích bệnh"}
+                  {analyzeLoading ? t("report.analyzing") : t("report.analyzeDisease")}
                 </button>
               </div>
             )}
             {analyzeResult && (
               <div className="mt-4 bg-gray-50 p-4 rounded">
                 <div className="font-semibold mb-2 text-green-700">
-                  Kết quả phân tích
+                  {t("report.analysisResult")}
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold">Giai đoạn:</span>{" "}
+                  <span className="font-semibold">{t("experimentLog.stage")}:</span>{" "}
                   {stageNameMap[analyzeResult.stage] || analyzeResult.stage}
                 </div>
                 <div className="mb-2">
-                  <span className="font-semibold">Dự đoán bệnh:</span>{" "}
+                  <span className="font-semibold">{t("report.diseasePrediction")}:</span>{" "}
                   {getPredictVietnamese(analyzeResult.disease.predict)}
                 </div>
                 <div>
-                  <span className="font-semibold">Xác suất các bệnh:</span>
+                  <span className="font-semibold">{t("report.diseaseProbability")}:</span>
                   <ul className="mt-2">
                     {Object.entries(analyzeResult.disease.probability)
                       .filter(([, value]) => value > 0.0001)
@@ -368,28 +355,27 @@ export default function ReportsDetails() {
           </div>
         </div>
 
-        {/* Thông tin mẫu vật */}
         <div className="bg-white rounded-xl shadow p-8">
           <h2 className="text-xl font-bold text-green-900 mb-4">
-            Thông tin mẫu vật
+            {t("report.sampleInfo")}
           </h2>
           {sample ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="font-semibold text-gray-700 mb-1">
-                  Tên mẫu vật
+                  {t("report.sampleName")}
                 </div>
                 <div className="text-lg">{sample.name}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700 mb-1">Ngày tạo</div>
-                <div>
-                  {sample.dob ? new Date(sample.dob).toLocaleDateString() : ""}
+                <div className="font-semibold text-gray-700 mb-1">
+                  {t("common.createdAt")}
                 </div>
+                <div>{sample.dob ? new Date(sample.dob).toLocaleDateString() : ""}</div>
               </div>
               <div>
                 <div className="font-semibold text-gray-700 mb-1">
-                  Trạng thái
+                  {t("common.status")}
                 </div>
                 <span
                   className={`px-2 py-1 rounded-full font-semibold text-xs ${
@@ -406,21 +392,20 @@ export default function ReportsDetails() {
                 </span>
               </div>
               <div className="md:col-span-2">
-                <div className="font-semibold text-gray-700 mb-1">Mô tả</div>
+                <div className="font-semibold text-gray-700 mb-1">
+                  {t("common.description")}
+                </div>
                 <div className="bg-gray-50 p-3 rounded text-gray-800 whitespace-pre-line">
                   {sample.description ?? (
-                    <span className="text-gray-400">Không có mô tả</span>
+                    <span className="text-gray-400">{t("common.noData")}</span>
                   )}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-gray-500">
-              Không tìm thấy thông tin mẫu vật.
-            </div>
+            <div className="text-gray-500">{t("report.noSample")}</div>
           )}
 
-          {/* Nút tạo task mới */}
           {sample && user?.roleId === 2 && (
             <div className="mt-6">
               <button
@@ -430,21 +415,20 @@ export default function ReportsDetails() {
                   void navigate(`/create-task/step-1?sampleId=${sample.id}`);
                 }}
               >
-                Tạo task mới
+                {t("report.createNewTask")}
               </button>
             </div>
           )}
 
-          {/* Form đánh giá báo cáo cho researcher (roleID 2) */}
           {user?.roleId === 2 && (
             <div className="mt-6">
               <h3 className="font-semibold text-green-800 mb-2">
-                Đánh giá báo cáo
+                {t("report.reportEvaluation")}
               </h3>
               <textarea
                 className="w-full border border-gray-300 rounded-md p-2 mb-2"
                 rows={4}
-                placeholder="Nhập đánh giá của bạn..."
+                placeholder={t("report.enterEvaluation")}
                 value={evaluation}
                 onChange={(e) => setEvaluation(e.target.value)}
               />
@@ -455,7 +439,7 @@ export default function ReportsDetails() {
                   void handleSendReview();
                 }}
               >
-                Gửi đánh giá
+                {t("report.sendEvaluation")}
               </button>
             </div>
           )}

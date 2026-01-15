@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import type { Method } from "../../../types/Method";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 export default function AdminMethodDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -25,7 +27,7 @@ export default function AdminMethodDetail() {
         }
         return null;
       } catch (error) {
-        console.error("Lỗi khi tải phương pháp:", error);
+        console.error("Error loading method:", error);
         return null;
       }
     };
@@ -35,8 +37,14 @@ export default function AdminMethodDetail() {
     });
   }, [id]);
 
-  if (loading) return <div>Đang tải dữ liệu...</div>;
-  if (!method) return <div>Không tìm thấy phương pháp.</div>;
+  const getMethodType = (type: string) => {
+    if (type === "Clonal") return t("method.asexual");
+    if (type === "Sexual") return t("method.sexual");
+    return type;
+  };
+
+  if (loading) return <div>{t("common.loadingData")}</div>;
+  if (!method) return <div>{t("common.noData")}</div>;
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100">
@@ -45,7 +53,7 @@ export default function AdminMethodDetail() {
         className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-4 hover:bg-green-800 hover:text-white transition"
         onClick={() => void navigate(`/admin/method?page=${page}`)}
       >
-        ← Trở về
+        ← {t("common.back")}
       </button>
       <div className="max-w-full mx-auto bg-white rounded shadow p-6">
         <h2 className="text-2xl font-bold mb-2 text-green-800">
@@ -53,23 +61,27 @@ export default function AdminMethodDetail() {
         </h2>
         <div className="mb-2">
           <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-            {method.type}
+            {getMethodType(method.type)}
           </span>
         </div>
         <div className="mb-4 text-gray-700">{method.description}</div>
-        <h3 className="text-lg font-semibold mb-2">Quy trình chi tiết:</h3>
+        <h3 className="text-lg font-semibold mb-2">
+          {t("method.detailedProcess")}:
+        </h3>
         <ol className="ml-6 space-y-3">
           {method.stages?.map((stage, idx) => (
-            // eslint-disable-next-line react-x/no-array-index-key
             <li key={stage.name + idx} className="mb-4 list-decimal">
               <div className="font-semibold">{stage.name}</div>
               <div className="text-gray-700">{stage.description}</div>
               <div className="text-gray-700">
-                Ngày xử lý: {stage.dateOfProcessing} ngày
+                {t("method.processingDays")}: {stage.dateOfProcessing}{" "}
+                {t("method.days")}
               </div>
               {stage.elementDTO && stage.elementDTO.length > 0 && (
                 <div className="mt-2">
-                  <span className="font-semibold">Nguyên liệu:</span>
+                  <span className="font-semibold">
+                    {t("method.materials")}:
+                  </span>
                   <ul className="list-disc ml-4">
                     {stage.elementDTO.map((el) => (
                       <li key={el.id} className="text-gray-700">

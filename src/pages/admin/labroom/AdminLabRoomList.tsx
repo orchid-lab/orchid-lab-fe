@@ -4,6 +4,7 @@ import { useSnackbar } from "notistack";
 import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import { useTranslation } from "react-i18next";
 
 Chart.register(ArcElement, Tooltip, Legend);
 
@@ -12,7 +13,7 @@ interface LabRoomItem {
   name: string;
   description: string;
   status: boolean;
-  inUse?: boolean; // trạng thái sử dụng
+  inUse?: boolean;
 }
 
 interface TissueCultureBatch {
@@ -41,6 +42,7 @@ function isApiListResponse<T>(obj: unknown): obj is ApiListResponse<T> {
 }
 
 const AdminLabRoomList: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -54,26 +56,25 @@ const AdminLabRoomList: React.FC = () => {
     if (performance < 30) {
       return (
         <p className="text-red-600 font-semibold">
-          Hiệu suất thấp: nhiều phòng đang bỏ trống, cần tối ưu khai thác.
+          {t("labRoom.lowPerformance")}
         </p>
       );
     } else if (performance < 60) {
       return (
         <p className="text-yellow-600 font-semibold">
-          Hiệu suất trung bình: một nửa số phòng được sử dụng, vẫn còn dư thừa.
+          {t("labRoom.averagePerformance")}
         </p>
       );
     } else if (performance < 85) {
       return (
         <p className="text-blue-600 font-semibold">
-          Hiệu suất tốt: phần lớn phòng được sử dụng hợp lý.
+          {t("labRoom.goodPerformance")}
         </p>
       );
     } else {
       return (
         <p className="text-green-600 font-semibold">
-          Hiệu suất rất cao: hầu hết các phòng đều đang được khai thác, cần chú
-          ý duy trì.
+          {t("labRoom.excellentPerformance")}
         </p>
       );
     }
@@ -107,7 +108,6 @@ const AdminLabRoomList: React.FC = () => {
             : [];
         }
 
-        // xác định trạng thái sử dụng
         let inUse = 0;
         let notInUse = 0;
 
@@ -124,21 +124,21 @@ const AdminLabRoomList: React.FC = () => {
         setNotInUseCount(notInUse);
       } catch (err) {
         console.error("Error fetching dữ liệu:", err);
-        setError("Không thể tải danh sách phòng thí nghiệm");
-        enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
+        setError(t("labRoom.errorLoadingList"));
+        enqueueSnackbar(t("common.errorLoading"), { variant: "error" });
       } finally {
         setLoading(false);
       }
     };
 
     void fetchData();
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   const totalRooms = inUseCount + notInUseCount;
   const performance = totalRooms > 0 ? (inUseCount / totalRooms) * 100 : 0;
 
   const chartData = {
-    labels: ["Đang sử dụng", "Chưa sử dụng"],
+    labels: [t("labRoom.inUse"), t("labRoom.notInUse")],
     datasets: [
       {
         data: [inUseCount, notInUseCount],
@@ -175,14 +175,14 @@ const AdminLabRoomList: React.FC = () => {
       <div className="max-w-6xl mx-auto bg-white rounded shadow p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-green-800">
-            Danh sách phòng thực nghiệm
+            {t("labRoom.labRoomList")}
           </h1>
           <button
             onClick={() => void navigate("/admin/labroom/new")}
             className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800"
             type="button"
           >
-            Tạo phòng thực nghiệm
+            {t("labRoom.createLabRoom")}
           </button>
         </div>
 
@@ -190,12 +190,12 @@ const AdminLabRoomList: React.FC = () => {
         <div className="mb-8 flex justify-center">
           <div className="bg-white rounded-lg shadow p-4 w-[340px]">
             <h3 className="text-center text-green-700 font-semibold mb-2 text-sm">
-              Biểu đồ tình trạng sử dụng phòng thí nghiệm
+              {t("labRoom.usageChart")}
             </h3>
             <Doughnut data={chartData} options={chartOptions} />
             <div className="text-center mt-4">
               <p className="font-medium">
-                Hiệu suất: {performance.toFixed(1)}%
+                {t("labRoom.performance")}: {performance.toFixed(1)}%
               </p>
               {getPerformanceLabel(performance)}
             </div>
@@ -205,7 +205,7 @@ const AdminLabRoomList: React.FC = () => {
         {/* Danh sách */}
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">Đang tải danh sách...</div>
+            <div className="text-gray-500">{t("labRoom.loadingList")}</div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-8">{error}</div>
@@ -213,17 +213,17 @@ const AdminLabRoomList: React.FC = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-green-50 text-green-800 font-semibold">
-                <th className="py-3 px-4 text-left">Tên</th>
-                <th className="px-4 text-left">Mô tả</th>
-                <th className="px-4 text-left">Trạng thái</th>
-                <th className="px-4 text-left">Tình trạng sử dụng</th>
+                <th className="py-3 px-4 text-left">{t("common.name")}</th>
+                <th className="px-4 text-left">{t("common.description")}</th>
+                <th className="px-4 text-left">{t("common.status")}</th>
+                <th className="px-4 text-left">{t("labRoom.usageStatus")}</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-gray-500">
-                    Không có phòng thực nghiệm nào
+                    {t("labRoom.noLabRooms")}
                   </td>
                 </tr>
               ) : (
@@ -235,10 +235,9 @@ const AdminLabRoomList: React.FC = () => {
                     }`}
                     onClick={() => {
                       if (!item.status) {
-                        enqueueSnackbar(
-                          "Phòng thực nghiệm này đã ngừng hoạt động nên không thể xem chi tiết",
-                          { variant: "warning" }
-                        );
+                        enqueueSnackbar(t("labRoom.cannotViewInactive"), {
+                          variant: "warning",
+                        });
                         return;
                       }
                       navigate(`/admin/labroom/${item.id}`);
@@ -249,22 +248,22 @@ const AdminLabRoomList: React.FC = () => {
                     <td className="px-4">
                       {item.status ? (
                         <span className="text-green-600 font-semibold">
-                          Đang hoạt động
+                          {t("labRoom.operatingStatus")}
                         </span>
                       ) : (
                         <span className="text-red-500 font-semibold">
-                          Ngừng hoạt động
+                          {t("labRoom.notOperating")}
                         </span>
                       )}
                     </td>
                     <td className="px-4">
                       {item.inUse ? (
                         <span className="text-green-600 font-semibold">
-                          Đang sử dụng
+                          {t("labRoom.inUse")}
                         </span>
                       ) : (
                         <span className="text-gray-500 font-semibold">
-                          Chưa sử dụng
+                          {t("labRoom.notInUse")}
                         </span>
                       )}
                     </td>

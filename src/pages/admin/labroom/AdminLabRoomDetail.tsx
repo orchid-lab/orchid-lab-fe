@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 interface LabRoomDetailModel {
   id: string;
@@ -19,6 +20,7 @@ function isApiSingleResponse<T>(obj: unknown): obj is ApiSingleResponse<T> {
 }
 
 const AdminLabRoomDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -39,13 +41,13 @@ const AdminLabRoomDetail: React.FC = () => {
         }
       } catch (err) {
         console.error("Fetch phòng thực nghiệm detail error:", err);
-        enqueueSnackbar("Không thể tải chi tiết", { variant: "error" });
+        enqueueSnackbar(t("common.errorLoading"), { variant: "error" });
       } finally {
         setLoading(false);
       }
     };
     void fetchDetail();
-  }, [id, enqueueSnackbar]);
+  }, [id, enqueueSnackbar, t]);
 
   const handleUpdate = async (): Promise<void> => {
     if (!data) return;
@@ -56,7 +58,7 @@ const AdminLabRoomDetail: React.FC = () => {
         name: data.name,
         description: data.description,
       });
-      enqueueSnackbar("Cập nhật thành công", { variant: "success" });
+      enqueueSnackbar(t("labRoom.updateSuccess"), { variant: "success" });
     } catch (error) {
       console.error("Update phòng thực nghiệm error:", error);
       const apiError = error as {
@@ -67,7 +69,7 @@ const AdminLabRoomDetail: React.FC = () => {
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ?? apiError.message ?? "Cập nhật thất bại!";
+        apiError.response?.data ?? apiError.message ?? t("labRoom.updateFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -86,7 +88,7 @@ const AdminLabRoomDetail: React.FC = () => {
       await axiosInstance.delete("/api/labroom", {
         data: { id: data.id },
       });
-      enqueueSnackbar("Xóa thành công", { variant: "success" });
+      enqueueSnackbar(t("labRoom.deleteSuccess"), { variant: "success" });
       navigate("/admin/labroom");
     } catch (error) {
       console.error("Delete phòng thực nghiệm error:", error);
@@ -98,7 +100,7 @@ const AdminLabRoomDetail: React.FC = () => {
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ?? apiError.message ?? "Xóa thất bại!";
+        apiError.response?.data ?? apiError.message ?? t("labRoom.deleteFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -113,7 +115,7 @@ const AdminLabRoomDetail: React.FC = () => {
   if (loading || !data) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">Đang tải dữ liệu...</div>
+        <div className="text-gray-600">{t("labRoom.loadingData")}</div>
       </main>
     );
   }
@@ -122,10 +124,10 @@ const AdminLabRoomDetail: React.FC = () => {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-8">
       <div className="max-w-xl mx-auto bg-white rounded shadow p-8 space-y-5">
         <h1 className="text-2xl font-bold text-green-800">
-          Chi tiết phòng thực nghiệm
+          {t("labRoom.labRoomDetailTitle")}
         </h1>
         <div className="flex flex-col">
-          <label className="font-medium mb-1.5">Tên</label>
+          <label className="font-medium mb-1.5">{t("common.name")}</label>
           <input
             className="border rounded px-3 py-2"
             value={data.name}
@@ -133,7 +135,7 @@ const AdminLabRoomDetail: React.FC = () => {
           />
         </div>
         <div className="flex flex-col">
-          <label className="font-medium mb-1.5">Mô tả</label>
+          <label className="font-medium mb-1.5">{t("common.description")}</label>
           <textarea
             className="border rounded px-3 py-2 min-h-[100px]"
             value={data.description}
@@ -141,7 +143,7 @@ const AdminLabRoomDetail: React.FC = () => {
           />
         </div>
         <div className="flex flex-col">
-          <label className="font-medium mb-1.5">Trạng thái</label>
+          <label className="font-medium mb-1.5">{t("common.status")}</label>
           <span
             className={`inline-flex w-fit items-center px-3 py-1 rounded-full text-sm ${
               data.status
@@ -149,7 +151,7 @@ const AdminLabRoomDetail: React.FC = () => {
                 : "bg-gray-200 text-gray-700"
             }`}
           >
-            {data.status ? "Hoạt động" : "Không hoạt động"}
+            {data.status ? t("status.active") : t("status.inactive")}
           </span>
         </div>
         <div className="flex gap-3 justify-end pt-4 border-t">
@@ -158,7 +160,7 @@ const AdminLabRoomDetail: React.FC = () => {
             onClick={() => navigate(-1)}
             className="px-4 py-2 rounded bg-gray-300 text-gray-800 hover:bg-gray-400"
           >
-            Quay lại
+            {t("common.back")}
           </button>
           <button
             type="button"
@@ -168,7 +170,7 @@ const AdminLabRoomDetail: React.FC = () => {
               saving ? "bg-green-300" : "bg-green-700 hover:bg-green-800"
             }`}
           >
-            {saving ? "Đang lưu..." : "Cập nhật"}
+            {saving ? t("common.saving") : t("common.save")}
           </button>
           <button
             type="button"
@@ -178,7 +180,7 @@ const AdminLabRoomDetail: React.FC = () => {
               deleting ? "bg-red-300" : "bg-red-600 hover:bg-red-700"
             }`}
           >
-            {deleting ? "Đang xóa..." : "Xóa"}
+            {deleting ? t("common.deleting") : t("common.delete")}
           </button>
         </div>
       </div>
