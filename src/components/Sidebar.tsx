@@ -29,15 +29,13 @@ export default function Sidebar() {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Để gửi cookie nếu có
+        credentials: 'include', 
       });
 
       if (response.ok) {
-        // Xóa cache hoặc dữ liệu local
         localStorage.clear();
         sessionStorage.clear();
         
-        // Gọi hàm logout từ AuthContext
         logout();
       } else {
         console.error('Logout failed:', await response.text());

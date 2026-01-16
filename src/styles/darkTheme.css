@@ -433,14 +433,17 @@ body {
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
   border-radius: 0.5rem !important;
+  transition: all 0.2s ease !important;
 }
 
-.dark .hover\:bg-blue-50:hover {
-  background-color: #1e40af !important;
+.dark button:not(.bg-blue-600):not(.bg-red-500):not(.bg-blue-500):hover {
+  background-color: #4b5563 !important;
+  transform: translateY(-1px);
 }
 
-.dark .hover\:border-blue-500:hover {
-  border-color: var(--accent-color) !important;
+.dark button:hover svg {
+  color: var(--accent-color) !important;
+  transition: color 0.2s ease;
 }
 
 /* Modals */
@@ -452,6 +455,20 @@ body {
 /* Gradient Text */
 .dark .bg-gradient-to-r.from-blue-600.to-blue-600 {
   background-image: linear-gradient(to right, #60a5fa, #60a5fa) !important;
+}
+
+/* Summary Cards */
+.dark .bg-green-100 {
+  background-color: rgba(6, 95, 70, 0.4) !important;
+}
+
+.dark .text-green-800 {
+  color: #a7f3d0 !important;
+}
+
+.dark .bg-green-100 .font-semibold.text-green-800,
+.dark .bg-green-100 .font-bold.text-green-800 {
+  color: #d1fae5 !important;
 }
 
 /* ==================== SHARED STYLES ==================== */
