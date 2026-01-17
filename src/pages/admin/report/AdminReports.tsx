@@ -3,6 +3,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import type { ReportApiResponse, Report } from "../../../types/Report";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { getMockReportsPage } from "../../../data/mockReportList";
 
 const PAGE_SIZE = 5;
 
@@ -22,14 +23,18 @@ export default function AdminReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
-          params: {
-            pageNumber: page,
-            pageSize: PAGE_SIZE,
-          },
-        });
+        // const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
+        //   params: {
+        //     pageNumber: page,
+        //     pageSize: PAGE_SIZE,
+        //   },
+        // });
 
-        const json = res.data;
+        // const json = res.data;
+        // setData(json.value.data || []);
+        // setTotal(json.value.totalCount || 0);
+        // setTotalPages(json.value.pageCount || 1);
+        const json = getMockReportsPage(page, PAGE_SIZE);
         setData(json.value.data || []);
         setTotal(json.value.totalCount || 0);
         setTotalPages(json.value.pageCount || 1);
@@ -136,11 +141,12 @@ export default function AdminReport() {
                       <td className="py-3 px-4">{r.name}</td>
                       <td className="px-4">{r.description}</td>
                       <td className="px-4">{r.technician}</td>
+                      <td className="px-4">{r.createdAt}</td>
                       <td className="px-4">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${
                             r.status === "Seen"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-green-100 text-green-700"
                               : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
@@ -170,7 +176,7 @@ export default function AdminReport() {
 
         {/* Summary cards */}
         <div className="flex gap-4 mt-6 mb-2">
-          <div className="bg-green-100 rounded p-4 w-1/4">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded p-4 w-1/4">
             <div className="font-semibold text-green-600">
               {t("report.totalReports")}
             </div>
