@@ -225,7 +225,7 @@ const CreateExperimentStep2 = () => {
               <div className="lg:col-span-2 space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                    Chọn cây giống (mẹ và/hoặc cha)
+                    Chọn cây giống
                   </h3>
                   {loading ? (
                     <div>Đang tải...</div>
@@ -236,7 +236,7 @@ const CreateExperimentStep2 = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Cây mẹ
+                            Cây giống 1
                           </label>
                           <div className="relative">
                             <select
@@ -246,7 +246,7 @@ const CreateExperimentStep2 = () => {
                               }
                               className="w-full px-4 py-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                             >
-                              <option value="">-- Chọn cây mẹ --</option>
+                              <option value="">-- Chọn cây giống 1 --</option>
                               {seedlings.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.localName ??
@@ -262,7 +262,7 @@ const CreateExperimentStep2 = () => {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Cây cha
+                            Cây giống 2
                           </label>
                           <div className="relative">
                             <select
@@ -272,7 +272,7 @@ const CreateExperimentStep2 = () => {
                               }
                               className="w-full px-4 py-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                             >
-                              <option value="">-- Chọn cây cha --</option>
+                              <option value="">-- Chọn cây giống 2 --</option>
                               {seedlings.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.localName ??
@@ -294,7 +294,7 @@ const CreateExperimentStep2 = () => {
                 <div className="mt-6 p-4 border rounded-lg bg-gray-50">
                   {selectedMother ? (
                     <div className="mb-4">
-                      <h4 className="font-semibold mb-2">Cây mẹ</h4>
+                      <h4 className="font-semibold mb-2">Cây giống 1</h4>
                       <div>
                         <strong>Tên địa phương:</strong>{" "}
                         {selectedMother.localName ?? "Chưa có"}
@@ -312,13 +312,13 @@ const CreateExperimentStep2 = () => {
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500">
-                      Chưa chọn cây mẹ.
+                      Chưa chọn cây giống 1.
                     </div>
                   )}
 
                   {selectedFather ? (
                     <div>
-                      <h4 className="font-semibold mb-2">Cây cha</h4>
+                      <h4 className="font-semibold mb-2">Cây giống 2</h4>
                       <div>
                         <strong>Tên địa phương:</strong>{" "}
                         {selectedFather.localName ?? "Chưa có"}
@@ -336,35 +336,20 @@ const CreateExperimentStep2 = () => {
                     </div>
                   ) : (
                     <div className="text-sm text-gray-500">
-                      Chưa chọn cây cha.
+                      Chưa chọn cây giống 2.
                     </div>
                   )}
                 </div>
               </div>
               {/* Sidebar */}
               <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
-                    <Info size={16} />
-                    Tóm tắt lựa chọn
-                  </h3>
-                  <div className="text-sm text-green-700 space-y-2">
-                    <div>
-                      <strong>Lô cấy:</strong> {form.batchName ?? "Chưa chọn"}
-                    </div>
-                    <div>
-                      <strong>Phương pháp:</strong>{" "}
-                      {form.methodName ?? "Chưa chọn"}
-                    </div>
-                  </div>
-                </div>
                 <div className="bg-orange-50 p-4 rounded-lg">
                   <h3 className="font-medium text-orange-800 mb-2">
                     Cây đã chọn
                   </h3>
                   <div className="text-sm text-orange-700 space-y-1">
                     <div>
-                      <strong>Mẹ:</strong>{" "}
+                      <strong>Cây giống 1:</strong>{" "}
                       {selectedMother
                         ? (selectedMother.localName ??
                           selectedMother.scientificName ??
@@ -372,7 +357,7 @@ const CreateExperimentStep2 = () => {
                         : "Chưa chọn"}
                     </div>
                     <div>
-                      <strong>Cha:</strong>{" "}
+                      <strong>Cây giống 2:</strong>{" "}
                       {selectedFather
                         ? (selectedFather.localName ??
                           selectedFather.scientificName ??

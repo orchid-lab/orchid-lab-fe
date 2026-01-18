@@ -304,15 +304,6 @@ const AdminExperimentLogDetail = () => {
             >
               Export PDF
             </button>
-            <button
-              className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
-              style={{ minWidth: 120 }}
-              onClick={() => {
-                /* Create Task logic here */
-              }}
-            >
-              Tạo nhiệm vụ
-            </button>
           </div>
         </div>
 
@@ -339,6 +330,9 @@ const AdminExperimentLogDetail = () => {
               </div>
               <div className="text-base">
                 <b>{t("experimentLog.sampleCountLabel")}:</b> {samples.length}
+              </div>
+              <div className="text-base">
+                <b>Số lượng mẫu mong muốn:</b> 1
               </div>
               <div className="text-base">
                 <b>{t("experimentLog.dateCreated")}:</b>{" "}

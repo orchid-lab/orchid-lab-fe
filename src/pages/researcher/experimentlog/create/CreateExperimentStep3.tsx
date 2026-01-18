@@ -148,7 +148,7 @@ const CreateExperimentStep3 = () => {
     <main className="ml-64 mt-6 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <ExperimentSteps currentStep={3} />
       <div className="max-w-7xl mx-auto px-6">
-        <div className="bg-white rounded-xl shadow-lg">
+        <div className="bg-white rounded-xl shadow-lg animate-fade-in-up">
           <div className="p-8 border-b">
             <h1 className="text-3xl font-bold text-gray-900">
               Tạo Kế Hoạch Lai Tạo Mới
