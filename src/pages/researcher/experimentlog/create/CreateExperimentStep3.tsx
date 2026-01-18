@@ -86,25 +86,78 @@ const CreateExperimentStep3 = () => {
     }
   };
 
+  const handleLocalFinish = () => {
+    // Developer helper: finish flow locally without calling API.
+    resetForm();
+    enqueueSnackbar("Hoàn thành (không gọi API)", { variant: "info" });
+    void navigate("/experiment-log");
+  };
+
   const hybridizationNamesToShow =
     methodType === "Sexual" && hybridizationNames
       ? [...hybridizationNames].reverse()
       : hybridizationNames;
 
+  // Mock plant details to show richer info in the review step when backend data is absent
+  const mockPlantDetails = [
+    {
+      id: "mock-1",
+      localName: "Vanda Blue",
+      scientificName: "Vanda coerulea",
+      description: "Mẫu cây Vanda có hoa xanh, độ thích nghi tốt",
+      doB: "2020-05-12",
+    },
+    {
+      id: "mock-2",
+      localName: "Phalaenopsis White",
+      scientificName: "Phalaenopsis amabilis",
+      description: "Mẫu Phalaenopsis trắng, thường dùng để lai tạo",
+      doB: "2019-11-03",
+    },
+    {
+      id: "mock-3",
+      localName: "Dendrobium Pink",
+      scientificName: "Dendrobium nobile",
+      description: "Dendrobium hồng, cây khỏe và ít sâu bệnh",
+      doB: "2021-02-20",
+    },
+  ];
+
+  const selectedMotherName =
+    hybridizationNamesToShow?.[0] ?? form.motherName ?? "Chưa chọn";
+  const selectedFatherName =
+    hybridizationNamesToShow?.[1] ??
+    (form.hybridization && form.hybridization.length > 0
+      ? form.hybridization[0]
+      : undefined) ??
+    "Chưa chọn";
+
+  const findMockByName = (name?: string) => {
+    if (!name) return undefined;
+    return (
+      mockPlantDetails.find(
+        (p) => p.localName === name || p.scientificName === name,
+      ) ?? mockPlantDetails[0]
+    );
+  };
+
+  const motherDetail = findMockByName(selectedMotherName);
+  const fatherDetail = findMockByName(selectedFatherName);
+
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+    <main className="ml-64 mt-6 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <ExperimentSteps currentStep={3} />
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b">
-            <h1 className="text-2xl font-bold text-gray-900">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-white rounded-xl shadow-lg">
+          <div className="p-8 border-b">
+            <h1 className="text-3xl font-bold text-gray-900">
               Tạo Kế Hoạch Lai Tạo Mới
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-2">
               Bước 3: Xem lại thông tin và hoàn thành
             </p>
           </div>
-          <div className="p-6 space-y-6">
+          <div className="p-8 space-y-6">
             {/* Review Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
@@ -117,10 +170,13 @@ const CreateExperimentStep3 = () => {
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-800 mb-1">
-                    Số lượng mẫu
+                    Thời gian
                   </h3>
                   <p className="text-gray-600">
-                    {numberOfSample ?? "Chưa nhập"}
+                    Bắt đầu: {form.startDate ?? "Chưa chọn"}
+                  </p>
+                  <p className="text-gray-600">
+                    Kết thúc: {form.endDate ?? "Chưa chọn"}
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -151,31 +207,45 @@ const CreateExperimentStep3 = () => {
               </div>
               {/* Right Column */}
               <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-green-800 mb-1">
+                {/* Selected plants - show detailed mock info when available */}
+                <div className="bg-white p-4 rounded-lg border">
+                  <h3 className="font-semibold text-gray-800 mb-3">
                     Cây giống đã chọn
                   </h3>
-                  <div className="text-sm text-green-700 space-y-1">
-                    {methodType === "Clonal" &&
-                      (hybridizationNames && hybridizationNames.length > 0 ? (
-                        <div>• {hybridizationNames[0]}</div>
-                      ) : (
-                        "Không có cây mẹ nào được chọn."
-                      ))}
-                    {methodType === "Sexual" && (
-                      <>
-                        <div>
-                          <strong>Mẹ:</strong>{" "}
-                          {hybridizationNamesToShow?.[0] ?? "Chưa chọn"}
-                        </div>
-                        <div>
-                          <strong>Cha:</strong>{" "}
-                          {hybridizationNamesToShow?.[1] ?? "Chưa chọn"}
-                        </div>
-                      </>
-                    )}
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="p-3 border rounded-lg bg-gray-50">
+                      <div className="font-medium text-sm">
+                        Mẹ: {selectedMotherName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {motherDetail?.scientificName ?? "-"}
+                      </div>
+                      <div className="text-sm text-gray-700 mt-2">
+                        {motherDetail?.description ?? "Không có mô tả."}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Ngày sinh: {motherDetail?.doB ?? "-"}
+                      </div>
+                    </div>
+
+                    <div className="p-3 border rounded-lg bg-gray-50">
+                      <div className="font-medium text-sm">
+                        Cha: {selectedFatherName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {fatherDetail?.scientificName ?? "-"}
+                      </div>
+                      <div className="text-sm text-gray-700 mt-2">
+                        {fatherDetail?.description ?? "Không có mô tả."}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Ngày sinh: {fatherDetail?.doB ?? "-"}
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Removed quick summary and mock chemicals/tools to tighten layout */}
               </div>
             </div>
 
@@ -216,27 +286,37 @@ const CreateExperimentStep3 = () => {
             >
               <ArrowLeft className="w-4 h-4" /> Quay lại
             </Link>
-            <button
-              onClick={() => void handleSubmit()}
-              disabled={isSubmitting}
-              className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                isSubmitting
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Hoàn thành & Tạo mới
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => void handleSubmit()}
+                disabled={isSubmitting}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                  isSubmitting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-green-600 text-white hover:bg-green-700"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Hoàn thành & Tạo mới
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleLocalFinish}
+                type="button"
+                className="px-4 py-2 rounded-lg font-medium border border-gray-300 bg-white hover:bg-gray-50"
+              >
+                Hoàn thành (không gọi API)
+              </button>
+            </div>
           </div>
         </div>
       </div>

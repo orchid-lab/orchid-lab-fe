@@ -22,7 +22,7 @@ interface Technician {
 
 function hasValueWithData<T>(
   obj: unknown,
-  itemGuard: (item: unknown) => item is T
+  itemGuard: (item: unknown) => item is T,
 ): obj is { value: { data: T[] } } {
   return (
     typeof obj === "object" &&
@@ -75,17 +75,21 @@ function isMethod(item: unknown): item is {
 }
 
 const CreateExperimentStep1 = () => {
+  // Developer offline mode: set to true to skip external API calls and use mock data
+  const DEV_OFFLINE = true;
   const navigate = useNavigate();
   const { form, setForm } = useExperimentLogForm();
 
   // Local state initialized from context
   const [selectedBatch, setSelectedBatch] = useState(
-    form.tissueCultureBatchID ?? ""
+    form.tissueCultureBatchID ?? "",
   );
   const [selectedMethod, setSelectedMethod] = useState(form.methodID ?? "");
   const [name, setName] = useState(form.name ?? "");
+  const [startDate, setStartDate] = useState(form.startDate ?? "");
+  const [endDate, setEndDate] = useState(form.endDate ?? "");
   const [numberOfSample, setNumberOfSample] = useState(
-    form.numberOfSample ?? 1
+    form.numberOfSample ?? 1,
   );
 
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -117,15 +121,21 @@ const CreateExperimentStep1 = () => {
     typeof form.technicianID === "string"
       ? form.technicianID
       : Array.isArray(form.technicianID) && form.technicianID.length > 0
-      ? form.technicianID[0]
-      : ""
+        ? form.technicianID[0]
+        : "",
   );
 
   // Fetch experiment logs for validation
   useEffect(() => {
+    if (DEV_OFFLINE) {
+      // In offline dev mode we don't need experiment log validations
+      setExperimentLogs([]);
+      setLoadingEL(false);
+      return;
+    }
     setLoadingEL(true);
     fetch(
-      "https://net-api.orchid-lab.systems/api/experimentlog?pageNumber=1&pageSize=1000"
+      "https://net-api.orchid-lab.systems/api/experimentlog?pageNumber=1&pageSize=1000",
     )
       .then(async (res) => {
         if (!res.ok) throw new Error("Lỗi khi lấy danh sách experiment logs");
@@ -143,7 +153,7 @@ const CreateExperimentStep1 = () => {
           }>(
             data,
             (
-              item
+              item,
             ): item is {
               id: string;
               tissueCultureBatchID: string;
@@ -159,7 +169,7 @@ const CreateExperimentStep1 = () => {
                   .tissueCultureBatchID === "string" &&
                 "status" in item
               );
-            }
+            },
           )
         ) {
           arr = data.value.data;
@@ -174,10 +184,29 @@ const CreateExperimentStep1 = () => {
 
   // Fetch batches from API
   useEffect(() => {
+    if (DEV_OFFLINE) {
+      setBatchError(null);
+      setBatches([
+        {
+          id: "mock-b1",
+          name: "Lô mẫu A",
+          labName: "Lab A",
+          description: "Lô mẫu dùng để dev",
+        },
+        {
+          id: "mock-b2",
+          name: "Lô mẫu B",
+          labName: "Lab B",
+          description: "Lô mẫu B",
+        },
+      ]);
+      setLoadingBatch(false);
+      return;
+    }
     setLoadingBatch(true);
     setBatchError(null);
     fetch(
-      "https://net-api.orchid-lab.systems/api/tissue-culture-batch?pageNumber=1&pageSize=10"
+      "https://net-api.orchid-lab.systems/api/tissue-culture-batch?pageNumber=1&pageSize=10",
     )
       .then(async (res) => {
         if (!res.ok) throw new Error("Lỗi khi lấy danh sách batch");
@@ -197,8 +226,25 @@ const CreateExperimentStep1 = () => {
 
   // Fetch methods from API
   useEffect(() => {
+    if (DEV_OFFLINE) {
+      setMethods([
+        {
+          id: "m1",
+          name: "Clonal",
+          description: "Clonal method",
+          type: "Clonal",
+        },
+        {
+          id: "m2",
+          name: "Sexual",
+          description: "Sexual method",
+          type: "Sexual",
+        },
+      ] as any);
+      return;
+    }
     fetch(
-      "https://net-api.orchid-lab.systems/api/method?pageNumber=1&pageSize=10"
+      "https://net-api.orchid-lab.systems/api/method?pageNumber=1&pageSize=10",
     )
       .then(async (res) => {
         if (!res.ok) throw new Error("Lỗi khi lấy danh sách phương pháp");
@@ -207,7 +253,7 @@ const CreateExperimentStep1 = () => {
         if (
           hasValueWithData<{ id: string; name: string; description: string }>(
             data,
-            isMethod
+            isMethod,
           )
         ) {
           arr = data.value.data;
@@ -219,9 +265,26 @@ const CreateExperimentStep1 = () => {
 
   // Fetch technicians from API
   useEffect(() => {
+    if (DEV_OFFLINE) {
+      setTechnicians([
+        {
+          id: "tech-1",
+          name: "Nguyen Van A",
+          email: "a@example.com",
+          roleID: "3",
+        },
+        {
+          id: "tech-2",
+          name: "Tran Thi B",
+          email: "b@example.com",
+          roleID: "3",
+        },
+      ]);
+      return;
+    }
     axios
       .get(
-        "https://net-api.orchid-lab.systems/api/user?pageNumber=1&pageSize=100"
+        "https://net-api.orchid-lab.systems/api/user?pageNumber=1&pageSize=100",
       )
       .then((res) => {
         const raw = res.data as { data?: Technician[] };
@@ -243,6 +306,8 @@ const CreateExperimentStep1 = () => {
     setForm((prev) => ({
       ...prev,
       name,
+      startDate,
+      endDate,
       numberOfSample,
       tissueCultureBatchID: selectedBatch,
       batchName: batchObj?.name ?? "",
@@ -259,6 +324,8 @@ const CreateExperimentStep1 = () => {
     setForm,
     methods,
     name,
+    startDate,
+    endDate,
     numberOfSample,
     selectedTechnician,
     technicians,
@@ -266,10 +333,10 @@ const CreateExperimentStep1 = () => {
 
   // Function to check if a batch is available for use
   const isBatchAvailable = (
-    batchId: string
+    batchId: string,
   ): { available: boolean; reason?: string } => {
     const relatedELs = experimentLogs.filter(
-      (el) => el.tissueCultureBatchID === batchId
+      (el) => el.tissueCultureBatchID === batchId,
     );
 
     if (relatedELs.length === 0) {
@@ -293,11 +360,14 @@ const CreateExperimentStep1 = () => {
 
     // If there are other statuses, check what they are
     const otherStatuses = relatedELs.filter((el) => String(el.status) !== "4");
-    const statusCounts = otherStatuses.reduce((acc, el) => {
-      const status = String(el.status);
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const statusCounts = otherStatuses.reduce(
+      (acc, el) => {
+        const status = String(el.status);
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     const statusText = Object.entries(statusCounts)
       .map(([status, count]) => {
@@ -321,34 +391,30 @@ const CreateExperimentStep1 = () => {
   };
 
   const handleNext = () => {
-    if (selectedBatch && selectedMethod) {
-      const batchValidation = isBatchAvailable(selectedBatch);
-      if (!batchValidation.available) {
-        setBatchError(batchValidation.reason ?? "Lô cấy mô không khả dụng");
-        return;
-      }
-      void navigate("/experiment-log/create/step-2");
-    }
+    // Developer bypass: allow progressing between steps even if
+    // API-backed selects are not loaded. Restore original validation
+    // when API is available again.
+    void navigate("/experiment-log/create/step-2");
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+    <main className="ml-64 mt-6 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <ExperimentSteps currentStep={1} />
-      <div className="px-6 py-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h1 className="text-2xl font-bold text-gray-900">
+      <div className="px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg animate-fade-in-up">
+            <div className="p-8 border-b">
+              <h1 className="text-3xl font-bold text-gray-900">
                 Tạo Kế Hoạch Lai Tạo Mới
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-2">
                 Bước 1: Chọn Lô Cấy Mô và Phương Pháp
               </p>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form chính */}
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                   {/* Tên EL */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -364,23 +430,30 @@ const CreateExperimentStep1 = () => {
                       required
                     />
                   </div>
-                  {/* Số lượng sample */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số lượng mẫu <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={15}
-                      value={numberOfSample}
-                      onChange={(e) =>
-                        setNumberOfSample(Number(e.target.value))
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                      placeholder="Nhập số lượng mẫu (1-15)"
-                      required
-                    />
+                  {/* Ngày bắt đầu / kết thúc (dev) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày bắt đầu
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày kết thúc
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                      />
+                    </div>
                   </div>
                   {/* Lô Cấy Mô */}
                   <div>
@@ -480,7 +553,7 @@ const CreateExperimentStep1 = () => {
                           <p>
                             {
                               methods.find(
-                                (m) => String(m.id) === selectedMethod
+                                (m) => String(m.id) === selectedMethod,
                               )?.description
                             }
                           </p>
@@ -500,12 +573,12 @@ const CreateExperimentStep1 = () => {
                                     step: number;
                                     status: boolean;
                                   },
-                                  index: number
+                                  index: number,
                                 ) => (
                                   <li key={stage.id}>
                                     Giai đoạn {index + 1}: {stage.name}
                                   </li>
-                                )
+                                ),
                               ) ?? <li>Không có thông tin giai đoạn</li>}
                           </ul>
                         </div>
@@ -532,49 +605,6 @@ const CreateExperimentStep1 = () => {
                     </select>
                   </div>
                 </div>
-                {/* Sidebar thông tin */}
-                <div className="space-y-4">
-                  {/* Hướng dẫn */}
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h3 className="font-medium text-green-800 mb-2">
-                      Hướng Dẫn Bước 1
-                    </h3>
-                    <ul className="text-sm text-green-700 space-y-1">
-                      <li>• Nhập tên cho nhật ký thí nghiệm</li>
-                      <li>• Chọn số lượng mẫu từ 1 đến 15</li>
-                      <li>• Chọn lô thí nghiệm có trạng thái phù hợp</li>
-                      <li>• Chọn phương pháp phù hợp với loại thí nghiệm</li>
-                      <li>• Bước 2: Chọn giống cây cho nhật ký thí nghiệm</li>
-                      <li>• Bước 3: Xem lại & tạo nhật ký</li>
-                    </ul>
-                  </div>
-                  {/* Batch Info */}
-                  {selectedBatch &&
-                    batches.find((b) => b.id === selectedBatch) && (
-                      <div className="bg-orange-50 p-4 rounded-lg">
-                        <h3 className="font-medium text-orange-800 mb-2">
-                          Thông tin lô nuôi cấy
-                        </h3>
-                        <div className="text-sm text-orange-700 space-y-1">
-                          <div>
-                            <strong>Tên:</strong>{" "}
-                            {batches.find((b) => b.id === selectedBatch)
-                              ?.name ?? "---"}
-                          </div>
-                          <div>
-                            <strong>Phòng thí nghiệm:</strong>{" "}
-                            {batches.find((b) => b.id === selectedBatch)
-                              ?.labName ?? "---"}
-                          </div>
-                          <div>
-                            <strong>Mô tả:</strong>{" "}
-                            {batches.find((b) => b.id === selectedBatch)
-                              ?.description ?? "---"}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                </div>
               </div>
             </div>
             {/* Footer buttons */}
@@ -588,22 +618,8 @@ const CreateExperimentStep1 = () => {
               <div className="flex gap-4">
                 <button
                   onClick={handleNext}
-                  disabled={
-                    !selectedBatch ||
-                    !selectedMethod ||
-                    (selectedBatch
-                      ? !isBatchAvailable(selectedBatch).available
-                      : false)
-                  }
-                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                    !selectedBatch ||
-                    !selectedMethod ||
-                    (selectedBatch
-                      ? !isBatchAvailable(selectedBatch).available
-                      : false)
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }`}
+                  // Bypass disabled state so developer can navigate for UI review
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-green-600 text-white hover:bg-green-700`}
                 >
                   Tiếp tục <ArrowRight className="w-4 h-4" />
                 </button>
