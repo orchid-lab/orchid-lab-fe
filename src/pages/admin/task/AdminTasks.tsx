@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../../api/axiosInstance";
+// import axiosInstance from "../../../api/axiosInstance"; // Tạm thời comment API
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -40,30 +40,120 @@ type StatusType =
   | "DoneInLate"
   | "Cancel";
 
-interface ApiTaskResponse {
-  value?: {
-    data?: Task[];
-    totalCount?: number;
-  };
-}
-
-function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object"
-  );
-}
+// --- DỮ LIỆU MOCK DATA (Được thêm mới) ---
+const MOCK_TASKS: Task[] = [
+  {
+    id: "TSK-001",
+    name: "Vệ sinh tủ cấy vi sinh (BSC) lô A",
+    researcher: "Nguyễn Văn A",
+    experimentLogName: "Nhật ký vệ sinh hàng ngày",
+    end_date: "2024-03-20T17:00:00",
+    create_at: "2024-03-18T08:00:00",
+    status: "DoneInTime",
+  },
+  {
+    id: "TSK-002",
+    name: "Pha chế 50 lít môi trường MS",
+    researcher: "Trần Thị B",
+    experimentLogName: "Pha chế môi trường nuôi cấy",
+    end_date: "2024-03-21T10:00:00",
+    create_at: "2024-03-19T09:30:00",
+    status: "InProcess",
+  },
+  {
+    id: "TSK-003",
+    name: "Kiểm tra nấm mốc lô Lan Hồ Điệp",
+    researcher: "Lê Văn C",
+    experimentLogName: "Kiểm soát chất lượng",
+    end_date: "2024-03-19T16:00:00",
+    create_at: "2024-03-15T14:00:00",
+    status: "DoneInLate",
+  },
+  {
+    id: "TSK-004",
+    name: "Cấy truyền mẫu Lan Vũ Nữ (Giai đoạn 2)",
+    researcher: "Nguyễn Văn A",
+    experimentLogName: "Subculture Batch #45",
+    end_date: "2024-03-25T17:00:00",
+    create_at: "2024-03-20T08:00:00",
+    status: "Assigned",
+  },
+  {
+    id: "TSK-005",
+    name: "Thay đèn LED phòng nuôi cấy số 3",
+    researcher: "Phạm Kỹ Thuật",
+    end_date: "2024-03-22T12:00:00",
+    create_at: "2024-03-20T10:00:00",
+    status: "Taken",
+  },
+  {
+    id: "TSK-006",
+    name: "Tổng hợp báo cáo số liệu tăng trưởng",
+    researcher: "Trần Thị B",
+    end_date: "2024-03-18T17:00:00",
+    create_at: "2024-03-18T08:00:00",
+    status: "Cancel",
+  },
+  {
+    id: "TSK-007",
+    name: "Đưa cây ra vườn ươm (Acclimatization)",
+    researcher: "Lê Văn C",
+    experimentLogName: "Xuất vườn lô #12",
+    end_date: "2024-03-20T15:00:00",
+    create_at: "2024-03-19T07:00:00",
+    status: "DoneInTime",
+  },
+  {
+    id: "TSK-008",
+    name: "Khử trùng dụng cụ thí nghiệm",
+    researcher: "Nguyễn Văn A",
+    end_date: "2024-03-21T09:00:00",
+    create_at: "2024-03-20T16:00:00",
+    status: "Assigned",
+  },
+  {
+    id: "TSK-009",
+    name: "Kiểm kê số lượng hóa chất tồn kho",
+    researcher: "Trần Thị B",
+    end_date: "2024-03-23T17:00:00",
+    create_at: "2024-03-21T08:00:00",
+    status: "InProcess",
+  },
+  {
+    id: "TSK-010",
+    name: "Lấy mẫu lá phân tích DNA",
+    researcher: "Lê Văn C",
+    experimentLogName: "Nghiên cứu gen đột biến",
+    end_date: "2024-03-15T17:00:00",
+    create_at: "2024-03-10T08:00:00",
+    status: "DoneInLate",
+  },
+  {
+    id: "TSK-011",
+    name: "Đo độ pH dung dịch dinh dưỡng",
+    researcher: "Nguyễn Văn A",
+    end_date: "2024-03-20T11:00:00",
+    create_at: "2024-03-20T08:30:00",
+    status: "DoneInTime",
+  },
+  {
+    id: "TSK-012",
+    name: "Vệ sinh sàn phòng Lab",
+    researcher: "Phạm Kỹ Thuật",
+    end_date: "2024-03-24T17:00:00",
+    create_at: "2024-03-22T08:00:00",
+    status: "Assigned",
+  }
+];
 
 function getStatusLabel(status: StatusType, t: (key: string) => string): string {
   const labels: Record<StatusType, string> = {
-    Assigned: t('status.taskAssigned'),
-    Taken: t('status.taskTaken'),
-    InProcess: t('status.taskInProcess'),
-    DoneInTime: t('status.taskDoneInTime'),
-    DoneInLate: t('status.taskDoneInLate'),
-    Cancel: t('status.taskCancelled'),
+    Assigned: t('status.taskAssigned') || "Đã giao",
+    Taken: t('status.taskTaken') || "Đã nhận",
+    InProcess: t('status.taskInProcess') || "Đang thực hiện",
+    DoneInTime: t('status.taskDoneInTime') || "Hoàn thành đúng hạn",
+    DoneInLate: t('status.taskDoneInLate') || "Hoàn thành trễ",
+    Cancel: t('status.taskCancelled') || "Đã hủy",
   };
   return labels[status] || status;
 }
@@ -98,9 +188,9 @@ export default function AdminTasks() {
   const [totalCount, setTotalCount] = useState(0);
 
   const [statusFilter, setStatusFilter] = useState<StatusType | string>(
-    t('common.all')
+    t('common.all') || "Tất cả"
   );
-  const [researcherFilter, setResearcherFilter] = useState<string>(t('common.all'));
+  const [researcherFilter, setResearcherFilter] = useState<string>(t('common.all') || "Tất cả");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
@@ -116,52 +206,63 @@ export default function AdminTasks() {
   const [timeMode, setTimeMode] = useState<"day" | "week" | "month">("day");
 
   const [filterMode, setFilterMode] = useState<"day" | "week" | "month">("day");
-  const [filterDate, setFilterDate] = useState<string>("");
+  // Set mặc định ngày hôm nay để biểu đồ hiển thị ngay
+  const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const tasksPerPage = 20;
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
-        const response = await axiosInstance.get(
-          `/api/tasks?pageNo=1&pageSize=1000`
-        );
-        if (isApiTaskResponse(response.data)) {
-          const all = Array.isArray(response.data.value?.data)
-            ? response.data.value.data
-            : [];
-          setAllTasks(all);
-          const counts: Record<StatusType, number> = {
+        // --- GIẢ LẬP GỌI API ---
+        // Thay vì gọi axios, ta dùng dữ liệu giả MOCK_TASKS
+        // const response = await axiosInstance.get(`/api/tasks?pageNo=1&pageSize=1000`);
+        
+        // Giả lập độ trễ mạng 500ms cho giống thật
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const all = MOCK_TASKS; // Sử dụng Mock Data
+        
+        setAllTasks(all);
+        
+        // Tính toán thống kê
+        const counts: Record<StatusType, number> = {
             Assigned: 0,
             Taken: 0,
             InProcess: 0,
             DoneInTime: 0,
             DoneInLate: 0,
             Cancel: 0,
-          };
-          const researcherSet = new Set<string>();
-          all.forEach((task) => {
-            counts[task.status] = (counts[task.status] || 0) + 1;
+        };
+        const researcherSet = new Set<string>();
+        all.forEach((task) => {
+            if (counts[task.status] !== undefined) {
+                counts[task.status] += 1;
+            }
             researcherSet.add(task.researcher);
-          });
-          setStatusCounts(counts);
-          setAllResearchers(Array.from(researcherSet));
-        }
+        });
+        setStatusCounts(counts);
+        setAllResearchers(Array.from(researcherSet));
+        
       } catch (err) {
         console.error("Error loading data:", err);
+        setError("Có lỗi khi tải dữ liệu");
+      } finally {
+        setLoading(false);
       }
     };
     void loadData();
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     let filteredData = [...allTasks];
-    if (statusFilter !== "Tất cả") {
+    const allLabel = t('common.all') || "Tất cả"; // Fallback nếu i18n chưa load
+
+    if (statusFilter !== allLabel && statusFilter !== "Tất cả") {
       filteredData = filteredData.filter((t) => t.status === statusFilter);
     }
-    if (researcherFilter !== "Tất cả") {
+    if (researcherFilter !== allLabel && researcherFilter !== "Tất cả") {
       filteredData = filteredData.filter(
         (t) => t.researcher === researcherFilter
       );
@@ -177,8 +278,7 @@ export default function AdminTasks() {
     const startIndex = (currentPage - 1) * tasksPerPage;
     const endIndex = startIndex + tasksPerPage;
     setTasks(filteredData.slice(startIndex, endIndex));
-    setLoading(false);
-  }, [statusFilter, researcherFilter, searchTerm, currentPage, allTasks]);
+  }, [statusFilter, researcherFilter, searchTerm, currentPage, allTasks, t]);
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
@@ -218,12 +318,12 @@ export default function AdminTasks() {
     labels: chartStats.map((item) => item.label),
     datasets: [
       {
-        label: t('task.totalTasksCreated'),
+        label: t('task.totalTasksCreated') || "Tổng nhiệm vụ",
         data: chartStats.map((item) => item.total),
         backgroundColor: "#3b82f6",
       },
       {
-        label: t('task.tasksCompletedOnTime'),
+        label: t('task.tasksCompletedOnTime') || "Hoàn thành đúng hạn",
         data: chartStats.map((item) => item.completedOnTime),
         backgroundColor: "#22c55e",
       },
@@ -308,83 +408,30 @@ export default function AdminTasks() {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-8">
       <style>{`
         @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
         }
-
         @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
         }
-
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.05);
-          }
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out forwards;
-        }
-
-        .animate-scale-in {
-          animation: scaleIn 0.5s ease-out forwards;
-        }
-
-        .animate-slide-in-left {
-          animation: slideInLeft 0.5s ease-out forwards;
-        }
-
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+        .animate-slide-in-left { animation: slideInLeft 0.5s ease-out forwards; }
         .stagger-1 { animation-delay: 0.1s; opacity: 0; }
         .stagger-2 { animation-delay: 0.2s; opacity: 0; }
         .stagger-3 { animation-delay: 0.3s; opacity: 0; }
         .stagger-4 { animation-delay: 0.4s; opacity: 0; }
         .stagger-5 { animation-delay: 0.5s; opacity: 0; }
         .stagger-6 { animation-delay: 0.6s; opacity: 0; }
-
-        .hover-lift {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hover-lift:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.15);
-        }
-
-        .row-hover {
-          transition: all 0.2s ease;
-        }
-
-        .row-hover:hover {
-          transform: scale(1.01);
-          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
-        }
+        .hover-lift { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.15); }
+        .row-hover { transition: all 0.2s ease; }
+        .row-hover:hover { transform: scale(1.01); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2); }
       `}</style>
 
       <div className="space-y-6">
@@ -392,7 +439,7 @@ export default function AdminTasks() {
         <div className="animate-fade-in-up">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              {t('task.taskStatisticsTitle')}
+              {t('task.taskStatisticsTitle') || "Thống kê công việc"}
             </h1>
             <select
               value={timeMode}
@@ -401,9 +448,9 @@ export default function AdminTasks() {
               }
               className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="day">{t('common.byDay')}</option>
-              <option value="week">{t('common.byWeek')}</option>
-              <option value="month">{t('common.byMonth')}</option>
+              <option value="day">{t('common.byDay') || "Theo ngày"}</option>
+              <option value="week">{t('common.byWeek') || "Theo tuần"}</option>
+              <option value="month">{t('common.byMonth') || "Theo tháng"}</option>
             </select>
           </div>
 
@@ -416,7 +463,7 @@ export default function AdminTasks() {
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4 animate-fade-in-up stagger-1 hover-lift">
           <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">
-              {t('task.specificTaskStatistics')}
+              {t('task.specificTaskStatistics') || "Thống kê chi tiết"}
             </h1>
             <select
               value={filterMode}
@@ -425,9 +472,9 @@ export default function AdminTasks() {
               }
               className="border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="day">{t('common.byDay')}</option>
-              <option value="week">{t('common.byWeek')}</option>
-              <option value="month">{t('common.byMonth')}</option>
+              <option value="day">{t('common.byDay') || "Theo ngày"}</option>
+              <option value="week">{t('common.byWeek') || "Theo tuần"}</option>
+              <option value="month">{t('common.byMonth') || "Theo tháng"}</option>
             </select>
             <input
               type="date"
@@ -472,7 +519,7 @@ export default function AdminTasks() {
                 }
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value={t('common.all')}>{t('common.all')}</option>
+                <option value={t('common.all') || "Tất cả"}>{t('common.all') || "Tất cả"}</option>
                 {Object.keys(STATUS_COLORS).map((key) => (
                   <option key={key} value={key}>
                     {getStatusLabel(key as StatusType, t)}
@@ -482,14 +529,14 @@ export default function AdminTasks() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-semibold">
-                {t('task.taskCreator')}:
+                {t('task.taskCreator') || "Người tạo"}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value={t('common.all')}>{t('common.all')}</option>
+                <option value={t('common.all') || "Tất cả"}>{t('common.all') || "Tất cả"}</option>
                 {allResearchers.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -500,7 +547,7 @@ export default function AdminTasks() {
             <div className="flex-1 min-w-[200px]">
               <input
                 type="text"
-                placeholder={`🔍 ${t('task.searchTasks')}`}
+                placeholder={`🔍 ${t('task.searchTasks') || "Tìm kiếm"}`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-300 rounded-full px-6 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -513,7 +560,7 @@ export default function AdminTasks() {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600 font-medium">{t('common.loadingData')}</p>
+            <p className="mt-4 text-gray-600 font-medium">{t('common.loadingData') || "Đang tải dữ liệu..."}</p>
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -526,19 +573,19 @@ export default function AdminTasks() {
                 <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                   <tr>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      {t('task.taskName')}
+                      {t('task.taskName') || "Tên nhiệm vụ"}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      {t('task.taskCreator')}
+                      {t('task.taskCreator') || "Người tạo"}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      {t('task.experimentLog')}
+                      {t('task.experimentLog') || "Nhật ký thí nghiệm"}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      {t('task.deadline')}
+                      {t('task.deadline') || "Hạn chót"}
                     </th>
                     <th className="text-left p-4 font-semibold text-gray-900">
-                      {t('common.status')}
+                      {t('common.status') || "Trạng thái"}
                     </th>
                   </tr>
                 </thead>
@@ -595,9 +642,10 @@ export default function AdminTasks() {
             {totalPages > 1 && (
               <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
                 <span className="font-medium">
-                  {t('common.showing')} {tasks.length} {t('task.tasks')} {t('common.on')} {t('common.total')} {totalCount}{" "}
-                  {t('task.tasks')}
+                  {t('common.showing') || "Hiển thị"} {tasks.length} {t('task.tasks') || "nhiệm vụ"} {t('common.on') || "trên"} {t('common.total') || "tổng"} {totalCount}{" "}
+                  {t('task.tasks') || "nhiệm vụ"}
                 </span>
+                {/* Pagination Controls */}
                 <div className="flex gap-2">
                   {currentPage > 1 && (
                     <button
