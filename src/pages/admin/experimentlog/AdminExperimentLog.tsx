@@ -206,7 +206,7 @@ const AdminExperimentLog = () => {
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get("/api/method?pageNumber=1&pageSize=100");
+        const res = await axiosInstance.get("/api/methods?PageNumber=1&PageSize=100");
         const raw = res.data as { value?: { data?: { id: string; name: string }[] } };
         const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
         setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
@@ -219,7 +219,7 @@ const AdminExperimentLog = () => {
 
   const fetchStatsOnly = useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/api/experimentlog?pageNumber=1&pageSize=1000");
+      const res = await axiosInstance.get("/api/experiment-logs?pageNo=1&pageSize=1000");
       const data = res.data;
 
       let allLogs: ExperimentLogEntry[] = [];
@@ -276,14 +276,14 @@ const AdminExperimentLog = () => {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      params.append("pageNumber", String(currentPage));
+      params.append("pageNo", String(currentPage));
       params.append("pageSize", String(logsPerPage));
       if (methodFilter) {
-        params.append("filter", methodFilter);
+        params.append("methodNameSearchTerm", methodFilter);
       }
 
       try {
-        const res = await axiosInstance.get(`/api/experimentlog?${params.toString()}`);
+        const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
         const data = res.data;
         let arr: ExperimentLogEntry[] = [];
         let total = 0;

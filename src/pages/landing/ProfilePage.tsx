@@ -30,9 +30,7 @@ export default function ProfilePage() {
       }
 
       try {
-        console.log('Fetching user data for ID:', authUser.id);
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
-        console.log('User data from API:', response.data);
         setUser(response.data);
         setEditUser({
           id: response.data.id ?? "",
@@ -41,7 +39,6 @@ export default function ProfilePage() {
           phoneNumber: response.data.phoneNumber ?? "",
         });
       } catch (error) {
-        console.error('Error fetching user data:', error);
         enqueueSnackbar(t('profile.cannotLoadUserInfo'), {
           variant: "error",
           autoHideDuration: 3000,
@@ -76,21 +73,28 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     try {
-      const infoChanged =
-        editUser.name !== user?.name ||
-        editUser.email !== user?.email ||
-        editUser.phoneNumber !== user?.phoneNumber;
-
-      if (infoChanged) {
-        await axiosInstance.put("/api/user", editUser);
-      }
+      let newAvatarUrl = user?.avatarUrl;
 
       if (avatarFile) {
         const formData = new FormData();
-        formData.append("userId", editUser.id);
         formData.append("image", avatarFile);
-        await axiosInstance.put("/api/user/images", formData, {
+        const imageResponse = await axiosInstance.post("/api/images", formData, {
           headers: { "Content-Type": "multipart/form-data" },
+        });
+        
+        newAvatarUrl = imageResponse.data;
+      }
+
+      const infoChanged =
+        editUser.name !== user?.name ||
+        editUser.email !== user?.email ||
+        editUser.phoneNumber !== user?.phoneNumber ||
+        newAvatarUrl !== user?.avatarUrl;
+
+      if (infoChanged) {
+        await axiosInstance.put("/api/user", {
+          ...editUser,
+          avatarUrl: newAvatarUrl,
         });
       }
 
@@ -108,7 +112,6 @@ export default function ProfilePage() {
         autoHideDuration: 2000,
       });
     } catch (error) {
-      console.error(error);
       const apiError = error as {
         response?: {
           data?: string;

@@ -21,7 +21,7 @@ export default function AdminSeedlings() {
       setLoading(true);
       try {
         const allRes = await axiosInstance.get(
-          "/api/seedling?pageNumber=1&pageSize=1000"
+          "/api/seedlings?pageNumber=1&pageSize=1000"
         );
         const allJson = allRes.data as SeedlingApiResponse;
         setAllSeedlings((allJson.value.data || []).reverse());
