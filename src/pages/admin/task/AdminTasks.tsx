@@ -124,7 +124,7 @@ export default function AdminTasks() {
     const loadData = async () => {
       try {
         const response = await axiosInstance.get(
-          `/api/tasks?pageNo=1&pageSize=1000`
+          `/api/tasks?PageNumber=1&pageSize=1000`
         );
         if (isApiTaskResponse(response.data)) {
           const all = Array.isArray(response.data.value?.data)

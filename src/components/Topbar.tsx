@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FaBell, FaEnvelope } from "react-icons/fa";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
+import NotificationModal from "./NotificationModal";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,7 @@ export default function Topbar() {
   const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigate = useNavigate();
 
   // Fetch user data from API
@@ -75,7 +77,10 @@ export default function Topbar() {
       {/* Right side - User section */}
       <div className="flex items-center gap-4">
         {/* Notification bell */}
-        <button className="relative p-2 rounded-lg hover:bg-blue-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
+        <button 
+          onClick={() => setIsNotificationOpen(true)}
+          className="relative p-2 rounded-lg hover:bg-blue-50/40 dark:hover:bg-gray-700 transition-all duration-300 group"
+        >
           <FaBell className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-300 group-hover:rotate-12 transform" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
         </button>
@@ -125,6 +130,12 @@ export default function Topbar() {
           </div>
         </div>
       </div>
+
+      {/* Notification Modal */}
+      <NotificationModal 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+      />
     </header>
   );
 }

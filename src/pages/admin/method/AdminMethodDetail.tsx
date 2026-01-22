@@ -20,7 +20,7 @@ export default function AdminMethodDetail() {
     ): Promise<Method | null> => {
       try {
         const response = await axiosInstance.get<{ value?: Method }>(
-          `/api/method/${methodId}`
+          `/api/methods/${methodId}`
         );
         if (response.data.value) {
           return response.data.value;

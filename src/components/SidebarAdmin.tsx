@@ -63,7 +63,6 @@ export default function SidebarDemo() {
     { path: "/admin/user", icon: FaUser, labelKey: "user.userManagement" },
     { path: "/admin/tasks", icon: FaTasks, labelKey: "navigation.task" },
     { path: "/admin/experiment-log", icon: FaClipboardList, labelKey: "navigation.experimentLog" },
-    { path: "/admin/labroom", icon: GiMicroscope, labelKey: "navigation.labRoom" },
     { path: "/admin/tissue-culture-batches", icon: FaVials, labelKey: "navigation.tissueCultureBatch" },
     { path: "/admin/report", icon: FaChartBar, labelKey: "navigation.report" },
     { path: "/admin/method", icon: PiBlueprintFill, labelKey: "navigation.method" },

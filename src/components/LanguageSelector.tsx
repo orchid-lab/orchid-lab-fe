@@ -64,7 +64,7 @@ export default function LanguageSelector() {
               onClick={() => changeLanguage(lang.code)}
               className={`flex items-center w-full text-left px-3 py-2 rounded-lg transition-all duration-200 ${
                 i18n.language === lang.code
-                  ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                  ? 'bg-blue-900 dark:bg-blue-700 text-white-700 dark:text-green-100'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
