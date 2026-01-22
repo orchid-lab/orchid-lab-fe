@@ -464,5 +464,17 @@
     "pleaseEnterDescription": "Vui lòng nhập mô tả!",
     "elementsOutOf": "nguyên vật liệu trên tổng số",
     "elements": "nguyên vật liệu"
+  },
+  "notification": {
+    "title": "Thông báo",
+    "unread": "chưa đọc",
+    "empty": "Không có thông báo",
+    "markAsRead": "Đánh dấu đã đọc",
+    "markAllAsRead": "Đánh dấu tất cả đã đọc",
+    "markedAsRead": "Đánh dấu đã đọc",
+    "allMarkedAsRead": "Tất cả đánh dấu đã đọc",
+    "fetchError": "Lỗi tải thông báo",
+    "markAsReadError": "Lỗi đánh dấu thông báo",
+    "markAllAsReadError": "Lỗi đánh dấu tất cả thông báo"
   }
 }

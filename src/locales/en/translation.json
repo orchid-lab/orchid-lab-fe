@@ -464,5 +464,17 @@
     "pleaseEnterDescription": "Please enter description!",
     "elementsOutOf": "elements out of",
     "elements": "elements"
+  },
+  "notification": {
+    "title": "Notifications",
+    "unread": "unread",
+    "empty": "No notifications",
+    "markAsRead": "Mark as read",
+    "markAllAsRead": "Mark all as read",
+    "markedAsRead": "Marked as read",
+    "allMarkedAsRead": "All marked as read",
+    "fetchError": "Error fetching notifications",
+    "markAsReadError": "Error marking notification as read",
+    "markAllAsReadError": "Error marking all notifications as read"
   }
 }
