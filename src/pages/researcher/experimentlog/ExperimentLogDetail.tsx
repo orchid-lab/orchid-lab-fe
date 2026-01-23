@@ -59,7 +59,6 @@ interface SamplesResponse {
   data?: Sample[];
 }
 
-// removed strict type guard; response shapes vary (value-wrapped or root)
 
 const ExperimentLogDetail = () => {
   const { id } = useParams();
@@ -69,17 +68,13 @@ const ExperimentLogDetail = () => {
   const [samplesLoading, setSamplesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedStage, setSelectedStage] = useState(1);
-
-  // Thêm state mới
   const [labName, setLabName] = useState<string>("Đang tải...");
   const [creator, setCreator] = useState<string>("Đang tải...");
-
   const { enqueueSnackbar } = useSnackbar();
   const [loadingStage, setLoadingStage] = useState(false);
-  const [loadingPDF, setLoadingPDF] = useState(false);
+  // const [loadingPDF, setLoadingPDF] = useState(false);
   const [reloadLog, setReloadLog] = useState(0);
 
-  // Fetch experiment log detail
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -215,57 +210,57 @@ const ExperimentLogDetail = () => {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!log?.id) return;
-    setLoadingPDF(true);
-    try {
-      const res = await axiosInstance.get(`/api/report/export-pdf/${log.id}`, {
-        responseType: "blob",
-        validateStatus: () => true,
-      });
+  // const handleExportPDF = async () => {
+  //   if (!log?.id) return;
+  //   setLoadingPDF(true);
+  //   try {
+  //     const res = await axiosInstance.get(`/api/report/export-pdf/${log.id}`, {
+  //       responseType: "blob",
+  //       validateStatus: () => true,
+  //     });
 
-      if (res.status !== 200) {
-        const errorText = await (res.data as Blob).text();
-        enqueueSnackbar(
-          errorText || "Xuất PDF thất bại! Vui lòng thử lại sau.",
-          { variant: "error", autoHideDuration: 3000, preventDuplicate: true }
-        );
-        return;
-      }
+  //     if (res.status !== 200) {
+  //       const errorText = await (res.data as Blob).text();
+  //       enqueueSnackbar(
+  //         errorText || "Xuất PDF thất bại! Vui lòng thử lại sau.",
+  //         { variant: "error", autoHideDuration: 3000, preventDuplicate: true }
+  //       );
+  //       return;
+  //     }
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `experimentlog_${log.id}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      enqueueSnackbar("Xuất PDF thành công!", {
-        variant: "success",
-        autoHideDuration: 3000,
-        preventDuplicate: true,
-      });
-    } catch (error) {
-      console.error(error);
-      const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
-        message?: string;
-      };
-      const backendMessage =
-        apiError.response?.data ?? apiError.message ?? "Xuất PDF thất bại!";
+  //     const url = window.URL.createObjectURL(new Blob([res.data]));
+  //     const link = document.createElement("a");
+  //     link.href = url;
+  //     link.setAttribute("download", `experimentlog_${log.id}.pdf`);
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     link.remove();
+  //     enqueueSnackbar("Xuất PDF thành công!", {
+  //       variant: "success",
+  //       autoHideDuration: 3000,
+  //       preventDuplicate: true,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //     const apiError = error as {
+  //       response?: {
+  //         data?: string;
+  //         status?: number;
+  //       };
+  //       message?: string;
+  //     };
+  //     const backendMessage =
+  //       apiError.response?.data ?? apiError.message ?? "Xuất PDF thất bại!";
 
-      enqueueSnackbar(backendMessage, {
-        variant: "error",
-        autoHideDuration: 5000,
-        preventDuplicate: true,
-      });
-    } finally {
-      setLoadingPDF(false);
-    }
-  };
+  //     enqueueSnackbar(backendMessage, {
+  //       variant: "error",
+  //       autoHideDuration: 5000,
+  //       preventDuplicate: true,
+  //     });
+  //   } finally {
+  //     setLoadingPDF(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (log?.currentStageName && log.stages && log.stages.length > 0) {
@@ -344,7 +339,7 @@ const ExperimentLogDetail = () => {
         <h1 className="text-2xl font-bold">
           Chi tiết nhật ký thí nghiệm - {log.name}
         </h1>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <button
             type="button"
             className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${
@@ -357,7 +352,7 @@ const ExperimentLogDetail = () => {
           >
             {loadingPDF ? "Đang xuất..." : "Xuất PDF"}
           </button>
-        </div>
+        </div> */}
         <div className="mb-6 grid grid-cols-2 gap-4">
           <div>
             <p>
