@@ -65,7 +65,8 @@
     "addNew": "Thêm mới",
     "saving": "Đang lưu...",
     "deleting": "Đang xóa...",
-    "details": "Chi tiết"
+    "details": "Chi tiết",
+    "category": "Danh mục"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -446,6 +447,8 @@
   },
   "element": {
     "elementManagement": "Quản lý nguyên vật liệu",
+    "chemical": "Hóa chất",
+    "material": "Vật liệu",
     "addElement": "Thêm nguyên vật liệu",
     "editElement": "Sửa nguyên vật liệu",
     "deleteElement": "Xóa nguyên vật liệu",
@@ -476,5 +479,45 @@
     "fetchError": "Lỗi tải thông báo",
     "markAsReadError": "Lỗi đánh dấu thông báo",
     "markAllAsReadError": "Lỗi đánh dấu tất cả thông báo"
+  },
+  "chemical": {
+    "management": "Quản lý hóa chất",
+    "add": "Thêm hóa chất",
+    "edit": "Sửa hóa chất",
+    "delete": "Xóa hóa chất",
+    "deleteConfirm": "Bạn có chắc muốn xóa hóa chất này?",
+    "added": "Thêm hóa chất thành công!",
+    "updated": "Cập nhật hóa chất thành công!",
+    "deleted": "Xóa hóa chất thành công!",
+    "addFailed": "Thêm hóa chất thất bại!",
+    "updateFailed": "Cập nhật hóa chất thất bại!",
+    "deleteFailed": "Xóa hóa chất thất bại!",
+    "fetchFailed": "Tải danh sách hóa chất thất bại!",
+    "total": "Tổng số hóa chất",
+    "searchByName": "Tìm kiếm theo tên...",
+    "unit": "Đơn vị nồng độ",
+    "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+    "outOf": "trên tổng số",
+    "chemicals": "hóa chất"
+  },
+  "material": {
+    "management": "Quản lý vật liệu",
+    "add": "Thêm vật liệu",
+    "edit": "Sửa vật liệu",
+    "delete": "Xóa vật liệu",
+    "deleteConfirm": "Bạn có chắc muốn xóa vật liệu này?",
+    "added": "Thêm vật liệu thành công!",
+    "updated": "Cập nhật vật liệu thành công!",
+    "deleted": "Xóa vật liệu thành công!",
+    "addFailed": "Thêm vật liệu thất bại!",
+    "updateFailed": "Cập nhật vật liệu thất bại!",
+    "deleteFailed": "Xóa vật liệu thất bại!",
+    "fetchFailed": "Tải danh sách vật liệu thất bại!",
+    "total": "Tổng số vật liệu",
+    "searchByName": "Tìm kiếm theo tên...",
+    "unit": "Đơn vị",
+    "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+    "outOf": "trên tổng số",
+    "materials": "vật liệu"
   }
 }
