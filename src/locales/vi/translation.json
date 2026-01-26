@@ -443,6 +443,9 @@
     "creating": "Đang tạo...",
     "create": "Tạo",
     "saving": "Đang lưu...",
+    "labRoomId": "ID Phòng",
+    "batchSize": "Kích thước lô",
+    "dimensions": "Kích thước",
     "errorLoadingList": "Không thể tải danh sách lô cấy mô"
   },
   "element": {
