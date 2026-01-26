@@ -443,7 +443,10 @@
     "creating": "Creating...",
     "create": "Create",
     "saving": "Saving...",
-    "errorLoadingList": "Unable to load tissue culture batch list"
+    "errorLoadingList": "Unable to load tissue culture batch list",
+    "labRoomId": "Lab Room ID",
+    "batchSize": "Batch Size",
+    "dimensions": "Dimensions"
   },
   "element": {
     "elementManagement": "Element Management",
