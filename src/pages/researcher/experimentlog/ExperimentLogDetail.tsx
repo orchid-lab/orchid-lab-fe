@@ -1,3 +1,4 @@
+/* eslint-disable react-x/no-array-index-key */
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
