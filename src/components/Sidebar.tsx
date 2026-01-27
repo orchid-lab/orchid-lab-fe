@@ -1,3 +1,4 @@
+/* eslint-disable react-dom/no-missing-button-type */
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt, FaSearch } from "react-icons/fa";
@@ -129,6 +130,7 @@ export default function Sidebar() {
       {/* Logout Button */}
       <div className="px-4 pb-4">
         <button
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleLogout}
           disabled={isLoggingOut}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full group ${

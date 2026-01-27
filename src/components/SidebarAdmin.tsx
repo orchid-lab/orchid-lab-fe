@@ -18,8 +18,8 @@ import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
 
-function getRoleName(role: string | undefined, t: any) {
-  return role || t("common.other");
+function getRoleName(role: string | undefined, t: (key: string) => string) {
+  return role ?? t("common.other");
 }
 
 function getRoleBadgeColor(role: string | undefined) {
@@ -41,7 +41,6 @@ export default function SidebarDemo() {
   const [user, setUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch user data from API
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
@@ -51,12 +50,11 @@ export default function SidebarDemo() {
         setUser(response.data);
       } catch (error) {
         console.error('Error fetching user data in Sidebar:', error);
-        // Fallback to authUser if API fails
         setUser(authUser);
       }
     };
 
-    fetchUserData();
+    void fetchUserData();
   }, [authUser]);
 
   const menuItems = [
@@ -162,14 +160,14 @@ export default function SidebarDemo() {
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  {user?.name?.charAt(0).toUpperCase() ?? 'U'}
                 </div>
               )}
               <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-[#252836]`}></div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">
-                {user?.name || t('common.loading')}
+                {user?.name ?? t('common.loading')}
               </p>
               <p className="text-xs text-gray-500">
                 {getRoleName(user?.role, t)}
@@ -181,6 +179,7 @@ export default function SidebarDemo() {
         {/* Logout Button */}
         <div className="px-4 pb-4">
           <button
+            type="button"
             onClick={logout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 w-full group"
           >

@@ -150,13 +150,13 @@ const AdminTissueCultureBatchList = () => {
                       {item.id}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {item.labRoomId || "-"}
+                      {item.labRoomId ?? "-"}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {item.labRoomName || item.labName || "-"}
+                      {item.labRoomName ?? item.labName ?? "-"}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {item.batchName || item.name || "-"}
+                      {item.batchName ?? item.name ?? "-"}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
                       {item.batchSizeWidth && item.batchSizeHeight
@@ -166,7 +166,7 @@ const AdminTissueCultureBatchList = () => {
                     <td className="px-6 py-4 text-gray-700">
                       {item.widthUnit && item.heightUnit
                         ? `${item.widthUnit} × ${item.heightUnit}`
-                        : item.widthUnit || item.heightUnit || "-"}
+                        : item.widthUnit ?? item.heightUnit ?? "-"}
                     </td>
                     <td className="px-6 py-4">
                       <span

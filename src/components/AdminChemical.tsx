@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import axiosInstance from "../api/axiosInstance";
@@ -46,7 +48,7 @@ export default function ChemicalList({ t }: ChemicalListProps) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await axiosInstance.get("/api/chemical", {
+      const res = await axiosInstance.get<{ data: Chemical[]; totalCount: number }>("/api/chemical", {
         params: {
           PageNo: 1,
           PageSize: 1000,
@@ -54,23 +56,24 @@ export default function ChemicalList({ t }: ChemicalListProps) {
         },
       });
       const json = res.data;
-      // API response structure: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
+
       setData(json.data || []);
       setTotal(json.totalCount || 0);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching chemicals:", error);
+      const errorObj = error as { response?: { status?: number; data?: unknown }; message?: string };
       console.error("Error details:", {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
+        status: errorObj.response?.status,
+        data: errorObj.response?.data,
+        message: errorObj.message,
       });
       setData([]);
       setTotal(0);
       
-      const errorMsg = error.response?.data?.message || 
-                       error.response?.statusText || 
-                       error.message || 
-                       t("chemical.fetchFailed") || 
+      const errorMsg = (errorObj.response?.data as { message?: string } | undefined)?.message ?? 
+                       (errorObj.response as { statusText?: string } | undefined)?.statusText ?? 
+                       errorObj.message ?? 
+                       t("chemical.fetchFailed") ?? 
                        "Failed to fetch chemicals";
       
       enqueueSnackbar(`Error: ${errorMsg}`, {

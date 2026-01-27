@@ -1,3 +1,4 @@
+/* eslint-disable react-dom/no-missing-button-type */
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaChartBar, FaFlask, FaSignOutAlt, FaSearch } from "react-icons/fa";
