@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -80,7 +79,7 @@ export default function AdminMethod() {
         staggerChildren: 0.1,
       },
     },
-  };
+  } as const;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -89,10 +88,10 @@ export default function AdminMethod() {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     },
-  };
+  } as const;
 
   const statsVariants = {
     hidden: { opacity: 0, scale: 0.8 },
@@ -101,10 +100,10 @@ export default function AdminMethod() {
       scale: 1,
       transition: {
         duration: 0.5,
-        ease: "easeInOut",
+        ease: "easeOut" as const,
       },
     },
-  };
+  } as const;
 
   const rowVariants = {
     hidden: { opacity: 0, x: -20 },
@@ -114,7 +113,7 @@ export default function AdminMethod() {
       transition: {
         delay: i * 0.05,
         duration: 0.4,
-        ease: "easeOut",
+        ease: "easeOut" as const,
       },
     }),
     exit: {
@@ -134,7 +133,7 @@ export default function AdminMethod() {
           className="mb-8"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: "easeOut" as const }}
         >
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {t("method.methodManagement")}
