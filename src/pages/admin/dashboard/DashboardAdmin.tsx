@@ -1,5 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { FaEdit, FaTrash, FaSearch, FaPlus } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 import type { User, UserApiResponse } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -16,17 +19,45 @@ function getRoleOptions(t: (key: string) => string): { value: string; label: str
   ];
 }
 
-// Helper function to get user role name (prioritize role string over roleId)
 function getUserRoleName(user: User): string {
-  // Priority 1: Use role string if available
   if (user.role && typeof user.role === 'string') {
     return user.role;
   }
-  // Priority 2: Fall back to roleId
   return getRoleName(user.roleId);
 }
 
 const PAGE_SIZE = 10;
+
+// Animation variants
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+};
+
+const cardVariants = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1 },
+  hover: { scale: 1.03, transition: { duration: 0.2 } }
+};
+
+const rowVariants = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 20 }
+};
+
+const modalVariants = {
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.8 }
+};
+
+const overlayVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 }
+};
 
 export default function DashboardAdmin() {
   const { user } = useAuth();
@@ -221,200 +252,276 @@ export default function DashboardAdmin() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50">
+    <motion.main 
+      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50"
+      initial="initial"
+      animate="animate"
+      variants={pageVariants}
+      transition={{ duration: 0.5 }}
+    >
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <motion.div 
+        className="bg-white shadow-sm border-b"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div className="px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <motion.h1 
+            className="text-2xl font-bold text-gray-900"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             {t('user.userManagement')}
-          </h1>
+          </motion.h1>
         </div>
         {/* Controls */}
-        <div className="px-6 py-4 flex flex-wrap gap-4 items-center bg-white">
-          <div className="relative flex-1 min-w-[200px]">
+        <motion.div 
+          className="px-6 py-4 flex flex-wrap gap-4 items-center bg-white"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.div 
+            className="relative flex-1 min-w-[200px]"
+            whileHover={{ scale: 1.01 }}
+          >
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:border-transparent transition-all"
               placeholder={`${t('common.search')} ${t('common.name').toLowerCase()} ${t('common.or').toLowerCase()} ${t('common.email').toLowerCase()}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </div>
-          <select
+          </motion.div>
+          <motion.select
             className="border border-gray-300 rounded-full px-4 py-2 text-sm"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {getRoleOptions(t).map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
-          </select>
+          </motion.select>
 
-          <button
+          <motion.button
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
             onClick={() => setShowAddModal(true)}
             type="button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <FaPlus /> {t('user.addUser')}
-          </button>
-        </div>
-      </div>
+          </motion.button>
+        </motion.div>
+      </motion.div>
+
       {/* Stats */}
       <div className="px-6 py-6 grid grid-cols-4 gap-4">
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="text-green-600 text-sm font-medium">
-            {t('user.totalUsers')}
-          </div>
-          <div className="text-2xl font-bold text-green-700">{total}</div>
-        </div>
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <div className="text-purple-600 text-sm font-medium">{t('user.admins')}</div>
-          <div className="text-2xl font-bold text-purple-700">{adminCount}</div>
-        </div>
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-blue-600 text-sm font-medium">{t('user.researchers')}</div>
-          <div className="text-2xl font-bold text-blue-700">
-            {researcherCount}
-          </div>
-        </div>
-        <div className="bg-green-50 p-4 rounded-lg">
-          <div className="text-green-600 text-sm font-medium">{t('user.technicians')}</div>
-          <div className="text-2xl font-bold text-green-700">
-            {technicianCount}
-          </div>
-        </div>
+        {[
+          { label: t('user.totalUsers'), value: total, color: 'green' },
+          { label: t('user.admins'), value: adminCount, color: 'purple' },
+          { label: t('user.researchers'), value: researcherCount, color: 'blue' },
+          { label: t('user.technicians'), value: technicianCount, color: 'green' },
+        ].map((stat, idx) => (
+          <motion.div
+            key={idx}
+            className={`bg-${stat.color}-50 p-4 rounded-lg`}
+            variants={cardVariants}
+            initial="initial"
+            animate="animate"
+            whileHover="hover"
+            transition={{ delay: idx * 0.1 }}
+          >
+            <div className={`text-${stat.color}-600 text-sm font-medium`}>
+              {stat.label}
+            </div>
+            <motion.div 
+              className={`text-2xl font-bold text-${stat.color}-700`}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1 + 0.3, type: "spring" }}
+            >
+              {stat.value}
+            </motion.div>
+          </motion.div>
+        ))}
       </div>
+
       {/* Table */}
       <div className="px-6 pb-6">
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <motion.div 
+          className="bg-white rounded-lg shadow overflow-x-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           <table className="min-w-full table-auto">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.name')}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.email')}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.phone')}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.role')}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.createdAt')}
-                </th>
-                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t('common.action')}
-                </th>
+                {[
+                  t('common.name'),
+                  t('common.email'),
+                  t('common.phone'),
+                  t('common.role'),
+                  t('common.createdAt'),
+                  t('common.action')
+                ].map((header, idx) => (
+                  <motion.th
+                    key={idx}
+                    className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + idx * 0.05 }}
+                  >
+                    {header}
+                  </motion.th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                  <tr key={idx} className="border-t animate-pulse">
-                    <td className="py-3 px-4">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  Array.from({ length: PAGE_SIZE }).map((_, idx) => (
+                    <motion.tr 
+                      key={idx} 
+                      className="border-t animate-pulse"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <td className="py-3 px-4">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      </td>
+                      <td className="px-4">
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </td>
+                      <td className="px-4">
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </td>
+                      <td className="px-4">
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </td>
+                      <td className="px-4">
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </td>
+                      <td className="px-4">
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </td>
+                    </motion.tr>
+                  ))
+                ) : filteredUsers.length === 0 ? (
+                  <motion.tr
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={6} className="text-center py-8 text-gray-400">
+                      {t('common.noData')}
                     </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </td>
-                  </tr>
-                ))
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-400">
-                    {t('common.noData')}
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 border-t">
-                    <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {user.name}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {user.email}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {user.phoneNumber ?? t('common.noPhoneNumber')}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(getUserRoleName(user))}`}
-                      >
-                        {getUserRoleName(user)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                      {user.createdDate
-                        ? new Date(user.createdDate).toLocaleDateString("vi-VN", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm">
-                      <div className="flex gap-2">
-                        <button
-                          className="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition"
-                          title={t('common.edit')}
-                          onClick={() => handleEdit(user)}
-                          type="button"
+                  </motion.tr>
+                ) : (
+                  filteredUsers.map((user, idx) => (
+                    <motion.tr 
+                      key={user.id} 
+                      className="hover:bg-gray-50 border-t"
+                      variants={rowVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={{ delay: idx * 0.05 }}
+                      whileHover={{ backgroundColor: "#f9fafb" }}
+                    >
+                      <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {user.name}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {user.email}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {user.phoneNumber ?? t('common.noPhoneNumber')}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm">
+                        <motion.span
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeClass(getUserRoleName(user))}`}
+                          whileHover={{ scale: 1.1 }}
+                          transition={{ type: "spring", stiffness: 400 }}
                         >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition"
-                          title={t('common.delete')}
-                          onClick={() => handleDeleteClick(user.id, user.name)}
-                          type="button"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                          {getUserRoleName(user)}
+                        </motion.span>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {user.createdDate
+                          ? new Date(user.createdDate).toLocaleDateString("vi-VN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm">
+                        <div className="flex gap-2">
+                          <motion.button
+                            className="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded transition"
+                            title={t('common.edit')}
+                            onClick={() => handleEdit(user)}
+                            type="button"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <FaEdit />
+                          </motion.button>
+                          <motion.button
+                            className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition"
+                            title={t('common.delete')}
+                            onClick={() => handleDeleteClick(user.id, user.name)}
+                            type="button"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <FaTrash />
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
-        </div>
+        </motion.div>
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
+          <motion.div 
+            className="flex justify-between items-center text-sm text-gray-600 mt-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
             <span>
               {t('user.showing')} {filteredUsers.length} {t('user.usersOutOf')} {total}{" "}
               {t('user.users')}
             </span>
             <div className="flex gap-2">
               {page > 1 && (
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setPage(page - 1)}
                   className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   ←
-                </button>
+                </motion.button>
               )}
 
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -429,7 +536,7 @@ export default function DashboardAdmin() {
                   pageNum = page - 2 + i;
                 }
                 return (
-                  <button
+                  <motion.button
                     key={pageNum}
                     type="button"
                     onClick={() => setPage(pageNum)}
@@ -438,180 +545,244 @@ export default function DashboardAdmin() {
                         ? "bg-green-700 text-white"
                         : "bg-gray-200 hover:bg-gray-300"
                     }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     {pageNum}
-                  </button>
+                  </motion.button>
                 );
               })}
 
               {page < totalPages && (
-                <button
+                <motion.button
                   type="button"
                   onClick={() => setPage(page + 1)}
                   className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   →
-                </button>
+                </motion.button>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
+
       {/* Edit Modal */}
-      {showEditModal && editUser && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[350px]">
-            <h2 className="text-lg font-bold mb-4">{t('user.editUser')}</h2>
-            <input
-              className="border rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.name')}
-              value={editUser.name}
-              onChange={(e) =>
-                setEditUser((u) => (u ? { ...u, name: e.target.value } : u))
-              }
-            />
-            <input
-              className="border bg-gray-200 rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.email')}
-              value={editUser.email}
-              disabled
-            />
-            <input
-              className="border rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.phone')}
-              value={editUser.phoneNumber || ""}
-              onChange={(e) =>
-                setEditUser((u) =>
-                  u ? { ...u, phoneNumber: e.target.value } : u
-                )
-              }
-            />
-            <select
-              className="border rounded px-3 py-2 w-full mb-4"
-              value={editUser.roleId}
-              onChange={(e) =>
-                setEditUser((u) =>
-                  u ? { ...u, roleId: parseInt(e.target.value) } : u
-                )
-              }
+      <AnimatePresence>
+        {showEditModal && editUser && (
+          <motion.div 
+            className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <motion.div 
+              className="bg-white p-6 rounded shadow-lg w-[350px]"
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
             >
-              <option value={2}>{t('roles.researcher')}</option>
-              <option value={3}>{t('roles.technician')}</option>
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => setShowEditModal(false)}
+              <h2 className="text-lg font-bold mb-4">{t('user.editUser')}</h2>
+              <input
+                className="border rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.name')}
+                value={editUser.name}
+                onChange={(e) =>
+                  setEditUser((u) => (u ? { ...u, name: e.target.value } : u))
+                }
+              />
+              <input
+                className="border bg-gray-200 rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.email')}
+                value={editUser.email}
+                disabled
+              />
+              <input
+                className="border rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.phone')}
+                value={editUser.phoneNumber ?? ""}
+                onChange={(e) =>
+                  setEditUser((u) =>
+                    u ? { ...u, phoneNumber: e.target.value } : u
+                  )
+                }
+              />
+              <select
+                className="border rounded px-3 py-2 w-full mb-4"
+                value={editUser.roleId}
+                onChange={(e) =>
+                  setEditUser((u) =>
+                    u ? { ...u, roleId: parseInt(e.target.value) } : u
+                  )
+                }
               >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => {
-                  void handleSaveEdit();
-                }}
-              >
-                {t('common.save')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <option value={2}>{t('roles.researcher')}</option>
+                <option value={3}>{t('roles.technician')}</option>
+              </select>
+              <div className="flex gap-2 justify-end">
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => setShowEditModal(false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.cancel')}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => {
+                    void handleSaveEdit();
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.save')}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[350px]">
-            <h2 className="text-lg font-bold mb-4">{t('user.addUser')}</h2>
-            <input
-              className="border rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.name')}
-              value={newUser.name}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, name: e.target.value }))
-              }
-            />
-            <input
-              className="border rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.email')}
-              value={newUser.email}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, email: e.target.value }))
-              }
-            />
-            <input
-              className="border rounded px-3 py-2 w-full mb-2"
-              placeholder={t('common.phone')}
-              value={newUser.phoneNumber}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, phoneNumber: e.target.value }))
-              }
-            />
-            <select
-              className="border rounded px-3 py-2 w-full mb-4"
-              value={newUser.roleId}
-              onChange={(e) =>
-                setNewUser((u) => ({ ...u, roleId: parseInt(e.target.value) }))
-              }
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div 
+            className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <motion.div 
+              className="bg-white p-6 rounded shadow-lg w-[350px]"
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
             >
-              <option value={0}>{t('common.selectRole')}</option>
-              <option value={2}>{t('roles.researcher')}</option>
-              <option value={3}>{t('roles.technician')}</option>
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => setShowAddModal(false)}
+              <h2 className="text-lg font-bold mb-4">{t('user.addUser')}</h2>
+              <input
+                className="border rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.name')}
+                value={newUser.name}
+                onChange={(e) =>
+                  setNewUser((u) => ({ ...u, name: e.target.value }))
+                }
+              />
+              <input
+                className="border rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.email')}
+                value={newUser.email}
+                onChange={(e) =>
+                  setNewUser((u) => ({ ...u, email: e.target.value }))
+                }
+              />
+              <input
+                className="border rounded px-3 py-2 w-full mb-2"
+                placeholder={t('common.phone')}
+                value={newUser.phoneNumber}
+                onChange={(e) =>
+                  setNewUser((u) => ({ ...u, phoneNumber: e.target.value }))
+                }
+              />
+              <select
+                className="border rounded px-3 py-2 w-full mb-4"
+                value={newUser.roleId}
+                onChange={(e) =>
+                  setNewUser((u) => ({ ...u, roleId: parseInt(e.target.value) }))
+                }
               >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                onClick={() => {
-                  void handleAddUser();
-                }}
-              >
-                {t('common.add')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <option value={0}>{t('common.selectRole')}</option>
+                <option value={2}>{t('roles.researcher')}</option>
+                <option value={3}>{t('roles.technician')}</option>
+              </select>
+              <div className="flex gap-2 justify-end">
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => setShowAddModal(false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.cancel')}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={() => {
+                    void handleAddUser();
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.add')}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Modal */}
-      {showDeleteModal && deleteTarget && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-[350px]">
-            <h2 className="text-lg font-bold mb-4 text-red-700">
-              {t('user.deleteUser')}
-            </h2>
-            <p>
-              {t('user.deleteUserConfirm')}
-            </p>
-            <p className="font-semibold mt-2">{deleteTarget.name}</p>
-            <div className="flex gap-2 justify-end mt-6">
-              <button
-                type="button"
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                onClick={() => {
-                  void handleDeleteUser();
-                }}
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
+      <AnimatePresence>
+        {showDeleteModal && deleteTarget && (
+          <motion.div 
+            className="fixed inset-0 bg-black/30 flex items-center justify-center z-50"
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <motion.div 
+              className="bg-white p-6 rounded shadow-lg w-[350px]"
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            >
+              <h2 className="text-lg font-bold mb-4 text-red-700">
+                {t('user.deleteUser')}
+              </h2>
+              <p>
+                {t('user.deleteUserConfirm')}
+              </p>
+              <p className="font-semibold mt-2">{deleteTarget.name}</p>
+              <div className="flex gap-2 justify-end mt-6">
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={() => setShowDeleteModal(false)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.cancel')}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  onClick={() => {
+                    void handleDeleteUser();
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {t('common.delete')}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.main>
   );
 }
