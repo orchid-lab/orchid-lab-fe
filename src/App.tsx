@@ -1,4 +1,10 @@
-import {BrowserRouter as Router,Routes,Route,Navigate,useLocation,} from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Method from "./pages/researcher/method/Method";
@@ -66,15 +72,19 @@ import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/Admi
 
 function getUserRole(user: any): string {
   const roleValue = user?.role || user?.Role;
-  if (roleValue && typeof roleValue === 'string') {
+  if (roleValue && typeof roleValue === "string") {
     return roleValue.toLowerCase().trim();
   }
-  
+
   switch (user?.roleId) {
-    case 1: return "admin";
-    case 2: return "researcher";
-    case 3: return "lab technician";
-    default: return "researcher";
+    case 1:
+      return "admin";
+    case 2:
+      return "researcher";
+    case 3:
+      return "lab technician";
+    default:
+      return "researcher";
   }
 }
 
@@ -84,15 +94,15 @@ function AppLayout() {
 
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
-  
+
   if (!isAuthReady) {
     return <div>Đang tải...</div>;
   }
-  
+
   const userRole = getUserRole(user);
-  
+
   let sidebar = <Sidebar />;
-  
+
   if (userRole === "admin") {
     sidebar = <SidebarAdmin />;
   } else if (userRole === "lab technician") {
@@ -453,21 +463,25 @@ function AppLayout() {
   );
 }
 
+import { NotificationProvider } from "./context/NotificationContext";
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <SnackbarProvider
-          maxSnack={3}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Router>
-            <Routes>
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="/*" element={<AppLayout />} />
-            </Routes>
-          </Router>
-        </SnackbarProvider>
+        <NotificationProvider>
+          <SnackbarProvider
+            maxSnack={3}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+            <Router>
+              <Routes>
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="/*" element={<AppLayout />} />
+              </Routes>
+            </Router>
+          </SnackbarProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
