@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 
-type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel";
+type ExperimentStatus = "Created" | "Waiting" | "InProcess" | "Done" | "Cancel";
 
 interface Stage {
   id: string;
@@ -64,12 +64,14 @@ const ExperimentLog = () => {
   const [stats, setStats] = useState<{
     total: number;
     Created: number;
+    Waiting: number;
     InProcess: number;
     Done: number;
     Cancel: number;
   }>({
     total: 0,
     Created: 0,
+    Waiting: 0,
     InProcess: 0,
     Done: 0,
     Cancel: 0,
@@ -86,6 +88,8 @@ const ExperimentLog = () => {
     switch (statusStr) {
       case "1":
         return "Created";
+      case "5":
+        return "Waiting";
       case "2":
         return "InProcess";
       case "3":
@@ -93,6 +97,11 @@ const ExperimentLog = () => {
       case "4":
         return "Cancel";
       default:
+        if (/waiting|pending|chờ|đợi/i.test(statusStr)) return "Waiting";
+        if (/inprocess|processing|đang/i.test(statusStr)) return "InProcess";
+        if (/done|completed|hoàn/i.test(statusStr)) return "Done";
+        if (/cancel|hủy/i.test(statusStr)) return "Cancel";
+        if (/created|mới/i.test(statusStr)) return "Created";
         return statusStr;
     }
   };
@@ -101,9 +110,11 @@ const ExperimentLog = () => {
   const statusToVietnamese = (status?: number | string) => {
     switch (normalizeStatus(status)) {
       case "Created":
-        return "Đã tạo";
+        return "Mới tạo";
+      case "Waiting":
+        return "Chờ thay đổi giai đoạn";
       case "InProcess":
-        return "Đang thực hiện";
+        return "Đang trong quá trình thực hiện";
       case "Done":
         return "Hoàn thành";
       case "Cancel":
@@ -116,11 +127,10 @@ const ExperimentLog = () => {
   // Fetch sample count
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
-      const response = await fetch(
-        `https://net-api.orchid-lab.systems/api/sample?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`,
-      );
-      if (!response.ok) return 0;
-      const data: unknown = await response.json();
+      const resp = await axiosInstance.get("/api/sample", {
+        params: { pageNo: 1, pageSize: 1000, experimentLogId },
+      });
+      const data: unknown = resp.data;
 
       if (typeof data === "object" && data !== null && "value" in data) {
         const value = (data as { value?: unknown }).value;
@@ -178,8 +188,29 @@ const ExperimentLog = () => {
       typeof o.id === "string" &&
       typeof o.name === "string" &&
       typeof o.methodName === "string" &&
-      typeof o.tissueCultureBatchName === "string"
+      (typeof o.tissueCultureBatchName === "string" ||
+        typeof (o as any).batcheName === "string" ||
+        typeof (o as any).batchName === "string")
     );
+  }
+
+  // Normalize different backend shapes into ExperimentLogEntry
+  function normalizeRawLog(obj: any): ExperimentLogEntry | null {
+    if (!obj || !obj.id || !obj.name) return null;
+    const tissueCultureBatchName =
+      obj.tissueCultureBatchName ?? obj.batcheName ?? obj.batchName ?? "";
+    return {
+      id: String(obj.id),
+      name: String(obj.name),
+      methodName: obj.methodName ?? obj.method ?? "",
+      description: obj.description ?? "",
+      tissueCultureBatchName,
+      createdDate: obj.createdDate ?? obj.createdDateString ?? "",
+      status: obj.status,
+      samples: obj.samples,
+      stages: obj.stages,
+      currentStageName: obj.currentStageName ?? obj.currentStageName ?? "",
+    };
   }
 
   // Fetch methods
@@ -187,7 +218,7 @@ const ExperimentLog = () => {
     const fetchMethods = async () => {
       try {
         const res = await axiosInstance.get(
-          "/api/method?pageNumber=1&pageSize=100",
+          "/api/methods?pageNumber=1&pageSize=100",
         );
         const raw = res.data as {
           value?: { data?: { id: string; name: string }[] };
@@ -204,30 +235,56 @@ const ExperimentLog = () => {
   // Fetch thống kê nhanh
   const fetchStatsOnly = useCallback(async () => {
     try {
-      // Fetch tất cả dữ liệu để đếm thống kê
-      const param = new URLSearchParams();
-      param.append("pageNumber", "1");
-      param.append("pageSize", "1000"); // Lấy tất cả để đếm
-      const res = await fetch(
-        `https://net-api.orchid-lab.systems/api/experimentlog?${param.toString()}`,
-      );
-      if (!res.ok) throw new Error("Lỗi khi lấy thống kê");
-      const data: unknown = await res.json();
+      // Fetch tất cả dữ liệu để đếm thống kê (use axiosInstance)
+      let data: unknown;
+      try {
+        const res = await axiosInstance.get("/api/experiment-logs", {
+          params: { pageNo: 1, pageSize: 1000 },
+        });
+        data = res.data;
+      } catch (err) {
+        const apiErr = err as any;
+        const detail =
+          apiErr?.response?.data?.detail || apiErr?.response?.data?.message;
+        if (typeof detail === "string" && detail.includes("OFFSET")) {
+          // Retry without params
+          const retryRes = await axiosInstance.get("/api/experiment-logs");
+          data = retryRes.data;
+        } else {
+          throw new Error("Lỗi khi lấy thống kê");
+        }
+      }
 
       let allLogs: ExperimentLogEntry[] = [];
-      if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-        allLogs = data.value.data;
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "data" in (data as Record<string, unknown>) &&
+        Array.isArray((data as any).data)
+      ) {
+        allLogs = (data as any).data
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
+      } else if (
+        hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
+      ) {
+        allLogs = (data.value.data ?? [])
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
       } else if (typeof data === "object" && data !== null && "value" in data) {
-        allLogs = ((data as ExperimentLogApiResponse).value ?? []).filter(
-          isExperimentLogEntry,
-        );
+        allLogs = ((data as ExperimentLogApiResponse).value ?? [])
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
       } else if (Array.isArray(data)) {
-        allLogs = data.filter(isExperimentLogEntry);
+        allLogs = data
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
       }
 
       // Đếm theo status
       const counts = {
         Created: 0,
+        Waiting: 0,
         InProcess: 0,
         Done: 0,
         Cancel: 0,
@@ -238,6 +295,9 @@ const ExperimentLog = () => {
         switch (status) {
           case "Created":
             counts.Created++;
+            break;
+          case "Waiting":
+            counts.Waiting++;
             break;
           case "InProcess":
             counts.InProcess++;
@@ -257,6 +317,7 @@ const ExperimentLog = () => {
       setStats({
         total,
         Created: counts.Created,
+        Waiting: counts.Waiting,
         InProcess: counts.InProcess,
         Done: counts.Done,
         Cancel: counts.Cancel,
@@ -273,23 +334,56 @@ const ExperimentLog = () => {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      params.append("pageNumber", String(currentPage));
+      params.append("pageNo", String(currentPage));
       params.append("pageSize", String(logsPerPage));
       if (methodFilter) {
         params.append("filter", methodFilter);
       }
 
       try {
-        const res = await fetch(
-          `https://net-api.orchid-lab.systems/api/experimentlog?${params.toString()}`,
-        );
-        if (!res.ok) throw new Error("Lỗi khi lấy dữ liệu");
-        const data: unknown = await res.json();
+        // Use axiosInstance to fetch paged experiment logs
+        const paramsObj: Record<string, unknown> = {
+          pageNo: currentPage,
+          pageSize: logsPerPage,
+        };
+        if (methodFilter) paramsObj.filter = methodFilter;
+
+        let data: unknown;
+        try {
+          const res = await axiosInstance.get("/api/experiment-logs", {
+            params: paramsObj,
+          });
+          data = res.data;
+        } catch (err) {
+          const apiErr = err as any;
+          const detail =
+            apiErr?.response?.data?.detail || apiErr?.response?.data?.message;
+          if (typeof detail === "string" && detail.includes("OFFSET")) {
+            const retryRes = await axiosInstance.get("/api/experiment-logs");
+            data = retryRes.data;
+          } else {
+            throw new Error("Lỗi khi lấy dữ liệu");
+          }
+        }
         let arr: ExperimentLogEntry[] = [];
         let total = 0;
 
-        if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-          arr = data.value.data;
+        if (
+          typeof data === "object" &&
+          data !== null &&
+          "data" in (data as Record<string, unknown>) &&
+          Array.isArray((data as any).data)
+        ) {
+          arr = (data as any).data
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
+          total = Number((data as any).totalCount ?? arr.length);
+        } else if (
+          hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
+        ) {
+          arr = (data.value.data ?? [])
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
           total = Number(
             (data as { value: { totalCount?: unknown } })?.value?.totalCount ??
               arr.length,
@@ -299,12 +393,14 @@ const ExperimentLog = () => {
           data !== null &&
           "value" in data
         ) {
-          arr = ((data as ExperimentLogApiResponse).value ?? []).filter(
-            isExperimentLogEntry,
-          );
+          arr = ((data as ExperimentLogApiResponse).value ?? [])
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
           total = (data as ExperimentLogApiResponse).totalCount ?? arr.length;
         } else if (Array.isArray(data)) {
-          arr = data.filter(isExperimentLogEntry);
+          arr = data
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
           total = arr.length;
         }
 
@@ -342,6 +438,8 @@ const ExperimentLog = () => {
     switch (normalizeStatus(status)) {
       case "Created":
         return "bg-blue-100 text-blue-800";
+      case "Waiting":
+        return "bg-indigo-100 text-indigo-800";
       case "InProcess":
         return "bg-yellow-100 text-yellow-800";
       case "Done":
@@ -426,13 +524,21 @@ const ExperimentLog = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
             <div className="rounded-xl border bg-blue-50 border-blue-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
               <div className="text-sm text-gray-600 mb-2 font-medium">
-                TỔNG THÍ NGHIỆM
+                {statusToVietnamese("Created")}
               </div>
               <div className="text-3xl font-bold text-blue-700">
-                {stats.total}
+                {stats.Created}
+              </div>
+            </div>
+            <div className="rounded-xl border bg-indigo-50 border-indigo-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
+              <div className="text-sm text-gray-600 mb-2 font-medium">
+                {statusToVietnamese("Waiting")}
+              </div>
+              <div className="text-3xl font-bold text-indigo-700">
+                {stats.Waiting}
               </div>
             </div>
             <div className="rounded-xl border bg-yellow-50 border-yellow-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">

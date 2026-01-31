@@ -31,21 +31,77 @@ const CreateExperimentStep3 = () => {
     setIsSubmitting(true);
     setError(null);
 
-    // Construct the payload for the API
+    // Map form values and coerce types
+    const methodId = methodID ? parseInt(String(methodID), 10) : NaN;
+    const batchesId = tissueCultureBatchID
+      ? parseInt(String(tissueCultureBatchID), 10)
+      : NaN;
+    const parentAId =
+      form.motherID ??
+      (Array.isArray(form.hybridization) && form.hybridization[0]) ??
+      "";
+    const assignedToTechnicianId =
+      Array.isArray(form.technicianID) && form.technicianID.length > 0
+        ? form.technicianID[0]
+        : ((form.technicianID as any) ?? "");
+
+    // Basic client-side validation
+    if (!Number.isInteger(batchesId) || batchesId <= 0) {
+      const msg = "Lỗi: Lô cấy mô (batch) chưa hợp lệ. Vui lòng chọn lại lô.";
+      enqueueSnackbar(msg, { variant: "error" });
+      setError(msg);
+      setIsSubmitting(false);
+      return;
+    }
+    if (!Number.isInteger(methodId) || methodId <= 0) {
+      const msg = "Lỗi: Phương pháp chưa hợp lệ. Vui lòng chọn phương pháp.";
+      enqueueSnackbar(msg, { variant: "error" });
+      setError(msg);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Verify batch exists on server before posting to get clearer error
+    try {
+      const batchListResp = await axiosInstance.get("/api/batches", {
+        params: { pageNo: 1, pageSize: 500 },
+      });
+      const serverBatches =
+        (batchListResp.data && batchListResp.data.data) || [];
+      const found = serverBatches.find((b: any) => Number(b.id) === batchesId);
+      if (!found) {
+        const msg = `Lỗi: Không tìm thấy lô cấy mô có id=${batchesId} trên server.`;
+        enqueueSnackbar(msg, { variant: "error" });
+        setError(msg);
+        setIsSubmitting(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Lỗi khi kiểm tra batch trên server:", err);
+      // Allow to proceed — server check failed, but still attempt to create and show server error
+    }
+
+    // Map form to backend payload shape
     const payload = {
+      methodId: methodId,
+      batchesId: batchesId,
+      parentAId: parentAId,
       name: name ?? "",
-      numberOfSample: numberOfSample ?? 1,
-      methodID: methodID ?? "",
-      description: description ?? "",
-      tissueCultureBatchID: tissueCultureBatchID ?? "",
-      hybridization: hybridization ?? [],
-      technicianID: form.technicianID ?? [],
+      expectedSampleCount: numberOfSample ?? 1,
+      assignedToTechnicianId: assignedToTechnicianId,
     };
     console.log("Payload gửi lên API:", payload);
 
     try {
-      const response = await axiosInstance.post("/api/experimentlog", payload);
-      if (response.status !== 200 && response.status !== 201) {
+      const response = await axiosInstance.post(
+        "/api/experiment-logs",
+        payload,
+      );
+      if (
+        response.status !== 200 &&
+        response.status !== 201 &&
+        response.status !== 204
+      ) {
         let errorData: { message?: string } | undefined;
         try {
           errorData = response.data as { message?: string };
@@ -181,6 +237,14 @@ const CreateExperimentStep3 = () => {
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-800 mb-1">
+                    Số mẫu mong muốn
+                  </h3>
+                  <p className="text-gray-600">
+                    {numberOfSample ?? "Chưa chọn"}
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-1">
                     Lô cấy mô
                   </h3>
                   <p className="text-gray-600">{batchName ?? "Chưa chọn"}</p>
@@ -215,7 +279,7 @@ const CreateExperimentStep3 = () => {
                   <div className="grid grid-cols-1 gap-3">
                     <div className="p-3 border rounded-lg bg-gray-50">
                       <div className="font-medium text-sm">
-                        Mẹ: {selectedMotherName}
+                        Cây giống: {selectedMotherName}
                       </div>
                       <div className="text-xs text-gray-500">
                         {motherDetail?.scientificName ?? "-"}
@@ -225,21 +289,6 @@ const CreateExperimentStep3 = () => {
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Ngày sinh: {motherDetail?.doB ?? "-"}
-                      </div>
-                    </div>
-
-                    <div className="p-3 border rounded-lg bg-gray-50">
-                      <div className="font-medium text-sm">
-                        Cha: {selectedFatherName}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {fatherDetail?.scientificName ?? "-"}
-                      </div>
-                      <div className="text-sm text-gray-700 mt-2">
-                        {fatherDetail?.description ?? "Không có mô tả."}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-2">
-                        Ngày sinh: {fatherDetail?.doB ?? "-"}
                       </div>
                     </div>
                   </div>
@@ -288,6 +337,7 @@ const CreateExperimentStep3 = () => {
             </Link>
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => void handleSubmit()}
                 disabled={isSubmitting}
                 className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${

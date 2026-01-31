@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import ExperimentSteps from "./ExperimentSteps";
 import { useExperimentLogForm } from "../../../../context/ExperimentLogFormContext";
-import axios from "axios";
+import axiosInstance from "../../../../api/axiosInstance";
 
 interface Batch {
   id: string;
@@ -76,7 +76,7 @@ function isMethod(item: unknown): item is {
 
 const CreateExperimentStep1 = () => {
   // Developer offline mode: set to true to skip external API calls and use mock data
-  const DEV_OFFLINE = true;
+  const DEV_OFFLINE = false;
   const navigate = useNavigate();
   const { form, setForm } = useExperimentLogForm();
 
@@ -125,61 +125,10 @@ const CreateExperimentStep1 = () => {
         : "",
   );
 
-  // Fetch experiment logs for validation
+  // Experiment logs validation is not required for now; keep empty
   useEffect(() => {
-    if (DEV_OFFLINE) {
-      // In offline dev mode we don't need experiment log validations
-      setExperimentLogs([]);
-      setLoadingEL(false);
-      return;
-    }
-    setLoadingEL(true);
-    fetch(
-      "https://net-api.orchid-lab.systems/api/experimentlog?pageNumber=1&pageSize=1000",
-    )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Lỗi khi lấy danh sách experiment logs");
-        const data: unknown = await res.json();
-        let arr: {
-          id: string;
-          tissueCultureBatchID: string;
-          status: number | string;
-        }[] = [];
-        if (
-          hasValueWithData<{
-            id: string;
-            tissueCultureBatchID: string;
-            status: number | string;
-          }>(
-            data,
-            (
-              item,
-            ): item is {
-              id: string;
-              tissueCultureBatchID: string;
-              status: number | string;
-            } => {
-              return (
-                typeof item === "object" &&
-                item !== null &&
-                "id" in item &&
-                typeof (item as { id: unknown }).id === "string" &&
-                "tissueCultureBatchID" in item &&
-                typeof (item as { tissueCultureBatchID: unknown })
-                  .tissueCultureBatchID === "string" &&
-                "status" in item
-              );
-            },
-          )
-        ) {
-          arr = data.value.data;
-        }
-        setExperimentLogs(arr);
-      })
-      .catch(() => {
-        setExperimentLogs([]);
-      })
-      .finally(() => setLoadingEL(false));
+    setExperimentLogs([]);
+    setLoadingEL(false);
   }, []);
 
   // Fetch batches from API
@@ -205,19 +154,41 @@ const CreateExperimentStep1 = () => {
     }
     setLoadingBatch(true);
     setBatchError(null);
-    fetch(
-      "https://net-api.orchid-lab.systems/api/tissue-culture-batch?pageNumber=1&pageSize=10",
-    )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Lỗi khi lấy danh sách batch");
-        const data: unknown = await res.json();
-        let arr: Batch[] = [];
-        if (hasValueWithData<Batch>(data, isBatch)) {
-          arr = data.value.data;
-        }
+    void axiosInstance
+      .get("/api/batches", { params: { pageNo: 1, pageSize: 100 } })
+      .then((res) => {
+        const raw = res.data as { data?: any[] };
+        const arr: Batch[] = Array.isArray(raw.data)
+          ? raw.data.map((b) => ({
+              id: String(b.id),
+              name: b.batchName,
+              labName: b.labRoomName,
+              description: b.status,
+            }))
+          : [];
         setBatches(arr);
       })
-      .catch(() => {
+      .catch(async (err) => {
+        const detail = err?.response?.data?.detail ?? "";
+        // Retry without params if server complains about OFFSET negative
+        if (typeof detail === "string" && detail.includes("OFFSET")) {
+          try {
+            const r2 = await axiosInstance.get("/api/batches");
+            const raw2 = r2.data as { data?: any[] };
+            const arr2: Batch[] = Array.isArray(raw2.data)
+              ? raw2.data.map((b) => ({
+                  id: String(b.id),
+                  name: b.batchName,
+                  labName: b.labRoomName,
+                  description: b.status,
+                }))
+              : [];
+            setBatches(arr2);
+            return;
+          } catch {
+            // fall through to error handler below
+          }
+        }
         setBatchError("Không thể tải danh sách batch.");
         setBatches([]);
       })
@@ -229,36 +200,32 @@ const CreateExperimentStep1 = () => {
     if (DEV_OFFLINE) {
       setMethods([
         {
-          id: "m1",
-          name: "Clonal",
-          description: "Clonal method",
+          id: "1",
+          name: "Nuôi cấy mô tế bào (Invitro)",
+          description: "Clonal",
           type: "Clonal",
         },
         {
-          id: "m2",
-          name: "Sexual",
-          description: "Sexual method",
+          id: "2",
+          name: "Nhân giống bằng thân giả",
+          description: "Sexual",
           type: "Sexual",
         },
       ] as any);
       return;
     }
-    fetch(
-      "https://net-api.orchid-lab.systems/api/method?pageNumber=1&pageSize=10",
-    )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Lỗi khi lấy danh sách phương pháp");
-        const data: unknown = await res.json();
-        let arr: { id: string; name: string; description: string }[] = [];
-        if (
-          hasValueWithData<{ id: string; name: string; description: string }>(
-            data,
-            isMethod,
-          )
-        ) {
-          arr = data.value.data;
-        }
-        setMethods(arr);
+    void axiosInstance
+      .get("/api/methods", { params: { pageNumber: 1, pageSize: 100 } })
+      .then((res) => {
+        const raw = res.data as { data?: any[] };
+        const arr = Array.isArray(raw.data)
+          ? raw.data.map((m) => ({
+              id: String(m.id),
+              name: m.name,
+              description: m.description,
+            }))
+          : [];
+        setMethods(arr as any);
       })
       .catch(() => setMethods([]));
   }, []);
@@ -268,34 +235,80 @@ const CreateExperimentStep1 = () => {
     if (DEV_OFFLINE) {
       setTechnicians([
         {
-          id: "tech-1",
-          name: "Nguyen Van A",
+          id: "66929930-eae7-49b4-8fbc-e10883fdcc3d",
+          name: "Technician Phat",
           email: "a@example.com",
-          roleID: "3",
+          roleID: "Lab Technician",
         },
         {
-          id: "tech-2",
-          name: "Tran Thi B",
-          email: "b@example.com",
-          roleID: "3",
+          id: "9a88a231-b8e9-422b-8a7d-4ed944b5c928",
+          name: "Admin Lam",
+          email: "tech@example.com",
+          roleID: "Lab Technician",
         },
       ]);
       return;
     }
-    axios
-      .get(
-        "https://net-api.orchid-lab.systems/api/user?pageNumber=1&pageSize=100",
-      )
+    void axiosInstance
+      .get("/api/user", { params: { PageNumber: 1, PageSize: 100 } })
       .then((res) => {
-        const raw = res.data as { data?: Technician[] };
-        console.log("User API raw:", raw.data);
+        const raw = res.data as { data?: any[] };
         const data: Technician[] = Array.isArray(raw.data)
-          ? raw.data.filter((u) => String(u.roleID) === "3")
+          ? raw.data
+              .filter((u) =>
+                String(u.role).toLowerCase().includes("technician"),
+              )
+              .map((u) => ({
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                roleID: u.role,
+              }))
           : [];
-        console.log("Filtered technicians:", data);
         setTechnicians(data);
       })
-      .catch(() => setTechnicians([]));
+      .catch(async (err) => {
+        // Log details to help debug unexpected URL or response
+        // eslint-disable-next-line no-console
+        console.error(
+          "Fetch users failed:",
+          err?.response?.data ?? err?.message,
+          "request:",
+          err?.config?.url,
+          err?.config?.params,
+        );
+        const detail = err?.response?.data?.detail ?? "";
+        if (
+          typeof detail === "string" &&
+          detail.includes("Không tìm thấy người dùng")
+        ) {
+          try {
+            const r2 = await axiosInstance.get("/api/user");
+            const raw2 = r2.data as { data?: any[] };
+            const data2: Technician[] = Array.isArray(raw2.data)
+              ? raw2.data
+                  .filter((u) =>
+                    String(u.role).toLowerCase().includes("technician"),
+                  )
+                  .map((u) => ({
+                    id: u.id,
+                    name: u.name,
+                    email: u.email,
+                    roleID: u.role,
+                  }))
+              : [];
+            setTechnicians(data2);
+            return;
+          } catch (err2) {
+            // eslint-disable-next-line no-console
+            console.error(
+              "Retry fetch users failed:",
+              err2?.response?.data ?? err2?.message,
+            );
+          }
+        }
+        setTechnicians([]);
+      });
   }, []);
 
   // Update context when local state changes
@@ -390,10 +403,12 @@ const CreateExperimentStep1 = () => {
     };
   };
 
+  const isStep1Valid = Boolean(
+    name && selectedBatch && selectedMethod && selectedTechnician,
+  );
+
   const handleNext = () => {
-    // Developer bypass: allow progressing between steps even if
-    // API-backed selects are not loaded. Restore original validation
-    // when API is available again.
+    if (!isStep1Valid) return;
     void navigate("/experiment-log/create/step-2");
   };
 
@@ -618,8 +633,8 @@ const CreateExperimentStep1 = () => {
               <div className="flex gap-4">
                 <button
                   onClick={handleNext}
-                  // Bypass disabled state so developer can navigate for UI review
-                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 bg-green-600 text-white hover:bg-green-700`}
+                  disabled={!isStep1Valid}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isStep1Valid ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"}`}
                 >
                   Tiếp tục <ArrowRight className="w-4 h-4" />
                 </button>
