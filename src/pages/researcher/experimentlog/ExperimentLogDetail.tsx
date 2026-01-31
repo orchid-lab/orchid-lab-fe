@@ -503,11 +503,22 @@ const ExperimentLogDetail = () => {
               <div className="text-base">
                 <b>{t("experimentLog.creator")}:</b> {creator}
               </div>
-              <div className="text-base">
-                <b>Giai đoạn hiện tại:</b>{" "}
-                <span className="text-sky-700 font-semibold">
-                  {currentStage}
-                </span>
+              <div className="text-base flex gap-2">
+                <div>
+                  <b>Giai đoạn hiện tại:</b>{" "}
+                  <span className="text-sky-700 font-semibold">
+                    {currentStage}
+                  </span>
+                </div>
+                <button
+                  className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
+                  style={{ minWidth: 120 }}
+                  onClick={() => {
+                    /* Create Task logic here */
+                  }}
+                >
+                  Chuyển giai đoạn
+                </button>
               </div>
             </div>
             <div className="flex-1 space-y-3">
