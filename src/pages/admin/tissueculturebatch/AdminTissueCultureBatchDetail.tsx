@@ -5,16 +5,15 @@ import { useTranslation } from "react-i18next";
 
 interface TCB {
   id: string;
-  name: string;
-  labName?: string;
+  name?: string;
+  batchName?: string;
+  labRoomId?: string;
+  labRoomName?: string;
+  batchSize?: number;
   description?: string;
   inUse?: string;
   status?: boolean;
-}
-
-interface LabRoom {
-  id: string;
-  name: string;
+  isBatching?: boolean;
 }
 
 const AdminTissueCultureBatchDetail = () => {
@@ -25,8 +24,6 @@ const AdminTissueCultureBatchDetail = () => {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [labRooms, setLabRooms] = useState<LabRoom[]>([]);
-  const [selectedLab, setSelectedLab] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -34,34 +31,23 @@ const AdminTissueCultureBatchDetail = () => {
     if (!id) return;
     setLoading(true);
     axiosInstance
-      .get(`/api/tissue-culture-batch/${id}`)
+      .get(`/api/batches/${id}`)
       .then((res) => {
-        const raw = res.data as { value?: TCB } | TCB;
-        const tcb = (raw as any)?.value ?? raw;
+        const tcb = res.data as TCB;
         setData(tcb);
-        setName((tcb as TCB).name);
-        setDescription((tcb as TCB).description ?? "");
-        setSelectedLab("");
+        setName(tcb.batchName || tcb.name || "");
+        setDescription(tcb.description ?? "");
+      })
+      .catch((err) => {
+        console.error("Error loading batch detail:", err);
       })
       .finally(() => setLoading(false));
   }, [id]);
 
-  useEffect(() => {
-    axiosInstance
-      .get("/api/labroom?pageNumber=1&pageSize=100")
-      .then((res) => {
-        const raw = res.data as { value?: { data?: LabRoom[] } } | LabRoom[];
-        const arr =
-          (raw as any)?.value?.data ?? (Array.isArray(raw) ? raw : []);
-        setLabRooms(arr);
-      })
-      .catch(() => setLabRooms([]));
-  }, []);
-
   const handleDelete = async () => {
     if (!id) return;
     if (!confirm(t("tissueCultureBatch.deleteConfirm"))) return;
-    await axiosInstance.delete("/api/tissue-culture-batch", { data: { id } });
+    await axiosInstance.delete("/api/batches", { data: { id } });
     navigate("/admin/tissue-culture-batches");
   };
 
@@ -69,17 +55,16 @@ const AdminTissueCultureBatchDetail = () => {
     if (!id) return;
     setSaving(true);
     try {
-      await axiosInstance.put("/api/tissue-culture-batch", {
+      await axiosInstance.put("/api/batches", {
         id,
-        name,
-        labRoomID: selectedLab || undefined,
-        status: data?.status ?? true,
+        batchName: name,
         description,
       });
       setEditing(false);
-      const res = await axiosInstance.get(`/api/tissue-culture-batch/${id}`);
-      const tcb = (res.data as any)?.value ?? res.data;
-      setData(tcb);
+      const res = await axiosInstance.get(`/api/batches/${id}`);
+      setData(res.data);
+    } catch (err) {
+      console.error("Error saving batch:", err);
     } finally {
       setSaving(false);
     }
@@ -116,20 +101,23 @@ const AdminTissueCultureBatchDetail = () => {
         {!editing ? (
           <div className="space-y-2">
             <p>
-              <b>{t("common.name")}:</b> {data.name}
+              <b>ID:</b> {data.id}
             </p>
             <p>
-              <b>{t("tissueCultureBatch.labRoom")}:</b> {data.labName ?? "-"}
+              <b>{t("common.name")}:</b> {data.batchName || data.name || "-"}
+            </p>
+            <p>
+              <b>{t("tissueCultureBatch.labRoom")}:</b> {data.labRoomName || "-"}
+            </p>
+            <p>
+              <b>{t("tissueCultureBatch.batchSize")}:</b> {data.batchSize ?? "-"}
             </p>
             <p>
               <b>{t("common.description")}:</b> {data.description ?? "-"}
             </p>
             <p>
-              <b>{t("tissueCultureBatch.usedIn")}:</b> {data.inUse ?? "-"}
-            </p>
-            <p>
               <b>{t("common.status")}:</b>{" "}
-              {data.status
+              {data.isBatching
                 ? t("tissueCultureBatch.operating")
                 : t("tissueCultureBatch.notOperating")}
             </p>
@@ -145,23 +133,6 @@ const AdminTissueCultureBatchDetail = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                {t("tissueCultureBatch.newLabRoom")}
-              </label>
-              <select
-                className="w-full border rounded px-3 py-2"
-                value={selectedLab}
-                onChange={(e) => setSelectedLab(e.target.value)}
-              >
-                <option value="">{t("tissueCultureBatch.keepCurrent")}</option>
-                {labRooms.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">

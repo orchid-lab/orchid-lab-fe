@@ -306,10 +306,10 @@ const AdminExperimentLog = () => {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      params.append("pageNumber", String(currentPage));
+      params.append("pageNo", String(currentPage));
       params.append("pageSize", String(logsPerPage));
       if (methodFilter) {
-        params.append("filter", methodFilter);
+        params.append("methodNameSearchTerm", methodFilter);
       }
 
       try {

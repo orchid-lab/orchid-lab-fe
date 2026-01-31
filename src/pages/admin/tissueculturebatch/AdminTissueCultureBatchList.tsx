@@ -5,11 +5,19 @@ import { useTranslation } from "react-i18next";
 
 interface TissueCultureBatch {
   id: string;
-  name: string;
+  name?: string;
   labName?: string;
+  labRoomId?: number;
+  labRoomName?: string;
+  batchName?: string;
+  batchSizeWidth?: number;
+  batchSizeHeight?: number;
+  widthUnit?: string;
+  heightUnit?: string;
   description?: string;
   inUse?: string;
-  status?: boolean;
+  status?: string | boolean;
+  isBatching?: boolean;
 }
 
 interface ApiListResponse {
@@ -18,6 +26,7 @@ interface ApiListResponse {
     totalCount?: number;
   };
   data?: TissueCultureBatch[];
+  totalCount?: number;
 }
 
 const AdminTissueCultureBatchList = () => {
@@ -30,24 +39,37 @@ const AdminTissueCultureBatchList = () => {
     setLoading(true);
     setError(null);
     axiosInstance
-      .get("/api/tissue-culture-batch?pageNumber=1&pageSize=100")
+      .get("/api/batches?pageNo=1&pageSize=100")
       .then((res) => {
         const raw = res.data as ApiListResponse | TissueCultureBatch[];
         let arr: TissueCultureBatch[] = [];
-        if ((raw as ApiListResponse)?.value?.data)
+        
+        if ((raw as ApiListResponse)?.value?.data) {
           arr = (raw as ApiListResponse).value!.data!;
-        else if ((raw as ApiListResponse)?.data)
+        } else if ((raw as ApiListResponse)?.data) {
           arr = (raw as ApiListResponse).data!;
-        else if (Array.isArray(raw)) arr = raw;
+        } else if (Array.isArray(raw)) {
+          arr = raw;
+        }
+        
+        arr.sort((a, b) => {
+          const idA = typeof a.id === 'string' ? parseInt(a.id) : a.id;
+          const idB = typeof b.id === 'string' ? parseInt(b.id) : b.id;
+          return idA - idB;
+        });
+        
         setItems(arr);
       })
-      .catch(() => setError(t("tissueCultureBatch.errorLoadingList")))
+      .catch((err) => {
+        console.error("Error loading batches:", err);
+        setError(t("tissueCultureBatch.errorLoadingList"));
+      })
       .finally(() => setLoading(false));
   }, [t]);
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-lg shadow">
+      <div className="max-w-full mx-auto bg-white rounded-lg shadow">
         <div className="p-6 border-b flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -70,10 +92,22 @@ const AdminTissueCultureBatchList = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {t("common.name")}
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t("tissueCultureBatch.labRoomId")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t("tissueCultureBatch.labRoom")}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t("tissueCultureBatch.batchName")}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t("tissueCultureBatch.batchSize")}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t("tissueCultureBatch.dimensions")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t("common.status")}
@@ -85,7 +119,7 @@ const AdminTissueCultureBatchList = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={8}
                     className="px-6 py-6 text-center text-gray-500"
                   >
                     {t("common.loadingData")}
@@ -94,7 +128,7 @@ const AdminTissueCultureBatchList = () => {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={8}
                     className="px-6 py-6 text-center text-red-500"
                   >
                     {error}
@@ -103,7 +137,7 @@ const AdminTissueCultureBatchList = () => {
               ) : items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={8}
                     className="px-6 py-6 text-center text-gray-500"
                   >
                     {t("tissueCultureBatch.noBatches")}
@@ -111,24 +145,42 @@ const AdminTissueCultureBatchList = () => {
                 </tr>
               ) : (
                 items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr key={item.id} className="hover:bg-gray-50 border-b">
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {item.name}
+                      {item.id}
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {item.labName ?? "-"}
+                      {item.labRoomId ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {item.labRoomName ?? item.labName ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {item.batchName ?? item.name ?? "-"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {item.batchSizeWidth && item.batchSizeHeight
+                        ? `${item.batchSizeWidth} × ${item.batchSizeHeight}`
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {item.widthUnit && item.heightUnit
+                        ? `${item.widthUnit} × ${item.heightUnit}`
+                        : item.widthUnit ?? item.heightUnit ?? "-"}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
-                          item.status
+                          item.status || item.isBatching
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-200 text-gray-700"
                         }`}
                       >
-                        {item.status
-                          ? t("tissueCultureBatch.operating")
-                          : t("tissueCultureBatch.notOperating")}
+                        {typeof item.status === 'string' 
+                          ? item.status 
+                          : (item.status || item.isBatching
+                              ? t("tissueCultureBatch.operating")
+                              : t("tissueCultureBatch.notOperating"))}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">

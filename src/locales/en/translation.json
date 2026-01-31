@@ -65,7 +65,8 @@
     "addNew": "Add New",
     "saving": "Saving...",
     "deleting": "Deleting...",
-    "details": "Details"
+    "details": "Details",
+    "category": "Category"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -443,7 +444,10 @@
     "creating": "Creating...",
     "create": "Create",
     "saving": "Saving...",
-    "errorLoadingList": "Unable to load tissue culture batch list"
+    "errorLoadingList": "Unable to load tissue culture batch list",
+    "labRoomId": "Lab Room ID",
+    "batchSize": "Batch Size",
+    "dimensions": "Dimensions"
   },
   "element": {
     "elementManagement": "Element Management",
@@ -464,6 +468,60 @@
     "pleaseEnterName": "Please enter name!",
     "pleaseEnterDescription": "Please enter description!",
     "elementsOutOf": "elements out of",
-    "elements": "elements"
+    "elements": "elements",
+    "chemical": "Chemical",
+    "material": "Material"
+  },
+  "notification": {
+    "title": "Notifications",
+    "unread": "unread",
+    "empty": "No notifications",
+    "markAsRead": "Mark as read",
+    "markAllAsRead": "Mark all as read",
+    "markedAsRead": "Marked as read",
+    "allMarkedAsRead": "All marked as read",
+    "fetchError": "Error fetching notifications",
+    "markAsReadError": "Error marking notification as read",
+    "markAllAsReadError": "Error marking all notifications as read"
+  },
+    "chemical": {
+    "management": "Chemical Management",
+    "add": "Add Chemical",
+    "edit": "Edit Chemical",
+    "delete": "Delete Chemical",
+    "deleteConfirm": "Are you sure you want to delete this chemical?",
+    "added": "Chemical added successfully",
+    "updated": "Chemical updated successfully",
+    "deleted": "Chemical deleted successfully",
+    "addFailed": "Failed to add chemical",
+    "updateFailed": "Failed to update chemical",
+    "deleteFailed": "Failed to delete chemical",
+    "fetchFailed": "Failed to fetch chemicals",
+    "total": "Total Chemicals",
+    "searchByName": "Search by name...",
+    "unit": "Concentration Unit",
+    "fillAllFields": "Please fill all fields",
+    "outOf": "out of",
+    "chemicals": "chemicals"
+  },
+    "material": {
+    "management": "Material Management",
+    "add": "Add Material",
+    "edit": "Edit Material",
+    "delete": "Delete Material",
+    "deleteConfirm": "Are you sure you want to delete this material?",
+    "added": "Material added successfully",
+    "updated": "Material updated successfully",
+    "deleted": "Material deleted successfully",
+    "addFailed": "Failed to add material",
+    "updateFailed": "Failed to update material",
+    "deleteFailed": "Failed to delete material",
+    "fetchFailed": "Failed to fetch materials",
+    "total": "Total Materials",
+    "searchByName": "Search by name...",
+    "unit": "Unit",
+    "fillAllFields": "Please fill all fields",
+    "outOf": "out of",
+    "materials": "materials"
   }
 }

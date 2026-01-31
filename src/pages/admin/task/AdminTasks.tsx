@@ -215,19 +215,15 @@ export default function AdminTasks() {
     const loadData = async () => {
       setLoading(true);
       try {
-        // --- GIẢ LẬP GỌI API ---
-        // Thay vì gọi axios, ta dùng dữ liệu giả MOCK_TASKS
-        // const response = await axiosInstance.get(`/api/tasks?pageNo=1&pageSize=1000`);
-        
-        // Giả lập độ trễ mạng 500ms cho giống thật
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const all = MOCK_TASKS; // Sử dụng Mock Data
-        
-        setAllTasks(all);
-        
-        // Tính toán thống kê
-        const counts: Record<StatusType, number> = {
+        const response = await axiosInstance.get(
+          `/api/tasks?PageNumber=1&pageSize=1000`
+        );
+        if (isApiTaskResponse(response.data)) {
+          const all = Array.isArray(response.data.value?.data)
+            ? response.data.value.data
+            : [];
+          setAllTasks(all);
+          const counts: Record<StatusType, number> = {
             Assigned: 0,
             Taken: 0,
             InProcess: 0,

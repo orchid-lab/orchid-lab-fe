@@ -1,3 +1,4 @@
+/* eslint-disable react-x/no-array-index-key */
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -60,7 +61,6 @@ interface SamplesResponse {
   data?: Sample[];
 }
 
-// removed strict type guard; response shapes vary (value-wrapped or root)
 
 const ExperimentLogDetail = () => {
   const [samples] = useState([
@@ -87,90 +87,44 @@ const ExperimentLogDetail = () => {
   const [error] = useState<string | null>(null);
   const { t } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
-  const [log, setLog] = useState<ExperimentLogDetailType | null>({
-    id: "EXP-001",
-    name: "Nuôi cấy lan hồ điệp - batch 1",
-    methodName: "MS + NAA",
-    description:
-      "Theo dõi phát triển cây con trong môi trường MS, bổ sung NAA.",
-    tissueCultureBatchName: "Batch Orchid 2026",
-    createdDate: "2026-01-10T09:24:00Z",
-    create_by: "u01",
-    status: "Process",
-    samples: [
-      {
-        id: "SMP-001",
-        name: "Lan hồ điệp #1",
-        description: "Cây con khỏe mạnh",
-        dob: "2025-12-01",
-        statusEnum: "Process",
-      },
-      {
-        id: "SMP-002",
-        name: "Lan hồ điệp #2",
-        description: "Có đốm nâu nhỏ",
-        dob: "2025-12-02",
-        statusEnum: "Process",
-      },
-    ],
-    stages: [
-      {
-        id: "STG-01",
-        name: "Gieo hạt",
-        description: "Giai đoạn gieo hạt",
-        dateOfProcessing: "2025-12-01",
-      },
-      {
-        id: "STG-02",
-        name: "Cấy chuyển",
-        description: "Cấy chuyển sang môi trường mới",
-        dateOfProcessing: "2025-12-15",
-      },
-    ],
-    hybridizations: [
-      {
-        seedling: {
-          id: "S1",
-          localName: "Lan hồ điệp vàng",
-          scientificName: "Phalaenopsis amabilis",
-        },
-      },
-      {
-        seedling: {
-          id: "S2",
-          localName: "Lan hồ điệp tím",
-          scientificName: "Phalaenopsis schilleriana",
-        },
-      },
-    ],
-  });
-  // Fetch experiment log detail
-  // useEffect(() => {
-  //   if (!id) return;
-  //   setLoading(true);
-  //   setError(null);
-  //   fetch(`https://net-api.orchid-lab.systems/api/experimentlog/${id}`)
-  //     .then(async (res) => {
-  //       if (!res.ok)
-  //         throw new Error("Lỗi khi lấy dữ liệu chi tiết nhật ký thí nghiệm");
-  //       const data: unknown = await res.json();
-  //       const logData = (data as { value?: unknown }).value ?? data;
-  //       const anyLog = logData as Record<string, unknown>;
-  //       const normalized: Partial<ExperimentLogDetailType> = {
-  //         ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
-  //         createdDate:
-  //           (anyLog.createdDate as string | undefined) ??
-  //           (anyLog.create_date as string | undefined),
-  //         tissueCultureBatchId:
-  //           (anyLog.tissueCultureBatchId as string | undefined) ??
-  //           (anyLog as { tissueCultureBatchID?: string }).tissueCultureBatchID,
-  //       };
-  //       setLog(normalized as ExperimentLogDetailType);
-  //     })
-  //     .catch(() => setError("Không thể tải chi tiết nhật ký thí nghiệm."))
-  //     .finally(() => setLoading(false));
-  // }, [id, reloadLog]);
+  const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
+  const [samples, setSamples] = useState<Sample[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [samplesLoading, setSamplesLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedStage, setSelectedStage] = useState(1);
+  const [labName, setLabName] = useState<string>("Đang tải...");
+  const [creator, setCreator] = useState<string>("Đang tải...");
+  const { enqueueSnackbar } = useSnackbar();
+  const [loadingStage, setLoadingStage] = useState(false);
+  // const [loadingPDF, setLoadingPDF] = useState(false);
+  const [reloadLog, setReloadLog] = useState(0);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    fetch(`https://net-api.orchid-lab.systems/api/experimentlog/${id}`)
+      .then(async (res) => {
+        if (!res.ok)
+          throw new Error("Lỗi khi lấy dữ liệu chi tiết nhật ký thí nghiệm");
+        const data: unknown = await res.json();
+        const logData = (data as { value?: unknown }).value ?? data;
+        const anyLog = logData as Record<string, unknown>;
+        const normalized: Partial<ExperimentLogDetailType> = {
+          ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+          createdDate:
+            (anyLog.createdDate as string | undefined) ??
+            (anyLog.create_date as string | undefined),
+          tissueCultureBatchId:
+            (anyLog.tissueCultureBatchId as string | undefined) ??
+            (anyLog as { tissueCultureBatchID?: string }).tissueCultureBatchID,
+        };
+        setLog(normalized as ExperimentLogDetailType);
+      })
+      .catch(() => setError("Không thể tải chi tiết nhật ký thí nghiệm."))
+      .finally(() => setLoading(false));
+  }, [id, reloadLog]);
 
   // Fetch samples
   // useEffect(() => {
@@ -204,81 +158,82 @@ const ExperimentLogDetail = () => {
   // }, [id, log]);
 
   // Fetch labName từ tissueCultureBatchId
-  // useEffect(() => {
-  //   if (log?.tissueCultureBatchId) {
-  //     fetch(
-  //       `https://net-api.orchid-lab.systems/api/tissue-culture-batch/${log.tissueCultureBatchId}`,
-  //     )
-  //       .then(async (res) => {
-  //         const raw: unknown = await res.json();
-  //         const parsed = raw as
-  //           | { value?: { labName?: string } }
-  //           | { labName?: string };
-  //         const name =
-  //           (parsed as { value?: { labName?: string } }).value?.labName ??
-  //           (parsed as { labName?: string }).labName;
-  //         setLabName(name ?? "Không xác định");
-  //       })
-  //       .catch(() => setLabName("Không xác định"));
-  //   }
-  // }, [log]);
+  useEffect(() => {
+    if (log?.tissueCultureBatchId) {
+      fetch(
+        `https://net-api.orchid-lab.systems/api/tissue-culture-batch/${log.tissueCultureBatchId}`
+      )
+        .then(async (res) => {
+          const raw: unknown = await res.json();
+          const parsed = raw as
+            | { value?: { labName?: string } }
+            | { labName?: string };
+          const name =
+            (parsed as { value?: { labName?: string } }).value?.labName ??
+            (parsed as { labName?: string }).labName;
+          setLabName(name ?? "Không xác định");
+        })
+        .catch(() => setLabName("Không xác định"));
+    }
+  }, [log]);
 
-  // // Fetch user từ create_by
-  // useEffect(() => {
-  //   if (log?.create_by) {
-  //     fetch(`https://net-api.orchid-lab.systems/api/user/${log.create_by}`)
-  //       .then(async (res) => {
-  //         const raw: unknown = await res.json();
-  //         const parsed = raw as
-  //           | { value?: { name?: string } }
-  //           | { name?: string };
-  //         const name =
-  //           (parsed as { value?: { name?: string } }).value?.name ??
-  //           (parsed as { name?: string }).name;
-  //         setCreator(name ?? "Không xác định");
-  //       })
-  //       .catch(() => setCreator("Không xác định"));
-  //   }
-  // }, [log]);
+  // Fetch user từ create_by
+  useEffect(() => {
+    if (log?.create_by) {
+      fetch(`https://net-api.orchid-lab.systems/api/user/${log.create_by}`)
+        .then(async (res) => {
+          const raw: unknown = await res.json();
+          const parsed = raw as
+            | { value?: { name?: string } }
+            | { name?: string };
+          const name =
+            (parsed as { value?: { name?: string } }).value?.name ??
+            (parsed as { name?: string }).name;
+          setCreator(name ?? "Không xác định");
+        })
+        .catch(() => setCreator("Không xác định"));
+    }
+  }, [log]);
 
-  // const handleChangeStage = async () => {
-  //   if (!log?.id) return;
-  //   setLoadingStage(true);
-  //   try {
-  //     await axiosInstance.put("/api/experimentlog/stage-changer", {
-  //       elid: log.id,
-  //     });
-  //     enqueueSnackbar("Chuyển giai đoạn thành công!", {
-  //       variant: "success",
-  //       autoHideDuration: 3000,
-  //       preventDuplicate: true,
-  //     });
+  const handleChangeStage = async () => {
+    if (!log?.id) return;
+    setLoadingStage(true);
+    try {
+      await axiosInstance.put("/api/experimentlog/stage-changer", {
+        elid: log.id,
+      });
+      enqueueSnackbar("Chuyển giai đoạn thành công!", {
+        variant: "success",
+        autoHideDuration: 3000,
+        preventDuplicate: true,
+      });
+      
+      // Reload trang sau khi chuyển giai đoạn thành công
+      window.location.reload();
+      
+    } catch (error) {
+      console.log(error);
+      const apiError = error as {
+        response?: {
+          data?: string;
+          status?: number;
+        };
+        message?: string;
+      };
+      const backendMessage =
+        apiError.response?.data ??
+        apiError.message ??
+        "Chuyển giai đoạn thất bại!";
 
-  //     // Reload trang sau khi chuyển giai đoạn thành công
-  //     window.location.reload();
-  //   } catch (error) {
-  //     console.log(error);
-  //     const apiError = error as {
-  //       response?: {
-  //         data?: string;
-  //         status?: number;
-  //       };
-  //       message?: string;
-  //     };
-  //     const backendMessage =
-  //       apiError.response?.data ??
-  //       apiError.message ??
-  //       "Chuyển giai đoạn thất bại!";
-
-  //     enqueueSnackbar(backendMessage, {
-  //       variant: "error",
-  //       autoHideDuration: 5000,
-  //       preventDuplicate: true,
-  //     });
-  //   } finally {
-  //     setLoadingStage(false);
-  //   }
-  // };
+      enqueueSnackbar(backendMessage, {
+        variant: "error",
+        autoHideDuration: 5000,
+        preventDuplicate: true,
+      });
+    } finally {
+      setLoadingStage(false);
+    }
+  };
 
   // const handleExportPDF = async () => {
   //   if (!log?.id) return;
@@ -293,7 +248,7 @@ const ExperimentLogDetail = () => {
   //       const errorText = await (res.data as Blob).text();
   //       enqueueSnackbar(
   //         errorText || "Xuất PDF thất bại! Vui lòng thử lại sau.",
-  //         { variant: "error", autoHideDuration: 3000, preventDuplicate: true },
+  //         { variant: "error", autoHideDuration: 3000, preventDuplicate: true }
   //       );
   //       return;
   //     }
@@ -332,18 +287,18 @@ const ExperimentLogDetail = () => {
   //   }
   // };
 
-  // useEffect(() => {
-  //   if (log?.currentStageName && log.stages && log.stages.length > 0) {
-  //     const idx = log.stages.findIndex(
-  //       (stage) => stage.name === log.currentStageName,
-  //     );
-  //     if (idx !== -1) {
-  //       setSelectedStage(idx + 1);
-  //     } else {
-  //       setSelectedStage(1);
-  //     }
-  //   }
-  // }, [log]);
+  useEffect(() => {
+    if (log?.currentStageName && log.stages && log.stages.length > 0) {
+      const idx = log.stages.findIndex(
+        (stage) => stage.name === log.currentStageName
+      );
+      if (idx !== -1) {
+        setSelectedStage(idx + 1);
+      } else {
+        setSelectedStage(1);
+      }
+    }
+  }, [log]);
 
   if (loading)
     return (
@@ -432,10 +387,12 @@ const ExperimentLogDetail = () => {
   ];
 
   return (
-    <main className="ml-64 mt-12 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
+        <h1 className="text-2xl font-bold">
+          Chi tiết nhật ký thí nghiệm - {log.name}
+        </h1>
+        {/* <div className="flex gap-2">
           <button
             type="button"
             className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 hover:bg-green-800 hover:text-green-900 transition"
@@ -443,29 +400,35 @@ const ExperimentLogDetail = () => {
           >
             &larr;
           </button>
-          <h1 className="text-2xl font-bold text-green-900">
-            {t("experimentLog.detailTitle")}{" "}
-            <span className="font-normal text-gray-700">- {log.name}</span>
-          </h1>
-          <div className="flex gap-3">
-            <button
-              className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
-              style={{ minWidth: 120 }}
-              onClick={() => {
-                /* Export PDF logic here */
-              }}
-            >
-              Export PDF
-            </button>
-            <button
-              className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
-              style={{ minWidth: 120 }}
-              onClick={() => {
-                /* Create Task logic here */
-              }}
-            >
-              Tạo nhiệm vụ
-            </button>
+        </div> */}
+        <div className="mb-6 grid grid-cols-2 gap-4">
+          <div>
+            <p>
+              <b>Phương pháp:</b> {log.methodName}
+            </p>
+            <p>
+              <b>Lô thí nghiệm:</b> {log.tissueCultureBatchName}
+            </p>
+            <p>
+              <b>Phòng thí nghiệm:</b> {labName}
+            </p>
+            <p>
+              <b>Trạng thái:</b> {getStatusDisplay(log.status)}
+            </p>
+            <p>
+              <b>Số lượng mẫu:</b> {samples.length}
+            </p>
+            <p>
+              <b>Ngày tạo:</b> {formatDate(log.createdDate)}
+            </p>
+            <p>
+              <b>Người tạo:</b> {creator}
+            </p>
+            {log.description && (
+              <p>
+                <b>Mô tả:</b> {log.description}
+              </p>
+            )}
           </div>
         </div>
 

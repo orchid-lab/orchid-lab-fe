@@ -56,9 +56,6 @@ import AdminTasks from "./pages/admin/task/AdminTasks";
 import AdminTaskDetail from "./pages/admin/task/AdminTaskDetail";
 import AdminExperimentLog from "./pages/admin/experimentlog/AdminExperimentLog";
 import AdminExperimentLogDetail from "./pages/admin/experimentlog/AdminExperimentLogDetail";
-import AdminLabRoomList from "./pages/admin/labroom/AdminLabRoomList";
-import AdminLabRoomCreate from "./pages/admin/labroom/AdminLabRoomCreate";
-import AdminLabRoomDetail from "./pages/admin/labroom/AdminLabRoomDetail";
 import AdminSeedlings from "./pages/admin/seeding/AdminSeedlings";
 import AdminSeedlingDetail from "./pages/admin/seeding/AdminSeedlingDetail";
 import AdminMethodDetail from "./pages/admin/method/AdminMethodDetail";
@@ -373,30 +370,6 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Admin">
                   <AdminExperimentLogDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/labroom"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/labroom/new"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomCreate />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/labroom/:id"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomDetail />
                 </ProtectedRoute>
               }
             />
