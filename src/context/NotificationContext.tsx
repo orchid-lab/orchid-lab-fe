@@ -81,9 +81,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [user?.id]);
 
-  // Lấy noti khi login hoặc reload
+  // Lấy noti khi login hoặc reload, đồng thời polling mỗi 20s
   useEffect(() => {
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000); // 20s
+    return () => clearInterval(interval);
   }, [user?.id]);
 
   return (
