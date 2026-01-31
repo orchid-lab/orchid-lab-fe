@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 export type MethodType = 1 | 2; // 1: Cấy mô, 2: Lai ghép
 
@@ -9,6 +9,8 @@ export interface ExperimentLogFormData {
   methodType?: string; // type của method (Clonal/Sexual)
   tissueCultureBatchID?: string; // chọn ở bước 1
   batchName?: string; // chỉ để hiển thị
+  startDate?: string; // ngày bắt đầu (dev)
+  endDate?: string; // ngày kết thúc (dev)
   numberOfSample?: number; // số lượng sample
   hybridization?: string[]; // chọn ở bước 2
   hybridizationNames?: string[]; // chỉ để hiển thị
@@ -26,33 +28,43 @@ interface ExperimentLogFormContextType {
 }
 
 const defaultForm: ExperimentLogFormData = {
-  name: '',
-  methodID: '',
-  methodName: '',
-  methodType: '',
-  tissueCultureBatchID: '',
-  batchName: '',
+  name: "",
+  methodID: "",
+  methodName: "",
+  methodType: "",
+  tissueCultureBatchID: "",
+  batchName: "",
+  startDate: "",
+  endDate: "",
   numberOfSample: undefined,
   hybridization: [],
   hybridizationNames: [],
-  motherID: '',
-  motherName: '',
-  description: '',
+  motherID: "",
+  motherName: "",
+  description: "",
   technicianID: [],
   technicianNames: [],
 };
 
-const ExperimentLogFormContext = createContext<ExperimentLogFormContextType | undefined>(undefined);
+const ExperimentLogFormContext = createContext<
+  ExperimentLogFormContextType | undefined
+>(undefined);
 
 export function useExperimentLogForm() {
   const context = useContext(ExperimentLogFormContext);
   if (!context) {
-    throw new Error('useExperimentLogForm must be used within an ExperimentLogFormProvider');
+    throw new Error(
+      "useExperimentLogForm must be used within an ExperimentLogFormProvider",
+    );
   }
   return context;
 }
 
-export function ExperimentLogFormProvider({ children }: { children: React.ReactNode }) {
+export function ExperimentLogFormProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [form, setForm] = useState<ExperimentLogFormData>(defaultForm);
   const resetForm = () => setForm(defaultForm);
   return (
@@ -60,4 +72,4 @@ export function ExperimentLogFormProvider({ children }: { children: React.ReactN
       {children}
     </ExperimentLogFormContext.Provider>
   );
-} 
+}

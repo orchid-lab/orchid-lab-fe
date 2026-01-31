@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useState as useStateReact } from "react";
 import { FaBell, FaEnvelope } from "react-icons/fa";
+import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import NotificationModal from "./NotificationModal";
@@ -39,10 +40,12 @@ export default function Topbar() {
       if (!authUser?.id) return;
 
       try {
-        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        const response = await axiosInstance.get<User>(
+          `/api/user/${authUser.id}`,
+        );
         setUser(response.data);
       } catch (error) {
-        console.error('Error fetching user data in Topbar:', error);
+        console.error("Error fetching user data in Topbar:", error);
         // Fallback to authUser if API fails
         setUser(authUser);
       }
@@ -61,21 +64,31 @@ export default function Topbar() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-          <div className="w-2 h-2 bg-blue-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
+          <div
+            className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"
+            style={{ animationDelay: "0.2s" }}
+          ></div>
+          <div
+            className="w-2 h-2 bg-blue-300 rounded-full animate-pulse"
+            style={{ animationDelay: "0.4s" }}
+          ></div>
         </div>
         <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
-          {new Date().toLocaleDateString("vi-VN", { 
-            weekday: "long", 
-            year: "numeric", 
-            month: "long", 
-            day: "numeric" 
+          {new Date().toLocaleDateString("vi-VN", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </span>
       </div>
 
       {/* Right side - User section */}
       <div className="flex items-center gap-4">
+        {/* Notification bell with dropdown */}
+        <div style={{ position: "relative" }}>
+          <NotificationBell />
+        </div>
         {/* Notification bell */}
         <button 
           onClick={() => setIsNotificationOpen(true)}
@@ -100,7 +113,7 @@ export default function Topbar() {
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
 
         {/* User section */}
-        <div 
+        <div
           className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
           onClick={handleAvatarClick}
         >
@@ -114,15 +127,17 @@ export default function Topbar() {
               />
             ) : (
               <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-700 font-semibold transition-transform duration-300 group-hover:scale-110">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.name?.charAt(0).toUpperCase() || "U"}
               </div>
             )}
-            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}></div>
+            <div
+              className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}
+            ></div>
           </div>
 
           <div className="flex flex-col">
             <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
-              {user?.name || t('common.loading')}
+              {user?.name || t("common.loading")}
             </span>
             <span className="text-gray-500 dark:text-gray-400 text-xs">
               {getRoleName(user?.role, t)}

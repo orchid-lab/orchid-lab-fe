@@ -3,6 +3,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import type { ReportApiResponse, Report } from "../../../types/Report";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { getMockReportsPage } from "../../../data/mockReportList";
 
 const PAGE_SIZE = 5;
 
@@ -22,14 +23,18 @@ export default function AdminReport() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
-          params: {
-            pageNumber: page,
-            pageSize: PAGE_SIZE,
-          },
-        });
-        
-        const json = res.data; 
+        // const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
+        //   params: {
+        //     pageNumber: page,
+        //     pageSize: PAGE_SIZE,
+        //   },
+        // });
+
+        // const json = res.data;
+        // setData(json.value.data || []);
+        // setTotal(json.value.totalCount || 0);
+        // setTotalPages(json.value.pageCount || 1);
+        const json = getMockReportsPage(page, PAGE_SIZE);
         setData(json.value.data || []);
         setTotal(json.value.totalCount || 0);
         setTotalPages(json.value.pageCount || 1);
@@ -58,7 +63,7 @@ export default function AdminReport() {
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="w-full">
-        <h1 className="text-2xl font-bold mb-4 text-green-800">
+        <h1 className="text-2xl font-bold mb-4 text-gray-900">
           {t("report.reportManagement")}
         </h1>
         {/* Thanh tìm kiếm */}
@@ -88,90 +93,102 @@ export default function AdminReport() {
           </div>
         </div>
         {/* Bảng danh sách */}
-        <div className="bg-white rounded shadow p-0 overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-green-50 text-green-800 font-semibold">
-                <th className="py-3 px-4">{t("report.taskName")}</th>
-                <th className="px-4">{t("report.description")}</th>
-                <th className="px-4">{t("report.writer")}</th>
-                <th className="px-4">{t("report.status")}</th>
-                <th className="px-4">{t("report.action")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                  <tr key={idx} className="border-t animate-pulse">
-                    <td className="py-3 px-4">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </td>
-                    <td className="px-4">
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    </td>
-                  </tr>
-                ))
-              ) : filteredReports.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600 font-medium">
+              {t("common.loadingData")}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded shadow p-0 overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                 <tr>
-                  <td colSpan={5} className="text-center py-6 text-gray-500">
-                    {t("report.noReports")}
-                  </td>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.sample")}
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.description")}
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.writer")}
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.createdDate")}
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.status")}
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    {t("report.action")}
+                  </th>
                 </tr>
-              ) : (
-                filteredReports.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="py-3 px-4">{r.name}</td>
-                    <td className="px-4">{r.description}</td>
-                    <td className="px-4">{r.technician}</td>
-                    <td className="px-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          r.status === "Seen"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {r.status === "Seen" ? t("report.seen") : t("report.notSeen")}
-                      </span>
-                    </td>
-                    <td className="px-4">
-                      <button
-                        type="button"
-                        className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
-                        onClick={() =>
-                          void navigate(`/admin/report/${r.id}?page=${page}`)
-                        }
-                      >
-                        {t("report.details")}
-                      </button>
+              </thead>
+              <tbody>
+                {filteredReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-6 text-gray-500">
+                      <div className="text-6xl mb-4">📋</div>
+                      <div className="text-lg font-medium">
+                        {t("report.noReports")}
+                      </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filteredReports.map((r) => (
+                    <tr key={r.id} className="border-t">
+                      <td className="py-3 px-4">{r.name}</td>
+                      <td className="px-4">{r.description}</td>
+                      <td className="px-4">{r.technician}</td>
+                      <td className="px-4">{r.createdAt}</td>
+                      <td className="px-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            r.status === "Seen"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {r.status === "Seen"
+                            ? t("report.seen")
+                            : t("report.notSeen")}
+                        </span>
+                      </td>
+                      <td className="px-4">
+                        <button
+                          type="button"
+                          className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
+                          onClick={() =>
+                            void navigate(`/admin/report/${r.id}?page=${page}`)
+                          }
+                        >
+                          {t("report.details")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Summary cards */}
         <div className="flex gap-4 mt-6 mb-2">
-          <div className="bg-green-100 rounded p-4 w-1/4">
-            <div className="font-semibold text-green-800">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded p-4 w-1/4">
+            <div className="font-semibold text-green-600">
               {t("report.totalReports")}
             </div>
-            <div className="text-2xl font-bold text-green-800">{total}</div>
+            <div className="text-2xl font-bold text-green-700">{total}</div>
           </div>
         </div>
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
             <span>
-              {t("common.showing")} {filteredReports.length} {t("report.reportsOutOf")}{" "}
-              {total} {t("report.reports")}
+              {t("common.showing")} {filteredReports.length}{" "}
+              {t("report.reportsOutOf")} {total} {t("report.reports")}
             </span>
             <div className="flex gap-2">
               {/* Previous button */}

@@ -1,8 +1,9 @@
 /* eslint-disable react-x/no-array-index-key */
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
+import { useTranslation } from "react-i18next";
 
 interface Sample {
   id: string;
@@ -62,6 +63,29 @@ interface SamplesResponse {
 
 
 const ExperimentLogDetail = () => {
+  const [samples] = useState([
+    {
+      id: "SMP-001",
+      name: "Lan hồ điệp #1",
+      description: "Cây con khỏe mạnh",
+      dob: "2025-12-01",
+      statusEnum: "Process",
+    },
+    {
+      id: "SMP-002",
+      name: "Lan hồ điệp #2",
+      description: "Có đốm nâu nhỏ",
+      dob: "2025-12-02",
+      statusEnum: "Process",
+    },
+  ]);
+  // Add missing labName and creator state
+  const [labName] = useState("Phòng Lab 01");
+  const [creator] = useState("Nguyễn Văn A");
+  // Add missing loading and error state
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
+  const { t } = useTranslation();
   const { id } = useParams();
   const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
@@ -103,35 +127,35 @@ const ExperimentLogDetail = () => {
   }, [id, reloadLog]);
 
   // Fetch samples
-  useEffect(() => {
-    if (!id || !log) return;
+  // useEffect(() => {
+  //   if (!id || !log) return;
 
-    setSamplesLoading(true);
-    fetch(
-      `https://net-api.orchid-lab.systems/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`
-    )
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Lỗi khi lấy dữ liệu samples");
-        const raw: unknown = await res.json();
+  //   setSamplesLoading(true);
+  //   fetch(
+  //     `https://net-api.orchid-lab.systems/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`,
+  //   )
+  //     .then(async (res) => {
+  //       if (!res.ok) throw new Error("Lỗi khi lấy dữ liệu samples");
+  //       const raw: unknown = await res.json();
 
-        const data = raw as SamplesResponse | Sample[];
-        let samplesData: Sample[] = [];
-        if ((data as SamplesResponse).value?.data) {
-          samplesData = (data as SamplesResponse).value!.data!;
-        } else if ((data as SamplesResponse).data) {
-          samplesData = (data as SamplesResponse).data!;
-        } else if (Array.isArray(data)) {
-          samplesData = data;
-        }
+  //       const data = raw as SamplesResponse | Sample[];
+  //       let samplesData: Sample[] = [];
+  //       if ((data as SamplesResponse).value?.data) {
+  //         samplesData = (data as SamplesResponse).value!.data!;
+  //       } else if ((data as SamplesResponse).data) {
+  //         samplesData = (data as SamplesResponse).data!;
+  //       } else if (Array.isArray(data)) {
+  //         samplesData = data;
+  //       }
 
-        setSamples(samplesData);
-      })
-      .catch((err) => {
-        console.error("Error fetching samples:", err);
-        setSamples([]);
-      })
-      .finally(() => setSamplesLoading(false));
-  }, [id, log]);
+  //       setSamples(samplesData);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Error fetching samples:", err);
+  //       setSamples([]);
+  //     })
+  //     .finally(() => setSamplesLoading(false));
+  // }, [id, log]);
 
   // Fetch labName từ tissueCultureBatchId
   useEffect(() => {
@@ -293,13 +317,18 @@ const ExperimentLogDetail = () => {
 
   const renderSelectedSeedlings = () => {
     if (!Array.isArray(log.hybridizations) || log.hybridizations.length === 0) {
-      return <div className="text-gray-500">Chưa chọn cây giống.</div>;
+      return (
+        <div className="text-gray-500">{t("experimentLog.noSeedlings")}</div>
+      );
     }
+
     return (
       <div className="text-green-800 text-base space-y-1">
         {log.hybridizations.map((hybridization, index) => (
           <div key={index}>
-            • {hybridization.seedling?.localName || "Chưa đặt tên"}
+            •{" "}
+            {hybridization.seedling?.localName ||
+              t("experimentLog.notAvailable")}
             {hybridization.seedling?.scientificName && (
               <span className="text-gray-600">
                 {" "}
@@ -313,7 +342,7 @@ const ExperimentLogDetail = () => {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "Chưa có";
+    if (!dateString) return t("experimentLog.notAvailable");
     try {
       return new Date(dateString).toLocaleDateString("vi-VN");
     } catch {
@@ -322,17 +351,40 @@ const ExperimentLogDetail = () => {
   };
 
   const getStatusDisplay = (status?: string) => {
-    if (!status) return "Chưa xác định";
+    if (!status) return t("experimentLog.notAvailable");
+
     const statusMap: Record<string, string> = {
-      Process: "Đang xử lý",
-      Suspended: "Tạm dừng",
-      Destroyed: "Đã hủy",
-      Failed: "Thất bại",
-      Pending: "Chờ xử lý",
-      ChangedToSeedling: "Đã chuyển thành cây giống",
+      Process: t("experimentLog.processing"),
+      InProcess: t("experimentLog.processing"),
+      Completed: t("experimentLog.completed"),
+      Failed: t("status.cancelled"),
+      Pending: t("status.pending"),
     };
+
     return statusMap[status] || status;
   };
+
+  // Current stage mock (for demo)
+  const currentStage = "Sinh protocom";
+
+  // Mock chemicals and equipment for the current stage
+  const chemicals = [
+    "NH4NO3",
+    "CaCl2.2H2O",
+    "MgSO4.7H2O",
+    "KNO3",
+    "KH2PO4",
+    "H3BO3",
+    "FeSO4.7H2O",
+  ];
+  const equipment = [
+    "Máy cất nước",
+    "Máy đo pH",
+    "Máy khuấy từ",
+    "Cân điện tử (Cân 2 số)",
+    "Muỗng, vá, đũa thủy tinh",
+    "Các dụng cụ như: cốc đong, ống đong, pipett, đĩa petri, chai thuỷ tinh, becher",
+  ];
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
@@ -343,15 +395,10 @@ const ExperimentLogDetail = () => {
         {/* <div className="flex gap-2">
           <button
             type="button"
-            className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-              log.status !== "Done" ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            onClick={() => {
-              void handleExportPDF();
-            }}
-            disabled={log.status !== "Done" || loadingPDF}
+            className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 hover:bg-green-800 hover:text-green-900 transition"
+            onClick={() => void navigate("/admin/experiment-log")}
           >
-            {loadingPDF ? "Đang xuất..." : "Xuất PDF"}
+            &larr;
           </button>
         </div> */}
         <div className="mb-6 grid grid-cols-2 gap-4">
@@ -385,274 +432,131 @@ const ExperimentLogDetail = () => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">Cây giống đã chọn</h2>
-          {renderSelectedSeedlings()}
-        </div>
-
-        {/* Timeline giai đoạn */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="font-semibold">Tiến trình các giai đoạn</h2>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                onClick={() => {
-                  void handleChangeStage();
-                }}
-                disabled={
-                  loadingStage ||
-                  log.status === "Done" ||
-                  (log.stages?.findIndex(
-                    (s) => s.name === log.currentStageName
-                  ) ?? 0) !==
-                    (log.stages?.length ?? 1) - 1
-                }
-              >
-                {loadingStage
-                  ? "Đang hoàn thành..."
-                  : "Hoàn thành nhật ký thí nghiệm"}
-              </button>
-              <button
-                type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                onClick={() => {
-                  void handleChangeStage();
-                }}
-                disabled={
-                  loadingStage ||
-                  log.status === "Done" ||
-                  (log.stages?.findIndex(
-                    (s) => s.name === log.currentStageName
-                  ) ?? 0) ===
-                    (log.stages?.length ?? 1) - 1
-                }
-              >
-                {loadingStage ? "Đang chuyển..." : "Chuyển giai đoạn"}
-              </button>
-              <button
-                type="button"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                onClick={() => {
-                  const currentStage = log.stages?.[selectedStage - 1];
-                  if (currentStage?.id) {
-                    const url = `/create-task?experimentLogId=${log.id}&stageId=${currentStage.id}&autoCreate=true`;
-                    window.location.href = url;
-                  } else {
-                    const url = `/create-task?experimentLogId=${log.id}`;
-                    window.location.href = url;
-                  }
-                }}
-              >
-                Tạo Task mới
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0 relative ml-6">
-            {stages.map((stage, idx) => (
-              <div
-                key={idx}
-                className="flex items-center mb-2 relative group cursor-pointer"
-                onClick={() => setSelectedStage(idx + 1)}
-              >
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 ${
-                    selectedStage > idx + 1
-                      ? "bg-gray-200 border-gray-300"
-                      : selectedStage === idx + 1
-                      ? "bg-yellow-400 border-yellow-400"
-                      : "bg-gray-200 border-gray-300"
-                  }`}
-                >
-                  <span className="text-white font-bold text-xs">
-                    {idx + 1}
+        {/* Info Card */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
+            <div className="flex-1 space-y-3">
+              <div className="text-base">
+                <b>{t("experimentLog.method")}:</b>{" "}
+                <span className="text-green-700">{log.methodName}</span>
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.tissueCultureBatch")}:</b>{" "}
+                {log.tissueCultureBatchName}
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.labRoom")}:</b> {labName}
+              </div>
+              <div className="text-base">
+                <b>{t("common.status")}:</b>{" "}
+                <span className="px-2 py-1 rounded bg-green-50 text-green-700">
+                  {getStatusDisplay(log.status)}
+                </span>
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.sampleCountLabel")}:</b> {samples.length}
+              </div>
+              <div className="text-base">
+                <b>Số lượng mẫu mong muốn:</b> 1
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.dateCreated")}:</b>{" "}
+                {formatDate(log.createdDate)}
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.creator")}:</b> {creator}
+              </div>
+              <div className="text-base flex gap-2">
+                <div>
+                  <b>Giai đoạn hiện tại:</b>{" "}
+                  <span className="text-sky-700 font-semibold">
+                    {currentStage}
                   </span>
                 </div>
-                {idx < stages.length - 1 && (
-                  <div className="absolute left-1/2 top-6 w-0.5 h-8 bg-gray-300 -translate-x-1/2 z-0"></div>
-                )}
-                <span
-                  className={`ml-4 text-base ${
-                    selectedStage === idx + 1
-                      ? "font-bold text-green-700"
-                      : "text-gray-700"
-                  }`}
+                <button
+                  className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
+                  style={{ minWidth: 120 }}
+                  onClick={() => {
+                    /* Create Task logic here */
+                  }}
                 >
-                  {stage}
-                  {log.currentStageName === stage && (
-                    <span className="ml-2 px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold">
-                      Giai đoạn hiện tại
-                    </span>
-                  )}
-                </span>
+                  Chuyển giai đoạn
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 space-y-3">
+              {log.description && (
+                <div className="text-base">
+                  <b>{t("common.description")}:</b> {log.description}
+                </div>
+              )}
+              <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                <h3 className="font-semibold mb-2 text-green-800">
+                  {t("experimentLog.selectedSeedlings")}
+                </h3>
+                {renderSelectedSeedlings()}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Chemicals and Equipment for current stage */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <h2 className="font-semibold text-lg mb-4 text-green-800">
+            Hóa chất và dụng cụ của giai đoạn hiện tại
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-semibold text-green-700 mb-2">
+                Hóa chất sử dụng
+              </h3>
+              <ul className="list-disc list-inside text-gray-900 space-y-1">
+                {chemicals.map((chem, idx) => (
+                  <li key={idx}>{chem}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-green-700 mb-2">
+                Dụng cụ sử dụng
+              </h3>
+              <ul className="list-disc list-inside text-gray-900 space-y-1">
+                {equipment.map((eq, idx) => (
+                  <li key={idx}>{eq}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Sample list section */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <h2 className="font-semibold text-lg mb-4 text-green-800">
+            Danh sách mẫu vật
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {samples.map((sample) => (
+              <div
+                key={sample.id}
+                className="bg-white border rounded-lg shadow-sm p-4 flex flex-col gap-2"
+              >
+                <div className="font-medium text-gray-900">{sample.name}</div>
+                <div className="text-sm text-gray-600">
+                  {sample.description}
+                </div>
+                <div className="text-xs text-gray-500">ID: {sample.id}</div>
+                <div className="text-xs text-gray-500">
+                  Ngày tạo: {sample.dob}
+                </div>
+                <div className="text-xs text-green-700">
+                  Trạng thái: {getStatusDisplay(sample.statusEnum)}
+                </div>
               </div>
             ))}
           </div>
+        </section>
 
-          {/* Chi tiết stage */}
-          <div className="mt-4 p-4 bg-gray-50 rounded border text-sm">
-            <b>Chi tiết {stages[selectedStage - 1]}</b>
-            <div className="mt-2 space-y-2">
-              <p>
-                <b>Mô tả:</b>{" "}
-                {log.stages?.[selectedStage - 1]?.description ??
-                  "Không có mô tả"}
-              </p>
-              <p>
-                <b>Ngày xử lý:</b>{" "}
-                {log.stages?.[selectedStage - 1]?.dateOfProcessing ??
-                  "Chưa xác định"}{" "}
-                ngày
-              </p>
-              {(() => {
-                const stage = log.stages?.[selectedStage - 1];
-                if (!stage?.elementDTO) return null;             
-                const elements = Array.isArray(stage.elementDTO)
-                  ? stage.elementDTO
-                  : [stage.elementDTO];
-                if (elements.length === 0) return null;
-                return (
-                  <div>
-                    <b>Nguyên vật liệu:</b>
-                    <div className="ml-4 space-y-1">                      
-                      {elements.map((el) => (
-                        <div key={el.id}>
-                          <p>- {el.name ?? "-"}</p>
-                          {el.description && (
-                            <p className="text-gray-600 text-sm">
-                              {el.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-
-        {/* Bảng sample */}
-        <div>
-          <h2 className="font-semibold mb-2">
-            Danh sách mẫu cây
-            {samplesLoading && (
-              <span className="text-sm text-gray-500 ml-2">(Đang tải...)</span>
-            )}
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full border">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-3 py-2 border">Tên mẫu</th>
-                  <th className="px-3 py-2 border">Ngày sinh</th>
-                  <th className="px-3 py-2 border">Trạng thái</th>
-                  <th className="px-3 py-2 border">Mô tả</th>
-                  <th className="px-3 py-2 border">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {samplesLoading ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-4 text-gray-500">
-                      Đang tải dữ liệu...
-                    </td>
-                  </tr>
-                ) : samples.length > 0 ? (
-                  samples.map((sample) => (
-                    <tr key={sample.id}>
-                      <td className="px-3 py-2 border">{sample.name}</td>
-                      <td className="px-3 py-2 border text-center">
-                        {formatDate(sample.dob)}
-                      </td>
-                      <td className="px-3 py-2 border text-center">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            sample.statusEnum === "Process"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : sample.statusEnum === "Completed"
-                              ? "bg-green-100 text-green-800"
-                              : sample.statusEnum === "Failed"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {getStatusDisplay(sample.statusEnum)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 border">
-                        {sample.description ?? "Không có mô tả"}
-                      </td>
-                      <td className="px-3 py-2 border text-center">
-                        <button
-                          type="button"
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium disabled:opacity-50"
-                          disabled={
-                            samplesLoading ||
-                            sample.statusEnum === "ChangedToSeedling"
-                          }
-                          onClick={() => {
-                            void (async () => {
-                              try {
-                                await axiosInstance.post(
-                                  "/api/sample/convert-to-seedling",
-                                  { sampleID: sample.id }
-                                );
-                                enqueueSnackbar(
-                                  "Chuyển thành cây giống thành công!",
-                                  {
-                                    variant: "success",
-                                    autoHideDuration: 3000,
-                                    preventDuplicate: true,
-                                  }
-                                );
-                                setSamplesLoading(true);
-                                setReloadLog((prev) => prev + 1);
-                              } catch (error) {
-                                console.log(error);
-                                const apiError = error as {
-                                  response?: {
-                                    data?: string;
-                                    status?: number;
-                                  };
-                                  message?: string;
-                                };
-                                const backendMessage =
-                                  apiError.response?.data ??
-                                  apiError.message ??
-                                  "Chuyển thành cây giống thất bại!";
-
-                                enqueueSnackbar(backendMessage, {
-                                  variant: "error",
-                                  autoHideDuration: 5000,
-                                  preventDuplicate: true,
-                                });
-                              } finally {
-                                setSamplesLoading(false);
-                              }
-                            })();
-                          }}
-                        >
-                          Chuyển thành cây giống
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="text-center py-4 text-gray-500">
-                      Không có mẫu cây nào.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Add more sections as needed for reports/tasks/timeline */}
       </div>
     </main>
   );

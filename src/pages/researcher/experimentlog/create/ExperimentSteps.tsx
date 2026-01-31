@@ -1,4 +1,3 @@
-
 import { Check } from "lucide-react";
 
 const ExperimentSteps = ({ currentStep = 1 }) => {
@@ -17,8 +16,8 @@ const ExperimentSteps = ({ currentStep = 1 }) => {
   ];
 
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="bg-white border-b border-gray-200 px-6 py-3 shadow-lg mb-3">
+      <div className="max-w-7xl mx-auto">
         <nav aria-label="Progress">
           <ol className="flex items-center">
             {steps.map((step, stepIdx) => (

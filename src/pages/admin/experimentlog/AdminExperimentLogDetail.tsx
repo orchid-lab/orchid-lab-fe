@@ -1,235 +1,231 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
-import type { Report } from "../../../types/Report";
-import axiosInstance from "../../../api/axiosInstance";
-
-Chart.register(ArcElement, Tooltip, Legend);
-
-interface Sample {
-  id: string;
-  name: string;
-  description?: string;
-  dob?: string;
-  statusEnum?: string;
-}
-
-interface ElementDTO {
-  id: string;
-  name: string;
-  description?: string;
-  status?: boolean;
-  currentInStage?: number;
-}
-
-interface StageDTO {
-  id: string;
-  name: string;
-  description?: string;
-  dateOfProcessing?: number | string;
-  elementDTO?: ElementDTO | ElementDTO[];
-}
-
-interface Hybridization {
-  seedling: {
-    id: string;
-    localName: string;
-    scientificName: string;
-  };
-}
-
-interface ExperimentLogDetailType {
-  id: string;
-  name: string;
-  methodName: string;
-  description?: string;
-  tissueCultureBatchName: string;
-  createdDate?: string;
-  create_date?: string;
-  create_by?: string;
-  status?: string;
-  samples?: Sample[];
-  stages?: StageDTO[];
-  hybridizations?: Hybridization[];
-}
-
-interface SamplesResponse {
-  value?: {
-    data?: Sample[];
-  };
-  data?: Sample[];
-}
-
-interface Task {
-  id: string;
-  researcher: string;
-  name: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  create_at: string;
-  status: StatusType;
-}
-
-type StatusType = "Assigned" | "Taken" | "InProcess" | "DoneInTime" | "DoneInLate" | "Cancel";
+import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const AdminExperimentLogDetail = () => {
+  // Add missing samples state
+  const [samples] = useState([
+    {
+      id: "SMP-001",
+      name: "Lan hồ điệp #1",
+      description: "Cây con khỏe mạnh",
+      dob: "2025-12-01",
+      statusEnum: "Process",
+    },
+    {
+      id: "SMP-002",
+      name: "Lan hồ điệp #2",
+      description: "Có đốm nâu nhỏ",
+      dob: "2025-12-02",
+      statusEnum: "Process",
+    },
+  ]);
+  // Add missing labName and creator state
+  const [labName] = useState("Phòng Lab 01");
+  const [creator] = useState("Nguyễn Văn A");
+  // Add missing loading and error state
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [, setSamplesLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [] = useState(1);
-  const [labName, setLabName] = useState<string>(t("experimentLog.loadingData"));
-  const [creator, setCreator] = useState<string>(t("experimentLog.loadingData"));
-  const [, setStageTasks] = useState<Record<string, Task[]>>({});
-  const [, setStageReports] = useState<Record<string, Report[]>>({});
+  // --- Static mock data for UI demo ---
+  const [log, setLog] = useState<ExperimentLogDetailType | null>({
+    id: "EXP-001",
+    name: "Nuôi cấy lan hồ điệp - batch 1",
+    methodName: "MS + NAA",
+    description:
+      "Theo dõi phát triển cây con trong môi trường MS, bổ sung NAA.",
+    tissueCultureBatchName: "Batch Orchid 2026",
+    createdDate: "2026-01-10T09:24:00Z",
+    create_by: "u01",
+    status: "Process",
+    samples: [
+      {
+        id: "SMP-001",
+        name: "Lan hồ điệp #1",
+        description: "Cây con khỏe mạnh",
+        dob: "2025-12-01",
+        statusEnum: "Process",
+      },
+      {
+        id: "SMP-002",
+        name: "Lan hồ điệp #2",
+        description: "Có đốm nâu nhỏ",
+        dob: "2025-12-02",
+        statusEnum: "Process",
+      },
+    ],
+    stages: [
+      {
+        id: "STG-01",
+        name: "Gieo hạt",
+        description: "Giai đoạn gieo hạt",
+        dateOfProcessing: "2025-12-01",
+      },
+      {
+        id: "STG-02",
+        name: "Cấy chuyển",
+        description: "Cấy chuyển sang môi trường mới",
+        dateOfProcessing: "2025-12-15",
+      },
+    ],
+    hybridizations: [
+      {
+        seedling: {
+          id: "S1",
+          localName: "Lan hồ điệp vàng",
+          scientificName: "Phalaenopsis amabilis",
+        },
+      },
+      {
+        seedling: {
+          id: "S2",
+          localName: "Lan hồ điệp tím",
+          scientificName: "Phalaenopsis schilleriana",
+        },
+      },
+    ],
+  });
 
+  // useEffect(() => {
+  //   if (!log?.stages || !id) return;
+  //   log.stages.forEach((stage) => {
+  //     const stageId = stage.id;
+  //     axiosInstance
+  //       .get(`/api/tasks?pageNo=1&pageSize=1000&experimentlogId=${id}&stageId=${stageId}`)
+  //       .then((res: { data: { value?: { data?: Task[] } } }) => {
+  //         setStageTasks((prev) => ({ ...prev, [stageId]: res.data.value?.data ?? [] }));
+  //       })
+  //       .catch((err: unknown) => {
+  //         console.error("Error fetching tasks for stage", stageId, err);
+  //         setStageTasks((prev) => ({ ...prev, [stageId]: [] }));
+  //       });
+  //     axiosInstance
+  //       .get(`/api/report?pageNumber=1&pageSize=1000&experimentLogId=${id}&stageId=${stageId}`)
+  //       .then((res: { data: { value?: { data?: Report[] } } }) => {
+  //         setStageReports((prev) => ({ ...prev, [stageId]: res.data.value?.data ?? [] }));
+  //       })
+  //       .catch((err: unknown) => {
+  //         console.error("Error fetching reports for stage", stageId, err);
+  //         setStageReports((prev) => ({ ...prev, [stageId]: [] }));
+  //       });
+  //   });
+  // }, [log, id]);
 
+  // useEffect(() => {
+  //   if (!id) return;
+  //   setLoading(true);
+  //   setError(null);
+  //   axiosInstance
+  //     .get(`/api/experimentlog/${id}`)
+  //     .then((res) => {
+  //       const logData = res.data.value ?? res.data;
+  //       const anyLog = logData as Record<string, unknown>;
+  //       const normalized: Partial<ExperimentLogDetailType> = {
+  //         ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+  //         createdDate:
+  //           (anyLog.createdDate as string | undefined) ??
+  //           (anyLog.create_date as string | undefined),
+  //       };
+  //       setLog(normalized as ExperimentLogDetailType);
+  //     })
+  //     .catch(() => setError(t("common.errorLoading")))
+  //     .finally(() => setLoading(false));
+  // }, [id, t]);
 
-  useEffect(() => {
-    if (!log?.stages || !id) return;
-    log.stages.forEach((stage) => {
-      const stageId = stage.id;
-      
-      axiosInstance
-        .get(`/api/tasks?pageNo=1&pageSize=1000&experimentlogId=${id}&stageId=${stageId}`)
-        .then((res: { data: { value?: { data?: Task[] } } }) => {
-          setStageTasks((prev) => ({
-            ...prev,
-            [stageId]: res.data.value?.data ?? [],
-          }));
-        })
-        .catch((err: unknown) => {
-          console.error("Error fetching tasks for stage", stageId, err);
-          setStageTasks((prev) => ({ ...prev, [stageId]: [] }));
-        });
+  // useEffect(() => {
+  //   if (!id || !log) return;
+  //   setSamplesLoading(true);
+  //   axiosInstance
+  //     .get(`/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`)
+  //     .then((res) => {
+  //       const rawData = res.data;
+  //       let data: SamplesResponse;
+  //       if (
+  //         typeof rawData === "object" &&
+  //         rawData !== null &&
+  //         ("value" in rawData || "data" in rawData)
+  //       ) {
+  //         data = rawData as SamplesResponse;
+  //       } else {
+  //         throw new Error("Invalid samples data");
+  //       }
+  //       let samplesData: Sample[] = [];
+  //       if (data.value?.data) {
+  //         samplesData = data.value.data;
+  //       } else if (data.data) {
+  //         samplesData = data.data;
+  //       } else if (Array.isArray(data)) {
+  //         samplesData = data;
+  //       }
+  //       setSamples(samplesData);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Error fetching samples:", err);
+  //       setSamples([]);
+  //     })
+  //     .finally(() => setSamplesLoading(false));
+  // }, [id, log]);
 
-      axiosInstance
-        .get(`/api/report?pageNumber=1&pageSize=1000&experimentLogId=${id}&stageId=${stageId}`)
-        .then((res: { data: { value?: { data?: Report[] } } }) => {
-          setStageReports((prev) => ({
-            ...prev,
-            [stageId]: res.data.value?.data ?? [],
-          }));
-        })
-        .catch((err: unknown) => {
-          console.error("Error fetching reports for stage", stageId, err);
-          setStageReports((prev) => ({ ...prev, [stageId]: [] }));
-        });
-    });
-  }, [log, id]);
+  // useEffect(() => {
+  //   if (!log) return;
+  //   const tcbId =
+  //     ((log as unknown as Record<string, unknown>)?.tissueCultureBatchId as string) ??
+  //     ((log as unknown as Record<string, unknown>)?.tissueCultureBatchID as string);
+  //   if (tcbId) {
+  //     axiosInstance
+  //       .get(`/api/tissue-culture-batch/${tcbId}`)
+  //       .then((res) => {
+  //         const raw = res.data;
+  //         const name = (raw?.value?.labName as string) ?? (raw?.labName as string);
+  //         setLabName(name ?? t("experimentLog.notAvailable"));
+  //       })
+  //       .catch(() => setLabName(t("experimentLog.notAvailable")));
+  //   }
+  // }, [log, t]);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    
-    axiosInstance
-      .get(`/api/experimentlog/${id}`)
-      .then((res) => {
-        const logData = res.data.value ?? res.data;
-        const anyLog = logData as Record<string, unknown>;
-        const normalized: Partial<ExperimentLogDetailType> = {
-          ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
-          createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
-        };
-        setLog(normalized as ExperimentLogDetailType);
-      })
-      .catch(() => setError(t("common.errorLoading")))
-      .finally(() => setLoading(false));
-  }, [id, t]);
-
-  useEffect(() => {
-    if (!id || !log) return;
-
-    setSamplesLoading(true);
-    axiosInstance
-      .get(`/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`)
-      .then((res) => {
-        const rawData = res.data;
-        let data: SamplesResponse;
-        if (typeof rawData === "object" && rawData !== null && ("value" in rawData || "data" in rawData)) {
-          data = rawData as SamplesResponse;
-        } else {
-          throw new Error("Invalid samples data");
-        }
-
-        let samplesData: Sample[] = [];
-        if (data.value?.data) {
-          samplesData = data.value.data;
-        } else if (data.data) {
-          samplesData = data.data;
-        } else if (Array.isArray(data)) {
-          samplesData = data;
-        }
-
-        setSamples(samplesData);
-      })
-      .catch((err) => {
-        console.error("Error fetching samples:", err);
-        setSamples([]);
-      })
-      .finally(() => setSamplesLoading(false));
-  }, [id, log]);
-
-  useEffect(() => {
-    if (!log) return;
-    const tcbId =
-      ((log as unknown as Record<string, unknown>)?.tissueCultureBatchId as string) ??
-      ((log as unknown as Record<string, unknown>)?.tissueCultureBatchID as string);
-    if (tcbId) {
-      axiosInstance
-        .get(`/api/tissue-culture-batch/${tcbId}`)
-        .then((res) => {
-          const raw = res.data;
-          const name = (raw?.value?.labName as string) ?? (raw?.labName as string);
-          setLabName(name ?? t("experimentLog.notAvailable"));
-        })
-        .catch(() => setLabName(t("experimentLog.notAvailable")));
-    }
-  }, [log, t]);
-
-  useEffect(() => {
-    if (log?.create_by) {
-      axiosInstance
-        .get(`/api/user/${log.create_by}`)
-        .then((res) => {
-          const raw = res.data;
-          const name = (raw?.value?.name as string) ?? (raw?.name as string);
-          setCreator(name ?? t("experimentLog.notAvailable"));
-        })
-        .catch(() => setCreator(t("experimentLog.notAvailable")));
-    }
-  }, [log, t]);
+  // useEffect(() => {
+  //   if (log?.create_by) {
+  //     axiosInstance
+  //       .get(`/api/user/${log.create_by}`)
+  //       .then((res) => {
+  //         const raw = res.data;
+  //         const name = (raw?.value?.name as string) ?? (raw?.name as string);
+  //         setCreator(name ?? t("experimentLog.notAvailable"));
+  //       })
+  //       .catch(() => setCreator(t("experimentLog.notAvailable")));
+  //   }
+  // }, [log, t]);
 
   if (loading)
     return (
-      <div className="ml-64 mt-16 p-8 text-gray-500">{t("experimentLog.loadingData")}</div>
+      <div className="ml-64 mt-16 p-8 text-gray-500">
+        {t("experimentLog.loadingData")}
+      </div>
     );
   if (error) return <div className="ml-64 mt-16 p-8 text-red-500">{error}</div>;
   if (!log) return <div className="ml-64 mt-16 p-8">{t("common.noData")}</div>;
 
-
-
-
-
   const renderSelectedSeedlings = () => {
     if (!Array.isArray(log.hybridizations) || log.hybridizations.length === 0) {
-      return <div className="text-gray-500">{t("experimentLog.noSeedlings")}</div>;
+      return (
+        <div className="text-gray-500">{t("experimentLog.noSeedlings")}</div>
+      );
     }
 
     return (
       <div className="text-green-800 text-base space-y-1">
         {log.hybridizations.map((hybridization, index) => (
           <div key={index}>
-            • {hybridization.seedling?.localName || t("experimentLog.notAvailable")}
+            •{" "}
+            {hybridization.seedling?.localName ||
+              t("experimentLog.notAvailable")}
             {hybridization.seedling?.scientificName && (
-              <span className="text-gray-600"> ({hybridization.seedling.scientificName})</span>
+              <span className="text-gray-600">
+                {" "}
+                ({hybridization.seedling.scientificName})
+              </span>
             )}
           </div>
         ))}
@@ -260,57 +256,171 @@ const AdminExperimentLogDetail = () => {
     return statusMap[status] || status;
   };
 
-  return (
-    <main className="ml-64 mt-8 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-      <button
-        type="button"
-        className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-4 hover:bg-green-800 hover:text-white transition"
-        onClick={() => void navigate("/admin/experiment-log")}
-      >
-        &larr; {t("experimentLog.backToList")}
-      </button>
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
-        <h1 className="text-2xl font-bold mb-4">
-          {t("experimentLog.detailTitle")} - {log.name}
-        </h1>
+  // Current stage mock (for demo)
+  const currentStage = "Sinh protocom";
 
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          <div>
-            <p>
-              <b>{t("experimentLog.method")}:</b> {log.methodName}
-            </p>
-            <p>
-              <b>{t("experimentLog.tissueCultureBatch")}:</b> {log.tissueCultureBatchName}
-            </p>
-            <p>
-              <b>{t("experimentLog.labRoom")}:</b> {labName}
-            </p>
-            <p>
-              <b>{t("common.status")}:</b> {getStatusDisplay(log.status)}
-            </p>
-            <p>
-              <b>{t("experimentLog.sampleCountLabel")}:</b> {samples.length}
-            </p>
-            <p>
-              <b>{t("experimentLog.dateCreated")}:</b> {formatDate(log.createdDate)}
-            </p>
-            <p>
-              <b>{t("experimentLog.creator")}:</b> {creator}
-            </p>
-            {log.description && (
-              <p>
-                <b>{t("common.description")}:</b> {log.description}
-              </p>
-            )}
+  // Mock chemicals and equipment for the current stage
+  const chemicals = [
+    "NH4NO3",
+    "CaCl2.2H2O",
+    "MgSO4.7H2O",
+    "KNO3",
+    "KH2PO4",
+    "H3BO3",
+    "FeSO4.7H2O",
+  ];
+  const equipment = [
+    "Máy cất nước",
+    "Máy đo pH",
+    "Máy khuấy từ",
+    "Cân điện tử (Cân 2 số)",
+    "Muỗng, vá, đũa thủy tinh",
+    "Các dụng cụ như: cốc đong, ống đong, pipett, đĩa petri, chai thuỷ tinh, becher",
+  ];
+
+  return (
+    <main className="ml-64 mt-12 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 hover:bg-green-800 hover:text-green-900 transition"
+            onClick={() => void navigate("/admin/experiment-log")}
+          >
+            &larr;
+          </button>
+          <h1 className="text-2xl font-bold text-green-900">
+            {t("experimentLog.detailTitle")}{" "}
+            <span className="font-normal text-gray-700">- {log.name}</span>
+          </h1>
+          <div className="flex gap-3">
+            <button
+              className="px-4 py-2 bg-emerald-100 text-green-800 rounded-md text-sm font-medium border border-green-700 hover:bg-emerald-200 transition shadow-sm"
+              style={{ minWidth: 120 }}
+              onClick={() => {
+                /* Export PDF logic here */
+              }}
+            >
+              Export PDF
+            </button>
           </div>
         </div>
 
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">{t("experimentLog.selectedSeedlings")}</h2>
-          {renderSelectedSeedlings()}
-        </div>
+        {/* Info Card */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
+            <div className="flex-1 space-y-3">
+              <div className="text-base">
+                <b>{t("experimentLog.method")}:</b>{" "}
+                <span className="text-green-700">{log.methodName}</span>
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.tissueCultureBatch")}:</b>{" "}
+                {log.tissueCultureBatchName}
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.labRoom")}:</b> {labName}
+              </div>
+              <div className="text-base">
+                <b>{t("common.status")}:</b>{" "}
+                <span className="px-2 py-1 rounded bg-green-50 text-green-700">
+                  {getStatusDisplay(log.status)}
+                </span>
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.sampleCountLabel")}:</b> {samples.length}
+              </div>
+              <div className="text-base">
+                <b>Số lượng mẫu mong muốn:</b> 1
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.dateCreated")}:</b>{" "}
+                {formatDate(log.createdDate)}
+              </div>
+              <div className="text-base">
+                <b>{t("experimentLog.creator")}:</b> {creator}
+              </div>
+              <div className="text-base">
+                <b>Giai đoạn hiện tại:</b>{" "}
+                <span className="text-sky-700 font-semibold">
+                  {currentStage}
+                </span>
+              </div>
+            </div>
+            <div className="flex-1 space-y-3">
+              {log.description && (
+                <div className="text-base">
+                  <b>{t("common.description")}:</b> {log.description}
+                </div>
+              )}
+              <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                <h3 className="font-semibold mb-2 text-green-800">
+                  {t("experimentLog.selectedSeedlings")}
+                </h3>
+                {renderSelectedSeedlings()}
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* Continue in next artifact due to length */}
+        {/* Chemicals and Equipment for current stage */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <h2 className="font-semibold text-lg mb-4 text-green-800">
+            Hóa chất và dụng cụ của giai đoạn hiện tại
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-semibold text-green-700 mb-2">
+                Hóa chất sử dụng
+              </h3>
+              <ul className="list-disc list-inside text-gray-900 space-y-1">
+                {chemicals.map((chem, idx) => (
+                  <li key={idx}>{chem}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-green-700 mb-2">
+                Dụng cụ sử dụng
+              </h3>
+              <ul className="list-disc list-inside text-gray-900 space-y-1">
+                {equipment.map((eq, idx) => (
+                  <li key={idx}>{eq}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Sample list section */}
+        <section className="w-full bg-white rounded-xl shadow-lg p-8">
+          <h2 className="font-semibold text-lg mb-4 text-green-800">
+            Danh sách mẫu vật
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {samples.map((sample) => (
+              <div
+                key={sample.id}
+                className="bg-white border rounded-lg shadow-sm p-4 flex flex-col gap-2"
+              >
+                <div className="font-medium text-gray-900">{sample.name}</div>
+                <div className="text-sm text-gray-600">
+                  {sample.description}
+                </div>
+                <div className="text-xs text-gray-500">ID: {sample.id}</div>
+                <div className="text-xs text-gray-500">
+                  Ngày tạo: {sample.dob}
+                </div>
+                <div className="text-xs text-green-700">
+                  Trạng thái: {getStatusDisplay(sample.statusEnum)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Add more sections as needed for reports/tasks/timeline */}
       </div>
     </main>
   );
