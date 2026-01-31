@@ -358,14 +358,6 @@ const CreateExperimentStep3 = () => {
                   </>
                 )}
               </button>
-
-              <button
-                onClick={handleLocalFinish}
-                type="button"
-                className="px-4 py-2 rounded-lg font-medium border border-gray-300 bg-white hover:bg-gray-50"
-              >
-                Hoàn thành (không gọi API)
-              </button>
             </div>
           </div>
         </div>
