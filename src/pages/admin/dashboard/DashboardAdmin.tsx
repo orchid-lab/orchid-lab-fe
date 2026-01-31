@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
@@ -75,7 +76,6 @@ export default function DashboardAdmin() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
-    email: "",
     phoneNumber: "",
     roleId: 2, 
   });
@@ -136,8 +136,27 @@ export default function DashboardAdmin() {
 
   const handleSaveEdit = async () => {
     if (!editUser) return;
+    
+    // Validation
+    if (!editUser.name.trim()) {
+      enqueueSnackbar(t('user.nameRequired') || 'Name is required', {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      return;
+    }
+    
+    if (editUser.roleId === 0) {
+      enqueueSnackbar(t('user.roleRequired') || 'Please select a role', {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      return;
+    }
+    
     try {
-      await axiosInstance.put("/api/user", editUser);
+      const { email, avatarUrl, ...userDataToUpdate } = editUser;
+      await axiosInstance.put("/api/user", userDataToUpdate);
       setShowEditModal(false);
       setEditUser(null);
       await fetchUsers();
@@ -170,10 +189,27 @@ export default function DashboardAdmin() {
   };
   
   const handleAddUser = async () => {
+    // Client-side validation
+    if (!newUser.name.trim()) {
+      enqueueSnackbar(t('user.nameRequired') || 'Name is required', {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      return;
+    }
+    
+    if (newUser.roleId === 0) {
+      enqueueSnackbar(t('user.roleRequired') || 'Please select a role', {
+        variant: "error",
+        autoHideDuration: 3000,
+      });
+      return;
+    }
+
     try {
       await axiosInstance.post("/api/authentication/register", newUser);
       setShowAddModal(false);
-      setNewUser({ name: "", email: "", phoneNumber: "", roleId: 2 });
+      setNewUser({ name: "", phoneNumber: "", roleId: 2 });
       await fetchUsers();
       setPage(1);
       enqueueSnackbar(t('user.userAdded'), {
@@ -588,42 +624,53 @@ export default function DashboardAdmin() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
             >
               <h2 className="text-lg font-bold mb-4">{t('user.editUser')}</h2>
-              <input
-                className="border rounded px-3 py-2 w-full mb-2"
-                placeholder={t('common.name')}
-                value={editUser.name}
-                onChange={(e) =>
-                  setEditUser((u) => (u ? { ...u, name: e.target.value } : u))
-                }
-              />
-              <input
-                className="border bg-gray-200 rounded px-3 py-2 w-full mb-2"
-                placeholder={t('common.email')}
-                value={editUser.email}
-                disabled
-              />
-              <input
-                className="border rounded px-3 py-2 w-full mb-2"
-                placeholder={t('common.phone')}
-                value={editUser.phoneNumber ?? ""}
-                onChange={(e) =>
-                  setEditUser((u) =>
-                    u ? { ...u, phoneNumber: e.target.value } : u
-                  )
-                }
-              />
-              <select
-                className="border rounded px-3 py-2 w-full mb-4"
-                value={editUser.roleId}
-                onChange={(e) =>
-                  setEditUser((u) =>
-                    u ? { ...u, roleId: parseInt(e.target.value) } : u
-                  )
-                }
-              >
-                <option value={2}>{t('roles.researcher')}</option>
-                <option value={3}>{t('roles.technician')}</option>
-              </select>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.name')} *
+                </label>
+                <input
+                  className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t('common.name')}
+                  value={editUser.name}
+                  onChange={(e) =>
+                    setEditUser((u) => (u ? { ...u, name: e.target.value } : u))
+                  }
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.phone')}
+                </label>
+                <input
+                  className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={t('common.phone')}
+                  value={editUser.phoneNumber ?? ""}
+                  onChange={(e) =>
+                    setEditUser((u) =>
+                      u ? { ...u, phoneNumber: e.target.value } : u
+                    )
+                  }
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('common.role')} *
+                </label>
+                <select
+                  className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={editUser.roleId}
+                  onChange={(e) =>
+                    setEditUser((u) =>
+                      u ? { ...u, roleId: parseInt(e.target.value) } : u
+                    )
+                  }
+                  required
+                >
+                  <option value={2}>{t('roles.researcher')}</option>
+                  <option value={3}>{t('roles.technician')}</option>
+                </select>
+              </div>
               <div className="flex gap-2 justify-end">
                 <motion.button
                   type="button"
@@ -671,23 +718,16 @@ export default function DashboardAdmin() {
             >
               <h2 className="text-lg font-bold mb-4">{t('user.addUser')}</h2>
               <input
-                className="border rounded px-3 py-2 w-full mb-2"
-                placeholder={t('common.name')}
+                className="border rounded px-3 py-2 w-full mb-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder={`${t('common.name')} *`}
                 value={newUser.name}
                 onChange={(e) =>
                   setNewUser((u) => ({ ...u, name: e.target.value }))
                 }
+                required
               />
               <input
-                className="border rounded px-3 py-2 w-full mb-2"
-                placeholder={t('common.email')}
-                value={newUser.email}
-                onChange={(e) =>
-                  setNewUser((u) => ({ ...u, email: e.target.value }))
-                }
-              />
-              <input
-                className="border rounded px-3 py-2 w-full mb-2"
+                className="border rounded px-3 py-2 w-full mb-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder={t('common.phone')}
                 value={newUser.phoneNumber}
                 onChange={(e) =>
@@ -695,13 +735,14 @@ export default function DashboardAdmin() {
                 }
               />
               <select
-                className="border rounded px-3 py-2 w-full mb-4"
+                className="border rounded px-3 py-2 w-full mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 value={newUser.roleId}
                 onChange={(e) =>
                   setNewUser((u) => ({ ...u, roleId: parseInt(e.target.value) }))
                 }
+                required
               >
-                <option value={0}>{t('common.selectRole')}</option>
+                <option value={0}>{t('common.selectRole')} *</option>
                 <option value={2}>{t('roles.researcher')}</option>
                 <option value={3}>{t('roles.technician')}</option>
               </select>
@@ -709,7 +750,10 @@ export default function DashboardAdmin() {
                 <motion.button
                   type="button"
                   className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setNewUser({ name: "", phoneNumber: "", roleId: 2 });
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

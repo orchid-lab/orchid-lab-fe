@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {BrowserRouter as Router,Routes,Route,Navigate,useLocation,} from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
@@ -61,16 +63,16 @@ import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminT
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
 
-function getUserRole(user: any): string {
-  const roleValue = user?.role || user?.Role;
+function getUserRole(user: unknown): string {
+  const roleValue = user?.role ?? user?.Role;
   if (roleValue && typeof roleValue === 'string') {
     return roleValue.toLowerCase().trim();
   }
   
-  switch (user?.roleId) {
+  switch (user?.roleId== undefined ? user?.RoleId : user?.roleId) {
     case 1: return "admin";
-    case 2: return "researcher";
-    case 3: return "lab technician";
+    case 3: return "researcher";
+    case 2: return "lab technician";
     default: return "researcher";
   }
 }

@@ -1,10 +1,12 @@
 /* eslint-disable react-dom/no-missing-button-type */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaChartBar, FaFlask, FaSignOutAlt, FaSearch } from "react-icons/fa";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../api/axiosInstance";
+import type { User } from "../types/Auth";
 
 const tabs = [
   { nameKey: "navigation.task", path: "/technician/tasks", icon: FaTasks },
@@ -12,10 +14,44 @@ const tabs = [
   { nameKey: "navigation.report", path: "/technician/reports", icon: FaChartBar },
 ];
 
+function getRoleName(role: string | undefined, t: (key: string) => string) {
+  return role ?? t("common.other");
+}
+
+function getRoleBadgeColor(role: string | undefined) {
+  switch (role?.toLowerCase()) {
+    case "admin":
+      return "bg-red-500";
+    case "researcher":
+      return "bg-blue-500";
+    case "technician":
+      return "bg-blue-500";
+    default:
+      return "bg-gray-500";
+  }
+}
+
 export default function SidebarTechnician() {
   const { t } = useTranslation();
-  const { logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) return;
+
+      try {
+        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        setUser(response.data);
+      } catch (error) {
+        console.error('Error fetching user data in Sidebar:', error);
+        setUser(authUser);
+      }
+    };
+
+    void fetchUserData();
+  }, [authUser]);
 
   const filteredTabs = tabs.filter(tab =>
     t(tab.nameKey).toLowerCase().includes(searchQuery.toLowerCase())
@@ -89,11 +125,39 @@ export default function SidebarTechnician() {
         })}
       </nav>
 
-      {/* Logout Section */}
+      {/* Access Controls Section */}
       <div className="px-4 pt-4 pb-2 border-t border-gray-700/50">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">
-          Account
+          Access Controls
         </p>
+      </div>
+
+      {/* User Profile */}
+      <div className="px-4 pb-4">
+        <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-[#252836] relative">
+          <div className="relative">
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt="User avatar"
+                className="w-9 h-9 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
+                {user?.name?.charAt(0).toUpperCase() ?? 'U'}
+              </div>
+            )}
+            <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-[#252836]`}></div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">
+              {user?.name ?? t('common.loading')}
+            </p>
+            <p className="text-xs text-gray-500">
+              {getRoleName(user?.role, t)}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Logout Button */}
