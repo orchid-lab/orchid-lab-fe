@@ -50,6 +50,7 @@ const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        className="notification-bell-btn"
         style={{
           background: "none",
           border: "none",
@@ -57,15 +58,18 @@ const NotificationBell: React.FC = () => {
           position: "relative",
           padding: 0,
           outline: "none",
+          paddingTop: 10,
         }}
         aria-label={t("notification.title")}
       >
         <FaBell
-          size={24}
+          size={22}
           color={open ? "#2563eb" : "#f59e42"}
           style={{
             filter: open ? "drop-shadow(0 0 4px #2563eb88)" : undefined,
             transition: "color 0.2s",
+            paddingTop: 1,
+            paddingBottom: 2,
           }}
         />
         {unreadCount > 0 && (

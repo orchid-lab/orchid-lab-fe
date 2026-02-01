@@ -80,6 +80,57 @@ body {
   background: var(--text-tertiary);
 }
 
+/* ==================== THEME TOGGLE BUTTON ==================== */
+
+.theme-toggle-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 9999px !important;
+  transition: background-color 0.2s ease !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-btn:hover {
+  background-color: transparent !important;
+  transform: none !important;
+}
+
+.dark .theme-toggle-btn {
+  background: transparent !important;
+}
+
+.dark .theme-toggle-btn:hover {
+  background-color: transparent !important;
+  transform: none !important;
+}
+
+/* Notification Bell Button */
+.notification-bell-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.notification-bell-btn:hover {
+  background: transparent !important;
+  transform: none !important;
+}
+
+.dark .notification-bell-btn {
+  background: transparent !important;
+}
+
+.dark .notification-bell-btn:hover {
+  background: transparent !important;
+  transform: none !important;
+}
+
 /* ==================== NOTIFICATION MODAL - MINIMAL DESIGN ==================== */
 
 /* Modal Container */
@@ -588,14 +639,14 @@ body {
 }
 
 /* Buttons */
-.dark button:not(.bg-blue-600):not(.bg-red-500):not(.bg-blue-500) {
+.dark button:not(.bg-blue-600):not(.bg-red-500):not(.bg-blue-500):not(.theme-toggle-btn):not(.notification-bell-btn) {
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
   border-radius: 0.5rem !important;
   transition: all 0.2s ease !important;
 }
 
-.dark button:not(.bg-blue-600):not(.bg-red-500):not(.bg-blue-500):hover {
+.dark button:not(.bg-blue-600):not(.bg-red-500):not(.bg-blue-500):not(.theme-toggle-btn):not(.notification-bell-btn):hover {
   background-color: #4b5563 !important;
   transform: translateY(-1px);
 }
