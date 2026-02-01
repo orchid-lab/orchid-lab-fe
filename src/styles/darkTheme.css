@@ -687,3 +687,124 @@ body {
   border-radius: 0.375rem !important;
   transition: all 0.2s ease !important;
 }
+
+/* ==================== NOTIFICATION BELL DROPDOWN ==================== */
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: 32px;
+  min-width: 320px;
+  max-width: 400px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 1.5px 4px #2563eb22;
+  z-index: 100;
+  overflow: hidden;
+  animation: fadeIn 0.2s;
+}
+
+:root[data-theme='dark'] .notif-dropdown {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 1.5px 4px #2563eb33;
+}
+
+/* Header */
+.notif-dropdown__header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 16px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Scrollable list */
+.notif-dropdown__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Empty state */
+.notif-dropdown__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+/* Each notification item */
+.notif-dropdown__item {
+  padding: 12px 16px 8px 16px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.notif-dropdown__item:last-child {
+  border-bottom: none;
+}
+
+.notif-dropdown__item:hover {
+  background: var(--table-row-hover);
+}
+
+/* Read state */
+.notif-dropdown__item--read {
+  background: var(--card-bg);
+  font-weight: 400;
+}
+
+/* Unread state */
+.notif-dropdown__item--unread {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+:root[data-theme='light'] .notif-dropdown__item--unread {
+  background: #f0f5ff;
+}
+
+:root[data-theme='dark'] .notif-dropdown__item--unread {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+/* Title */
+.notif-dropdown__title {
+  font-size: 15px;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+.notif-dropdown__item--unread .notif-dropdown__title {
+  color: var(--accent-color);
+}
+
+/* Content */
+.notif-dropdown__content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+/* Timestamp */
+.notif-dropdown__time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* Unread dot indicator */
+.notif-dropdown__dot {
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(37, 99, 235, 0.5);
+  display: inline-block;
+}
