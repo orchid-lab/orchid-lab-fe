@@ -269,13 +269,13 @@ const ExperimentLog = () => {
       ) {
         allLogs = (data as any).data
           .map(normalizeRawLog)
-          .filter((x): x is ExperimentLogEntry => x !== null);
+          .filter((x: any): x is ExperimentLogEntry => x !== null);
       } else if (
         hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
       ) {
         allLogs = (data.value.data ?? [])
           .map(normalizeRawLog)
-          .filter((x): x is ExperimentLogEntry => x !== null);
+          .filter((x: any): x is ExperimentLogEntry => x !== null);
       } else if (typeof data === "object" && data !== null && "value" in data) {
         allLogs = ((data as ExperimentLogApiResponse).value ?? [])
           .map(normalizeRawLog)
@@ -329,7 +329,14 @@ const ExperimentLog = () => {
       });
     } catch (err) {
       console.error("Không thể lấy thống kê:", err);
-      setStats({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
+      setStats({
+        total: 0,
+        Created: 0,
+        Waiting: 0,
+        InProcess: 0,
+        Done: 0,
+        Cancel: 0,
+      });
     }
   }, []);
 
@@ -381,7 +388,7 @@ const ExperimentLog = () => {
         ) {
           arr = (data as any).data
             .map(normalizeRawLog)
-            .filter((x): x is ExperimentLogEntry => x !== null);
+            .filter((x: any): x is ExperimentLogEntry => x !== null);
           total = Number((data as any).totalCount ?? arr.length);
         } else if (
           hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
