@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BrowserRouter as Router,
   Routes,
@@ -5,7 +8,6 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Method from "./pages/researcher/method/Method";
 import Tasks from "./pages/researcher/task/Tasks";
@@ -44,14 +46,12 @@ import { SnackbarProvider } from "notistack";
 import ReportsCreate from "./pages/technician/report/ReportsCreate";
 import ReportList from "./pages/researcher/report/Reports";
 import ReportsTechnician from "./pages/technician/report/Reports";
-import SidebarTechnician from "./components/SidebarTechinician";
+import SidebarTechnician from "./components/SidebarTechnician";
 import ListTask from "./pages/technician/task/listTask";
 import { ThemeProvider } from "./context/ThemeContext";
 import TechDetailTask from "./pages/technician/task/TechDetailTask";
 import ListSample from "./pages/technician/sample/ListSample";
 import TechDetailSample from "./pages/technician/sample/TechDetailSample";
-
-// Admin pages
 import AdminTasks from "./pages/admin/task/AdminTasks";
 import AdminTaskDetail from "./pages/admin/task/AdminTaskDetail";
 import AdminExperimentLog from "./pages/admin/experimentlog/AdminExperimentLog";
@@ -69,6 +69,8 @@ import AdminElement from "./pages/admin/element/AdminElement";
 import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchList";
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
+import TechnicianExperimentLogDetail from "./pages/technician/experimentlog/TechnicianExperimentLogDetail";
+import TechnicianExperimentLog from "./pages/technician/experimentlog/TechnicianExperimentLog";
 
 function getUserRole(user: any): string {
   const roleValue = user?.role ?? user?.Role;
@@ -101,10 +103,12 @@ function AppLayout() {
 
   const userRole = getUserRole(user);
 
-  let sidebar = <Sidebar />;
+  let sidebar = <SidebarTechnician />;
 
   if (userRole === "admin") {
     sidebar = <SidebarAdmin />;
+  } else if (userRole === "researcher") {
+    sidebar = <Sidebar />;
   } else if (userRole === "lab technician") {
     sidebar = <SidebarTechnician />;
   }
@@ -228,6 +232,22 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ReportList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician/experiment-log"
+              element={
+                <ProtectedRoute requiredRole="Lab Technician">
+                  <TechnicianExperimentLog />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician/experiment-log/:id"
+              element={
+                <ProtectedRoute requiredRole="Lab Technician">
+                  <TechnicianExperimentLogDetail />
                 </ProtectedRoute>
               }
             />
@@ -464,6 +484,7 @@ function AppLayout() {
 }
 
 import { NotificationProvider } from "./context/NotificationContext";
+import Sidebar from "./components/Sidebar";
 
 function App() {
   return (

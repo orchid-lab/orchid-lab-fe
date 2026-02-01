@@ -52,7 +52,7 @@ interface MethodOption {
   name: string;
 }
 
-const AdminExperimentLog = () => {
+const TechnicianExperimentLog = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
@@ -589,4 +589,4 @@ const AdminExperimentLog = () => {
   );
 };
 
-export default AdminExperimentLog;
+export default TechnicianExperimentLog;

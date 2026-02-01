@@ -10,7 +10,11 @@ Chart.register(ArcElement, Tooltip, Legend);
 interface Task {
   id: string;
   name: string;
+  description?: string;
+  stageId?: string;
+  researcherId: string;
   researcher: string;
+  technicianId: string;
   experimentLogName?: string;
   end_date: string;
   create_at: string;
@@ -27,8 +31,11 @@ type StatusType =
 
 interface ApiTaskResponse {
   value?: {
-    data?: Task[];
     totalCount?: number;
+    pageCount?: number;
+    pageSize?: number;
+    pageNumber?: number;
+    data?: Task[];
   };
 }
 
@@ -111,18 +118,26 @@ export default function ListTask() {
   const tasksPerPage = 20;
 
   // Load summary data chỉ 1 lần khi component mount
+  // API: GET /api/tasks?PageNumber=1&PageSize=1000
+  // Sau đó filter theo technicianId ở frontend vì API không có param technicianId
   useEffect(() => {
     const loadSummaryData = async () => {
       try {
-        // Lấy tất cả tasks của technician để tính summary
-        const response = await axiosInstance.get(
-          `/api/tasks?pageNo=1&pageSize=1000&technicianId=${user?.id}`
-        );
+        const params = new URLSearchParams();
+        params.append("PageNumber", "1");
+        params.append("PageSize", "1000");
+
+        const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
 
         if (isApiTaskResponse(response.data)) {
           const allTasks = Array.isArray(response.data.value?.data)
             ? response.data.value.data
             : [];
+
+          // Filter theo technicianId của user hiện tại ở frontend
+          const myTasks = allTasks.filter(
+            (task) => task.technicianId === user?.id
+          );
 
           // Tính status counts
           const counts: Record<StatusType, number> = {
@@ -134,7 +149,7 @@ export default function ListTask() {
             Cancel: 0,
           };
 
-          allTasks.forEach((task) => {
+          myTasks.forEach((task) => {
             counts[task.status] = (counts[task.status] || 0) + 1;
           });
 
@@ -143,7 +158,7 @@ export default function ListTask() {
           today.setHours(0, 0, 0, 0);
 
           // Lọc các task có end_date là hôm nay
-          const todayTasks = allTasks.filter((task) => {
+          const todayTasks = myTasks.filter((task) => {
             const taskEndDate = new Date(task.end_date);
             taskEndDate.setHours(0, 0, 0, 0);
             return taskEndDate.getTime() === today.getTime();
@@ -151,7 +166,6 @@ export default function ListTask() {
 
           const totalToday = todayTasks.length;
 
-          // Tính số task đã hoàn thành và chưa hoàn thành trong ngày hôm nay
           const completed = todayTasks.filter(
             (task) =>
               task.status === "DoneInTime" || task.status === "DoneInLate"
@@ -180,21 +194,20 @@ export default function ListTask() {
   }, [user?.id]);
 
   // Build query parameters cho API call chính
+  // Swagger params: PageNumber, PageSize, ResearcherId, SearchTerm, StageId
   const buildApiQuery = useMemo(() => {
     const params = new URLSearchParams();
 
-    // Luôn load tất cả tasks để sort và filter ở frontend
-    params.append("pageNo", "1");
-    params.append("pageSize", "1000"); // Load tất cả để sort và filter
-    params.append("technicianId", user?.id ?? "");
+    params.append("PageNumber", "1");
+    params.append("PageSize", "1000"); // Load tất cả để sort, filter và paginate ở frontend
 
-    // Backend không hỗ trợ status filter, chỉ có thể filter ở frontend
+    // Chỉ append SearchTerm nếu có giá trị
     if (searchTerm.trim()) {
-      params.append("search", searchTerm.trim());
+      params.append("SearchTerm", searchTerm.trim());
     }
 
     return params.toString();
-  }, [searchTerm, user?.id]);
+  }, [searchTerm]);
 
   // Load tasks với debounce cho search
   useEffect(() => {
@@ -211,15 +224,17 @@ export default function ListTask() {
                 ? res.data.value.data
                 : [];
 
+              // Filter theo technicianId của user hiện tại ở frontend
+              let filteredData = data.filter(
+                (task) => task.technicianId === user?.id
+              );
+
               // Sort toàn bộ danh sách theo create_at (newest first)
-              const sortedData = [...data].sort((a, b) => {
+              filteredData = [...filteredData].sort((a, b) => {
                 const dateA = new Date(a.create_at);
                 const dateB = new Date(b.create_at);
-                return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+                return dateB.getTime() - dateA.getTime();
               });
-
-              // Filter trên data đã sort
-              let filteredData = sortedData;
 
               // Filter by status
               if (statusFilter !== "Tất cả") {
@@ -240,7 +255,7 @@ export default function ListTask() {
                 });
               }
 
-              // Filter by search term
+              // Filter by search term ở frontend (double-check lại cho chắc)
               if (searchTerm.trim()) {
                 filteredData = filteredData.filter(
                   (task) =>
@@ -259,7 +274,7 @@ export default function ListTask() {
               const paginatedData = filteredData.slice(startIndex, endIndex);
 
               setTasks(paginatedData);
-              setTotalCount(filteredData.length); // Total filtered count
+              setTotalCount(filteredData.length);
             }
           })
           .catch(() => {
@@ -271,7 +286,7 @@ export default function ListTask() {
           });
       },
       searchTerm ? 300 : 0
-    ); // Debounce 300ms cho search, ngay lập tức cho các filter khác
+    );
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -280,6 +295,7 @@ export default function ListTask() {
     searchTerm,
     todayFilter,
     currentPage,
+    user?.id,
     enqueueSnackbar,
   ]);
 
@@ -299,9 +315,9 @@ export default function ListTask() {
       {
         data: [stats.completed, stats.inProgress, stats.totalToday],
         backgroundColor: [
-          "#22c55e", // green
-          "#facc15", // yellow
-          "#3b82f6", // blue
+          "#22c55e",
+          "#facc15",
+          "#3b82f6",
         ],
         borderWidth: 1,
       },
@@ -524,7 +540,7 @@ export default function ListTask() {
                 <tbody>
                   {tasks.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-gray-500">
+                      <td colSpan={5} className="p-8 text-center text-gray-500">
                         Không tìm thấy nhiệm vụ nào
                       </td>
                     </tr>

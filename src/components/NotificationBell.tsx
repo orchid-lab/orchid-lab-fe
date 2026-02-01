@@ -1,15 +1,23 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import React, { useRef, useState } from "react";
 import { useNotification } from "../context/NotificationContext";
+import { useNavigate } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../context/AuthContext";
 
 const NotificationBell: React.FC = () => {
   const { notifications, markAsRead } = useNotification();
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { user } = useAuth();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  // Đóng dropdown khi click ngoài
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
@@ -19,6 +27,20 @@ const NotificationBell: React.FC = () => {
     if (open) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
+
+  const handleNotificationClick = (notification: typeof notifications[0]) => {
+    if (!notification.isRead) {
+      markAsRead(notification.id);
+    }
+
+    if (user?.role === "technician") {
+      navigate("/technician/experiment-log");
+    } else if (user?.role === "researcher") {
+      navigate("/researcher/experiment-log");
+    }
+
+    setOpen(false);
+  };
 
   return (
     <div
@@ -36,7 +58,7 @@ const NotificationBell: React.FC = () => {
           padding: 0,
           outline: "none",
         }}
-        aria-label="Thông báo"
+        aria-label={t("notification.title")}
       >
         <FaBell
           size={24}
@@ -99,7 +121,7 @@ const NotificationBell: React.FC = () => {
               background: "#f9fafb",
             }}
           >
-            Thông báo
+            {t("notification.title")}
           </div>
           <ul
             style={{
@@ -112,7 +134,7 @@ const NotificationBell: React.FC = () => {
           >
             {notifications.length === 0 && (
               <li style={{ padding: 24, textAlign: "center", color: "#888" }}>
-                Không có thông báo nào
+                {t("notification.empty")}
               </li>
             )}
             {notifications.map((n) => (
@@ -123,11 +145,11 @@ const NotificationBell: React.FC = () => {
                   borderBottom: "1px solid #f3f4f6",
                   background: n.isRead ? "#fff" : "#f1f5fd",
                   fontWeight: n.isRead ? 400 : 600,
-                  cursor: n.isRead ? "default" : "pointer",
+                  cursor: "pointer",
                   transition: "background 0.2s",
                   position: "relative",
                 }}
-                onClick={() => !n.isRead && markAsRead(n.id)}
+                onClick={() => handleNotificationClick(n)}
               >
                 <div
                   style={{
@@ -142,7 +164,7 @@ const NotificationBell: React.FC = () => {
                   {n.content}
                 </div>
                 <div style={{ fontSize: 11, color: "#888" }}>
-                  {new Date(n.createdAt).toLocaleString()}
+                  {new Date(n.createdAt).toLocaleString("vi-VN")}
                 </div>
                 {!n.isRead && (
                   <span

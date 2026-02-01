@@ -1,7 +1,7 @@
 /* eslint-disable react-dom/no-missing-button-type */
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { FaTasks, FaChartBar, FaFlask, FaSignOutAlt, FaSearch } from "react-icons/fa";
+import { FaTasks, FaBook, FaChartBar, FaFlask, FaSignOutAlt, FaSearch } from "react-icons/fa";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,7 @@ import type { User } from "../types/Auth";
 
 const tabs = [
   { nameKey: "navigation.task", path: "/technician/tasks", icon: FaTasks },
+  { nameKey: "navigation.experimentLog", path: "/technician/experiment-log", icon: FaBook },
   { nameKey: "navigation.sample", path: "/technician/samples", icon: FaFlask },
   { nameKey: "navigation.report", path: "/technician/reports", icon: FaChartBar },
 ];
