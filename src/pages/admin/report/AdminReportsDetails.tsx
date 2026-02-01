@@ -1,6 +1,5 @@
-import axiosInstance from "../../../api/axiosInstance";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +20,7 @@ interface Sample {
   roots?: number;
   stemHeightCm?: number;
   rootLengthCm?: number;
+  note?: string;
 }
 
 interface AnalyzeResult {
@@ -34,7 +34,6 @@ interface AnalyzeResult {
 export default function AdminReportsDetails() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const page = searchParams.get("page") ?? "1";
   const { id } = useParams();
@@ -149,7 +148,7 @@ export default function AdminReportsDetails() {
   }
 
   // Simulated analyze function: generate fake probabilities and a top prediction
-  const analyzeImageFromUrl = async (imgUrl: string) => {
+  const analyzeImageFromUrl = async () => {
     setAnalyzeLoading(true);
     setAnalyzeResult(null);
     // simulate network
@@ -196,9 +195,6 @@ export default function AdminReportsDetails() {
     };
     return statusMap[status] || status;
   };
-
-  const clamp = (v: number, min = 0, max = 100) =>
-    Math.max(min, Math.min(max, v));
 
   function metricStatus(
     value: number | undefined,
@@ -386,9 +382,8 @@ export default function AdminReportsDetails() {
 
               <div className="ml-auto flex gap-2">
                 <button
-                  onClick={() =>
-                    selectedImg && analyzeImageFromUrl(selectedImg)
-                  }
+                  type="button"
+                  onClick={() => selectedImg && analyzeImageFromUrl()}
                   className="px-3 py-2 bg-emerald-600 text-white rounded-md text-sm flex items-center gap-2"
                   disabled={!selectedImg || analyzeLoading}
                 >
