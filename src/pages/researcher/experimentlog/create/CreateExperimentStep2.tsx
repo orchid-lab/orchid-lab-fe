@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Info, Plus, ChevronDown } from "lucide-react";
+import { ArrowRight, ArrowLeft, Plus, ChevronDown } from "lucide-react";
 import ExperimentSteps from "./ExperimentSteps";
 import { useExperimentLogForm } from "../../../../context/ExperimentLogFormContext";
 import axiosInstance from "../../../../api/axiosInstance";
@@ -14,14 +14,14 @@ interface Seedling {
   doB: string;
 }
 
-interface ApiSeedling {
-  id: string;
-  localName?: string;
-  scientificName?: string;
-  name?: string;
-  description: string;
-  doB: string;
-}
+// interface ApiSeedling {
+//   id: string;
+//   localName?: string;
+//   scientificName?: string;
+//   name?: string;
+//   description: string;
+//   doB: string;
+// }
 
 const CreateExperimentStep2 = () => {
   const navigate = useNavigate();

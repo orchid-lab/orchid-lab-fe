@@ -17,7 +17,6 @@ const CreateExperimentStep3 = () => {
     methodID,
     methodName,
     methodType,
-    hybridization,
     hybridizationNames,
     description,
     technicianNames,
@@ -142,13 +141,6 @@ const CreateExperimentStep3 = () => {
     }
   };
 
-  const handleLocalFinish = () => {
-    // Developer helper: finish flow locally without calling API.
-    resetForm();
-    enqueueSnackbar("Hoàn thành (không gọi API)", { variant: "info" });
-    void navigate("/experiment-log");
-  };
-
   const hybridizationNamesToShow =
     methodType === "Sexual" && hybridizationNames
       ? [...hybridizationNames].reverse()
@@ -181,12 +173,6 @@ const CreateExperimentStep3 = () => {
 
   const selectedMotherName =
     hybridizationNamesToShow?.[0] ?? form.motherName ?? "Chưa chọn";
-  const selectedFatherName =
-    hybridizationNamesToShow?.[1] ??
-    (form.hybridization && form.hybridization.length > 0
-      ? form.hybridization[0]
-      : undefined) ??
-    "Chưa chọn";
 
   const findMockByName = (name?: string) => {
     if (!name) return undefined;
@@ -198,7 +184,6 @@ const CreateExperimentStep3 = () => {
   };
 
   const motherDetail = findMockByName(selectedMotherName);
-  const fatherDetail = findMockByName(selectedFatherName);
 
   return (
     <main className="ml-64 mt-6 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">

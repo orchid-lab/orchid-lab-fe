@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 export type MethodType = 1 | 2; // 1: Cấy mô, 2: Lai ghép
 
@@ -17,6 +17,8 @@ export interface ExperimentLogFormData {
   description?: string; // nhập ở bước 3
   technicianID?: string[]; // chọn ở bước 1
   technicianNames?: string[]; // chỉ để hiển thị
+  startDate?: string; // chọn ở bước 3
+  endDate?: string; // chọn ở bước 3
 }
 
 interface ExperimentLogFormContextType {
@@ -26,33 +28,43 @@ interface ExperimentLogFormContextType {
 }
 
 const defaultForm: ExperimentLogFormData = {
-  name: '',
-  methodID: '',
-  methodName: '',
-  methodType: '',
-  tissueCultureBatchID: '',
-  batchName: '',
+  name: "",
+  methodID: "",
+  methodName: "",
+  methodType: "",
+  tissueCultureBatchID: "",
+  batchName: "",
   numberOfSample: undefined,
   hybridization: [],
   hybridizationNames: [],
-  motherID: '',
-  motherName: '',
-  description: '',
+  motherID: "",
+  motherName: "",
+  description: "",
   technicianID: [],
   technicianNames: [],
+  startDate: "",
+  endDate: "",
 };
 
-const ExperimentLogFormContext = createContext<ExperimentLogFormContextType | undefined>(undefined);
+const ExperimentLogFormContext = createContext<
+  ExperimentLogFormContextType | undefined
+>(undefined);
 
 export function useExperimentLogForm() {
   const context = useContext(ExperimentLogFormContext);
   if (!context) {
-    throw new Error('useExperimentLogForm must be used within an ExperimentLogFormProvider');
+    throw new Error(
+      "useExperimentLogForm must be used within an ExperimentLogFormProvider",
+    );
   }
   return context;
 }
 
-export function ExperimentLogFormProvider({ children }: { children: React.ReactNode }) {
+export function ExperimentLogFormProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [form, setForm] = useState<ExperimentLogFormData>(defaultForm);
   const resetForm = () => setForm(defaultForm);
   return (
@@ -60,4 +72,4 @@ export function ExperimentLogFormProvider({ children }: { children: React.ReactN
       {children}
     </ExperimentLogFormContext.Provider>
   );
-} 
+}

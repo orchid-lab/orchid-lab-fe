@@ -21,59 +21,59 @@ interface Technician {
   roleID: string | number;
 }
 
-function hasValueWithData<T>(
-  obj: unknown,
-  itemGuard: (item: unknown) => item is T,
-): obj is { value: { data: T[] } } {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object" &&
-    (obj as { value: { data?: unknown[] } }).value !== null &&
-    "data" in (obj as { value: { data?: unknown[] } }).value &&
-    Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
-    (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
-  );
-}
+// function hasValueWithData<T>(
+//   obj: unknown,
+//   itemGuard: (item: unknown) => item is T,
+// ): obj is { value: { data: T[] } } {
+//   return (
+//     typeof obj === "object" &&
+//     obj !== null &&
+//     "value" in obj &&
+//     typeof (obj as { value: unknown }).value === "object" &&
+//     (obj as { value: { data?: unknown[] } }).value !== null &&
+//     "data" in (obj as { value: { data?: unknown[] } }).value &&
+//     Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
+//     (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
+//   );
+// }
 
-function isBatch(item: unknown): item is Batch {
-  return (
-    typeof item === "object" &&
-    item !== null &&
-    "id" in item &&
-    typeof (item as { id: unknown }).id === "string" &&
-    "name" in item &&
-    typeof (item as { name: unknown }).name === "string"
-  );
-}
+// function isBatch(item: unknown): item is Batch {
+//   return (
+//     typeof item === "object" &&
+//     item !== null &&
+//     "id" in item &&
+//     typeof (item as { id: unknown }).id === "string" &&
+//     "name" in item &&
+//     typeof (item as { name: unknown }).name === "string"
+//   );
+// }
 
-function isMethod(item: unknown): item is {
-  id: string;
-  name: string;
-  description: string;
-  type?: string;
-  stages?: {
-    id: string;
-    name: string;
-    description: string;
-    dateOfProcessing: number;
-    step: number;
-    status: boolean;
-  }[];
-} {
-  return (
-    typeof item === "object" &&
-    item !== null &&
-    "id" in item &&
-    typeof (item as { id: unknown }).id === "string" &&
-    "name" in item &&
-    typeof (item as { name: unknown }).name === "string" &&
-    "description" in item &&
-    typeof (item as { description: unknown }).description === "string"
-    // type và stages là optional
-  );
-}
+// function isMethod(item: unknown): item is {
+//   id: string;
+//   name: string;
+//   description: string;
+//   type?: string;
+//   stages?: {
+//     id: string;
+//     name: string;
+//     description: string;
+//     dateOfProcessing: number;
+//     step: number;
+//     status: boolean;
+//   }[];
+// } {
+//   return (
+//     typeof item === "object" &&
+//     item !== null &&
+//     "id" in item &&
+//     typeof (item as { id: unknown }).id === "string" &&
+//     "name" in item &&
+//     typeof (item as { name: unknown }).name === "string" &&
+//     "description" in item &&
+//     typeof (item as { description: unknown }).description === "string"
+//     // type và stages là optional
+//   );
+// }
 
 const CreateExperimentStep1 = () => {
   // Developer offline mode: set to true to skip external API calls and use mock data
@@ -89,7 +89,7 @@ const CreateExperimentStep1 = () => {
   const [name, setName] = useState(form.name ?? "");
   const [startDate, setStartDate] = useState(form.startDate ?? "");
   const [endDate, setEndDate] = useState(form.endDate ?? "");
-  const [numberOfSample, setNumberOfSample] = useState(
+  const [numberOfSample, _setNumberOfSample] = useState(
     form.numberOfSample ?? 1,
   );
 
@@ -304,7 +304,7 @@ const CreateExperimentStep1 = () => {
             // eslint-disable-next-line no-console
             console.error(
               "Retry fetch users failed:",
-              err2?.response?.data ?? err2?.message,
+              (err2 as any)?.response?.data ?? (err2 as any)?.message,
             );
           }
         }
