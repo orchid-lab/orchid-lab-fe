@@ -51,14 +51,14 @@ import TechDetailTask from "./pages/technician/task/TechDetailTask";
 import ListSample from "./pages/technician/sample/ListSample";
 import TechDetailSample from "./pages/technician/sample/TechDetailSample";
 
-// Import admin pages
+// Admin pages
 import AdminTasks from "./pages/admin/task/AdminTasks";
 import AdminTaskDetail from "./pages/admin/task/AdminTaskDetail";
 import AdminExperimentLog from "./pages/admin/experimentlog/AdminExperimentLog";
 import AdminExperimentLogDetail from "./pages/admin/experimentlog/AdminExperimentLogDetail";
-import AdminLabRoomList from "./pages/admin/labroom/AdminLabRoomList";
-import AdminLabRoomCreate from "./pages/admin/labroom/AdminLabRoomCreate";
-import AdminLabRoomDetail from "./pages/admin/labroom/AdminLabRoomDetail";
+// import AdminLabRoomList from "./pages/admin/labroom/AdminLabRoomList";
+// import AdminLabRoomCreate from "./pages/admin/labroom/AdminLabRoomCreate";
+// import AdminLabRoomDetail from "./pages/admin/labroom/AdminLabRoomDetail";
 import AdminSeedlings from "./pages/admin/seeding/AdminSeedlings";
 import AdminSeedlingDetail from "./pages/admin/seeding/AdminSeedlingDetail";
 import AdminMethodDetail from "./pages/admin/method/AdminMethodDetail";
@@ -71,7 +71,7 @@ import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/Admi
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
 
 function getUserRole(user: any): string {
-  const roleValue = user?.role || user?.Role;
+  const roleValue = user?.role ?? user?.Role;
   if (roleValue && typeof roleValue === "string") {
     return roleValue.toLowerCase().trim();
   }
@@ -376,7 +376,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="/admin/labroom"
               element={
                 <ProtectedRoute requiredRole="Admin">
@@ -399,7 +399,7 @@ function AppLayout() {
                   <AdminLabRoomDetail />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="/admin/seedling"
               element={

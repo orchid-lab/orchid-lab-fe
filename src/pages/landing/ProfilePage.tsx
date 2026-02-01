@@ -78,7 +78,7 @@ export default function ProfilePage() {
       if (avatarFile) {
         const formData = new FormData();
         formData.append("image", avatarFile);
-        const imageResponse = await axiosInstance.post("/api/images", formData, {
+        const imageResponse = await axiosInstance.post("/user", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         
