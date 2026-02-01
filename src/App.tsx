@@ -1,6 +1,10 @@
-/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import {BrowserRouter as Router,Routes,Route,Navigate,useLocation,} from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import Method from "./pages/researcher/method/Method";
@@ -52,6 +56,9 @@ import AdminTasks from "./pages/admin/task/AdminTasks";
 import AdminTaskDetail from "./pages/admin/task/AdminTaskDetail";
 import AdminExperimentLog from "./pages/admin/experimentlog/AdminExperimentLog";
 import AdminExperimentLogDetail from "./pages/admin/experimentlog/AdminExperimentLogDetail";
+import AdminLabRoomList from "./pages/admin/labroom/AdminLabRoomList";
+import AdminLabRoomCreate from "./pages/admin/labroom/AdminLabRoomCreate";
+import AdminLabRoomDetail from "./pages/admin/labroom/AdminLabRoomDetail";
 import AdminSeedlings from "./pages/admin/seeding/AdminSeedlings";
 import AdminSeedlingDetail from "./pages/admin/seeding/AdminSeedlingDetail";
 import AdminMethodDetail from "./pages/admin/method/AdminMethodDetail";
@@ -63,17 +70,21 @@ import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminT
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
 
-function getUserRole(user: unknown): string {
-  const roleValue = user?.role ?? user?.Role;
-  if (roleValue && typeof roleValue === 'string') {
+function getUserRole(user: any): string {
+  const roleValue = user?.role || user?.Role;
+  if (roleValue && typeof roleValue === "string") {
     return roleValue.toLowerCase().trim();
   }
-  
-  switch (user?.roleId== undefined ? user?.RoleId : user?.roleId) {
-    case 1: return "admin";
-    case 3: return "researcher";
-    case 2: return "lab technician";
-    default: return "researcher";
+
+  switch (user?.roleId) {
+    case 1:
+      return "admin";
+    case 2:
+      return "researcher";
+    case 3:
+      return "lab technician";
+    default:
+      return "researcher";
   }
 }
 
@@ -83,15 +94,15 @@ function AppLayout() {
 
   const isLoginPage = location.pathname === "/login";
   const isUnauthorizedPage = location.pathname === "/unauthorized";
-  
+
   if (!isAuthReady) {
     return <div>Đang tải...</div>;
   }
-  
+
   const userRole = getUserRole(user);
-  
+
   let sidebar = <Sidebar />;
-  
+
   if (userRole === "admin") {
     sidebar = <SidebarAdmin />;
   } else if (userRole === "lab technician") {
@@ -366,6 +377,30 @@ function AppLayout() {
               }
             />
             <Route
+              path="/admin/labroom"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminLabRoomList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/labroom/new"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminLabRoomCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/labroom/:id"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminLabRoomDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/seedling"
               element={
                 <ProtectedRoute requiredRole="Admin">
@@ -428,21 +463,25 @@ function AppLayout() {
   );
 }
 
+import { NotificationProvider } from "./context/NotificationContext";
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <SnackbarProvider
-          maxSnack={3}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Router>
-            <Routes>
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              <Route path="/*" element={<AppLayout />} />
-            </Routes>
-          </Router>
-        </SnackbarProvider>
+        <NotificationProvider>
+          <SnackbarProvider
+            maxSnack={3}
+            anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          >
+            <Router>
+              <Routes>
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="/*" element={<AppLayout />} />
+              </Routes>
+            </Router>
+          </SnackbarProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
