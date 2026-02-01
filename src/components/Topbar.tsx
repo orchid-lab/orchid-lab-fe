@@ -1,9 +1,10 @@
+ /* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState, useRef, useState as useStateReact } from "react";
-import { FaBell, FaEnvelope } from "react-icons/fa";
+import { useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
@@ -34,7 +35,6 @@ export default function Topbar() {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
-  // Fetch user data from API
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
@@ -90,11 +90,6 @@ export default function Topbar() {
           <NotificationBell />
         </div>
 
-        {/* Messages */}
-        <button className="relative p-2 rounded-lg hover:bg-blue-50/40 dark:hover:bg-gray-700 transition-all duration-300 group">
-          <FaEnvelope className="text-gray-400 dark:text-gray-200 text-xl group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors duration-300" />
-        </button>
-
         {/* Theme Toggle */}
         <ThemeToggle />
 
@@ -119,7 +114,7 @@ export default function Topbar() {
               />
             ) : (
               <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-700 font-semibold transition-transform duration-300 group-hover:scale-110">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
+                {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </div>
             )}
             <div
@@ -129,7 +124,7 @@ export default function Topbar() {
 
           <div className="flex flex-col">
             <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
-              {user?.name || t("common.loading")}
+              {user?.name ?? t("common.loading")}
             </span>
             <span className="text-gray-500 dark:text-gray-400 text-xs">
               {getRoleName(user?.role, t)}
