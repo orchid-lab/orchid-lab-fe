@@ -41,6 +41,7 @@ interface ExperimentLogEntry {
   samples?: Sample[];
   stages?: Stage[];
   currentStageName?: string;
+  expectedSampleCount: number;
 }
 
 interface ExperimentLogApiResponse {
@@ -65,20 +66,19 @@ const TechnicianExperimentLog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [sampleCounts, setSampleCounts] = useState<Record<string, number>>({});
   const [methods, setMethods] = useState<MethodOption[]>([]);
   const [stats, setStats] = useState<{
     total: number;
     Created: number;
-    InProcess: number;
-    Done: number;
-    Cancel: number;
+    InProgress: number;
+    Completed: number;
+    Destroyed: number;
   }>({
     total: 0,
     Created: 0,
-    InProcess: 0,
-    Done: 0,
-    Cancel: 0,
+    InProgress: 0,
+    Completed: 0,
+    Destroyed: 0,
   });
 
   const navigate = useNavigate();
@@ -89,14 +89,16 @@ const TechnicianExperimentLog = () => {
   const normalizeStatus = (status?: number | string) => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
-      case "1":
+      case "Created":
         return "Created";
-      case "2":
-        return "InProcess";
-      case "3":
-        return "Done";
-      case "4":
-        return "Cancel";
+      case "InProgress":
+        return "InProgress";
+      case "WaitingForChangeStage":
+        return "WaitingForChangeStage";
+      case "Completed":
+        return "Completed";
+      case "Destroyed":
+        return "Destroyed";
       default:
         return statusStr;
     }
@@ -106,12 +108,14 @@ const TechnicianExperimentLog = () => {
     switch (normalizeStatus(status)) {
       case "Created":
         return t("status.created");
-      case "InProcess":
+      case "InProgress":
         return t("experimentLog.inProgress");
-      case "Done":
+      case "Completed":
         return t("experimentLog.completed");
-      case "Cancel":
-        return t("experimentLog.cancelled");
+      case "Destroyed":
+        return t("experimentLog.destroyed");
+      case "WaitingForChangeStage":
+        return t("experimentLog.waitingForStageChange");
       default:
         return t("common.none");
     }
@@ -120,13 +124,13 @@ const TechnicianExperimentLog = () => {
   const chartData = {
     labels: [
       statusToVietnamese("Created"),
-      statusToVietnamese("InProcess"),
-      statusToVietnamese("Done"),
-      statusToVietnamese("Cancel"),
+      statusToVietnamese("InProgress"),
+      statusToVietnamese("Completed"),
+      statusToVietnamese("Destroyed"),
     ],
     datasets: [
       {
-        data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
+        data: [stats.Created, stats.InProgress, stats.Completed, stats.Destroyed],
         backgroundColor: ["#3b82f6", "#facc15", "#22c55e", "#ef4444"],
         borderWidth: 1,
       },
@@ -152,36 +156,6 @@ const TechnicianExperimentLog = () => {
     },
   };
 
-  const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
-    try {
-      const response = await axiosInstance.get(`/api/sample?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
-      const data = response.data;
-
-      if (typeof data === "object" && data !== null && "value" in data) {
-        const value = (data as { value?: unknown }).value;
-        if (Array.isArray(value)) {
-          return value.length;
-        }
-        if (value && typeof value === "object" && "data" in (value as { data?: unknown[] })) {
-          const inner = (value as { data?: unknown[] }).data;
-          return Array.isArray(inner) ? inner.length : 0;
-        }
-      }
-      return Array.isArray(data) ? data.length : 0;
-    } catch {
-      return 0;
-    }
-  };
-
-  const fetchAllSampleCounts = useCallback(async (experimentLogs: ExperimentLogEntry[]) => {
-    const counts: Record<string, number> = {};
-    const promises = experimentLogs.map(async (log) => {
-      const count = await fetchSampleCount(log.id);
-      counts[log.id] = count;
-    });
-    await Promise.all(promises);
-    setSampleCounts(counts);
-  }, []);
 
   function hasValueWithData<T>(obj: unknown, itemGuard: (item: unknown) => item is T): obj is { value: { data: T[] } } {
     return (
@@ -222,6 +196,7 @@ const TechnicianExperimentLog = () => {
       samples: obj.samples,
       stages: obj.stages,
       currentStageName: obj.currentStageName ?? "",
+      expectedSampleCount: obj.expectedSampleCount ?? 0,
     };
   }
 
@@ -265,9 +240,9 @@ const TechnicianExperimentLog = () => {
 
       const counts = {
         Created: 0,
-        InProcess: 0,
-        Done: 0,
-        Cancel: 0,
+        InProgress: 0,
+        Completed: 0,
+        Destroyed: 0,
       };
 
       allLogs.forEach((log) => {
@@ -276,30 +251,30 @@ const TechnicianExperimentLog = () => {
           case "Created":
             counts.Created++;
             break;
-          case "InProcess":
-            counts.InProcess++;
+          case "InProgress":
+            counts.InProgress++;
             break;
-          case "Done":
-            counts.Done++;
+          case "Completed":
+            counts.Completed++;
             break;
-          case "Cancel":
-            counts.Cancel++;
+          case "Destroyed":
+            counts.Destroyed++;
             break;
         }
       });
 
-      const total = counts.Created + counts.InProcess + counts.Done + counts.Cancel;
+      const total = counts.Created + counts.InProgress + counts.Completed + counts.Destroyed;
 
       setStats({
         total,
         Created: counts.Created,
-        InProcess: counts.InProcess,
-        Done: counts.Done,
-        Cancel: counts.Cancel,
+        InProgress: counts.InProgress,
+        Completed: counts.Completed,
+        Destroyed: counts.Destroyed,
       });
     } catch (err) {
       console.error(t("common.errorLoading"), err);
-      setStats({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
+      setStats({ total: 0, Created: 0, InProgress: 0, Completed: 0, Destroyed: 0 });
     }
   }, [t, userId]);
 
@@ -352,10 +327,6 @@ const TechnicianExperimentLog = () => {
 
         setLogs(arr);
         setTotalCount(total);
-
-        if (arr.length > 0) {
-          await fetchAllSampleCounts(arr);
-        }
       } catch {
         setError(t("common.errorLoading"));
         setLogs([]);
@@ -367,17 +338,19 @@ const TechnicianExperimentLog = () => {
 
     void fetchData();
     void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t, userId, isAuthReady]);
+  }, [currentPage, logsPerPage, methodFilter, fetchStatsOnly, t, userId, isAuthReady]);
 
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
       case "Created":
         return "bg-blue-100 text-blue-800";
-      case "InProcess":
+      case "WaitingForChangeStage":
+        return "bg-indigo-100 text-indigo-800";
+      case "InProgress":
         return "bg-yellow-100 text-yellow-800";
-      case "Done":
+      case "Completed":
         return "bg-green-100 text-green-800";
-      case "Cancel":
+      case "Destroyed":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -430,16 +403,16 @@ const TechnicianExperimentLog = () => {
                 <div className="text-2xl font-bold text-blue-700">{stats.total}</div>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg w-40">
-                <div className="text-yellow-600 text-sm font-medium">{statusToVietnamese("InProcess")}</div>
-                <div className="text-2xl font-bold text-yellow-700">{stats.InProcess}</div>
+                <div className="text-yellow-600 text-sm font-medium">{statusToVietnamese("InProgress")}</div>
+                <div className="text-2xl font-bold text-yellow-700">{stats.InProgress}</div>
               </div>
               <div className="bg-green-50 p-4 rounded-lg w-40">
-                <div className="text-green-600 text-sm font-medium">{statusToVietnamese("Done")}</div>
-                <div className="text-2xl font-bold text-green-700">{stats.Done}</div>
+                <div className="text-green-600 text-sm font-medium">{statusToVietnamese("Completed")}</div>
+                <div className="text-2xl font-bold text-green-700">{stats.Completed}</div>
               </div>
               <div className="bg-red-50 p-4 rounded-lg w-40">
-                <div className="text-red-600 text-sm font-medium">{statusToVietnamese("Cancel")}</div>
-                <div className="text-2xl font-bold text-red-700">{stats.Cancel}</div>
+                <div className="text-red-600 text-sm font-medium">{statusToVietnamese("Destroyed")}</div>
+                <div className="text-2xl font-bold text-red-700">{stats.Destroyed}</div>
               </div>
             </div>
           </div>
@@ -566,8 +539,8 @@ const TechnicianExperimentLog = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">{sampleCounts[log.id] ?? 0}</span>
-                          <span className="text-xs text-gray-400">{t("experimentLog.samples")}</span>
+                          <span className="font-semibold text-blue-600">{log.expectedSampleCount}</span>
+                          <span className="text-xs text-gray-400">mẫu</span>
                         </div>
                       </td>
                     </tr>

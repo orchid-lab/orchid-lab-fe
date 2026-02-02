@@ -40,6 +40,7 @@ interface ExperimentLogEntry {
   samples?: Sample[];
   stages?: Stage[];
   currentStageName?: string;
+  expectedSampleCount: number;
 }
 
 interface ExperimentLogApiResponse {

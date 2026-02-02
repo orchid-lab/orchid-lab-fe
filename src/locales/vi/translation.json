@@ -67,7 +67,8 @@
     "deleting": "Đang xóa...",
     "details": "Chi tiết",
     "category": "Danh mục",
-    "start": "Bắt đầu"
+    "start": "Bắt đầu",
+    "loggingOut": "Đang đăng xuất..."
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -381,7 +382,8 @@
     "noSamples": "Không có mẫu cây nào.",
     "backToList": "Trở về",
     "notAvailable": "Không xác định",
-    "days": "ngày"
+    "days": "ngày",
+    "waitingForStageChange": "Chờ chuyển giai đoạn"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

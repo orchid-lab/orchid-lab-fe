@@ -67,7 +67,8 @@
     "deleting": "Deleting...",
     "details": "Details",
     "category": "Category",
-    "start": "Start"
+    "start": "Start",
+    "loggingOut": "Logging out..."
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -381,7 +382,8 @@
     "noSamples": "No samples available.",
     "backToList": "Back",
     "notAvailable": "Not available",
-    "days": "days"
+    "days": "days",
+    "waitingForStageChange": "Waiting for Stage Change"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",

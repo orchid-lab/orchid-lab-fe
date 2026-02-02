@@ -39,6 +39,7 @@ interface ExperimentLogEntry {
   samples?: Sample[];
   stages?: Stage[];
   currentStageName?: string;
+  expectedSampleCount: number;
 }
 
 interface ExperimentLogApiResponse {
@@ -64,22 +65,21 @@ const ExperimentLog = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
-  const [sampleCounts, setSampleCounts] = useState<Record<string, number>>({});
   const [methods, setMethods] = useState<MethodOption[]>([]);
   const [stats, setStats] = useState<{
     total: number;
     Created: number;
-    Waiting: number;
+    WaitingForChangeStage: number;
     InProcess: number;
-    Done: number;
-    Cancel: number;
+    Completed: number;
+    Destroyed: number;
   }>({
     total: 0,
     Created: 0,
-    Waiting: 0,
+    WaitingForChangeStage: 0,
     InProcess: 0,
-    Done: 0,
-    Cancel: 0,
+    Completed: 0,
+    Destroyed: 0,
   });
 
   const navigate = useNavigate();
@@ -91,23 +91,18 @@ const ExperimentLog = () => {
   const normalizeStatus = (status?: number | string) => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
-      case "1":
+      case "Created":
         return "Created";
-      case "5":
-        return "Waiting";
-      case "2":
-        return "InProcess";
-      case "3":
-        return "Done";
-      case "4":
-        return "Cancel";
+      case "InProgress":
+        return "InProgress" 
+      case "WaitingForChangeStage":
+        return "WaitingForChangeStage";
+      case "Completed":
+        return "Completed";
+      case "Destroyed":
+        return "Destroyed";
       default:
-        if (/waiting|pending|chờ|đợi/i.test(statusStr)) return "Waiting";
-        if (/inprocess|processing|đang/i.test(statusStr)) return "InProcess";
-        if (/done|completed|hoàn/i.test(statusStr)) return "Done";
-        if (/cancel|hủy/i.test(statusStr)) return "Cancel";
-        if (/created|mới/i.test(statusStr)) return "Created";
-        return statusStr;
+        return "NotDefined";
     }
   };
 
@@ -116,59 +111,18 @@ const ExperimentLog = () => {
     switch (normalizeStatus(status)) {
       case "Created":
         return "Mới tạo";
-      case "Waiting":
+      case "WaitingForChangeStage":
         return "Chờ thay đổi giai đoạn";
-      case "InProcess":
+      case "InProgress":
         return "Đang trong quá trình thực hiện";
-      case "Done":
+      case "Completed":
         return "Hoàn thành";
-      case "Cancel":
+      case "Destroyed":
         return "Đã hủy";
       default:
         return "Không xác định";
     }
   };
-
-  // Fetch sample count
-  const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
-    try {
-      const resp = await axiosInstance.get("/api/sample", {
-        params: { pageNo: 1, pageSize: 1000, experimentLogId },
-      });
-      const data: unknown = resp.data;
-
-      if (typeof data === "object" && data !== null && "value" in data) {
-        const value = (data as { value?: unknown }).value;
-        if (Array.isArray(value)) {
-          return value.length;
-        }
-        if (
-          value &&
-          typeof value === "object" &&
-          "data" in (value as { data?: unknown[] })
-        ) {
-          const inner = (value as { data?: unknown[] }).data;
-          return Array.isArray(inner) ? inner.length : 0;
-        }
-      }
-      return Array.isArray(data) ? data.length : 0;
-    } catch {
-      return 0;
-    }
-  };
-
-  const fetchAllSampleCounts = useCallback(
-    async (experimentLogs: ExperimentLogEntry[]) => {
-      const counts: Record<string, number> = {};
-      const promises = experimentLogs.map(async (log) => {
-        const count = await fetchSampleCount(log.id);
-        counts[log.id] = count;
-      });
-      await Promise.all(promises);
-      setSampleCounts(counts);
-    },
-    [],
-  );
 
   function hasValueWithData<T>(
     obj: unknown,
@@ -215,6 +169,7 @@ const ExperimentLog = () => {
       samples: obj.samples,
       stages: obj.stages,
       currentStageName: obj.currentStageName ?? obj.currentStageName ?? "",
+      expectedSampleCount: obj.expectedSampleCount ?? 0,
     };
   }
 
@@ -225,12 +180,37 @@ const ExperimentLog = () => {
         const res = await axiosInstance.get(
           "/api/methods?pageNumber=1&pageSize=100",
         );
-        const raw = res.data as {
-          value?: { data?: { id: string; name: string }[] };
-        };
-        const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
-        setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-      } catch {
+        const data = res.data;
+        console.log("Methods API response:", data);
+        
+        let arr: { id: string; name: string }[] = [];
+        
+        // Xử lý nhiều cấu trúc response khác nhau
+        if (typeof data === "object" && data !== null) {
+          if ("value" in data) {
+            const value = (data as any).value;
+            if (Array.isArray(value?.data)) {
+              arr = value.data;
+            } else if (Array.isArray(value)) {
+              arr = value;
+            }
+          } else if ("data" in data && Array.isArray((data as any).data)) {
+            arr = (data as any).data;
+          } else if (Array.isArray(data)) {
+            arr = data;
+          }
+        } else if (Array.isArray(data)) {
+          arr = data;
+        }
+        
+        const methods = arr
+          .filter((m: any) => m?.id && m?.name)
+          .map((m: any) => ({ id: String(m.id), name: String(m.name) }));
+        
+        console.log("Parsed methods:", methods);
+        setMethods(methods);
+      } catch (err) {
+        console.error("Error fetching methods:", err);
         setMethods([]);
       }
     };
@@ -289,10 +269,10 @@ const ExperimentLog = () => {
       // Đếm theo status
       const counts = {
         Created: 0,
-        Waiting: 0,
+        WaitingForChangeStage: 0,
         InProcess: 0,
-        Done: 0,
-        Cancel: 0,
+        Completed: 0,
+        Destroyed: 0,
       };
 
       allLogs.forEach((log) => {
@@ -301,41 +281,41 @@ const ExperimentLog = () => {
           case "Created":
             counts.Created++;
             break;
-          case "Waiting":
-            counts.Waiting++;
+          case "WaitingForChangeStage":
+            counts.WaitingForChangeStage++;
             break;
-          case "InProcess":
+          case "InProgress":
             counts.InProcess++;
             break;
-          case "Done":
-            counts.Done++;
+          case "Completed":
+            counts.Completed++;
             break;
-          case "Cancel":
-            counts.Cancel++;
+          case "Destroyed":
+            counts.Destroyed++;
             break;
         }
       });
 
       const total =
-        counts.Created + counts.InProcess + counts.Done + counts.Cancel;
+        counts.Created + counts.InProcess + counts.Completed + counts.Destroyed + counts.WaitingForChangeStage;
 
       setStats({
         total,
         Created: counts.Created,
-        Waiting: counts.Waiting,
+        WaitingForChangeStage: counts.WaitingForChangeStage,
         InProcess: counts.InProcess,
-        Done: counts.Done,
-        Cancel: counts.Cancel,
+        Completed: counts.Completed,
+        Destroyed: counts.Destroyed,
       });
     } catch (err) {
       console.error("Không thể lấy thống kê:", err);
       setStats({
         total: 0,
         Created: 0,
-        Waiting: 0,
+        WaitingForChangeStage: 0,
         InProcess: 0,
-        Done: 0,
-        Cancel: 0,
+        Completed: 0,
+        Destroyed: 0,
       });
     }
   }, []);
@@ -423,10 +403,6 @@ const ExperimentLog = () => {
 
         setLogs(arr);
         setTotalCount(total);
-
-        if (arr.length > 0) {
-          await fetchAllSampleCounts(arr);
-        }
       } catch {
         setError("Không thể tải dữ liệu.");
         setLogs([]);
@@ -442,7 +418,6 @@ const ExperimentLog = () => {
     currentPage,
     logsPerPage,
     methodFilter,
-    fetchAllSampleCounts,
     fetchStatsOnly,
   ]);
 
@@ -450,13 +425,13 @@ const ExperimentLog = () => {
     switch (normalizeStatus(status)) {
       case "Created":
         return "bg-blue-100 text-blue-800";
-      case "Waiting":
+      case "WaitingForChangeStage":
         return "bg-indigo-100 text-indigo-800";
-      case "InProcess":
+      case "InProgress":
         return "bg-yellow-100 text-yellow-800";
-      case "Done":
+      case "Completed":
         return "bg-green-100 text-green-800";
-      case "Cancel":
+      case "Destroyed":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -473,6 +448,17 @@ const ExperimentLog = () => {
 
     const matchesStatus =
       statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
+
+    // Filter theo method name
+    const matchesMethod =
+      !methodFilter ||
+      (() => {
+        const selectedMethod = methods.find((m) => m.id === methodFilter);
+        if (!selectedMethod) return true;
+        return log.methodName
+          .toLowerCase()
+          .includes(selectedMethod.name.toLowerCase());
+      })();
 
     let matchesStage = true;
     if (
@@ -491,7 +477,7 @@ const ExperimentLog = () => {
       }
     }
 
-    return matchesSearch && matchesStatus && matchesStage;
+    return matchesSearch && matchesStatus && matchesMethod && matchesStage;
   });
 
   return (
@@ -547,15 +533,15 @@ const ExperimentLog = () => {
             </div>
             <div className="rounded-xl border bg-indigo-50 border-indigo-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
               <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Waiting")}
+                {statusToVietnamese("WaitingForChangeStage")}
               </div>
               <div className="text-3xl font-bold text-indigo-700">
-                {stats.Waiting}
+                {stats.WaitingForChangeStage}
               </div>
             </div>
             <div className="rounded-xl border bg-yellow-50 border-yellow-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
               <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("InProcess")}
+                {statusToVietnamese("InProgress")}
               </div>
               <div className="text-3xl font-bold text-yellow-700">
                 {stats.InProcess}
@@ -563,18 +549,18 @@ const ExperimentLog = () => {
             </div>
             <div className="rounded-xl border bg-green-50 border-green-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
               <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Done")}
+                {statusToVietnamese("Completed")}
               </div>
               <div className="text-3xl font-bold text-green-700">
-                {stats.Done}
+                {stats.Completed}
               </div>
             </div>
             <div className="rounded-xl border bg-red-50 border-red-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
               <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Cancel")}
+                {statusToVietnamese("Destroyed")}
               </div>
               <div className="text-3xl font-bold text-red-700">
-                {stats.Cancel}
+                {stats.Destroyed}
               </div>
             </div>
           </div>
@@ -728,7 +714,7 @@ const ExperimentLog = () => {
                         <td className="p-4 text-sm text-gray-500">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-blue-600">
-                              {sampleCounts[log.id] ?? 0}
+                              {log.expectedSampleCount}
                             </span>
                             <span className="text-xs text-gray-400">mẫu</span>
                           </div>
