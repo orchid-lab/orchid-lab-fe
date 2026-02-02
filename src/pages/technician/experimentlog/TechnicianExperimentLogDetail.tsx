@@ -90,6 +90,7 @@ const TechnicianExperimentLogDetail = () => {
   const [creator, setCreator] = useState<string>(t("experimentLog.loadingData"));
   const [, setStageTasks] = useState<Record<string, Task[]>>({});
   const [, setStageReports] = useState<Record<string, Report[]>>({});
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
 
 
@@ -132,7 +133,7 @@ const TechnicianExperimentLogDetail = () => {
     setError(null);
     
     axiosInstance
-      .get(`/api/experimentlog/${id}`)
+      .get(`/api/experiment-logs/${id}`)
       .then((res) => {
         const logData = res.data.value ?? res.data;
         const anyLog = logData as Record<string, unknown>;
@@ -145,6 +146,21 @@ const TechnicianExperimentLogDetail = () => {
       .catch(() => setError(t("common.errorLoading")))
       .finally(() => setLoading(false));
   }, [id, t]);
+
+  const handleStart = async () => {
+    if (!id) return;
+    setIsUpdatingStatus(true);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        status: "InProgress",
+      });
+      setLog((prev) => (prev ? { ...prev, status: "InProgress" } : prev));
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   useEffect(() => {
     if (!id || !log) return;
@@ -267,9 +283,17 @@ const TechnicianExperimentLogDetail = () => {
       <button
         type="button"
         className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-4 hover:bg-green-800 hover:text-white transition"
-        onClick={() => void navigate("/admin/experiment-log")}
+        onClick={() => void navigate("/technician/experiment-log")}
       >
         &larr; {t("experimentLog.backToList")}
+      </button>
+      <button
+        type="button"
+        onClick={() => void handleStart()}
+        disabled={isUpdatingStatus}
+        className="ml-3 border cursor-pointer border-blue-600 text-blue-600 rounded px-4 py-1 mb-4 hover:bg-blue-600 hover:text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {t("common.start")}
       </button>
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-8">
         <h1 className="text-2xl font-bold mb-4">

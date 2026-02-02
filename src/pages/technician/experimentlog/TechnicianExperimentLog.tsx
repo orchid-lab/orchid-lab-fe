@@ -6,6 +6,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../context/AuthContext";
 
 Chart.register(ArcElement, Tooltip, Legend);
 
@@ -53,6 +54,8 @@ interface MethodOption {
 }
 
 const TechnicianExperimentLog = () => {
+  const { user, isAuthReady } = useAuth();
+  const userId = user?.id ?? "";
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
@@ -196,12 +199,30 @@ const TechnicianExperimentLog = () => {
   function isExperimentLogEntry(obj: unknown): obj is ExperimentLogEntry {
     if (typeof obj !== "object" || obj === null) return false;
     const o = obj as Record<string, unknown>;
-    return (
-      typeof o.id === "string" &&
-      typeof o.name === "string" &&
-      typeof o.methodName === "string" &&
-      typeof o.tissueCultureBatchName === "string"
-    );
+    return typeof o.id === "string" && typeof o.name === "string";
+  }
+
+  function normalizeRawLog(obj: any): ExperimentLogEntry | null {
+    if (!obj?.id || !obj.name) return null;
+    const tissueCultureBatchName =
+      obj.tissueCultureBatchName ??
+      obj.batcheName ??
+      obj.batchName ??
+      obj.tissueCultureBatch?.name ??
+      "";
+    const methodName = obj.methodName ?? obj.method?.name ?? obj.method ?? "";
+    return {
+      id: String(obj.id),
+      name: String(obj.name),
+      methodName: String(methodName ?? ""),
+      description: obj.description ?? "",
+      tissueCultureBatchName: String(tissueCultureBatchName ?? ""),
+      createdDate: obj.createdDate ?? obj.createdDateString ?? "",
+      status: obj.status,
+      samples: obj.samples,
+      stages: obj.stages,
+      currentStageName: obj.currentStageName ?? "",
+    };
   }
 
   useEffect(() => {
@@ -220,16 +241,26 @@ const TechnicianExperimentLog = () => {
 
   const fetchStatsOnly = useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/api/experiment-logs?pageNo=1&pageSize=1000");
+      const params = new URLSearchParams();
+      params.append("pageNo", "1");
+      params.append("pageSize", "1000");
+      if (userId) {
+        params.append("TechnicianId", userId);
+      }
+      const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
       const data = res.data;
 
       let allLogs: ExperimentLogEntry[] = [];
-      if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-        allLogs = data.value.data;
+      if (typeof data === "object" && data !== null && "data" in (data as Record<string, unknown>) && Array.isArray((data as any).data)) {
+        allLogs = (data as any).data.map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
+      } else if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
+        allLogs = (data.value.data ?? []).map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
       } else if (typeof data === "object" && data !== null && "value" in data) {
-        allLogs = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
+        allLogs = ((data as ExperimentLogApiResponse).value ?? [])
+          .map(normalizeRawLog)
+          .filter((x: any): x is ExperimentLogEntry => x !== null);
       } else if (Array.isArray(data)) {
-        allLogs = data.filter(isExperimentLogEntry);
+        allLogs = data.map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
       }
 
       const counts = {
@@ -270,9 +301,16 @@ const TechnicianExperimentLog = () => {
       console.error(t("common.errorLoading"), err);
       setStats({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
     }
-  }, [t]);
+  }, [t, userId]);
 
   useEffect(() => {
+    if (!isAuthReady) return;
+    if (!userId) {
+      setLoading(false);
+      setLogs([]);
+      setTotalCount(0);
+      return;
+    }
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -282,28 +320,35 @@ const TechnicianExperimentLog = () => {
       if (methodFilter) {
         params.append("methodNameSearchTerm", methodFilter);
       }
+      params.append("technicianId", userId);
 
       try {
         const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
         const data = res.data;
-        let arr: ExperimentLogEntry[] = [];
+        let rawArr: unknown[] = [];
         let total = 0;
 
-        if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-          arr = data.value.data;
-          total = Number((data as { value: { totalCount?: unknown } })?.value?.totalCount ?? arr.length);
+        if (typeof data === "object" && data !== null && "data" in (data as Record<string, unknown>) && Array.isArray((data as any).data)) {
+          rawArr = (data as any).data;
+          total = Number((data as any).totalCount ?? rawArr.length);
+        } else if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
+          rawArr = data.value.data ?? [];
+          total = Number((data as { value: { totalCount?: unknown } })?.value?.totalCount ?? rawArr.length);
         } else if (typeof data === "object" && data !== null && "value" in data) {
-          arr = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
-          total = (data as ExperimentLogApiResponse).totalCount ?? arr.length;
+          rawArr = (data as ExperimentLogApiResponse).value ?? [];
+          total = (data as ExperimentLogApiResponse).totalCount ?? rawArr.length;
         } else if (Array.isArray(data)) {
-          arr = data.filter(isExperimentLogEntry);
-          total = arr.length;
+          rawArr = data;
+          total = rawArr.length;
         }
 
-        arr = arr.map((log) => ({
-          ...log,
-          status: normalizeStatus(log.status),
-        }));
+        const arr = rawArr
+          .map(normalizeRawLog)
+          .filter((x: any): x is ExperimentLogEntry => x !== null)
+          .map((log) => ({
+            ...log,
+            status: normalizeStatus(log.status),
+          }));
 
         setLogs(arr);
         setTotalCount(total);
@@ -322,7 +367,7 @@ const TechnicianExperimentLog = () => {
 
     void fetchData();
     void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t]);
+  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t, userId, isAuthReady]);
 
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
@@ -506,7 +551,7 @@ const TechnicianExperimentLog = () => {
                     <tr
                       key={log.id}
                       className="hover:bg-green-50 cursor-pointer transition"
-                      onClick={() => void navigate(`/admin/experiment-log/${log.id}`)}
+                      onClick={() => void navigate(`/technician/experiment-log/${log.id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.methodName}</td>
