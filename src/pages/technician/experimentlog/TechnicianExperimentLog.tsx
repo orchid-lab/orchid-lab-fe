@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -34,22 +35,38 @@ interface ExperimentLogEntry {
   name: string;
   methodName: string;
   description?: string;
-  tissueCultureBatchName: string;
+  tissueCultureBatchName?: string;
+  batchName?: string;
   createdDate?: string;
   status?: number | string;
   samples?: Sample[];
   stages?: Stage[];
   currentStageName?: string;
+  currentStageOrder?: number;
+  expectedSampleCount?: number;
 }
 
+// Actual API response shape: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
 interface ExperimentLogApiResponse {
-  value: ExperimentLogEntry[];
-  totalCount?: number;
+  totalCount: number;
+  pageCount: number;
+  pageSize: number;
+  pageNumber: number;
+  data: ExperimentLogEntry[];
 }
 
 interface MethodOption {
   id: string;
   name: string;
+}
+
+// Actual sample API response shape
+interface SampleApiResponse {
+  totalCount: number;
+  pageCount: number;
+  pageSize: number;
+  pageNumber: number;
+  data: unknown[];
 }
 
 const TechnicianExperimentLog = () => {
@@ -93,6 +110,17 @@ const TechnicianExperimentLog = () => {
       case "3":
         return "Done";
       case "4":
+        return "Cancel";
+      // API trả về string status trực tiếp như "Created", "WaitingForChangeStage", v.v.
+      case "Created":
+        return "Created";
+      case "WaitingForChangeStage":
+        return "InProcess";
+      case "InProcess":
+        return "InProcess";
+      case "Done":
+        return "Done";
+      case "Cancel":
         return "Cancel";
       default:
         return statusStr;
@@ -149,20 +177,36 @@ const TechnicianExperimentLog = () => {
     },
   };
 
+  // Parse the actual API response shape: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
+  const parseApiResponse = (data: unknown): { logs: ExperimentLogEntry[]; totalCount: number } => {
+    if (typeof data === "object" && data !== null && "data" in data && "totalCount" in data) {
+      const res = data as ExperimentLogApiResponse;
+      if (Array.isArray(res.data)) {
+        return {
+          logs: res.data as ExperimentLogEntry[],
+          totalCount: res.totalCount ?? res.data.length,
+        };
+      }
+    }
+    // Fallback: if response is a plain array
+    if (Array.isArray(data)) {
+      return { logs: data as ExperimentLogEntry[], totalCount: data.length };
+    }
+    return { logs: [], totalCount: 0 };
+  };
+
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
-      const response = await axiosInstance.get(`/api/sample?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
+      const response = await axiosInstance.get(`/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
       const data = response.data;
 
-      if (typeof data === "object" && data !== null && "value" in data) {
-        const value = (data as { value?: unknown }).value;
-        if (Array.isArray(value)) {
-          return value.length;
-        }
-        if (value && typeof value === "object" && "data" in (value as { data?: unknown[] })) {
-          const inner = (value as { data?: unknown[] }).data;
-          return Array.isArray(inner) ? inner.length : 0;
-        }
+      // Handle actual API shape: { totalCount, data: [...] }
+      if (typeof data === "object" && data !== null && "totalCount" in data) {
+        return (data as SampleApiResponse).totalCount ?? 0;
+      }
+      if (typeof data === "object" && data !== null && "data" in data) {
+        const inner = (data as SampleApiResponse).data;
+        return Array.isArray(inner) ? inner.length : 0;
       }
       return Array.isArray(data) ? data.length : 0;
     } catch {
@@ -180,37 +224,24 @@ const TechnicianExperimentLog = () => {
     setSampleCounts(counts);
   }, []);
 
-  function hasValueWithData<T>(obj: unknown, itemGuard: (item: unknown) => item is T): obj is { value: { data: T[] } } {
-    return (
-      typeof obj === "object" &&
-      obj !== null &&
-      "value" in obj &&
-      typeof (obj as { value: unknown }).value === "object" &&
-      (obj as { value: { data?: unknown[] } }).value !== null &&
-      "data" in (obj as { value: { data?: unknown[] } }).value &&
-      Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
-      (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
-    );
-  }
-
-  function isExperimentLogEntry(obj: unknown): obj is ExperimentLogEntry {
-    if (typeof obj !== "object" || obj === null) return false;
-    const o = obj as Record<string, unknown>;
-    return (
-      typeof o.id === "string" &&
-      typeof o.name === "string" &&
-      typeof o.methodName === "string" &&
-      typeof o.tissueCultureBatchName === "string"
-    );
-  }
-
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get("/api/methods?PageNumber=1&PageSize=100");
-        const raw = res.data as { value?: { data?: { id: string; name: string }[] } };
-        const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
-        setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
+        const res = await axiosInstance.get("/api/methods?PageNo=1&PageSize=100");
+        const raw = res.data;
+        // Try shape: { totalCount, data: [...] }
+        if (typeof raw === "object" && raw !== null && "data" in raw && Array.isArray((raw as { data: unknown[] }).data)) {
+          const arr = (raw as { data: { id: string; name: string }[] }).data;
+          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
+        }
+        // Fallback: { value: { data: [...] } }
+        else if (typeof raw === "object" && raw !== null && "value" in raw) {
+          const val = (raw as { value?: { data?: { id: string; name: string }[] } }).value;
+          const arr = Array.isArray(val?.data) ? val.data : [];
+          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
+        } else {
+          setMethods([]);
+        }
       } catch {
         setMethods([]);
       }
@@ -220,17 +251,8 @@ const TechnicianExperimentLog = () => {
 
   const fetchStatsOnly = useCallback(async () => {
     try {
-      const res = await axiosInstance.get("/api/experiment-logs?pageNo=1&pageSize=1000");
-      const data = res.data;
-
-      let allLogs: ExperimentLogEntry[] = [];
-      if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-        allLogs = data.value.data;
-      } else if (typeof data === "object" && data !== null && "value" in data) {
-        allLogs = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
-      } else if (Array.isArray(data)) {
-        allLogs = data.filter(isExperimentLogEntry);
-      }
+      const res = await axiosInstance.get("/api/experiment-logs?PageNo=1&PageSize=1000");
+      const { logs: allLogs } = parseApiResponse(res.data);
 
       const counts = {
         Created: 0,
@@ -277,39 +299,34 @@ const TechnicianExperimentLog = () => {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      params.append("pageNo", String(currentPage));
-      params.append("pageSize", String(logsPerPage));
+      params.append("PageNo", String(Math.max(1, currentPage)));
+      params.append("PageSize", String(logsPerPage));
+
+      // methodFilter stores the method ID from the select; look up the name to pass as MethodNameSearchTerm
       if (methodFilter) {
-        params.append("methodNameSearchTerm", methodFilter);
+        const selectedMethod = methods.find((m) => m.id === methodFilter);
+        if (selectedMethod) {
+          params.append("MethodNameSearchTerm", selectedMethod.name);
+        }
       }
 
       try {
         const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
-        const data = res.data;
-        let arr: ExperimentLogEntry[] = [];
-        let total = 0;
+        const { logs: arr, totalCount: total } = parseApiResponse(res.data);
 
-        if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-          arr = data.value.data;
-          total = Number((data as { value: { totalCount?: unknown } })?.value?.totalCount ?? arr.length);
-        } else if (typeof data === "object" && data !== null && "value" in data) {
-          arr = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
-          total = (data as ExperimentLogApiResponse).totalCount ?? arr.length;
-        } else if (Array.isArray(data)) {
-          arr = data.filter(isExperimentLogEntry);
-          total = arr.length;
-        }
-
-        arr = arr.map((log) => ({
+        // Normalize status for display
+        const normalizedLogs = arr.map((log) => ({
           ...log,
+          // Normalize batchName -> tissueCultureBatchName if needed
+          tissueCultureBatchName: log.tissueCultureBatchName ?? log.batchName ?? "",
           status: normalizeStatus(log.status),
         }));
 
-        setLogs(arr);
+        setLogs(normalizedLogs);
         setTotalCount(total);
 
-        if (arr.length > 0) {
-          await fetchAllSampleCounts(arr);
+        if (normalizedLogs.length > 0) {
+          await fetchAllSampleCounts(normalizedLogs);
         }
       } catch {
         setError(t("common.errorLoading"));
@@ -322,7 +339,7 @@ const TechnicianExperimentLog = () => {
 
     void fetchData();
     void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t]);
+  }, [currentPage, logsPerPage, methodFilter, methods, fetchAllSampleCounts, fetchStatsOnly, t]);
 
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
@@ -343,24 +360,31 @@ const TechnicianExperimentLog = () => {
     const matchesSearch =
       !searchTerm ||
       log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.tissueCultureBatchName.toLowerCase().includes(searchTerm.toLowerCase());
+      (log.tissueCultureBatchName ?? "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
 
     let matchesStage = true;
-    if (stageFilter !== "all" && log.stages && log.stages.length > 0 && log.currentStageName) {
+    if (stageFilter !== "all") {
       const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      if (stageNumber >= 1 && stageNumber <= log.stages.length) {
-        const stageIndex = stageNumber - 1;
-        const targetStageName = log.stages[stageIndex].name;
-        matchesStage = log.currentStageName === targetStageName;
-      } else {
-        matchesStage = false;
+      // Use currentStageOrder from API (0-based), so stage 1 = order 0, stage 2 = order 1, etc.
+      if (log.currentStageOrder !== undefined) {
+        matchesStage = log.currentStageOrder === stageNumber - 1;
+      } else if (log.stages && log.stages.length > 0 && log.currentStageName) {
+        if (stageNumber >= 1 && stageNumber <= log.stages.length) {
+          const targetStageName = log.stages[stageNumber - 1].name;
+          matchesStage = log.currentStageName === targetStageName;
+        } else {
+          matchesStage = false;
+        }
       }
     }
 
     return matchesSearch && matchesStatus && matchesStage;
   });
+
+  // Pagination based on server-side totalCount
+  const totalPages = Math.ceil(totalCount / logsPerPage);
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
@@ -506,7 +530,7 @@ const TechnicianExperimentLog = () => {
                     <tr
                       key={log.id}
                       className="hover:bg-green-50 cursor-pointer transition"
-                      onClick={() => void navigate(`/admin/experiment-log/${log.id}`)}
+                      onClick={() => void navigate(`/technician/experiment-log/${log.id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.methodName}</td>
@@ -550,7 +574,7 @@ const TechnicianExperimentLog = () => {
                 );
               })()}
             </div>
-            {totalCount > logsPerPage && (
+            {totalPages > 1 && (
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -560,7 +584,7 @@ const TechnicianExperimentLog = () => {
                 >
                   {t("common.previous")}
                 </button>
-                {Array.from({ length: Math.ceil(totalCount / logsPerPage) }, (_, i) => i + 1).map((number) => (
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
                   <button
                     type="button"
                     key={number}
@@ -575,7 +599,7 @@ const TechnicianExperimentLog = () => {
                 <button
                   type="button"
                   onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === Math.ceil(totalCount / logsPerPage)}
+                  disabled={currentPage === totalPages}
                   className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t("common.next")}
