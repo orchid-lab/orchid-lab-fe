@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -8,8 +9,6 @@ import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 
 Chart.register(ArcElement, Tooltip, Legend);
-
-// ─── Full API response types ────────────────────────────────────
 
 interface Trait {
   name: string;
@@ -173,7 +172,7 @@ const TechnicianExperimentLogDetail = () => {
         batchId: log.batch.id,
       })
       .then(() => {
-        fetchLog(); // reload data sau khi đổi status thành công
+        fetchLog(); 
       })
       .catch((err: unknown) => {
         console.error("Update status failed:", err);
