@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { useNotification } from "../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
@@ -14,6 +14,13 @@ const NotificationBell: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Sắp xếp thông báo từ mới nhất đến cũ nhất
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [notifications]);
 
   React.useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -100,12 +107,12 @@ const NotificationBell: React.FC = () => {
             {t("notification.title")}
           </div>
           <ul className="notif-dropdown__list">
-            {notifications.length === 0 && (
+            {sortedNotifications.length === 0 && (
               <li className="notif-dropdown__empty">
                 {t("notification.empty")}
               </li>
             )}
-            {notifications.map((n) => (
+            {sortedNotifications.map((n) => (
               <li
                 key={n.id}
                 className={`notif-dropdown__item ${n.isRead ? "notif-dropdown__item--read" : "notif-dropdown__item--unread"}`}
