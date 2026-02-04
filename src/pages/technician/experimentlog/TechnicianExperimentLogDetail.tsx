@@ -163,13 +163,6 @@ interface ExperimentLogDetailType {
   create_by?: string;
 }
 
-interface SamplesResponse {
-  value?: {
-    data?: Sample[];
-  };
-  data?: Sample[];
-}
-
 // =============================================================================
 // CANCEL MODAL COMPONENT
 // =============================================================================
@@ -259,9 +252,7 @@ const TechnicianExperimentLogDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
-  const [samples, setSamples] = useState<Sample[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setSamplesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [labName, setLabName] = useState<string>(t("experimentLog.loadingData"));
   const [creator, setCreator] = useState<string>(t("experimentLog.loadingData"));
@@ -273,6 +264,9 @@ const TechnicianExperimentLogDetail = () => {
   const [isProtocormPopoverOpen, setIsProtocormPopoverOpen] = useState(false);
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
   const [protocormQuantity, setProtocormQuantity] = useState<string>("");
+
+  // Use samples directly from log.samples
+  const samples = log?.samples || [];
 
   // ---------------------------------------------------------------------------
   // DATA FETCHING EFFECTS
@@ -343,18 +337,15 @@ const TechnicianExperimentLogDetail = () => {
         experimentLogId: id,
         quantity: qty,
       });
-      // Refresh samples list after creation
-      const res = await axiosInstance.get(`/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`);
-      const rawData = res.data;
-      let samplesData: Sample[] = [];
-      if (rawData?.value?.data) {
-        samplesData = rawData.value.data;
-      } else if (rawData?.data) {
-        samplesData = rawData.data;
-      } else if (Array.isArray(rawData)) {
-        samplesData = rawData;
-      }
-      setSamples(samplesData);
+      // Refetch experiment log to get updated samples
+      const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
+      const logData = res.data.value ?? res.data;
+      const anyLog = logData as Record<string, unknown>;
+      const normalized: Partial<ExperimentLogDetailType> = {
+        ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+        createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
+      };
+      setLog(normalized as ExperimentLogDetailType);
       setIsProtocormPopoverOpen(false);
       setProtocormQuantity("");
     } catch {
@@ -363,39 +354,6 @@ const TechnicianExperimentLogDetail = () => {
       setIsCreatingProtocorm(false);
     }
   };
-
-  useEffect(() => {
-    if (!id || !log) return;
-
-    setSamplesLoading(true);
-    axiosInstance
-      .get(`/api/sample?pageNo=1&pageSize=100&experimentLogId=${id}`)
-      .then((res) => {
-        const rawData = res.data;
-        let data: SamplesResponse;
-        if (typeof rawData === "object" && rawData !== null && ("value" in rawData || "data" in rawData)) {
-          data = rawData as SamplesResponse;
-        } else {
-          throw new Error("Invalid samples data");
-        }
-
-        let samplesData: Sample[] = [];
-        if (data.value?.data) {
-          samplesData = data.value.data;
-        } else if (data.data) {
-          samplesData = data.data;
-        } else if (Array.isArray(data)) {
-          samplesData = data;
-        }
-
-        setSamples(samplesData);
-      })
-      .catch((err) => {
-        console.error("Error fetching samples:", err);
-        setSamples([]);
-      })
-      .finally(() => setSamplesLoading(false));
-  }, [id, log]);
 
   useEffect(() => {
     if (!log) return;
@@ -466,8 +424,10 @@ const TechnicianExperimentLogDetail = () => {
     return <div className="text-gray-500">{t("experimentLog.noSeedlings")}</div>;
   };
 
+  // ─── Helpers ──────────────────────────────────────────────────
+
   const formatDate = (dateString?: string) => {
-    if (!dateString) return t("experimentLog.notAvailable");
+    if (!dateString) return "—";
     try {
       return new Date(dateString).toLocaleDateString("vi-VN");
     } catch {
