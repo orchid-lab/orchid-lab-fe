@@ -59,7 +59,7 @@ export default function Topbar() {
   };
 
   return (
-    <header className="h-16 fixed top-0 left-64 right-0 z-20 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-blue-100 dark:border-gray-700">
+    <header className="topbar-header h-16 fixed top-0 right-0 z-20 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-blue-100 dark:border-gray-700">
       {/* Left side - Decorative elements */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
