@@ -902,7 +902,7 @@ body[data-sidebar-collapsed="true"] .topbar-header {
 .sidebar-search-input:focus {
   background: var(--search-focus-bg);
   border-color: var(--accent-color);
-  ring-color: var(--accent-ring);
+  lighting-color: var(--accent-ring);
 }
 
 /* Navigation Items */

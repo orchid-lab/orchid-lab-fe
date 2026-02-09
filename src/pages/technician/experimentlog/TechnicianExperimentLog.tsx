@@ -2,7 +2,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter } from "lucide-react";
+import { 
+  Search, 
+  Filter, 
+  Beaker, 
+  FlaskConical, 
+  CheckCircle2, 
+  XCircle,
+  Clock,
+  Calendar,
+  TrendingUp,
+  BarChart3,
+  Microscope
+} from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
@@ -46,7 +58,6 @@ interface ExperimentLogEntry {
   expectedSampleCount?: number;
 }
 
-// Actual API response shape: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
 interface ExperimentLogApiResponse {
   totalCount: number;
   pageCount: number;
@@ -60,7 +71,6 @@ interface MethodOption {
   name: string;
 }
 
-// Actual sample API response shape
 interface SampleApiResponse {
   totalCount: number;
   pageCount: number;
@@ -111,7 +121,6 @@ const TechnicianExperimentLog = () => {
         return "Done";
       case "4":
         return "Cancel";
-      // API trả về string status trực tiếp như "Created", "WaitingForChangeStage", v.v.
       case "Created":
         return "Created";
       case "WaitingForChangeStage":
@@ -152,32 +161,36 @@ const TechnicianExperimentLog = () => {
     datasets: [
       {
         data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
-        backgroundColor: ["#3b82f6", "#facc15", "#22c55e", "#ef4444"],
-        borderWidth: 1,
+        backgroundColor: ["#ec4899", "#22c55e", "#93c5fd", "#ef4444"],
+        borderWidth: 0,
+        spacing: 2,
       },
     ],
   };
 
+  // CẬP NHẬT CHART OPTIONS TẠI ĐÂY
   const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: 0,
+    },
     plugins: {
       legend: {
-        display: true,
-        position: "bottom" as const,
+        display: false, // Tắt legend mặc định để biểu đồ nở ra giữa
       },
       tooltip: {
         callbacks: {
           label: function (context: import("chart.js").TooltipItem<"doughnut">) {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
             const value = context.parsed;
-            const percent = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${value} (${percent}%)`;
+            return `${context.label} (${value})`;
           },
         },
       },
     },
+    cutout: "70%",
   };
 
-  // Parse the actual API response shape: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
   const parseApiResponse = (data: unknown): { logs: ExperimentLogEntry[]; totalCount: number } => {
     if (typeof data === "object" && data !== null && "data" in data && "totalCount" in data) {
       const res = data as ExperimentLogApiResponse;
@@ -188,7 +201,6 @@ const TechnicianExperimentLog = () => {
         };
       }
     }
-    // Fallback: if response is a plain array
     if (Array.isArray(data)) {
       return { logs: data as ExperimentLogEntry[], totalCount: data.length };
     }
@@ -200,7 +212,6 @@ const TechnicianExperimentLog = () => {
       const response = await axiosInstance.get(`/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
       const data = response.data;
 
-      // Handle actual API shape: { totalCount, data: [...] }
       if (typeof data === "object" && data !== null && "totalCount" in data) {
         return (data as SampleApiResponse).totalCount ?? 0;
       }
@@ -229,13 +240,10 @@ const TechnicianExperimentLog = () => {
       try {
         const res = await axiosInstance.get("/api/methods?PageNo=1&PageSize=100");
         const raw = res.data;
-        // Try shape: { totalCount, data: [...] }
         if (typeof raw === "object" && raw !== null && "data" in raw && Array.isArray((raw as { data: unknown[] }).data)) {
           const arr = (raw as { data: { id: string; name: string }[] }).data;
           setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-        }
-        // Fallback: { value: { data: [...] } }
-        else if (typeof raw === "object" && raw !== null && "value" in raw) {
+        } else if (typeof raw === "object" && raw !== null && "value" in raw) {
           const val = (raw as { value?: { data?: { id: string; name: string }[] } }).value;
           const arr = Array.isArray(val?.data) ? val.data : [];
           setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
@@ -302,7 +310,6 @@ const TechnicianExperimentLog = () => {
       params.append("PageNo", String(Math.max(1, currentPage)));
       params.append("PageSize", String(logsPerPage));
 
-      // methodFilter stores the method ID from the select; look up the name to pass as MethodNameSearchTerm
       if (methodFilter) {
         const selectedMethod = methods.find((m) => m.id === methodFilter);
         if (selectedMethod) {
@@ -314,10 +321,8 @@ const TechnicianExperimentLog = () => {
         const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
         const { logs: arr, totalCount: total } = parseApiResponse(res.data);
 
-        // Normalize status for display
         const normalizedLogs = arr.map((log) => ({
           ...log,
-          // Normalize batchName -> tissueCultureBatchName if needed
           tissueCultureBatchName: log.tissueCultureBatchName ?? log.batchName ?? "",
           status: normalizeStatus(log.status),
         }));
@@ -344,15 +349,31 @@ const TechnicianExperimentLog = () => {
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
       case "Created":
-        return "bg-blue-100 text-blue-800";
+        return "bg-pink-100 text-pink-700 border-pink-200";
       case "InProcess":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-blue-100 text-blue-700 border-blue-200";
       case "Done":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-700 border-green-200";
       case "Cancel":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-700 border-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusIcon = (status?: number | string) => {
+    const iconClass = "w-4 h-4";
+    switch (normalizeStatus(status)) {
+      case "Created":
+        return <Beaker className={`${iconClass} text-pink-600`} />;
+      case "InProcess":
+        return <Clock className={`${iconClass} text-blue-600`} />;
+      case "Done":
+        return <CheckCircle2 className={`${iconClass} text-green-600`} />;
+      case "Cancel":
+        return <XCircle className={`${iconClass} text-red-600`} />;
+      default:
+        return null;
     }
   };
 
@@ -367,7 +388,6 @@ const TechnicianExperimentLog = () => {
     let matchesStage = true;
     if (stageFilter !== "all") {
       const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      // Use currentStageOrder from API (0-based), so stage 1 = order 0, stage 2 = order 1, etc.
       if (log.currentStageOrder !== undefined) {
         matchesStage = log.currentStageOrder === stageNumber - 1;
       } else if (log.stages && log.stages.length > 0 && log.currentStageName) {
@@ -383,231 +403,331 @@ const TechnicianExperimentLog = () => {
     return matchesSearch && matchesStatus && matchesStage;
   });
 
-  // Pagination based on server-side totalCount
   const totalPages = Math.ceil(totalCount / logsPerPage);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{t("experimentLog.experimentLogTitle")}</h1>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Microscope className="w-10 h-10 text-purple-600" />
+            <h1 className="text-4xl font-bold text-gray-900">
+              {t("experimentLog.experimentLogTitle")}
+            </h1>
           </div>
+          <p className="text-gray-600 text-lg ml-13">
+            Monitor and manage cultivation experiments efficiently.
+          </p>
+        </div>
 
-          <div className="flex">
-            <div className="mb-6 flex justify-center mr-3">
-              <div className="bg-white rounded-lg shadow p-4 w-[340px]">
-                <h3 className="text-center text-green-700 font-semibold mb-2 text-sm">
-                  {t("experimentLog.latestStatusChart")}
-                </h3>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Doughnut Chart */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {t("experimentLog.latestStatusChart")}
+            </h3>
+            
+            {/* CẬP NHẬT GIAO DIỆN CHART TẠI ĐÂY */}
+            <div className="flex items-center justify-center h-[280px]">
+              <div className="relative w-[280px] h-[280px]">
                 <Doughnut data={chartData} options={chartOptions} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-4xl font-bold text-gray-900">
+                    {stats.total}
+                  </div>
+                  <div className="text-sm text-gray-500">Experiments</div>
+                </div>
               </div>
             </div>
-            <div className="flex flex-wrap justify-center h-25 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg w-40">
-                <div className="text-blue-600 text-sm font-medium">{t("experimentLog.totalExperiments")}</div>
-                <div className="text-2xl font-bold text-blue-700">{stats.total}</div>
+            {/* KẾT THÚC CẬP NHẬT CHART */}
+
+          </div>
+
+          {/* Status Cards */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Experiment Statistics</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200">
+                <Beaker className="w-8 h-8 text-pink-600 mb-3" />
+                <div className="text-sm text-pink-700 font-medium mb-1">
+                  {statusToVietnamese("Created")}
+                </div>
+                <div className="text-3xl font-bold text-pink-900">
+                  {stats.Created}
+                </div>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-lg w-40">
-                <div className="text-yellow-600 text-sm font-medium">{statusToVietnamese("InProcess")}</div>
-                <div className="text-2xl font-bold text-yellow-700">{stats.InProcess}</div>
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
+                <Clock className="w-8 h-8 text-blue-600 mb-3" />
+                <div className="text-sm text-blue-700 font-medium mb-1">
+                  {statusToVietnamese("InProcess")}
+                </div>
+                <div className="text-3xl font-bold text-blue-900">
+                  {stats.InProcess}
+                </div>
               </div>
-              <div className="bg-green-50 p-4 rounded-lg w-40">
-                <div className="text-green-600 text-sm font-medium">{statusToVietnamese("Done")}</div>
-                <div className="text-2xl font-bold text-green-700">{stats.Done}</div>
+              <div className="bg-green-100 rounded-xl p-5 border border-green-200">
+                <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
+                <div className="text-sm text-green-700 font-medium mb-1">
+                  {statusToVietnamese("Done")}
+                </div>
+                <div className="text-3xl font-bold text-green-900">
+                  {stats.Done}
+                </div>
               </div>
-              <div className="bg-red-50 p-4 rounded-lg w-40">
-                <div className="text-red-600 text-sm font-medium">{statusToVietnamese("Cancel")}</div>
-                <div className="text-2xl font-bold text-red-700">{stats.Cancel}</div>
+              <div className="bg-red-100 rounded-xl p-5 border border-red-200">
+                <XCircle className="w-8 h-8 text-red-600 mb-3" />
+                <div className="text-sm text-red-700 font-medium mb-1">
+                  {statusToVietnamese("Cancel")}
+                </div>
+                <div className="text-3xl font-bold text-red-900">
+                  {stats.Cancel}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="px-6 py-6">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("experimentLog.experimentLogList")}</h2>
-            <p className="text-gray-600 text-sm mb-4">{t("experimentLog.manageAndTrack")}</p>
-
-            <div className="flex gap-4 flex-wrap mb-4 bg-white p-4 rounded-lg shadow-sm">
-              <div className="flex-1 relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder={t("common.search") + "..."}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {/* Summary Card */}
+        <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 border border-purple-200">
+          <div className="flex items-center gap-4">
+            <div className="bg-white p-4 rounded-xl">
+              <TrendingUp className="w-8 h-8 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.total}</h3>
+              <p className="text-gray-600">{t("experimentLog.totalExperiments")}</p>
+            </div>
+            <div className="ml-auto flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{stats.Done}</div>
+                <div className="text-sm text-gray-600">Completed</div>
               </div>
-              <div className="flex items-center gap-2 min-w-[180px]">
-                <Filter className="text-gray-400 w-4 h-4" />
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
-                >
-                  <option value="all">{t("experimentLog.allStatuses")}</option>
-                  <option value="Created">{t("status.created")}</option>
-                  <option value="InProcess">{t("status.inProgress")}</option>
-                  <option value="Done">{t("status.completed")}</option>
-                  <option value="Cancel">{t("status.cancelled")}</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 min-w-[220px]">
-                <span className="text-gray-600 text-sm">{t("experimentLog.method")}:</span>
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={methodFilter}
-                  onChange={(e) => setMethodFilter(e.target.value)}
-                >
-                  <option value="">{t("experimentLog.allMethods")}</option>
-                  {methods.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 min-w-[180px]">
-                <span className="text-gray-600 text-sm">{t("experimentLog.stage")}:</span>
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={stageFilter}
-                  onChange={(e) => setStageFilter(e.target.value as "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4")}
-                >
-                  <option value="all">{t("experimentLog.allStages")}</option>
-                  <option value="Giai đoạn 1">Giai đoạn 1</option>
-                  <option value="Giai đoạn 2">Giai đoạn 2</option>
-                  <option value="Giai đoạn 3">Giai đoạn 3</option>
-                  <option value="Giai đoạn 4">Giai đoạn 4</option>
-                </select>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{stats.InProcess}</div>
+                <div className="text-sm text-gray-600">In Progress</div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="overflow-x-auto">
+        {/* Filters */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <BarChart3 className="w-6 h-6 text-gray-600" />
+            <h2 className="text-xl font-semibold text-gray-900">
+              {t("experimentLog.experimentLogList")}
+            </h2>
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-gray-500" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
+                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+              >
+                <option value="all">{t("experimentLog.allStatuses")}</option>
+                <option value="Created">{t("status.created")}</option>
+                <option value="InProcess">{t("status.inProgress")}</option>
+                <option value="Done">{t("status.completed")}</option>
+                <option value="Cancel">{t("status.cancelled")}</option>
+              </select>
+            </div>
+
+            <select
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+            >
+              <option value="">{t("experimentLog.allMethods")}</option>
+              {methods.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value as "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4")}
+            >
+              <option value="all">{t("experimentLog.allStages")}</option>
+              <option value="Giai đoạn 1">Giai đoạn 1</option>
+              <option value="Giai đoạn 2">Giai đoạn 2</option>
+              <option value="Giai đoạn 3">Giai đoạn 3</option>
+              <option value="Giai đoạn 4">Giai đoạn 4</option>
+            </select>
+
+            <div className="flex-1 min-w-[300px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t("common.search") + "..."}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("all");
+                setMethodFilter("");
+                setStageFilter("all");
+                setSearchTerm("");
+              }}
+              className="px-4 py-2.5 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors font-medium"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {/* Experiments Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500">Loading experiments...</div>
+          </div>
+        ) : error ? (
+          <div className="text-red-500 text-center py-12">{error}</div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.experimentName")}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.method")}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.tissueCultureBatch")}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.dateCreated")}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("common.status")}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.sampleCount")}
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {loading ? (
+              <tbody className="divide-y divide-gray-200">
+                {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-gray-500">{t("experimentLog.loadingData")}</div>
+                    <td colSpan={6} className="p-12 text-center text-gray-500">
+                      {t("common.noData")}
                     </td>
                   </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-red-500">{error}</div>
-                    </td>
-                  </tr>
-                ) : filteredLogs.length > 0 ? (
+                ) : (
                   filteredLogs.map((log) => (
                     <tr
                       key={log.id}
-                      className="hover:bg-green-50 cursor-pointer transition"
+                      className="hover:bg-purple-50 cursor-pointer transition-colors"
                       onClick={() => void navigate(`/technician/experiment-log/${log.id}`)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.methodName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.tissueCultureBatchName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.createdDate ? new Date(log.createdDate).toLocaleDateString("vi-VN") : ""}
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {log.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(log.status)}`}>
+                      <td className="px-6 py-4 text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <FlaskConical className="w-4 h-4 text-purple-500" />
+                          {log.methodName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {log.tissueCultureBatchName}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          {log.createdDate
+                            ? new Date(log.createdDate).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })
+                            : ""}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(log.status)}`}
+                        >
+                          {getStatusIcon(log.status)}
                           {statusToVietnamese(log.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">{sampleCounts[log.id] ?? 0}</span>
-                          <span className="text-xs text-gray-400">{t("experimentLog.samples")}</span>
+                          <div className="bg-purple-100 px-3 py-1 rounded-full">
+                            <span className="font-semibold text-purple-700">
+                              {sampleCounts[log.id] ?? 0}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">samples</span>
                         </div>
                       </td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-gray-500">{t("common.noData")}</div>
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
-          </div>
 
-          <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              {(() => {
-                const start = filteredLogs.length === 0 ? 0 : (currentPage - 1) * logsPerPage + 1;
-                const end = filteredLogs.length === 0 ? 0 : (currentPage - 1) * logsPerPage + filteredLogs.length;
-                return (
-                  <span>
-                    {t("common.showing")} {start}-{end} {t("common.of")} {totalCount}
-                  </span>
-                );
-              })()}
-            </div>
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {t("common.previous")}
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                  <button
-                    type="button"
-                    key={number}
-                    onClick={() => setCurrentPage(number)}
-                    className={`${
-                      currentPage === number ? "bg-green-600 text-white" : "text-gray-500 hover:text-gray-700"
-                    } px-3 py-1 rounded text-sm`}
-                  >
-                    {number}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {t("common.next")}
-                </button>
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  {t("common.showing")} {filteredLogs.length} {t("common.of")} {totalCount}
+                </span>
+                <div className="flex gap-2">
+                  {currentPage > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                    >
+                      ←
+                    </button>
+                  )}
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                    <button
+                      key={number}
+                      type="button"
+                      onClick={() => setCurrentPage(number)}
+                      className={`px-3 py-1.5 rounded-lg text-sm ${
+                        currentPage === number
+                          ? "bg-purple-600 text-white"
+                          : "bg-white border border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {number}
+                    </button>
+                  ))}
+
+                  {currentPage < totalPages && (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                    >
+                      →
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </main>
   );

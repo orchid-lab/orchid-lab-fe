@@ -5,6 +5,20 @@ import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import {
+  Calendar,
+  Clock,
+  CheckCircle2,
+  UserPlus,
+  Inbox,
+  Loader,
+  CheckCheck,
+  AlertCircle,
+  XCircle,
+  Search,
+  Filter,
+} from "lucide-react";
+
 Chart.register(ArcElement, Tooltip, Legend);
 
 interface Task {
@@ -49,30 +63,30 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
 }
 
 const STATUS_LABELS: Record<StatusType, string> = {
-  Assigned: "Đã giao",
-  Taken: "Đã nhận",
-  InProcess: "Đang thực hiện",
-  DoneInTime: "Hoàn thành đúng hạn",
-  DoneInLate: "Hoàn thành trễ hạn",
-  Cancel: "Bị hủy",
-};
-
-const STATUS_SUMMARY_LABELS: Record<StatusType, string> = {
-  Assigned: "Nhiệm vụ đã giao",
-  Taken: "Nhiệm vụ đã nhận",
-  InProcess: "Nhiệm vụ đang thực hiện",
-  DoneInTime: "Nhiệm vụ hoàn thành đúng hạn",
-  DoneInLate: "Nhiệm vụ hoàn thành trễ hạn",
-  Cancel: "Nhiệm vụ bị hủy",
+  Assigned: "Assigned",
+  Taken: "Received",
+  InProcess: "In Progress",
+  DoneInTime: "Completed On Time",
+  DoneInLate: "Completed Late",
+  Cancel: "Cancelled",
 };
 
 const STATUS_COLORS: Record<StatusType, string> = {
-  Assigned: "text-blue-700",
-  Taken: "text-purple-700",
-  InProcess: "text-yellow-700",
-  DoneInTime: "text-blue-700",
-  DoneInLate: "text-orange-700",
-  Cancel: "text-red-700",
+  Assigned: "bg-purple-100 text-purple-700 border-purple-200",
+  Taken: "bg-blue-100 text-blue-700 border-blue-200",
+  InProcess: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  DoneInTime: "bg-green-100 text-green-700 border-green-200",
+  DoneInLate: "bg-orange-100 text-orange-700 border-orange-200",
+  Cancel: "bg-red-100 text-red-700 border-red-200",
+};
+
+const STATUS_ICON_COLORS: Record<StatusType, string> = {
+  Assigned: "text-purple-500",
+  Taken: "text-blue-500",
+  InProcess: "text-yellow-500",
+  DoneInTime: "text-green-500",
+  DoneInLate: "text-orange-500",
+  Cancel: "text-red-500",
 };
 
 export default function ListTask() {
@@ -80,21 +94,16 @@ export default function ListTask() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuth();
 
-  // State cho pagination và data
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // State cho filters
-  const [statusFilter, setStatusFilter] = useState<StatusType | "Tất cả">(
-    "Tất cả"
-  );
+  const [statusFilter, setStatusFilter] = useState<StatusType | "All">("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [todayFilter, setTodayFilter] = useState(false);
 
-  // State cho summary data (chỉ load 1 lần)
   const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
     Assigned: 0,
     Taken: 0,
@@ -104,7 +113,6 @@ export default function ListTask() {
     Cancel: 0,
   });
 
-  // State cho thống kê
   const [stats, setStats] = useState<{
     totalToday: number;
     completed: number;
@@ -117,9 +125,6 @@ export default function ListTask() {
 
   const tasksPerPage = 20;
 
-  // Load summary data chỉ 1 lần khi component mount
-  // API: GET /api/tasks?PageNumber=1&PageSize=1000
-  // Sau đó filter theo technicianId ở frontend vì API không có param technicianId
   useEffect(() => {
     const loadSummaryData = async () => {
       try {
@@ -134,12 +139,8 @@ export default function ListTask() {
             ? response.data.value.data
             : [];
 
-          // Filter theo technicianId của user hiện tại ở frontend
-          const myTasks = allTasks.filter(
-            (task) => task.technicianId === user?.id
-          );
+          const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
 
-          // Tính status counts
           const counts: Record<StatusType, number> = {
             Assigned: 0,
             Taken: 0,
@@ -153,11 +154,9 @@ export default function ListTask() {
             counts[task.status] = (counts[task.status] || 0) + 1;
           });
 
-          // Tính thống kê cho task hôm nay
           const today = new Date();
           today.setHours(0, 0, 0, 0);
 
-          // Lọc các task có end_date là hôm nay
           const todayTasks = myTasks.filter((task) => {
             const taskEndDate = new Date(task.end_date);
             taskEndDate.setHours(0, 0, 0, 0);
@@ -165,12 +164,9 @@ export default function ListTask() {
           });
 
           const totalToday = todayTasks.length;
-
           const completed = todayTasks.filter(
-            (task) =>
-              task.status === "DoneInTime" || task.status === "DoneInLate"
+            (task) => task.status === "DoneInTime" || task.status === "DoneInLate"
           ).length;
-
           const inProgress = todayTasks.filter(
             (task) =>
               task.status === "Assigned" ||
@@ -179,11 +175,7 @@ export default function ListTask() {
           ).length;
 
           setStatusCounts(counts);
-          setStats({
-            totalToday,
-            completed,
-            inProgress,
-          });
+          setStats({ totalToday, completed, inProgress });
         }
       } catch (err) {
         console.error("Error loading summary data:", err);
@@ -193,15 +185,11 @@ export default function ListTask() {
     void loadSummaryData();
   }, [user?.id]);
 
-  // Build query parameters cho API call chính
-  // Swagger params: PageNumber, PageSize, ResearcherId, SearchTerm, StageId
   const buildApiQuery = useMemo(() => {
     const params = new URLSearchParams();
-
     params.append("PageNumber", "1");
-    params.append("PageSize", "1000"); // Load tất cả để sort, filter và paginate ở frontend
+    params.append("PageSize", "1000");
 
-    // Chỉ append SearchTerm nếu có giá trị
     if (searchTerm.trim()) {
       params.append("SearchTerm", searchTerm.trim());
     }
@@ -209,7 +197,6 @@ export default function ListTask() {
     return params.toString();
   }, [searchTerm]);
 
-  // Load tasks với debounce cho search
   useEffect(() => {
     const timeoutId = setTimeout(
       () => {
@@ -224,26 +211,18 @@ export default function ListTask() {
                 ? res.data.value.data
                 : [];
 
-              // Filter theo technicianId của user hiện tại ở frontend
-              let filteredData = data.filter(
-                (task) => task.technicianId === user?.id
-              );
+              let filteredData = data.filter((task) => task.technicianId === user?.id);
 
-              // Sort toàn bộ danh sách theo create_at (newest first)
               filteredData = [...filteredData].sort((a, b) => {
                 const dateA = new Date(a.create_at);
                 const dateB = new Date(b.create_at);
                 return dateB.getTime() - dateA.getTime();
               });
 
-              // Filter by status
-              if (statusFilter !== "Tất cả") {
-                filteredData = filteredData.filter(
-                  (task) => task.status === statusFilter
-                );
+              if (statusFilter !== "All") {
+                filteredData = filteredData.filter((task) => task.status === statusFilter);
               }
 
-              // Filter by today based on end_date
               if (todayFilter) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -255,20 +234,14 @@ export default function ListTask() {
                 });
               }
 
-              // Filter by search term ở frontend (double-check lại cho chắc)
               if (searchTerm.trim()) {
                 filteredData = filteredData.filter(
                   (task) =>
-                    task.name
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase()) ||
-                    task.researcher
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase())
+                    task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    task.researcher.toLowerCase().includes(searchTerm.toLowerCase())
                 );
               }
 
-              // Apply pagination to filtered/sorted data
               const startIndex = (currentPage - 1) * tasksPerPage;
               const endIndex = startIndex + tasksPerPage;
               const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -278,8 +251,8 @@ export default function ListTask() {
             }
           })
           .catch(() => {
-            setError("Không thể tải danh sách nhiệm vụ");
-            enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
+            setError("Unable to load task list");
+            enqueueSnackbar("Error loading data", { variant: "error" });
           })
           .finally(() => {
             setLoading(false);
@@ -289,37 +262,22 @@ export default function ListTask() {
     );
 
     return () => clearTimeout(timeoutId);
-  }, [
-    buildApiQuery,
-    statusFilter,
-    searchTerm,
-    todayFilter,
-    currentPage,
-    user?.id,
-    enqueueSnackbar,
-  ]);
+  }, [buildApiQuery, statusFilter, searchTerm, todayFilter, currentPage, user?.id, enqueueSnackbar]);
 
-  // Reset về trang 1 khi filter thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, searchTerm, todayFilter]);
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-  // Chart data
   const chartData = {
-    labels: ["Đã hoàn thành", "Đang thực hiện", "Task hôm nay"],
+    labels: ["Completed", "In Progress", "Pending"],
     datasets: [
       {
-        data: [stats.completed, stats.inProgress, stats.totalToday],
-        backgroundColor: [
-          "#22c55e",
-          "#facc15",
-          "#3b82f6",
-        ],
-        borderWidth: 1,
+        data: [stats.completed, stats.inProgress, stats.totalToday - stats.completed - stats.inProgress],
+        backgroundColor: ["#ec4899", "#22c55e", "#93c5fd"],
+        borderWidth: 0,
+        spacing: 2,
       },
     ],
   };
@@ -328,119 +286,189 @@ export default function ListTask() {
     plugins: {
       legend: {
         display: true,
-        position: "bottom" as const,
+        position: "right" as const,
+        labels: {
+          usePointStyle: true,
+          pointStyle: "circle",
+          padding: 15,
+          font: {
+            size: 13,
+            family: "'Inter', sans-serif",
+          },
+        },
       },
       tooltip: {
         callbacks: {
-          label: function (
-            context: import("chart.js").TooltipItem<"doughnut">
-          ) {
-            const total = context.dataset.data.reduce(
-              (a: number, b: number) => a + b,
-              0
-            );
+          label: function (context: import("chart.js").TooltipItem<"doughnut">) {
             const value = context.parsed;
-            const percent = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${value} (${percent}%)`;
+            return `${context.label} (${value})`;
           },
         },
       },
     },
+    cutout: "70%",
+  };
+
+  const getStatusIcon = (status: StatusType) => {
+    const iconClass = `w-5 h-5 ${STATUS_ICON_COLORS[status]}`;
+    switch (status) {
+      case "Assigned":
+        return <UserPlus className={iconClass} />;
+      case "Taken":
+        return <Inbox className={iconClass} />;
+      case "InProcess":
+        return <Loader className={iconClass} />;
+      case "DoneInTime":
+        return <CheckCheck className={iconClass} />;
+      case "DoneInLate":
+        return <AlertCircle className={iconClass} />;
+      case "Cancel":
+        return <XCircle className={iconClass} />;
+    }
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-      <div className="space-y-6">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Danh sách nhiệm vụ của tôi
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Theo dõi và quản lý các nhiệm vụ được giao
-            </p>
-            <p className="text-sm text-blue-600 mt-1">
-              📅 Sắp xếp theo thời gian tạo mới nhất
-            </p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Orchid Lab Task Management
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Monitor and manage cultivation tasks efficiently.
+          </p>
         </div>
 
-        {/* Thống kê */}
-        <div className="flex flex-col md:flex-row gap-6 mb-8">
-          {/* Chart trạng thái */}
-          <div className="flex justify-center">
-            <div className="bg-white rounded-lg shadow p-4 w-full md:w-[340px]">
-              <h3 className="text-center text-blue-700 font-semibold mb-2 text-sm">
-                Biểu đồ thống kê nhiệm vụ ngày hôm nay
-              </h3>
-              <Doughnut data={chartData} options={chartOptions} />
-            </div>
-          </div>
-
-          {/* Số liệu thống kê */}
-          <div className="flex flex-wrap justify-center md:justify-start gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg w-40">
-              <div className="text-blue-600 text-sm font-medium">
-                NHIỆM VỤ HÔM NAY
-              </div>
-              <div className="text-2xl font-bold text-blue-700">
-                {stats.totalToday}
-              </div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg w-40">
-              <div className="text-blue-600 text-sm font-medium">
-                NHIỆM VỤ CHƯA HOÀN THÀNH
-              </div>
-              <div className="text-2xl font-bold text-blue-700">
-                {stats.inProgress}
-              </div>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg w-40">
-              <div className="text-blue-600 text-sm font-medium">
-                NHIỆM VỤ ĐÃ HOÀN THÀNH
-              </div>
-              <div className="text-2xl font-bold text-blue-700">
-                {stats.completed}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Doughnut Chart */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Today's Task Distribution
+            </h3>
+            <div className="flex items-center justify-center h-[280px]">
+              <div className="relative w-[280px]">
+                <Doughnut data={chartData} options={chartOptions} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-4xl font-bold text-gray-900">
+                    {stats.totalToday}
+                  </div>
+                  <div className="text-sm text-gray-500">Tasks</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 6 ô tổng hợp */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries(STATUS_SUMMARY_LABELS).map(([key, label]) => (
-            <div
-              key={key}
-              className="rounded-lg border border-gray-200 bg-white px-6 py-4 flex flex-col justify-between min-w-[150px] items-center"
-            >
-              <span className="text-sm text-gray-600 mb-1">{label}</span>
-              <span
-                className={`text-2xl font-semibold ${
-                  STATUS_COLORS[key as StatusType]
-                } bg-white`}
-              >
-                {statusCounts[key as StatusType]}
-              </span>
+          {/* Today's Status Cards */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Today's Status</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
+                <Calendar className="w-8 h-8 text-blue-600 mb-3" />
+                <div className="text-sm text-blue-700 font-medium mb-1">
+                  Tasks Today:
+                </div>
+                <div className="text-3xl font-bold text-blue-900">
+                  {stats.totalToday}
+                </div>
+              </div>
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
+                <Clock className="w-8 h-8 text-blue-600 mb-3" />
+                <div className="text-sm text-blue-700 font-medium mb-1">
+                  Incomplete:
+                </div>
+                <div className="text-3xl font-bold text-blue-900">
+                  {stats.inProgress}
+                </div>
+              </div>
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
+                <CheckCircle2 className="w-8 h-8 text-blue-600 mb-3" />
+                <div className="text-sm text-blue-700 font-medium mb-1">
+                  Completed:
+                </div>
+                <div className="text-3xl font-bold text-blue-900">
+                  {stats.completed}
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Bộ lọc */}
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <div className="flex flex-wrap items-center gap-4 mb-3">
+        {/* Status Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <UserPlus className="w-5 h-5 text-purple-500" />
+              <span className="text-sm text-gray-600 font-medium">Assigned:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.Assigned}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-blue-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Inbox className="w-5 h-5 text-blue-500" />
+              <span className="text-sm text-gray-600 font-medium">Received:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.Taken}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-yellow-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm text-gray-600 font-medium">In Progress:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.InProcess}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-green-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCheck className="w-5 h-5 text-green-500" />
+              <span className="text-sm text-gray-600 font-medium">Completed On Time:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.DoneInTime}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-orange-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <span className="text-sm text-gray-600 font-medium">Completed Late:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.DoneInLate}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-red-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="w-5 h-5 text-red-500" />
+              <span className="text-sm text-gray-600 font-medium">Cancelled:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.Cancel}
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
-                Trạng thái:
-              </span>
+              <Filter className="w-5 h-5 text-gray-500" />
               <select
                 value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as StatusType | "Tất cả")
-                }
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                onChange={(e) => setStatusFilter(e.target.value as StatusType | "All")}
+                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                <option value="Tất cả">Tất cả</option>
+                <option value="All">Status</option>
                 {Object.entries(STATUS_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
@@ -448,157 +476,134 @@ export default function ListTask() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setTodayFilter(!todayFilter)}
-                className={`px-3 py-2 text-sm rounded-full border ${
-                  todayFilter
-                    ? "bg-blue-100 border-blue-500 text-blue-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Nhiệm vụ hôm nay
-              </button>
-            </div>
-            <div className="flex-1 min-w-[200px]">
+
+            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+              <option>Date Range</option>
+            </select>
+
+            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+              <option>Task Type</option>
+            </select>
+
+            <div className="flex-1 min-w-[300px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm nhiệm vụ..."
+                placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+
             <button
               type="button"
               onClick={() => {
-                setStatusFilter("Tất cả");
+                setStatusFilter("All");
                 setSearchTerm("");
                 setTodayFilter(false);
               }}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+              className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
             >
-              Xóa bộ lọc
+              Clear Filters
             </button>
           </div>
-
-          {/* Hiển thị active filters */}
-          {(statusFilter !== "Tất cả" || searchTerm.trim() || todayFilter) && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-              <span className="text-xs text-gray-500">
-                Bộ lọc đang áp dụng:
-              </span>
-              {statusFilter !== "Tất cả" && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  Trạng thái: {STATUS_LABELS[statusFilter]}
-                </span>
-              )}
-              {todayFilter && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  Task hôm nay
-                </span>
-              )}
-              {searchTerm.trim() && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                  Tìm kiếm: "{searchTerm}"
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
+        {/* Tasks Table */}
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">Đang tải danh sách nhiệm vụ...</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500">Loading tasks...</div>
           </div>
         ) : error ? (
-          <div className="text-red-500 text-center py-8">{error}</div>
+          <div className="text-red-500 text-center py-12">{error}</div>
         ) : (
-          <>
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Task Name
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Created By
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Notes
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Deadline
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {tasks.length === 0 ? (
                   <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Tên nhiệm vụ
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Người tạo nhiệm vụ
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Nhật ký thí nghiệm
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Thời hạn
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Trạng thái
-                    </th>
+                    <td colSpan={5} className="p-12 text-center text-gray-500">
+                      No tasks found
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {tasks.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-gray-500">
-                        Không tìm thấy nhiệm vụ nào
+                ) : (
+                  tasks.map((task) => (
+                    <tr
+                      key={task.id}
+                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        void navigate(`/technician/tasks/${task.id}`);
+                      }}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {task.name}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">{task.researcher}</td>
+                      <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
+                        {task.description ?? task.experimentLogName ?? "No notes"}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {task.end_date
+                          ? new Date(task.end_date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : ""}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                            STATUS_COLORS[task.status]
+                          }`}
+                        >
+                          {getStatusIcon(task.status)}
+                          {STATUS_LABELS[task.status]}
+                        </span>
                       </td>
                     </tr>
-                  ) : (
-                    tasks.map((task) => (
-                      <tr
-                        key={task.id}
-                        className="border-b hover:bg-blue-50 cursor-pointer transition"
-                        onClick={() => {
-                          void navigate(`/technician/tasks/${task.id}`);
-                        }}
-                      >
-                        <td className="p-4 text-gray-900">{task.name}</td>
-                        <td className="p-4 text-gray-600">{task.researcher}</td>
-                        <td className="p-4 text-gray-600">
-                          {task.experimentLogName ?? "Không có"}
-                        </td>
-                        <td className="p-4 text-gray-600">
-                          {task.end_date
-                            ? new Date(task.end_date).toLocaleDateString()
-                            : ""}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              STATUS_COLORS[task.status]
-                            }`}
-                          >
-                            {STATUS_LABELS[task.status]}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
-                <span>
-                  Hiển thị {tasks.length} nhiệm vụ trên tổng số {totalCount}{" "}
-                  nhiệm vụ
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  Showing {tasks.length} of {totalCount} tasks
                 </span>
                 <div className="flex gap-2">
-                  {/* Previous button */}
                   {currentPage > 1 && (
                     <button
                       type="button"
-                      onClick={() => paginate(currentPage - 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
                     >
                       ←
                     </button>
                   )}
 
-                  {/* Page numbers */}
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     let pageNum;
                     if (totalPages <= 5) {
@@ -615,11 +620,11 @@ export default function ListTask() {
                       <button
                         key={pageNum}
                         type="button"
-                        onClick={() => paginate(pageNum)}
-                        className={`px-3 py-1 rounded-lg ${
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1.5 rounded-lg text-sm ${
                           currentPage === pageNum
-                            ? "bg-green-700 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white border border-gray-300 hover:bg-gray-50"
                         }`}
                       >
                         {pageNum}
@@ -627,12 +632,11 @@ export default function ListTask() {
                     );
                   })}
 
-                  {/* Next button */}
                   {currentPage < totalPages && (
                     <button
                       type="button"
-                      onClick={() => paginate(currentPage + 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
                     >
                       →
                     </button>
@@ -640,7 +644,7 @@ export default function ListTask() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </main>
