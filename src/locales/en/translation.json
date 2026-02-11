@@ -394,9 +394,11 @@
     "noSampleGeneration": "No sample generation",
     "canGenerateSample": "Can generate sample",
     "currentLabel": "Current",
-    "chemicalInUsed": "Chemical in Use",
-    "materialInUsed": "Material in Use",
-    "chemicalsAndMaterials": "Chemicals & Materials"
+    "chemicalsUsed": "Chemicals in Use",
+    "materialsUsed": "Materials in Use",
+    "chemicalsAndMaterials": "Chemicals & Materials",
+    "noChemicals": "No chemicals in use.",
+    "noMaterials": "No materials in use."
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",

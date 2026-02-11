@@ -394,9 +394,11 @@
     "noSampleGeneration": "Không sinh chồi",
     "canGenerateSample": "Có thể sinh chồi",
     "currentLabel": "Hiện tại",
-    "chemicalInUsed": "Hóa chất đang sử dụng",
-    "materialInUsed": "Vật liệu đang sử dụng",
-    "chemicalsAndMaterials": "Hóa chất & Vật liệu"
+    "chemicalsUsed": "Hóa chất đang sử dụng",
+    "materialsUsed": "Vật liệu đang sử dụng",
+    "chemicalsAndMaterials": "Hóa chất & Vật liệu",
+    "noChemicals": "Không có hóa chất nào đang sử dụng.",
+    "noMaterials": "Không có vật liệu nào đang sử dụng."
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",
