@@ -18,7 +18,7 @@ interface Task {
   experimentLogName?: string;
   taskTargetType?: string;
   targetName?: string;
-  end_date: string;
+  expectedEndDate: any;
   create_at: string;
   status: StatusType;
 }
@@ -239,7 +239,7 @@ export default function ListTask() {
 
           // Lọc các task có end_date là hôm nay
           const todayTasks = myTasks.filter((task) => {
-            const taskEndDate = new Date(task.end_date);
+            const taskEndDate = new Date(task.expectedEndDate);
             taskEndDate.setHours(0, 0, 0, 0);
             return taskEndDate.getTime() === today.getTime();
           });
@@ -350,7 +350,7 @@ export default function ListTask() {
                 today.setHours(0, 0, 0, 0);
 
                 filteredData = filteredData.filter((task) => {
-                  const taskEndDate = new Date(task.end_date);
+                  const taskEndDate = new Date(task.expectedEndDate);
                   taskEndDate.setHours(0, 0, 0, 0);
                   return taskEndDate.getTime() === today.getTime();
                 });
@@ -669,8 +669,8 @@ export default function ListTask() {
                           {task.targetName ?? task.experimentLogName ?? "Không có"}
                         </td>
                         <td className="p-4 text-gray-600">
-                          {task.end_date
-                            ? new Date(task.end_date).toLocaleDateString()
+                          {task.expectedEndDate
+                            ? new Date(task.expectedEndDate).toLocaleDateString()
                             : ""}
                         </td>
                         <td className="p-4">
