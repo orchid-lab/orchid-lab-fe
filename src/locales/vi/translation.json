@@ -68,7 +68,10 @@
     "details": "Chi tiết",
     "category": "Danh mục",
     "start": "Bắt đầu",
-    "loggingOut": "Đang đăng xuất..."
+    "loggingOut": "Đang đăng xuất...",
+    "days": "ngày",
+    "create": "Tạo",
+    "processing":"Đang xử lý"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -349,7 +352,7 @@
     "samples": "mẫu",
     "detailTitle": "Chi tiết nhật ký thí nghiệm",
     "labRoom": "Phòng thí nghiệm",
-    "sampleCountLabel": "Số lượng mẫu",
+    "expectedSampleCountLabel": "Số lượng mẫu mong muốn",
     "creator": "Người tạo",
     "selectedSeedlings": "Cây giống đã chọn",
     "noSeedlings": "Chưa chọn cây giống.",
@@ -379,11 +382,21 @@
     "processing": "Đang xử lý",
     "suspended": "Tạm dừng",
     "destroyed": "Đã huỷ",
-    "noSamples": "Không có mẫu cây nào.",
+    "noSamples": "Chưa có mẫu cây nào.",
     "backToList": "Trở về",
     "notAvailable": "Không xác định",
     "days": "ngày",
-    "waitingForStageChange": "Chờ chuyển giai đoạn"
+    "waitingForStageChange": "Chờ chuyển giai đoạn", 
+    "currentStage": "Giai đoạn hiện tại",
+    "createProtocorm": "Tạo Protocorm",
+    "duration": "Thời gian",
+    "stages": "Giai đoạn",
+    "noSampleGeneration": "Không sinh chồi",
+    "canGenerateSample": "Có thể sinh chồi",
+    "currentLabel": "Hiện tại",
+    "chemicalInUsed": "Hóa chất đang sử dụng",
+    "materialInUsed": "Vật liệu đang sử dụng",
+    "chemicalsAndMaterials": "Hóa chất & Vật liệu"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

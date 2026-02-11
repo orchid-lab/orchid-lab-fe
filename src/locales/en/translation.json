@@ -68,7 +68,10 @@
     "details": "Details",
     "category": "Category",
     "start": "Start",
-    "loggingOut": "Logging out..."
+    "loggingOut": "Logging out...",
+    "days": "days",
+    "create": "Create",
+    "processing":"Processing"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -349,7 +352,7 @@
     "samples": "samples",
     "detailTitle": "Experiment Log Details",
     "labRoom": "Lab Room",
-    "sampleCountLabel": "Sample Count",
+    "expectedSampleCountLabel": "Expected Sample Count",
     "creator": "Creator",
     "selectedSeedlings": "Selected Seedlings",
     "noSeedlings": "No seedlings selected.",
@@ -383,7 +386,17 @@
     "backToList": "Back",
     "notAvailable": "Not available",
     "days": "days",
-    "waitingForStageChange": "Waiting for Stage Change"
+    "waitingForStageChange": "Waiting for Stage Change",
+    "currentStage": "Current Stage",
+    "createProtocorm": "Create Protocorm",
+    "duration": "Duration",
+    "stages": "Stages",
+    "noSampleGeneration": "No sample generation",
+    "canGenerateSample": "Can generate sample",
+    "currentLabel": "Current",
+    "chemicalInUsed": "Chemical in Use",
+    "materialInUsed": "Material in Use",
+    "chemicalsAndMaterials": "Chemicals & Materials"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
