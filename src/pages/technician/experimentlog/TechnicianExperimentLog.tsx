@@ -476,6 +476,7 @@ const TechnicianExperimentLog = () => {
 
   return (
     <main 
+      id="technician-experimentlog-page"
       ref={containerRef} 
       className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8"
     >
@@ -514,13 +515,15 @@ const TechnicianExperimentLog = () => {
             </div>
           </div>
 
-          {/* Status Cards */}
+          {/* Status Cards - Code sạch, không logic phức tạp */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 gsap-header">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 gsap-header">
               Experiment Statistics
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200 gsap-stat-card">
+              
+              {/* Card 1: Created */}
+              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200 gsap-stat-card transition-colors">
                 <Beaker className="w-8 h-8 text-pink-600 mb-3" />
                 <div className="text-sm text-pink-700 font-medium mb-1">
                   {statusToVietnamese("Created")}
@@ -529,7 +532,9 @@ const TechnicianExperimentLog = () => {
                   {stats.Created}
                 </div>
               </div>
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200 gsap-stat-card">
+
+              {/* Card 2: InProcess */}
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200 gsap-stat-card transition-colors">
                 <Clock className="w-8 h-8 text-blue-600 mb-3" />
                 <div className="text-sm text-blue-700 font-medium mb-1">
                   {statusToVietnamese("InProcess")}
@@ -538,7 +543,9 @@ const TechnicianExperimentLog = () => {
                   {stats.InProcess}
                 </div>
               </div>
-              <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card">
+
+              {/* Card 3: Done */}
+              <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card transition-colors">
                 <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
                 <div className="text-sm text-green-700 font-medium mb-1">
                   {statusToVietnamese("Done")}
@@ -547,7 +554,9 @@ const TechnicianExperimentLog = () => {
                   {stats.Done}
                 </div>
               </div>
-              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card">
+
+              {/* Card 4: Cancel */}
+              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card transition-colors">
                 <XCircle className="w-8 h-8 text-red-600 mb-3" />
                 <div className="text-sm text-red-700 font-medium mb-1">
                   {statusToVietnamese("Cancel")}
@@ -556,6 +565,7 @@ const TechnicianExperimentLog = () => {
                   {stats.Cancel}
                 </div>
               </div>
+
             </div>
           </div>
         </div>

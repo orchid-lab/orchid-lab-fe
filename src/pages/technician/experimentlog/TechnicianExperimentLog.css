@@ -1,88 +1,148 @@
-/* ==================== THEME VARIABLES (Local Scope) ==================== */
-/* Chỉ định nghĩa các màu nền cơ bản để component ánh xạ theo */
+/* ========================================= */
+/* TECHNICIAN EXPERIMENT LOG - DARK MODE FIX */
+/* ========================================= */
 
-:root[data-theme='light'] {
-  --bg-component: #ffffff;
-  --bg-hover: #f3f4f6;
-  --border-color: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --input-bg: #ffffff;
+/* --- DARK MODE: VIBRANT & MODERN STATUS CARDS --- */
+/* Mỗi card giữ màu sắc đặc trưng với gradient đẹp mắt */
+
+/* 1. PINK CARD (Created) - Gradient hồng đậm sang trọng */
+.dark #technician-experimentlog-page .bg-pink-100 {
+    background: linear-gradient(135deg, #831843 0%, #be185d 100%) !important;
+    border: 2px solid #ec4899 !important;
+    box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:root[data-theme='dark'] {
-  --bg-component: #1f2937; /* Gray 800 */
-  --bg-hover: #374151;     /* Gray 700 */
-  --border-color: #4b5563; /* Gray 600 */
-  --text-primary: #f9fafb; /* Gray 50 */
-  --text-secondary: #d1d5db; /* Gray 300 */
-  --input-bg: #374151;
+.dark #technician-experimentlog-page .bg-pink-100:hover {
+    background: linear-gradient(135deg, #9f1853 0%, #db2777 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -2px rgba(236, 72, 153, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* ==================== COMPONENT OVERRIDES ==================== */
-
-/* 1. TABLE STYLING */
-/* Đảm bảo bảng hiển thị đúng màu khi sang Dark Mode */
-.dark table {
-  background-color: var(--bg-component) !important;
-  color: var(--text-secondary) !important;
+/* Icon sáng hơn */
+.dark #technician-experimentlog-page .bg-pink-100 .text-pink-600 { 
+    color: #fce7f3 !important; 
 }
 
-.dark thead {
-  background-color: var(--bg-hover) !important; /* Header tối hơn nền một chút */
+/* Label text */
+.dark #technician-experimentlog-page .bg-pink-100 .text-pink-700 { 
+    color: #fbcfe8 !important; 
+    font-weight: 500;
 }
 
-.dark thead th {
-  color: var(--text-primary) !important;
+/* Số lượng - trắng và bold */
+.dark #technician-experimentlog-page .bg-pink-100 .text-pink-900 { 
+    color: #ffffff !important; 
+    font-weight: 700; 
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.dark tbody tr {
-  border-bottom: 1px solid var(--border-color);
+/* 2. BLUE CARD (InProcess) - Gradient xanh dương chuyên nghiệp */
+.dark #technician-experimentlog-page .bg-blue-100 {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%) !important;
+    border: 2px solid #3b82f6 !important;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark tbody tr:hover {
-  background-color: var(--bg-hover) !important;
+.dark #technician-experimentlog-page .bg-blue-100:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -2px rgba(59, 130, 246, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* 2. FORM ELEMENTS (Input, Select) */
-/* Override mặc định của trình duyệt để input không bị trắng ở dark mode */
-.dark input,
-.dark select {
-  background-color: var(--input-bg) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-primary) !important;
+.dark #technician-experimentlog-page .bg-blue-100 .text-blue-600 { 
+    color: #dbeafe !important; 
 }
 
-.dark input::placeholder {
-  color: #9ca3af !important; /* Gray 400 */
+.dark #technician-experimentlog-page .bg-blue-100 .text-blue-700 { 
+    color: #bfdbfe !important; 
+    font-weight: 500;
 }
 
-/* 3. SCROLLBAR (Cho bảng hoặc danh sách dài) */
-.gsap-table-container::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+.dark #technician-experimentlog-page .bg-blue-100 .text-blue-900 { 
+    color: #ffffff !important; 
+    font-weight: 700; 
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.dark .gsap-table-container::-webkit-scrollbar-track {
-  background: #111827;
+/* 3. GREEN CARD (Done) - Gradient xanh lá thành công */
+.dark #technician-experimentlog-page .bg-green-100 {
+    background: linear-gradient(135deg, #14532d 0%, #15803d 100%) !important;
+    border: 2px solid #22c55e !important;
+    box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .gsap-table-container::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 4px;
+.dark #technician-experimentlog-page .bg-green-100:hover {
+    background: linear-gradient(135deg, #166534 0%, #16a34a 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -2px rgba(34, 197, 94, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.1) !important;
 }
 
-.dark .gsap-table-container::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+.dark #technician-experimentlog-page .bg-green-100 .text-green-600 { 
+    color: #dcfce7 !important; 
 }
 
-/* 4. SUMMARY CARD */
-:root[data-theme='light'] .gsap-summary {
-  background: linear-gradient(to right, #f3e8ff, #fce7f3) !important;
-  border-color: #ddd6fe !important;
+.dark #technician-experimentlog-page .bg-green-100 .text-green-700 { 
+    color: #bbf7d0 !important; 
+    font-weight: 500;
 }
 
-.dark .gsap-summary {
-  background: linear-gradient(to right, rgba(107, 33, 168, 0.3), rgba(190, 24, 93, 0.3)) !important;
-  border-color: rgba(168, 85, 247, 0.5) !important;
+.dark #technician-experimentlog-page .bg-green-100 .text-green-900 { 
+    color: #ffffff !important; 
+    font-weight: 700; 
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 4. RED CARD (Cancel) - Gradient đỏ cảnh báo */
+.dark #technician-experimentlog-page .bg-red-100 {
+    background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%) !important;
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark #technician-experimentlog-page .bg-red-100:hover {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -2px rgba(239, 68, 68, 0.4), 0 4px 8px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark #technician-experimentlog-page .bg-red-100 .text-red-600 { 
+    color: #fee2e2 !important; 
+}
+
+.dark #technician-experimentlog-page .bg-red-100 .text-red-700 { 
+    color: #fecaca !important; 
+    font-weight: 500;
+}
+
+.dark #technician-experimentlog-page .bg-red-100 .text-red-900 { 
+    color: #ffffff !important; 
+    font-weight: 700; 
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ===================================== */
+/* OPTIONAL: THÊM ANIMATION KHI HOVER  */
+/* ===================================== */
+
+.dark #technician-experimentlog-page .gsap-stat-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation cho icon khi hover */
+.dark #technician-experimentlog-page .gsap-stat-card:hover svg {
+    transform: scale(1.1) rotate(5deg);
+    transition: transform 0.3s ease;
+}
+
+/* Làm số to hơn một chút khi hover */
+.dark #technician-experimentlog-page .gsap-stat-card:hover .text-pink-900,
+.dark #technician-experimentlog-page .gsap-stat-card:hover .text-blue-900,
+.dark #technician-experimentlog-page .gsap-stat-card:hover .text-green-900,
+.dark #technician-experimentlog-page .gsap-stat-card:hover .text-red-900 {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
 }
