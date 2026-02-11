@@ -1,26 +1,32 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable no-var */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Search, 
-  Filter, 
-  Beaker, 
-  FlaskConical, 
-  CheckCircle2, 
+import {
+  Search,
+  Filter,
+  Beaker,
+  FlaskConical,
+  CheckCircle2,
   XCircle,
   Clock,
   Calendar,
   TrendingUp,
   BarChart3,
-  Microscope
+  Microscope,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 Chart.register(ArcElement, Tooltip, Legend);
+gsap.registerPlugin(useGSAP); 
 
 type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel";
 
@@ -81,10 +87,17 @@ interface SampleApiResponse {
 
 const TechnicianExperimentLog = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  
+  // --- GSAP REF ---
+  const containerRef = useRef<HTMLElement>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
   const [methodFilter, setMethodFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<"all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4">("all");
+  const [stageFilter, setStageFilter] = useState<
+    "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
+  >("all");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,30 +118,66 @@ const TechnicianExperimentLog = () => {
     Cancel: 0,
   });
 
-  const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 5;
 
-  const normalizeStatus = (status?: number | string) => {
+  // --- GSAP ANIMATIONS ---
+
+  // 1. Animation cho cấu trúc trang khi mới load (Header, Stats, Filter)
+  useGSAP(() => {
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+    // Header animation
+    tl.from(".gsap-header", {
+      y: -30,
+      opacity: 0,
+      duration: 0.6,
+      stagger: 0.1
+    })
+    // Chart & Stats cards
+    .from(".gsap-chart", {
+      scale: 0.9,
+      opacity: 0,
+      duration: 0.5
+    }, "-=0.3")
+    .from(".gsap-stat-card", {
+      y: 20,
+      opacity: 0,
+      duration: 0.5,
+      stagger: 0.1
+    }, "-=0.3")
+    // Summary card
+    .from(".gsap-summary", {
+      y: 20,
+      opacity: 0,
+      duration: 0.5
+    }, "-=0.2")
+    // Filter bar
+    .from(".gsap-filter", {
+      y: 10,
+      opacity: 0,
+      duration: 0.4
+    }, "-=0.2");
+
+  }, { scope: containerRef });
+
+    const normalizeStatus = (status?: number | string) => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
       case "1":
-        return "Created";
-      case "2":
-        return "InProcess";
-      case "3":
-        return "Done";
-      case "4":
-        return "Cancel";
       case "Created":
         return "Created";
+      case "2":
+      case "InProgress": // Thêm dòng này để khớp API
+      case "InProcess":
       case "WaitingForChangeStage":
         return "InProcess";
-      case "InProcess":
-        return "InProcess";
+      case "3":
       case "Done":
+      case "Completed":
         return "Done";
+      case "4":
       case "Cancel":
         return "Cancel";
       default:
@@ -168,7 +217,6 @@ const TechnicianExperimentLog = () => {
     ],
   };
 
-  // CẬP NHẬT CHART OPTIONS TẠI ĐÂY
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -177,7 +225,7 @@ const TechnicianExperimentLog = () => {
     },
     plugins: {
       legend: {
-        display: false, // Tắt legend mặc định để biểu đồ nở ra giữa
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -191,8 +239,15 @@ const TechnicianExperimentLog = () => {
     cutout: "70%",
   };
 
-  const parseApiResponse = (data: unknown): { logs: ExperimentLogEntry[]; totalCount: number } => {
-    if (typeof data === "object" && data !== null && "data" in data && "totalCount" in data) {
+  const parseApiResponse = (
+    data: unknown
+  ): { logs: ExperimentLogEntry[]; totalCount: number } => {
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "data" in data &&
+      "totalCount" in data
+    ) {
       const res = data as ExperimentLogApiResponse;
       if (Array.isArray(res.data)) {
         return {
@@ -209,7 +264,9 @@ const TechnicianExperimentLog = () => {
 
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
-      const response = await axiosInstance.get(`/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
+      const response = await axiosInstance.get(
+        `/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`
+      );
       const data = response.data;
 
       if (typeof data === "object" && data !== null && "totalCount" in data) {
@@ -225,26 +282,38 @@ const TechnicianExperimentLog = () => {
     }
   };
 
-  const fetchAllSampleCounts = useCallback(async (experimentLogs: ExperimentLogEntry[]) => {
-    const counts: Record<string, number> = {};
-    const promises = experimentLogs.map(async (log) => {
-      const count = await fetchSampleCount(log.id);
-      counts[log.id] = count;
-    });
-    await Promise.all(promises);
-    setSampleCounts(counts);
-  }, []);
+  const fetchAllSampleCounts = useCallback(
+    async (experimentLogs: ExperimentLogEntry[]) => {
+      const counts: Record<string, number> = {};
+      const promises = experimentLogs.map(async (log) => {
+        const count = await fetchSampleCount(log.id);
+        counts[log.id] = count;
+      });
+      await Promise.all(promises);
+      setSampleCounts(counts);
+    },
+    []
+  );
 
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get("/api/methods?PageNo=1&PageSize=100");
+        const res = await axiosInstance.get(
+          "/api/methods?PageNo=1&PageSize=100"
+        );
         const raw = res.data;
-        if (typeof raw === "object" && raw !== null && "data" in raw && Array.isArray((raw as { data: unknown[] }).data)) {
+        if (
+          typeof raw === "object" &&
+          raw !== null &&
+          "data" in raw &&
+          Array.isArray((raw as { data: unknown[] }).data)
+        ) {
           const arr = (raw as { data: { id: string; name: string }[] }).data;
           setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
         } else if (typeof raw === "object" && raw !== null && "value" in raw) {
-          const val = (raw as { value?: { data?: { id: string; name: string }[] } }).value;
+          const val = (
+            raw as { value?: { data?: { id: string; name: string }[] } }
+          ).value;
           const arr = Array.isArray(val?.data) ? val.data : [];
           setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
         } else {
@@ -258,49 +327,36 @@ const TechnicianExperimentLog = () => {
   }, []);
 
   const fetchStatsOnly = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get("/api/experiment-logs?PageNo=1&PageSize=1000");
-      const { logs: allLogs } = parseApiResponse(res.data);
+  try {
+    const res = await axiosInstance.get(
+      "/api/experiment-logs?PageNo=1&PageSize=1000"
+    );
+    const { logs: allLogs } = parseApiResponse(res.data);
 
-      const counts = {
-        Created: 0,
-        InProcess: 0,
-        Done: 0,
-        Cancel: 0,
-      };
+    const counts = {
+      Created: 0,
+      InProcess: 0,
+      Done: 0,
+      Cancel: 0,
+    };
 
-      allLogs.forEach((log) => {
-        const status = normalizeStatus(log.status);
-        switch (status) {
-          case "Created":
-            counts.Created++;
-            break;
-          case "InProcess":
-            counts.InProcess++;
-            break;
-          case "Done":
-            counts.Done++;
-            break;
-          case "Cancel":
-            counts.Cancel++;
-            break;
-        }
-      });
+    allLogs.forEach((log) => {
+      const normalized = normalizeStatus(log.status);
+      // Kiểm tra chính xác các key đã khởi tạo ở trên
+      if (normalized === "Created") counts.Created++;
+      else if (normalized === "InProcess") counts.InProcess++;
+      else if (normalized === "Done") counts.Done++;
+      else if (normalized === "Cancel") counts.Cancel++;
+    });
 
-      const total = counts.Created + counts.InProcess + counts.Done + counts.Cancel;
-
-      setStats({
-        total,
-        Created: counts.Created,
-        InProcess: counts.InProcess,
-        Done: counts.Done,
-        Cancel: counts.Cancel,
-      });
-    } catch (err) {
-      console.error(t("common.errorLoading"), err);
-      setStats({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
-    }
-  }, [t]);
+    setStats({
+      total: counts.Created + counts.InProcess + counts.Done + counts.Cancel,
+      ...counts,
+    });
+  } catch (err) {
+    console.error("Error fetching stats:", err);
+  }
+}, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -318,12 +374,14 @@ const TechnicianExperimentLog = () => {
       }
 
       try {
-        const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
+        const res = await axiosInstance.get(
+          `/api/experiment-logs?${params.toString()}`
+        );
         const { logs: arr, totalCount: total } = parseApiResponse(res.data);
 
         const normalizedLogs = arr.map((log) => ({
           ...log,
-          tissueCultureBatchName: log.tissueCultureBatchName ?? log.batchName ?? "",
+          tissueCultureBatchName: log.tissueCultureBatchName ?? (log as any).batcheName ?? "",
           status: normalizeStatus(log.status),
         }));
 
@@ -344,7 +402,15 @@ const TechnicianExperimentLog = () => {
 
     void fetchData();
     void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, methods, fetchAllSampleCounts, fetchStatsOnly, t]);
+  }, [
+    currentPage,
+    logsPerPage,
+    methodFilter,
+    methods,
+    fetchAllSampleCounts,
+    fetchStatsOnly,
+    t,
+  ]);
 
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
@@ -377,13 +443,16 @@ const TechnicianExperimentLog = () => {
     }
   };
 
-  const filteredLogs = logs.filter((log) => {
+  var filteredLogs = logs.filter((log) => {
     const matchesSearch =
       !searchTerm ||
       log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.tissueCultureBatchName ?? "").toLowerCase().includes(searchTerm.toLowerCase());
+      (log.tissueCultureBatchName ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
 
     let matchesStage = true;
     if (stageFilter !== "all") {
@@ -406,10 +475,13 @@ const TechnicianExperimentLog = () => {
   const totalPages = Math.ceil(totalCount / logsPerPage);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+    <main 
+      ref={containerRef} 
+      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8"
+    >
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 gsap-header">
           <div className="flex items-center gap-3 mb-2">
             <Microscope className="w-10 h-10 text-purple-600" />
             <h1 className="text-4xl font-bold text-gray-900">
@@ -424,12 +496,11 @@ const TechnicianExperimentLog = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-chart">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {t("experimentLog.latestStatusChart")}
             </h3>
-            
-            {/* CẬP NHẬT GIAO DIỆN CHART TẠI ĐÂY */}
+
             <div className="flex items-center justify-center h-[280px]">
               <div className="relative w-[280px] h-[280px]">
                 <Doughnut data={chartData} options={chartOptions} />
@@ -441,15 +512,15 @@ const TechnicianExperimentLog = () => {
                 </div>
               </div>
             </div>
-            {/* KẾT THÚC CẬP NHẬT CHART */}
-
           </div>
 
           {/* Status Cards */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Experiment Statistics</h3>
+            <h3 className="text-lg font-semibold text-gray-900 gsap-header">
+              Experiment Statistics
+            </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200">
+              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200 gsap-stat-card">
                 <Beaker className="w-8 h-8 text-pink-600 mb-3" />
                 <div className="text-sm text-pink-700 font-medium mb-1">
                   {statusToVietnamese("Created")}
@@ -458,7 +529,7 @@ const TechnicianExperimentLog = () => {
                   {stats.Created}
                 </div>
               </div>
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
+              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200 gsap-stat-card">
                 <Clock className="w-8 h-8 text-blue-600 mb-3" />
                 <div className="text-sm text-blue-700 font-medium mb-1">
                   {statusToVietnamese("InProcess")}
@@ -467,7 +538,7 @@ const TechnicianExperimentLog = () => {
                   {stats.InProcess}
                 </div>
               </div>
-              <div className="bg-green-100 rounded-xl p-5 border border-green-200">
+              <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card">
                 <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
                 <div className="text-sm text-green-700 font-medium mb-1">
                   {statusToVietnamese("Done")}
@@ -476,7 +547,7 @@ const TechnicianExperimentLog = () => {
                   {stats.Done}
                 </div>
               </div>
-              <div className="bg-red-100 rounded-xl p-5 border border-red-200">
+              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card">
                 <XCircle className="w-8 h-8 text-red-600 mb-3" />
                 <div className="text-sm text-red-700 font-medium mb-1">
                   {statusToVietnamese("Cancel")}
@@ -490,43 +561,57 @@ const TechnicianExperimentLog = () => {
         </div>
 
         {/* Summary Card */}
-        <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 border border-purple-200">
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-2xl p-6 border border-purple-100 dark:border-purple-700/50 gsap-summary">
           <div className="flex items-center gap-4">
-            <div className="bg-white p-4 rounded-xl">
-              <TrendingUp className="w-8 h-8 text-purple-600" />
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm dark:shadow-none">
+              <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
             </div>
+            
+            {/* Text chính */}
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.total}</h3>
-              <p className="text-gray-600">{t("experimentLog.totalExperiments")}</p>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {stats.total}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {t("experimentLog.totalExperiments")}
+              </p>
             </div>
+
+            {/* Stats nhỏ bên phải */}
             <div className="ml-auto flex items-center gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.Done}</div>
-                <div className="text-sm text-gray-600">Completed</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.Done}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.InProcess}</div>
-                <div className="text-sm text-gray-600">In Progress</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.InProcess}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-filter">
           <div className="flex items-center gap-3 mb-4">
             <BarChart3 className="w-6 h-6 text-gray-600" />
             <h2 className="text-xl font-semibold text-gray-900">
               {t("experimentLog.experimentLogList")}
             </h2>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-gray-500" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as ExperimentStatus | "all")
+                }
                 className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               >
                 <option value="all">{t("experimentLog.allStatuses")}</option>
@@ -553,7 +638,16 @@ const TechnicianExperimentLog = () => {
             <select
               className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
               value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value as "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4")}
+              onChange={(e) =>
+                setStageFilter(
+                  e.target.value as
+                    | "all"
+                    | "Giai đoạn 1"
+                    | "Giai đoạn 2"
+                    | "Giai đoạn 3"
+                    | "Giai đoạn 4"
+                )
+              }
             >
               <option value="all">{t("experimentLog.allStages")}</option>
               <option value="Giai đoạn 1">Giai đoạn 1</option>
@@ -596,7 +690,7 @@ const TechnicianExperimentLog = () => {
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden gsap-table-container">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -631,8 +725,10 @@ const TechnicianExperimentLog = () => {
                   filteredLogs.map((log) => (
                     <tr
                       key={log.id}
-                      className="hover:bg-purple-50 cursor-pointer transition-colors"
-                      onClick={() => void navigate(`/technician/experiment-log/${log.id}`)}
+                      className="hover:bg-purple-50 cursor-pointer transition-colors gsap-table-row"
+                      onClick={() =>
+                        void navigate(`/technician/experiment-log/${log.id}`)
+                      }
                     >
                       <td className="px-6 py-4 font-medium text-gray-900">
                         {log.name}
@@ -650,17 +746,22 @@ const TechnicianExperimentLog = () => {
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           {log.createdDate
-                            ? new Date(log.createdDate).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })
+                            ? new Date(log.createdDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
                             : ""}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(log.status)}`}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(
+                            log.status
+                          )}`}
                         >
                           {getStatusIcon(log.status)}
                           {statusToVietnamese(log.status)}
@@ -686,39 +787,42 @@ const TechnicianExperimentLog = () => {
             {totalPages > 1 && (
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                 <span className="text-sm text-gray-600">
-                  {t("common.showing")} {filteredLogs.length} {t("common.of")} {totalCount}
+                  {t("common.showing")} {filteredLogs.length} {t("common.of")}{" "}
+                  {totalCount}
                 </span>
                 <div className="flex gap-2">
                   {currentPage > 1 && (
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage - 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm transition-colors"
                     >
                       ←
                     </button>
                   )}
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                    <button
-                      key={number}
-                      type="button"
-                      onClick={() => setCurrentPage(number)}
-                      className={`px-3 py-1.5 rounded-lg text-sm ${
-                        currentPage === number
-                          ? "bg-purple-600 text-white"
-                          : "bg-white border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {number}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (number) => (
+                      <button
+                        key={number}
+                        type="button"
+                        onClick={() => setCurrentPage(number)}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                          currentPage === number
+                            ? "bg-purple-600 text-white"
+                            : "bg-white border border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    )
+                  )}
 
                   {currentPage < totalPages && (
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage + 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm transition-colors"
                     >
                       →
                     </button>

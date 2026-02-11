@@ -1,0 +1,88 @@
+/* ==================== THEME VARIABLES (Local Scope) ==================== */
+/* Chỉ định nghĩa các màu nền cơ bản để component ánh xạ theo */
+
+:root[data-theme='light'] {
+  --bg-component: #ffffff;
+  --bg-hover: #f3f4f6;
+  --border-color: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --input-bg: #ffffff;
+}
+
+:root[data-theme='dark'] {
+  --bg-component: #1f2937; /* Gray 800 */
+  --bg-hover: #374151;     /* Gray 700 */
+  --border-color: #4b5563; /* Gray 600 */
+  --text-primary: #f9fafb; /* Gray 50 */
+  --text-secondary: #d1d5db; /* Gray 300 */
+  --input-bg: #374151;
+}
+
+/* ==================== COMPONENT OVERRIDES ==================== */
+
+/* 1. TABLE STYLING */
+/* Đảm bảo bảng hiển thị đúng màu khi sang Dark Mode */
+.dark table {
+  background-color: var(--bg-component) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark thead {
+  background-color: var(--bg-hover) !important; /* Header tối hơn nền một chút */
+}
+
+.dark thead th {
+  color: var(--text-primary) !important;
+}
+
+.dark tbody tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dark tbody tr:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+/* 2. FORM ELEMENTS (Input, Select) */
+/* Override mặc định của trình duyệt để input không bị trắng ở dark mode */
+.dark input,
+.dark select {
+  background-color: var(--input-bg) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark input::placeholder {
+  color: #9ca3af !important; /* Gray 400 */
+}
+
+/* 3. SCROLLBAR (Cho bảng hoặc danh sách dài) */
+.gsap-table-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.dark .gsap-table-container::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+.dark .gsap-table-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark .gsap-table-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* 4. SUMMARY CARD */
+:root[data-theme='light'] .gsap-summary {
+  background: linear-gradient(to right, #f3e8ff, #fce7f3) !important;
+  border-color: #ddd6fe !important;
+}
+
+.dark .gsap-summary {
+  background: linear-gradient(to right, rgba(107, 33, 168, 0.3), rgba(190, 24, 93, 0.3)) !important;
+  border-color: rgba(168, 85, 247, 0.5) !important;
+}
