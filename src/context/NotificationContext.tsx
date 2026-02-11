@@ -71,17 +71,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       .withUrl(`https://net-api.tissuex.me/hubs/notifications`, {
         accessTokenFactory: () => localStorage.getItem("token") ?? "",
         withCredentials: true,
-        transport: signalR.HttpTransportType.WebSockets,
+        // Try all transports - WebSockets first, then fall back to others
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling,
+        skipNegotiation: false,
       })
       .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Trace)
+      .configureLogging(signalR.LogLevel.Warning)
       .build();
 
-    connection.start().then(() => {
-      connection.on("ReceiveNotification", (notification: Notification) => {
-        setNotifications((prev) => [notification, ...prev]);
+    connection.start()
+      .then(() => {
+        console.log("SignalR connected successfully");
+        connection.on("notification:new", (notification: Notification) => {
+          setNotifications((prev) => [notification, ...prev]);
+        });
+      })
+      .catch((err) => {
+        console.warn("SignalR connection failed, using polling instead:", err);
+        // Notification polling is already set up, so app will still work
       });
-    });
 
     connectionRef.current = connection;
 

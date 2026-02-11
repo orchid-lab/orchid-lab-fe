@@ -16,9 +16,16 @@ interface Task {
   researcher: string;
   technicianId: string;
   experimentLogName?: string;
+  taskTargetType?: string;
+  targetName?: string;
   end_date: string;
   create_at: string;
   status: StatusType;
+}
+
+interface ExperimentLog {
+  id: string;
+  name: string;
 }
 
 type StatusType =
@@ -30,22 +37,40 @@ type StatusType =
   | "Cancel";
 
 interface ApiTaskResponse {
-  value?: {
-    totalCount?: number;
-    pageCount?: number;
-    pageSize?: number;
-    pageNumber?: number;
-    data?: Task[];
-  };
+  totalCount?: number;
+  pageCount?: number;
+  pageSize?: number;
+  pageNumber?: number;
+  data?: Task[];
 }
 
 function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   return (
     typeof obj === "object" &&
     obj !== null &&
-    "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object"
+    "data" in obj &&
+    Array.isArray((obj as { data: unknown }).data)
   );
+}
+
+function isApiExperimentLogResponse(
+  obj: unknown
+) {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "data" in obj &&
+    Array.isArray((obj as { data: unknown }).data)
+  ); 
+}
+
+function isUserResponse(obj: unknown) {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "data" in obj &&
+    Array.isArray((obj as { data: unknown }).data)
+  )
 }
 
 const STATUS_LABELS: Record<StatusType, string> = {
@@ -86,6 +111,9 @@ export default function ListTask() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [experiments, setExperiments] = useState<ExperimentLog[]>([]);
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string }[]>([]);
+  const [samples, setSamples] = useState<{ id: string; name: string }[]>([]);
 
   // State cho filters
   const [statusFilter, setStatusFilter] = useState<StatusType | "Tất cả">(
@@ -117,6 +145,60 @@ export default function ListTask() {
 
   const tasksPerPage = 20;
 
+  //Load danh sách experiment logs và users để mapping tên
+  useEffect(() => {
+    const fetchExperiments = async () => {
+      const params = new URLSearchParams();
+      params.append("PageNo", "1");
+      params.append("PageSize", "1000");
+
+      const response = await axiosInstance.get(
+        `/api/experiment-logs?${params.toString()}`
+      );
+      if (isApiExperimentLogResponse(response.data)) {
+        setExperiments(response.data.data ?? []);
+      }
+    };
+
+    const fetchUsers = async () => {
+      const params = new URLSearchParams();
+      params.append("PageNumber", "1");
+      params.append("PageSize", "1000");
+      const response = await axiosInstance.get(
+        `/api/user?${params.toString()}`
+      );
+      if( isUserResponse(response.data)) {
+        const usersData = response.data.data ?? [];
+        const simplifiedUsers = usersData.map((user: { id: string; name: string }) => ({
+          id: user.id,
+          name: user.name,
+        }));
+        setAllUsers(simplifiedUsers);
+      }
+    };
+
+    const fetchSamples = async () => {
+      const params = new URLSearchParams();
+      params.append("PageNo", "1");
+      params.append("PageSize", "1000");
+      const response = await axiosInstance.get(
+        `/api/samples?${params.toString()}`
+      );
+      if (isUserResponse(response.data)) {
+        const samplesData = response.data.data ?? [];
+        const simplifiedSamples = samplesData.map((sample: { id: string; name: string }) => ({
+          id: sample.id,
+          name: sample.name,
+        }));
+        setSamples(simplifiedSamples);
+      }
+    };
+
+    void fetchExperiments();
+    void fetchUsers();
+    void fetchSamples();
+  }, [user?.id]);
+
   // Load summary data chỉ 1 lần khi component mount
   // API: GET /api/tasks?PageNumber=1&PageSize=1000
   // Sau đó filter theo technicianId ở frontend vì API không có param technicianId
@@ -130,9 +212,7 @@ export default function ListTask() {
         const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
 
         if (isApiTaskResponse(response.data)) {
-          const allTasks = Array.isArray(response.data.value?.data)
-            ? response.data.value.data
-            : [];
+          const allTasks = response.data.data ?? [];
 
           // Filter theo technicianId của user hiện tại ở frontend
           const myTasks = allTasks.filter(
@@ -220,14 +300,35 @@ export default function ListTask() {
           .get(`/api/tasks?${buildApiQuery}`)
           .then((res) => {
             if (isApiTaskResponse(res.data)) {
-              const data = Array.isArray(res.data.value?.data)
-                ? res.data.value.data
-                : [];
+              const data = res.data.data ?? [];
 
               // Filter theo technicianId của user hiện tại ở frontend
               let filteredData = data.filter(
                 (task) => task.technicianId === user?.id
               );
+              
+              // Map researcher name, experimentLogName và targetName
+              filteredData.forEach((task) => {
+                const researcher = allUsers.find(u => u.id === task.researcherId);
+                task.researcher = researcher?.name ?? "Không rõ";
+
+                // Map targetName dựa vào taskTargetType
+                const targetId = (task as any).targetId;
+                const targetType = (task as any).taskTargetType;
+                
+                if (targetType === "Sample") {
+                  const sample = samples.find(s => s.id === targetId);
+                  task.targetName = sample?.name ?? "";
+                } else if (targetType === "ExperimentLog") {
+                  const experiment = experiments.find(e => e.id === targetId);
+                  task.targetName = experiment?.name ?? "";
+                  task.experimentLogName = experiment?.name ?? "";
+                } else {
+                  task.targetName = "";
+                }
+                
+                task.taskTargetType = targetType;
+              });
 
               // Sort toàn bộ danh sách theo create_at (newest first)
               filteredData = [...filteredData].sort((a, b) => {
@@ -297,6 +398,9 @@ export default function ListTask() {
     currentPage,
     user?.id,
     enqueueSnackbar,
+    experiments,
+    allUsers,
+    samples,
   ]);
 
   // Reset về trang 1 khi filter thay đổi
@@ -527,7 +631,10 @@ export default function ListTask() {
                       Người tạo nhiệm vụ
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
-                      Nhật ký thí nghiệm
+                      Loại công việc
+                    </th>
+                    <th className="text-left p-4 font-medium text-gray-900">
+                      Đối tượng
                     </th>
                     <th className="text-left p-4 font-medium text-gray-900">
                       Thời hạn
@@ -540,7 +647,7 @@ export default function ListTask() {
                 <tbody>
                   {tasks.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-gray-500">
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
                         Không tìm thấy nhiệm vụ nào
                       </td>
                     </tr>
@@ -556,7 +663,10 @@ export default function ListTask() {
                         <td className="p-4 text-gray-900">{task.name}</td>
                         <td className="p-4 text-gray-600">{task.researcher}</td>
                         <td className="p-4 text-gray-600">
-                          {task.experimentLogName ?? "Không có"}
+                          {task.taskTargetType === "Sample" ? "Mẫu vật" : task.taskTargetType === "ExperimentLog" ? "Thí nghiệm" : task.taskTargetType ?? "Không xác định"}
+                        </td>
+                        <td className="p-4 text-gray-600">
+                          {task.targetName ?? task.experimentLogName ?? "Không có"}
                         </td>
                         <td className="p-4 text-gray-600">
                           {task.end_date
