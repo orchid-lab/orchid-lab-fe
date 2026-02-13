@@ -12,21 +12,10 @@
   transition: margin-left 0.3s ease-in-out;
 }
 
-/* Performance optimization for animations */
-#technician-experimentlog-detail .detail-header,
-#technician-experimentlog-detail .info-card,
-#technician-experimentlog-detail .materials-card,
-#technician-experimentlog-detail .stages-card,
-#technician-experimentlog-detail .samples-card,
-#technician-experimentlog-detail .stage-card,
-#technician-experimentlog-detail .sample-card {
-  will-change: transform, opacity;
-}
-
 /* Smooth transitions for interactive elements */
 #technician-experimentlog-detail .stage-card,
 #technician-experimentlog-detail .sample-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Adjust for collapsed sidebar */

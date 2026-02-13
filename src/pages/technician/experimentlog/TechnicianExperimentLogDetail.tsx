@@ -186,18 +186,15 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
 
   useLayoutEffect(() => {
     if (isOpen && modalRef.current) {
+      // Animation đơn giản - chỉ fade in
       gsap.fromTo(modalRef.current,
         {
-          scale: 0.8,
-          opacity: 0,
-          y: -20
+          opacity: 0
         },
         {
-          scale: 1,
           opacity: 1,
-          y: 0,
-          duration: 0.3,
-          ease: "back.out(1.5)"
+          duration: 0.2,
+          ease: "power2.out"
         }
       );
     }
@@ -420,94 +417,64 @@ const TechnicianExperimentLogDetail = () => {
     if (!log || loading) return;
 
     const ctx = gsap.context(() => {
-      // Animation cho header - slide in from top
+      // Animation đơn giản chỉ fade in - KHÔNG dùng transform để tránh ẩn content
       gsap.from(headerRef.current, {
-        y: -50,
         opacity: 0,
-        duration: 0.6,
-        ease: "power3.out"
-      });
-
-      // Animation cho info card - fade in và scale up
-      gsap.from(infoCardRef.current, {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.6,
-        delay: 0.2,
+        duration: 0.5,
         ease: "power2.out"
       });
 
-      // Animation cho materials card - slide from left
+      gsap.from(infoCardRef.current, {
+        opacity: 0,
+        duration: 0.5,
+        delay: 0.1,
+        ease: "power2.out"
+      });
+
+      // Materials card - chỉ fade in
       if (materialsCardRef.current) {
         gsap.from(materialsCardRef.current, {
-          x: -50,
           opacity: 0,
-          duration: 0.6,
+          duration: 0.5,
+          delay: 0.2,
+          ease: "power2.out"
+        });
+      }
+
+      // Stages card - chỉ fade in
+      if (stagesCardRef.current) {
+        gsap.from(stagesCardRef.current, {
+          opacity: 0,
+          duration: 0.5,
           delay: 0.3,
           ease: "power2.out"
         });
       }
 
-      // Animation cho stages card - slide from right
-      if (stagesCardRef.current) {
-        gsap.from(stagesCardRef.current, {
-          x: 50,
+      // Samples card - chỉ fade in
+      if (samplesCardRef.current) {
+        gsap.from(samplesCardRef.current, {
           opacity: 0,
-          duration: 0.6,
+          duration: 0.5,
           delay: 0.4,
           ease: "power2.out"
         });
-
-        // Animation cho từng stage card
-        const stageCards = stagesCardRef.current.querySelectorAll('.stage-card');
-        gsap.from(stageCards, {
-          y: 30,
-          opacity: 0,
-          duration: 0.4,
-          stagger: 0.1,
-          delay: 0.6,
-          ease: "back.out(1.2)"
-        });
       }
 
-      // Animation cho samples card - fade in from bottom
-      if (samplesCardRef.current) {
-        gsap.from(samplesCardRef.current, {
-          y: 50,
-          opacity: 0,
-          duration: 0.6,
-          delay: 0.5,
-          ease: "power2.out"
-        });
-
-        // Animation cho từng sample card
-        const sampleCards = samplesCardRef.current.querySelectorAll('.sample-card');
-        if (sampleCards.length > 0) {
-          gsap.from(sampleCards, {
-            scale: 0.9,
-            opacity: 0,
-            duration: 0.4,
-            stagger: 0.08,
-            delay: 0.7,
-            ease: "back.out(1.5)"
-          });
-        }
-      }
-
-      // Hover animations cho cards
+      // Hover animations cho cards - nhẹ nhàng hơn
       const allCards = document.querySelectorAll('.stage-card, .sample-card');
       allCards.forEach(card => {
         card.addEventListener('mouseenter', () => {
           gsap.to(card, {
-            y: -5,
-            duration: 0.3,
+            y: -3,
+            duration: 0.2,
             ease: "power2.out"
           });
         });
         card.addEventListener('mouseleave', () => {
           gsap.to(card, {
             y: 0,
-            duration: 0.3,
+            duration: 0.2,
             ease: "power2.out"
           });
         });
@@ -890,6 +857,12 @@ const TechnicianExperimentLogDetail = () => {
           const stageChemicals = currentMethodStage?.stageChemicals ?? [];
           const stageMaterials = currentMethodStage?.stageMaterials ?? [];
           
+          // Debug logging
+          console.log('Current Stage Order:', log.currentStageOrder);
+          console.log('Current Method Stage:', currentMethodStage);
+          console.log('Stage Chemicals:', stageChemicals);
+          console.log('Stage Materials:', stageMaterials);
+          
           // Group materials by category
           const materialsByCategory = stageMaterials.reduce((acc, sm) => {
             const category = sm.material?.category ?? (t("common.other") ?? "Khác");
@@ -906,10 +879,7 @@ const TechnicianExperimentLogDetail = () => {
             return acc;
           }, {} as Record<string, Chemical[]>);
 
-          if (stageChemicals.length === 0 && stageMaterials.length === 0) {
-            return null;
-          }
-
+          // LUÔN LUÔN hiển thị section này, kể cả khi trống
           return (
             <section ref={materialsCardRef} className="materials-card">
               <h2 className="materials-title">
