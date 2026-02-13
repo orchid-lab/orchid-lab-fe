@@ -1,0 +1,1240 @@
+/* =============================================================================
+   TECHNICIAN EXPERIMENT LOG DETAIL - DEDICATED STYLES
+   ============================================================================= */
+
+/* ==================== MAIN CONTAINER ==================== */
+#technician-experimentlog-detail {
+  margin-left: 260px;
+  margin-top: 48px;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  padding: 1.5rem;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Performance optimization for animations */
+#technician-experimentlog-detail .detail-header,
+#technician-experimentlog-detail .info-card,
+#technician-experimentlog-detail .materials-card,
+#technician-experimentlog-detail .stages-card,
+#technician-experimentlog-detail .samples-card,
+#technician-experimentlog-detail .stage-card,
+#technician-experimentlog-detail .sample-card {
+  will-change: transform, opacity;
+}
+
+/* Smooth transitions for interactive elements */
+#technician-experimentlog-detail .stage-card,
+#technician-experimentlog-detail .sample-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Adjust for collapsed sidebar */
+body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
+  margin-left: 72px;
+}
+
+/* ==================== DARK MODE - MAIN CONTAINER ==================== */
+:root[data-theme='dark'] #technician-experimentlog-detail {
+  background: linear-gradient(to bottom right, #1f2937, #111827);
+}
+
+/* ==================== HEADER SECTION ==================== */
+#technician-experimentlog-detail .detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+#technician-experimentlog-detail .back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #166534;
+  color: #166534;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+#technician-experimentlog-detail .back-button:hover {
+  background-color: #166534;
+  color: white;
+  transform: translateX(-2px);
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .back-button {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .back-button:hover {
+  background-color: #22c55e;
+  color: #111827;
+}
+
+#technician-experimentlog-detail .detail-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .detail-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .detail-title .experiment-name {
+  font-weight: normal;
+  color: #374151;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .detail-title .experiment-name {
+  color: #d1d5db;
+}
+
+/* ==================== ACTION BUTTONS ==================== */
+#technician-experimentlog-detail .action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+#technician-experimentlog-detail .btn-start {
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 120px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#technician-experimentlog-detail .btn-start:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+#technician-experimentlog-detail .btn-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#technician-experimentlog-detail .btn-protocorm {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#technician-experimentlog-detail .btn-protocorm.enabled {
+  background-color: #059669;
+  color: white;
+  cursor: pointer;
+}
+
+#technician-experimentlog-detail .btn-protocorm.enabled:hover {
+  background-color: #047857;
+  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);
+  transform: translateY(-2px);
+}
+
+#technician-experimentlog-detail .btn-protocorm.disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .btn-protocorm.disabled {
+  background-color: #374151;
+  color: #6b7280;
+}
+
+#technician-experimentlog-detail .btn-cancel {
+  padding: 0.5rem 1rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 120px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#technician-experimentlog-detail .btn-cancel:hover {
+  background-color: #fecaca;
+  box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .btn-cancel {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border-color: #dc2626;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .btn-cancel:hover {
+  background-color: rgba(220, 38, 38, 0.3);
+}
+
+/* ==================== PROTOCORM POPOVER ==================== */
+#technician-experimentlog-detail .protocorm-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  width: 360px;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-popover {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+#technician-experimentlog-detail .protocorm-popover-header {
+  padding: 0.75rem;
+  background: linear-gradient(to right, #d1fae5, #a7f3d0);
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-popover-header {
+  background: linear-gradient(to right, rgba(6, 95, 70, 0.4), rgba(5, 150, 105, 0.3));
+  border-bottom-color: #374151;
+}
+
+#technician-experimentlog-detail .protocorm-popover-header .header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+#technician-experimentlog-detail .protocorm-popover-header .header-icon {
+  color: #059669;
+  font-size: 0.875rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-popover-header .header-icon {
+  color: #34d399;
+}
+
+#technician-experimentlog-detail .protocorm-popover-header .header-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-popover-header .header-text {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .protocorm-popover-close {
+  padding: 0.25rem;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .protocorm-popover-close:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-popover-close:hover {
+  color: #d1d5db;
+  background-color: #374151;
+}
+
+#technician-experimentlog-detail .protocorm-popover-content {
+  padding: 0.75rem;
+}
+
+#technician-experimentlog-detail .protocorm-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-info {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .protocorm-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#technician-experimentlog-detail .protocorm-input {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: white;
+  color: #111827;
+}
+
+#technician-experimentlog-detail .protocorm-input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-input {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-input:focus {
+  border-color: #34d399;
+  box-shadow: 0 0 0 1px #34d399;
+}
+
+#technician-experimentlog-detail .protocorm-submit {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  color: white;
+  background-color: #059669;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#technician-experimentlog-detail .protocorm-submit:hover:not(:disabled) {
+  background-color: #047857;
+}
+
+#technician-experimentlog-detail .protocorm-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#technician-experimentlog-detail .protocorm-warning {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #d97706;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .protocorm-warning {
+  color: #fbbf24;
+}
+
+/* ==================== INFO CARD ==================== */
+#technician-experimentlog-detail .info-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .info-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#technician-experimentlog-detail .info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  #technician-experimentlog-detail .info-grid {
+    flex-direction: row;
+  }
+}
+
+#technician-experimentlog-detail .info-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#technician-experimentlog-detail .info-item {
+  font-size: 1rem;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .info-item {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .info-label {
+  font-weight: bold;
+}
+
+#technician-experimentlog-detail .info-value {
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .info-value {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#technician-experimentlog-detail .status-badge.created {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+#technician-experimentlog-detail .status-badge.in-progress {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+#technician-experimentlog-detail .status-badge.waiting {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+#technician-experimentlog-detail .status-badge.completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+#technician-experimentlog-detail .status-badge.destroyed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.created {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.in-progress {
+  background-color: rgba(234, 179, 8, 0.3);
+  color: #fde047;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.waiting {
+  background-color: rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.completed {
+  background-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.destroyed {
+  background-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+#technician-experimentlog-detail .current-stage {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .current-stage {
+  color: #38bdf8;
+}
+
+#technician-experimentlog-detail .seedling-box {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .seedling-box {
+  background: #374151;
+}
+
+#technician-experimentlog-detail .seedling-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .seedling-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .seedling-content {
+  color: #166534;
+  font-size: 1rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .seedling-content {
+  color: #86efac;
+}
+
+/* ==================== CHEMICALS AND MATERIALS SECTION ==================== */
+#technician-experimentlog-detail .materials-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .materials-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#technician-experimentlog-detail .materials-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .materials-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .stage-indicator {
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: #0284c7;
+  margin-left: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-indicator {
+  color: #38bdf8;
+}
+
+#technician-experimentlog-detail .materials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  #technician-experimentlog-detail .materials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#technician-experimentlog-detail .material-section-title {
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .material-section-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .material-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+#technician-experimentlog-detail .chemical-icon {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+#technician-experimentlog-detail .equipment-icon {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .chemical-icon {
+  background-color: rgba(126, 34, 206, 0.3);
+  color: #d8b4fe;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .equipment-icon {
+  background-color: rgba(217, 119, 6, 0.3);
+  color: #fbbf24;
+}
+
+#technician-experimentlog-detail .material-count {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .material-count {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .material-category {
+  margin-bottom: 0.75rem;
+}
+
+#technician-experimentlog-detail .category-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .category-name {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .material-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#technician-experimentlog-detail .material-item {
+  font-size: 0.875rem;
+  color: #111827;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .material-item {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .material-bullet {
+  margin-top: 0.25rem;
+}
+
+#technician-experimentlog-detail .material-bullet.chemical {
+  color: #a855f7;
+}
+
+#technician-experimentlog-detail .material-bullet.equipment {
+  color: #f59e0b;
+}
+
+#technician-experimentlog-detail .material-name {
+  font-weight: 500;
+}
+
+#technician-experimentlog-detail .material-unit {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .material-unit {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .no-materials {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .no-materials {
+  color: #9ca3af;
+}
+
+/* ==================== STAGES SECTION ==================== */
+#technician-experimentlog-detail .stages-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stages-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#technician-experimentlog-detail .stages-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stages-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .stages-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #technician-experimentlog-detail .stages-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #technician-experimentlog-detail .stages-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+#technician-experimentlog-detail .stage-card {
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .stage-card.current {
+  background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px #60a5fa;
+}
+
+#technician-experimentlog-detail .stage-card.normal {
+  background: linear-gradient(to bottom right, #f0fdf4, #dcfce7);
+  border-color: #bbf7d0;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-card.current {
+  background: linear-gradient(to bottom right, rgba(30, 64, 175, 0.2), rgba(37, 99, 235, 0.15));
+  border-color: #3b82f6;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-card.normal {
+  background: linear-gradient(to bottom right, rgba(6, 95, 70, 0.2), rgba(5, 150, 105, 0.15));
+  border-color: #22c55e;
+}
+
+#technician-experimentlog-detail .stage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#technician-experimentlog-detail .stage-number {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+#technician-experimentlog-detail .stage-number.current {
+  background-color: #2563eb;
+  color: white;
+}
+
+#technician-experimentlog-detail .stage-number.normal {
+  background-color: #16a34a;
+  color: white;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-number.current {
+  background-color: #3b82f6;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-number.normal {
+  background-color: #22c55e;
+}
+
+#technician-experimentlog-detail .stage-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-name {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .current-badge {
+  margin-left: auto;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 9999px;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .current-badge {
+  background-color: rgba(37, 99, 235, 0.3);
+  color: #93c5fd;
+}
+
+#technician-experimentlog-detail .stage-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-description {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .stage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+#technician-experimentlog-detail .stage-tag {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-tag {
+  background-color: #374151;
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .stage-tag.sample-generation {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#technician-experimentlog-detail .stage-tag.sample-generation.enabled {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+#technician-experimentlog-detail .stage-tag.sample-generation.disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-tag.sample-generation.enabled {
+  background-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .stage-tag.sample-generation.disabled {
+  background-color: #374151;
+  color: #6b7280;
+}
+
+/* ==================== SAMPLES SECTION ==================== */
+#technician-experimentlog-detail .samples-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .samples-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#technician-experimentlog-detail .samples-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .samples-title {
+  color: #86efac;
+}
+
+#technician-experimentlog-detail .samples-empty {
+  color: #6b7280;
+  text-align: center;
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .samples-empty {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .samples-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #technician-experimentlog-detail .samples-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #technician-experimentlog-detail .samples-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+#technician-experimentlog-detail .sample-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .sample-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .sample-card {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+#technician-experimentlog-detail .sample-name {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .sample-name {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .sample-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .sample-description {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .sample-id {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .sample-id {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .sample-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .sample-date {
+  color: #9ca3af;
+}
+
+#technician-experimentlog-detail .sample-status {
+  margin-top: 0.5rem;
+}
+
+/* ==================== CANCEL MODAL ==================== */
+#technician-experimentlog-detail .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
+#technician-experimentlog-detail .modal-container {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+#technician-experimentlog-detail .modal-content {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 28rem;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-content {
+  background: #1f2937;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#technician-experimentlog-detail .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-header {
+  border-bottom-color: #374151;
+}
+
+#technician-experimentlog-detail .modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-title {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .modal-close {
+  padding: 0.375rem;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .modal-close:hover {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-close:hover {
+  color: #d1d5db;
+  background-color: #374151;
+}
+
+#technician-experimentlog-detail .modal-body {
+  padding: 1rem 1.5rem;
+}
+
+#technician-experimentlog-detail .modal-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-label {
+  color: #d1d5db;
+}
+
+#technician-experimentlog-detail .modal-required {
+  color: #dc2626;
+}
+
+#technician-experimentlog-detail .modal-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  resize: none;
+  background: white;
+  color: #111827;
+}
+
+#technician-experimentlog-detail .modal-textarea:focus {
+  outline: none;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-textarea {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-textarea:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+#technician-experimentlog-detail .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-footer {
+  border-top-color: #374151;
+  background-color: #111827;
+}
+
+#technician-experimentlog-detail .modal-btn-cancel {
+  padding: 0.5rem 1rem;
+  color: #374151;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .modal-btn-cancel:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-btn-cancel {
+  background: #374151;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-btn-cancel:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+
+#technician-experimentlog-detail .modal-btn-confirm {
+  padding: 0.5rem 1rem;
+  color: white;
+  background-color: #dc2626;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#technician-experimentlog-detail .modal-btn-confirm:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+#technician-experimentlog-detail .modal-btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== LOADING & ERROR STATES ==================== */
+#technician-experimentlog-detail .loading-state,
+#technician-experimentlog-detail .error-state,
+#technician-experimentlog-detail .no-data-state {
+  padding: 2rem;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#technician-experimentlog-detail .loading-state {
+  color: #6b7280;
+}
+
+#technician-experimentlog-detail .error-state {
+  color: #dc2626;
+}
+
+#technician-experimentlog-detail .no-data-state {
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .loading-state {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .error-state {
+  color: #f87171;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .no-data-state {
+  color: #9ca3af;
+}
+
+/* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+@media (max-width: 768px) {
+  #technician-experimentlog-detail {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  #technician-experimentlog-detail .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  #technician-experimentlog-detail .action-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  #technician-experimentlog-detail .action-buttons button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  #technician-experimentlog-detail .protocorm-popover {
+    right: auto;
+    left: 0;
+    width: calc(100vw - 2rem);
+  }
+}

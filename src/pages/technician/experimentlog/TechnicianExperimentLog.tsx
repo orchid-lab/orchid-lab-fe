@@ -1,850 +1,955 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable no-var */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Search,
-  Filter,
-  Beaker,
-  FlaskConical,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Calendar,
-  TrendingUp,
-  BarChart3,
-  Microscope,
-} from "lucide-react";
-import axiosInstance from "../../../api/axiosInstance";
-import { Doughnut } from "react-chartjs-2";
+
+/**
+ * =============================================================================
+ * TECHNICIAN EXPERIMENT LOG DETAIL PAGE
+ * =============================================================================
+ * 
+ * Displays experiment log details for technicians with actions:
+ * - View experiment info (method, batch, seedling, stages, samples)
+ * - Start experiment (change status to InProgress)
+ * - Cancel experiment with reason modal
+ * 
+ * API Endpoints:
+ * - GET /api/experiment-logs/:id - Get experiment log details
+ * - PUT /api/experiment-logs/:id/status - Update status (start)
+ * - PUT /api/experiment-logs/:id/cancel - Cancel with reason
+ * - GET /api/sample - Get samples for experiment
+ * - GET /api/user/:id - Get creator info
+ * =============================================================================
+ */
+
+// =============================================================================
+// IMPORTS
+// =============================================================================
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
+import { FaTimes, FaSeedling } from "react-icons/fa";
+import axiosInstance from "../../../api/axiosInstance";
+import type { User } from "../../../types/Auth";
+import "./technicianExperimentLogDetail.css";
 
 Chart.register(ArcElement, Tooltip, Legend);
-gsap.registerPlugin(useGSAP); 
 
-type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel";
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
 
-interface Stage {
-  id: string;
-  name: string;
-  description?: string;
-  dateOfProcessing?: number;
-  step: number;
-  status: boolean;
-  elementDTO?: unknown[];
-}
-
+/**
+ * Sample - Represents a sample in the experiment
+ */
 interface Sample {
   id: string;
   name: string;
+  experimentLogId?: string;
+  currentSampleStage?: string;
+  notes?: string;
+  reason?: string;
+  executionDate?: string;
+  status?: string;
+  // Legacy fields
   description?: string;
   dob?: string;
-  status?: boolean;
+  statusEnum?: string;
 }
 
-interface ExperimentLogEntry {
-  id: string;
+interface StageDefinition {
+  id: number;
   name: string;
-  methodName: string;
   description?: string;
-  tissueCultureBatchName?: string;
+}
+
+interface Material {
+  id: number;
+  name: string;
+  category?: string;
+  description?: string;
+  unit?: string;
+}
+
+interface Chemical {
+  id: number;
+  name: string;
+  category?: string;
+  description?: string;
+  concentrationUnit?: string;
+}
+
+interface StageMaterial {
+  id: string;
+  material: Material;
+}
+
+interface StageChemical {
+  id: string;
+  chemical: Chemical;
+}
+
+interface MethodStage {
+  id: number;
+  durationsDays: number;
+  order: number;
+  stageDefinition: StageDefinition;
+  stageMaterials?: StageMaterial[];
+  stageChemicals?: StageChemical[];
+  isSampleGenerated?: boolean; // Determines if protocorm creation is allowed at this stage
+}
+
+interface Method {
+  id: number;
+  name: string;
+  description?: string;
+  totalDurationDays?: number;
+  methodStages?: MethodStage[];
+}
+
+interface Batch {
+  id: number;
+  labRoomId?: number;
+  labRoomName?: string;
   batchName?: string;
+  batchSizeWidth?: number;
+  batchSizeHeight?: number;
+  widthUnit?: string;
+  heightUnit?: string;
+  status?: string;
+}
+
+interface Trait {
+  name: string;
+  value: number;
+  unit: string;
+}
+
+interface Seedling {
+  id: string;
+  localName: string;
+  scientificName?: string;
+  description?: string;
+  parentAId?: string;
+  parentALocalName?: string;
+  parentAScientificName?: string;
+  traits?: Trait[];
   createdDate?: string;
-  status?: number | string;
-  samples?: Sample[];
-  stages?: Stage[];
-  currentStageName?: string;
-  currentStageOrder?: number;
-  expectedSampleCount?: number;
+  createdBy?: string;
 }
 
-interface ExperimentLogApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: ExperimentLogEntry[];
-}
-
-interface MethodOption {
+interface ExperimentLogDetailType {
   id: string;
   name: string;
+  seedling?: Seedling;
+  method?: Method;
+  batch?: Batch;
+  expectedSampleCount?: number;
+  currentStageOrder?: number;
+  assignedTo?: string;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
+  reason?: string;
+  status?: string;
+  createdDate?: string;
+  createdBy?: string;
+  updatedDate?: string;
+  updatedBy?: string;
+  samples?: Sample[];
+  // Legacy fields for backward compatibility
+  methodName?: string;
+  tissueCultureBatchName?: string;
+  create_date?: string;
+  create_by?: string;
 }
 
-interface SampleApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: unknown[];
+// =============================================================================
+// CANCEL MODAL COMPONENT
+// =============================================================================
+interface CancelModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  isLoading: boolean;
 }
 
-const TechnicianExperimentLog = () => {
+const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, isLoading }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  
-  // --- GSAP REF ---
-  const containerRef = useRef<HTMLElement>(null);
+  const [reason, setReason] = useState("");
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
-  const [methodFilter, setMethodFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<
-    "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
-  >("all");
-  const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
+  if (!isOpen) return null;
+
+  const handleConfirm = () => {
+    if (reason.trim()) {
+      onConfirm(reason);
+      setReason("");
+    }
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="modal-backdrop"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="modal-container">
+        <div className="modal-content">
+          {/* Header */}
+          <div className="modal-header">
+            <h3 className="modal-title">
+              {t("experimentLog.cancelExperiment") || "Hủy thí nghiệm"}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="modal-close"
+            >
+              <FaTimes />
+            </button>
+          </div>
+          {/* Content */}
+          <div className="modal-body">
+            <label className="modal-label">
+              {t("experimentLog.cancelReason") || "Lý do hủy thí nghiệm"} <span className="modal-required">*</span>
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={t("experimentLog.enterCancelReason") || "Nhập lý do hủy thí nghiệm..."}
+              className="modal-textarea"
+              rows={4}
+            />
+          </div>
+          {/* Footer */}
+          <div className="modal-footer">
+            <button
+              type="button"
+              onClick={onClose}
+              className="modal-btn-cancel"
+              disabled={isLoading}
+            >
+              {t("common.cancel") || "Hủy"}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={!reason.trim() || isLoading}
+              className="modal-btn-confirm"
+            >
+              {isLoading ? (t("common.processing") || "Đang xử lý...") : (t("common.confirm") || "Xác nhận")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const TechnicianExperimentLogDetail = () => {
+  const { t } = useTranslation();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
-  const [sampleCounts, setSampleCounts] = useState<Record<string, number>>({});
-  const [methods, setMethods] = useState<MethodOption[]>([]);
-  const [stats, setStats] = useState<{
-    total: number;
-    Created: number;
-    InProcess: number;
-    Done: number;
-    Cancel: number;
-  }>({
-    total: 0,
-    Created: 0,
-    InProcess: 0,
-    Done: 0,
-    Cancel: 0,
-  });
+  const [labName, setLabName] = useState<string>(t("experimentLog.loadingData"));
+  const [creator, setCreator] = useState<string>(t("experimentLog.loadingData"));
+  
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isProtocormPopoverOpen, setIsProtocormPopoverOpen] = useState(false);
+  const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
+  const [protocormQuantity, setProtocormQuantity] = useState<string>("");
 
+  const samples = log?.samples ?? [];
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const logsPerPage = 5;
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    
+    axiosInstance
+      .get(`/api/experiment-logs/${id}`)
+      .then((res) => {
+        const logData = res.data.value ?? res.data;
+        const anyLog = logData as Record<string, unknown>;
+        const normalized: Partial<ExperimentLogDetailType> = {
+          ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+          createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
+        };
+        setLog(normalized as ExperimentLogDetailType);
+      })
+      .catch(() => setError(t("common.errorLoading")))
+      .finally(() => setLoading(false));
+  }, [id, t]);
 
-  // --- GSAP ANIMATIONS ---
+  const handleStart = async () => {
+    if (!id) return;
+    setIsUpdatingStatus(true);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        status: "InProgress",
+      });
+      setLog((prev) => (prev ? { ...prev, status: "InProgress" } : prev));
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
-  // 1. Animation cho cấu trúc trang khi mới load (Header, Stats, Filter)
-  useGSAP(() => {
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+  const handleCancel = async (reason: string) => {
+    if (!id) return;
+    setIsCancelling(true);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/cancel`, {
+        id: id,
+        reason: reason || null,
+      });
+      setLog((prev) => (prev ? { ...prev, status: "Failed" } : prev));
+      setIsCancelModalOpen(false);
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
-    // Header animation
-    tl.from(".gsap-header", {
-      y: -30,
-      opacity: 0,
-      duration: 0.6,
-      stagger: 0.1
-    })
-    // Chart & Stats cards
-    .from(".gsap-chart", {
-      scale: 0.9,
-      opacity: 0,
-      duration: 0.5
-    }, "-=0.3")
-    .from(".gsap-stat-card", {
-      y: 20,
-      opacity: 0,
-      duration: 0.5,
-      stagger: 0.1
-    }, "-=0.3")
-    // Summary card
-    .from(".gsap-summary", {
-      y: 20,
-      opacity: 0,
-      duration: 0.5
-    }, "-=0.2")
-    // Filter bar
-    .from(".gsap-filter", {
-      y: 10,
-      opacity: 0,
-      duration: 0.4
-    }, "-=0.2");
+  /**
+   * Create protocorms using POST /api/samples
+   * Body: { experimentLogId: string, quantity: number }
+   */
+  const handleCreateProtocorm = async () => {
+    const qty = parseInt(protocormQuantity, 10);
+    if (!id || qty <= 0) return;
+    setIsCreatingProtocorm(true);
+    try {
+      await axiosInstance.post(`/api/samples`, {
+        experimentLogId: id,
+        quantity: qty,
+      });
+      // Refetch experiment log to get updated samples
+      const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
+      const logData = res.data.value ?? res.data;
+      const anyLog = logData as Record<string, unknown>;
+      const normalized: Partial<ExperimentLogDetailType> = {
+        ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+        createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
+      };
+      setLog(normalized as ExperimentLogDetailType);
+      setIsProtocormPopoverOpen(false);
+      setProtocormQuantity("");
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setIsCreatingProtocorm(false);
+    }
+  };
 
-  }, { scope: containerRef });
+  useEffect(() => {
+    if (!log) return;
+    const tcbId =
+      ((log as unknown as Record<string, unknown>)?.tissueCultureBatchId as string) ??
+      ((log as unknown as Record<string, unknown>)?.tissueCultureBatchID as string);
+    if (tcbId) {
+      axiosInstance
+        .get(`/api/tissue-culture-batch/${tcbId}`)
+        .then((res) => {
+          const raw = res.data;
+          const name = (raw?.value?.labName as string) ?? (raw?.labName as string);
+          setLabName(name ?? t("experimentLog.notAvailable"));
+        })
+        .catch(() => setLabName(t("experimentLog.notAvailable")));
+    }
+  }, [log, t]);
 
-    const normalizeStatus = (status?: number | string) => {
+  // Fetch creator name using User type from Auth.ts
+  useEffect(() => {
+    const creatorId = log?.createdBy ?? log?.create_by;
+    if (creatorId) {
+      axiosInstance
+        .get(`/api/user/${creatorId}`)
+        .then((res) => {
+          const raw = res.data;
+          // API returns either { value: User } or User directly
+          const userData: User | undefined = raw?.value ?? raw;
+          setCreator(userData?.name ?? t("experimentLog.notAvailable"));
+        })
+        .catch(() => setCreator(t("experimentLog.notAvailable")));
+    }
+  }, [log, t]);
+
+  if (loading)
+    return (
+      <main id="technician-experimentlog-detail">
+        <div className="loading-state">{t("experimentLog.loadingData")}</div>
+      </main>
+    );
+  if (error) return (
+    <main id="technician-experimentlog-detail">
+      <div className="error-state">{error}</div>
+    </main>
+  );
+  if (!log) return (
+    <main id="technician-experimentlog-detail">
+      <div className="no-data-state">{t("common.noData")}</div>
+    </main>
+  );
+
+  const renderSelectedSeedlings = () => {
+    // New API structure: seedling is a single object
+    if (log.seedling) {
+      return (
+        <div className="seedling-content">
+          <div>
+            • {log.seedling.localName || t("experimentLog.notAvailable")}
+            {log.seedling.scientificName && (
+              <span style={{ color: '#6b7280' }}> ({log.seedling.scientificName})</span>
+            )}
+          </div>
+          {log.seedling.parentALocalName && (
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '1rem' }}>
+              {t("experimentLog.parent") || "Cây mẹ"}: {log.seedling.parentALocalName}
+              {log.seedling.parentAScientificName && (
+                <span> ({log.seedling.parentAScientificName})</span>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return <div style={{ color: '#6b7280' }}>{t("experimentLog.noSeedlings")}</div>;
+  };
+
+  // ─── Helpers ──────────────────────────────────────────────────
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "—";
+    try {
+      return new Date(dateString).toLocaleDateString("vi-VN");
+    } catch {
+      return dateString;
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // STATUS HELPERS - Matching TechnicianExperimentLog page
+  // ---------------------------------------------------------------------------
+  
+  /**
+   * Normalize status string for consistent comparison
+   */
+  const normalizeStatus = (status?: number | string): string => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
-      case "1":
       case "Created":
         return "Created";
-      case "2":
-      case "InProgress": // Thêm dòng này để khớp API
-      case "InProcess":
+      case "InProgress":
+        return "InProgress";
       case "WaitingForChangeStage":
-        return "InProcess";
-      case "3":
-      case "Done":
+        return "WaitingForChangeStage";
       case "Completed":
-        return "Done";
-      case "4":
-      case "Cancel":
-        return "Cancel";
+        return "Completed";
+      case "Destroyed":
+        return "Destroyed";
       default:
         return statusStr;
     }
   };
 
-  const statusToVietnamese = (status?: number | string) => {
+  /**
+   * Convert status to Vietnamese label - matching TechnicianExperimentLog page
+   */
+  const getStatusDisplay = (status?: string | number): string => {
     switch (normalizeStatus(status)) {
       case "Created":
         return t("status.created");
-      case "InProcess":
+      case "InProgress":
         return t("experimentLog.inProgress");
-      case "Done":
+      case "WaitingForChangeStage":
+        return t("experimentLog.waitingForStageChange");
+      case "Completed":
         return t("experimentLog.completed");
-      case "Cancel":
-        return t("experimentLog.cancelled");
+      case "Destroyed":
+        return t("experimentLog.destroyed");
       default:
         return t("common.none");
     }
   };
 
-  const chartData = {
-    labels: [
-      statusToVietnamese("Created"),
-      statusToVietnamese("InProcess"),
-      statusToVietnamese("Done"),
-      statusToVietnamese("Cancel"),
-    ],
-    datasets: [
-      {
-        data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
-        backgroundColor: ["#ec4899", "#22c55e", "#93c5fd", "#ef4444"],
-        borderWidth: 0,
-        spacing: 2,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: 0,
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context: import("chart.js").TooltipItem<"doughnut">) {
-            const value = context.parsed;
-            return `${context.label} (${value})`;
-          },
-        },
-      },
-    },
-    cutout: "70%",
-  };
-
-  const parseApiResponse = (
-    data: unknown
-  ): { logs: ExperimentLogEntry[]; totalCount: number } => {
-    if (
-      typeof data === "object" &&
-      data !== null &&
-      "data" in data &&
-      "totalCount" in data
-    ) {
-      const res = data as ExperimentLogApiResponse;
-      if (Array.isArray(res.data)) {
-        return {
-          logs: res.data as ExperimentLogEntry[],
-          totalCount: res.totalCount ?? res.data.length,
-        };
-      }
+  /**
+   * Get status badge color classes - matching TechnicianExperimentLog page
+   */
+  const getStatusColor = (status?: string | number): string => {
+    const normalized = normalizeStatus(status);
+    let className = "status-badge ";
+    switch (normalized) {
+      case "Created":
+        className += "created";
+        break;
+      case "WaitingForChangeStage":
+        className += "waiting";
+        break;
+      case "InProgress":
+        className += "in-progress";
+        break;
+      case "Completed":
+        className += "completed";
+        break;
+      case "Destroyed":
+        className += "destroyed";
+        break;
+      default:
+        className += "created";
     }
-    if (Array.isArray(data)) {
-      return { logs: data as ExperimentLogEntry[], totalCount: data.length };
-    }
-    return { logs: [], totalCount: 0 };
+    return className;
   };
 
-  const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
-    try {
-      const response = await axiosInstance.get(
-        `/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`
-      );
-      const data = response.data;
-
-      if (typeof data === "object" && data !== null && "totalCount" in data) {
-        return (data as SampleApiResponse).totalCount ?? 0;
-      }
-      if (typeof data === "object" && data !== null && "data" in data) {
-        const inner = (data as SampleApiResponse).data;
-        return Array.isArray(inner) ? inner.length : 0;
-      }
-      return Array.isArray(data) ? data.length : 0;
-    } catch {
-      return 0;
+  // Current stage from log data - get stage name by matching currentStageOrder with method.methodStages
+  const getCurrentStageName = (): string => {
+    if (!log?.method?.methodStages || log.currentStageOrder === undefined) {
+      return t("experimentLog.notAvailable");
     }
-  };
-
-  const fetchAllSampleCounts = useCallback(
-    async (experimentLogs: ExperimentLogEntry[]) => {
-      const counts: Record<string, number> = {};
-      const promises = experimentLogs.map(async (log) => {
-        const count = await fetchSampleCount(log.id);
-        counts[log.id] = count;
-      });
-      await Promise.all(promises);
-      setSampleCounts(counts);
-    },
-    []
-  );
-
-  useEffect(() => {
-    const fetchMethods = async () => {
-      try {
-        const res = await axiosInstance.get(
-          "/api/methods?PageNo=1&PageSize=100"
-        );
-        const raw = res.data;
-        if (
-          typeof raw === "object" &&
-          raw !== null &&
-          "data" in raw &&
-          Array.isArray((raw as { data: unknown[] }).data)
-        ) {
-          const arr = (raw as { data: { id: string; name: string }[] }).data;
-          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-        } else if (typeof raw === "object" && raw !== null && "value" in raw) {
-          const val = (
-            raw as { value?: { data?: { id: string; name: string }[] } }
-          ).value;
-          const arr = Array.isArray(val?.data) ? val.data : [];
-          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-        } else {
-          setMethods([]);
-        }
-      } catch {
-        setMethods([]);
-      }
-    };
-    void fetchMethods();
-  }, []);
-
-  const fetchStatsOnly = useCallback(async () => {
-  try {
-    const res = await axiosInstance.get(
-      "/api/experiment-logs?PageNo=1&PageSize=1000"
+    const currentMethodStage = log.method.methodStages.find(
+      (stage) => stage.order === log.currentStageOrder
     );
-    const { logs: allLogs } = parseApiResponse(res.data);
+    return currentMethodStage?.stageDefinition?.name ?? t("experimentLog.notAvailable");
+  };
+  const currentStage = getCurrentStageName();
 
-    const counts = {
-      Created: 0,
-      InProcess: 0,
-      Done: 0,
-      Cancel: 0,
-    };
-
-    allLogs.forEach((log) => {
-      const normalized = normalizeStatus(log.status);
-      // Kiểm tra chính xác các key đã khởi tạo ở trên
-      if (normalized === "Created") counts.Created++;
-      else if (normalized === "InProcess") counts.InProcess++;
-      else if (normalized === "Done") counts.Done++;
-      else if (normalized === "Cancel") counts.Cancel++;
-    });
-
-    setStats({
-      total: counts.Created + counts.InProcess + counts.Done + counts.Cancel,
-      ...counts,
-    });
-  } catch (err) {
-    console.error("Error fetching stats:", err);
-  }
-}, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.append("PageNo", String(Math.max(1, currentPage)));
-      params.append("PageSize", String(logsPerPage));
-
-      if (methodFilter) {
-        const selectedMethod = methods.find((m) => m.id === methodFilter);
-        if (selectedMethod) {
-          params.append("MethodNameSearchTerm", selectedMethod.name);
-        }
-      }
-
-      try {
-        const res = await axiosInstance.get(
-          `/api/experiment-logs?${params.toString()}`
-        );
-        const { logs: arr, totalCount: total } = parseApiResponse(res.data);
-
-        const normalizedLogs = arr.map((log) => ({
-          ...log,
-          tissueCultureBatchName: log.tissueCultureBatchName ?? (log as any).batcheName ?? "",
-          status: normalizeStatus(log.status),
-        }));
-
-        setLogs(normalizedLogs);
-        setTotalCount(total);
-
-        if (normalizedLogs.length > 0) {
-          await fetchAllSampleCounts(normalizedLogs);
-        }
-      } catch {
-        setError(t("common.errorLoading"));
-        setLogs([]);
-        setTotalCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void fetchData();
-    void fetchStatsOnly();
-  }, [
-    currentPage,
-    logsPerPage,
-    methodFilter,
-    methods,
-    fetchAllSampleCounts,
-    fetchStatsOnly,
-    t,
-  ]);
-
-  const getStatusColor = (status?: number | string): string => {
-    switch (normalizeStatus(status)) {
-      case "Created":
-        return "bg-pink-100 text-pink-700 border-pink-200";
-      case "InProcess":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Done":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "Cancel":
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+  // Get current method stage object for checking isSampleGenerated
+  const getCurrentMethodStage = (): MethodStage | undefined => {
+    if (!log?.method?.methodStages || log.currentStageOrder === undefined) {
+      return undefined;
     }
+    return log.method.methodStages.find(
+      (stage) => stage.order === log.currentStageOrder
+    );
   };
 
-  const getStatusIcon = (status?: number | string) => {
-    const iconClass = "w-4 h-4";
-    switch (normalizeStatus(status)) {
-      case "Created":
-        return <Beaker className={`${iconClass} text-pink-600`} />;
-      case "InProcess":
-        return <Clock className={`${iconClass} text-blue-600`} />;
-      case "Done":
-        return <CheckCircle2 className={`${iconClass} text-green-600`} />;
-      case "Cancel":
-        return <XCircle className={`${iconClass} text-red-600`} />;
-      default:
-        return null;
-    }
+  // Check if current stage allows protocorm creation (isSampleGenerated = true)
+  const canCreateProtocorm = (): boolean => {
+    const currentMethodStage = getCurrentMethodStage();
+    return currentMethodStage?.isSampleGenerated === true;
   };
 
-  var filteredLogs = logs.filter((log) => {
-    const matchesSearch =
-      !searchTerm ||
-      log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.tissueCultureBatchName ?? "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  // Helper to get method name
+  const methodName = log?.method?.name ?? log?.methodName ?? t("experimentLog.notAvailable");
 
-    const matchesStatus =
-      statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
+  // Helper to get batch/tissue culture batch name
+  const batchName = log?.batch?.batchName ?? log?.tissueCultureBatchName ?? t("experimentLog.notAvailable");
 
-    let matchesStage = true;
-    if (stageFilter !== "all") {
-      const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      if (log.currentStageOrder !== undefined) {
-        matchesStage = log.currentStageOrder === stageNumber - 1;
-      } else if (log.stages && log.stages.length > 0 && log.currentStageName) {
-        if (stageNumber >= 1 && stageNumber <= log.stages.length) {
-          const targetStageName = log.stages[stageNumber - 1].name;
-          matchesStage = log.currentStageName === targetStageName;
-        } else {
-          matchesStage = false;
-        }
-      }
-    }
-
-    return matchesSearch && matchesStatus && matchesStage;
-  });
-
-  const totalPages = Math.ceil(totalCount / logsPerPage);
+  // Helper to get lab room name
+  const labRoomName = log?.batch?.labRoomName ?? labName;
 
   return (
-    <main 
-      id="technician-experimentlog-page"
-      ref={containerRef} 
-      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8"
-    >
-      <div className="max-w-[1400px] mx-auto space-y-6">
+    <main id="technician-experimentlog-detail">
+      {/* Cancel Modal */}
+      <CancelModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleCancel}
+        isLoading={isCancelling}
+      />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Header */}
-        <div className="mb-8 gsap-header">
-          <div className="flex items-center gap-3 mb-2">
-            <Microscope className="w-10 h-10 text-purple-600" />
-            <h1 className="text-4xl font-bold text-gray-900">
-              {t("experimentLog.experimentLogTitle")}
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg ml-13">
-            Monitor and manage cultivation experiments efficiently.
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-chart">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t("experimentLog.latestStatusChart")}
-            </h3>
-
-            <div className="flex items-center justify-center h-[280px]">
-              <div className="relative w-[280px] h-[280px]">
-                <Doughnut data={chartData} options={chartOptions} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="text-4xl font-bold text-gray-900">
-                    {stats.total}
-                  </div>
-                  <div className="text-sm text-gray-500">Experiments</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Cards - Code sạch, không logic phức tạp */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 gsap-header">
-              Experiment Statistics
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              
-              {/* Card 1: Created */}
-              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200 gsap-stat-card transition-colors">
-                <Beaker className="w-8 h-8 text-pink-600 mb-3" />
-                <div className="text-sm text-pink-700 font-medium mb-1">
-                  {statusToVietnamese("Created")}
-                </div>
-                <div className="text-3xl font-bold text-pink-900">
-                  {stats.Created}
-                </div>
-              </div>
-
-              {/* Card 2: InProcess */}
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200 gsap-stat-card transition-colors">
-                <Clock className="w-8 h-8 text-blue-600 mb-3" />
-                <div className="text-sm text-blue-700 font-medium mb-1">
-                  {statusToVietnamese("InProcess")}
-                </div>
-                <div className="text-3xl font-bold text-blue-900">
-                  {stats.InProcess}
-                </div>
-              </div>
-
-              {/* Card 3: Done */}
-              <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card transition-colors">
-                <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
-                <div className="text-sm text-green-700 font-medium mb-1">
-                  {statusToVietnamese("Done")}
-                </div>
-                <div className="text-3xl font-bold text-green-900">
-                  {stats.Done}
-                </div>
-              </div>
-
-              {/* Card 4: Cancel */}
-              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card transition-colors">
-                <XCircle className="w-8 h-8 text-red-600 mb-3" />
-                <div className="text-sm text-red-700 font-medium mb-1">
-                  {statusToVietnamese("Cancel")}
-                </div>
-                <div className="text-3xl font-bold text-red-900">
-                  {stats.Cancel}
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {/* Summary Card */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-2xl p-6 border border-purple-100 dark:border-purple-700/50 gsap-summary">
-          <div className="flex items-center gap-4">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm dark:shadow-none">
-              <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            
-            {/* Text chính */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.total}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                {t("experimentLog.totalExperiments")}
-              </p>
-            </div>
-
-            {/* Stats nhỏ bên phải */}
-            <div className="ml-auto flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {stats.Done}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {stats.InProcess}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-filter">
-          <div className="flex items-center gap-3 mb-4">
-            <BarChart3 className="w-6 h-6 text-gray-600" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              {t("experimentLog.experimentLogList")}
-            </h2>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-500" />
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as ExperimentStatus | "all")
-                }
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+        <div className="detail-header">
+          <button
+            type="button"
+            className="back-button"
+            onClick={() => void navigate("/technician/experiment-log")}
+          >
+            &larr; {t("experimentLog.backToList")}
+          </button>
+          <h1 className="detail-title">
+            {t("experimentLog.detailTitle")}{" "}
+            <span className="experiment-name">- {log.name}</span>
+          </h1>
+          <div className="action-buttons">
+            {/* Start Button */}
+            {normalizeStatus(log.status) === "Created" && (
+              <button
+                type="button"
+                onClick={() => void handleStart()}
+                disabled={isUpdatingStatus}
+                className="btn-start"
               >
-                <option value="all">{t("experimentLog.allStatuses")}</option>
-                <option value="Created">{t("status.created")}</option>
-                <option value="InProcess">{t("status.inProgress")}</option>
-                <option value="Done">{t("status.completed")}</option>
-                <option value="Cancel">{t("status.cancelled")}</option>
-              </select>
-            </div>
-
-            <select
-              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
-            >
-              <option value="">{t("experimentLog.allMethods")}</option>
-              {methods.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
-              value={stageFilter}
-              onChange={(e) =>
-                setStageFilter(
-                  e.target.value as
-                    | "all"
-                    | "Giai đoạn 1"
-                    | "Giai đoạn 2"
-                    | "Giai đoạn 3"
-                    | "Giai đoạn 4"
-                )
-              }
-            >
-              <option value="all">{t("experimentLog.allStages")}</option>
-              <option value="Giai đoạn 1">Giai đoạn 1</option>
-              <option value="Giai đoạn 2">Giai đoạn 2</option>
-              <option value="Giai đoạn 3">Giai đoạn 3</option>
-              <option value="Giai đoạn 4">Giai đoạn 4</option>
-            </select>
-
-            <div className="flex-1 min-w-[300px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t("common.search") + "..."}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setStatusFilter("all");
-                setMethodFilter("");
-                setStageFilter("all");
-                setSearchTerm("");
-              }}
-              className="px-4 py-2.5 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors font-medium"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
-
-        {/* Experiments Table */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">Loading experiments...</div>
-          </div>
-        ) : error ? (
-          <div className="text-red-500 text-center py-12">{error}</div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden gsap-table-container">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.experimentName")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.method")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.tissueCultureBatch")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.dateCreated")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("common.status")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.sampleCount")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-12 text-center text-gray-500">
-                      {t("common.noData")}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <tr
-                      key={log.id}
-                      className="hover:bg-purple-50 cursor-pointer transition-colors gsap-table-row"
-                      onClick={() =>
-                        void navigate(`/technician/experiment-log/${log.id}`)
-                      }
-                    >
-                      <td className="px-6 py-4 font-medium text-gray-900">
-                        {log.name}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <FlaskConical className="w-4 h-4 text-purple-500" />
-                          {log.methodName}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {log.tissueCultureBatchName}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          {log.createdDate
-                            ? new Date(log.createdDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : ""}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(
-                            log.status
-                          )}`}
-                        >
-                          {getStatusIcon(log.status)}
-                          {statusToVietnamese(log.status)}
+                {isUpdatingStatus ? (t("common.processing") || "Đang xử lý...") : (t("common.start") || "Bắt đầu")}
+              </button>
+            )}
+            {/* Create Protocorm Button with Popover - only enabled when current stage has isSampleGenerated = true */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setIsProtocormPopoverOpen(!isProtocormPopoverOpen)}
+                disabled={!canCreateProtocorm()}
+                className={`btn-protocorm ${canCreateProtocorm() ? 'enabled' : 'disabled'}`}
+                title={
+                  canCreateProtocorm()
+                    ? (t("experimentLog.createProtocorm") || "Tạo Protocorm")
+                    : (t("experimentLog.protocormDisabledHint") || "Chỉ được tạo protocorm khi giai đoạn hiện tại cho phép")
+                }
+              >
+                <FaSeedling />
+                {t("experimentLog.createProtocorm") || "Tạo Protocorm"}
+              </button>
+              
+              {/* Popover for creating protocorm */}
+              {isProtocormPopoverOpen && (
+                <>
+                  {/* Invisible backdrop to close popover */}
+                  <div 
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                    onClick={() => {
+                      setIsProtocormPopoverOpen(false);
+                      setProtocormQuantity("");
+                    }} 
+                  />
+                  {/* Popover content */}
+                  <div className="protocorm-popover">
+                    {/* Header */}
+                    <div className="protocorm-popover-header">
+                      <div className="header-title">
+                        <FaSeedling className="header-icon" />
+                        <span className="header-text">
+                          {t("experimentLog.createProtocorm") || "Tạo Protocorm"}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-purple-100 px-3 py-1 rounded-full">
-                            <span className="font-semibold text-purple-700">
-                              {sampleCounts[log.id] ?? 0}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-500">samples</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-                <span className="text-sm text-gray-600">
-                  {t("common.showing")} {filteredLogs.length} {t("common.of")}{" "}
-                  {totalCount}
-                </span>
-                <div className="flex gap-2">
-                  {currentPage > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm transition-colors"
-                    >
-                      ←
-                    </button>
-                  )}
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (number) => (
+                      </div>
                       <button
-                        key={number}
                         type="button"
-                        onClick={() => setCurrentPage(number)}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                          currentPage === number
-                            ? "bg-purple-600 text-white"
-                            : "bg-white border border-gray-300 hover:bg-gray-50"
-                        }`}
+                        onClick={() => {
+                          setIsProtocormPopoverOpen(false);
+                          setProtocormQuantity("");
+                        }}
+                        className="protocorm-popover-close"
                       >
-                        {number}
+                        <FaTimes style={{ fontSize: '0.75rem' }} />
                       </button>
-                    )
-                  )}
-
-                  {currentPage < totalPages && (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm transition-colors"
-                    >
-                      →
-                    </button>
-                  )}
-                </div>
-              </div>
+                    </div>
+                    {/* Content */}
+                    <div className="protocorm-popover-content">
+                      {/* Info - compact */}
+                      <div className="protocorm-info">
+                        <span>{t("experimentLog.expectedSampleCountLabel") || "Mong muốn"}: <b>{log.expectedSampleCount ?? 0}</b></span>
+                        <span>{t("experimentLog.currentLabel") || "Hiện tại"}: <b>{samples.length}</b></span>
+                      </div>
+                      {/* Input */}
+                      <div className="protocorm-input-group">
+                        <input
+                          type="number"
+                          min="1"
+                          value={protocormQuantity}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === "" || /^[1-9]\d*$/.test(value)) {
+                              setProtocormQuantity(value);
+                            }
+                          }}
+                          placeholder={t("experimentLog.quantity") || "Số lượng"}
+                          className="protocorm-input"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handleCreateProtocorm()}
+                          disabled={(parseInt(protocormQuantity, 10) || 0) <= 0 || isCreatingProtocorm}
+                          className="protocorm-submit"
+                        >
+                          {isCreatingProtocorm ? (
+                            <span style={{ fontSize: '0.75rem' }}>{t("common.processing") || "..."}</span>
+                          ) : (
+                            <>
+                              <FaSeedling style={{ fontSize: '0.75rem' }} />
+                              <span>{t("common.create") || "Tạo"}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      {(parseInt(protocormQuantity, 10) || 0) > Math.max(0, (log.expectedSampleCount ?? 0) - samples.length) && 
+                       (log.expectedSampleCount ?? 0) - samples.length > 0 && (
+                        <p className="protocorm-warning">
+                          {t("experimentLog.exceedsExpected") || "Vượt quá số còn lại"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Cancel Button */}
+            {normalizeStatus(log.status) === "Created" && (
+              <button
+                type="button"
+                onClick={() => setIsCancelModalOpen(true)}
+                className="btn-cancel"
+              >
+                {t("common.cancel") || "Hủy thí nghiệm"}
+              </button>
             )}
           </div>
+        </div>
+
+        {/* Info Card */}
+        <section className="info-card">
+          <div className="info-grid">
+            <div className="info-column">
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.method")}:</span>{" "}
+                <span className="info-value">{methodName}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.tissueCultureBatch")}:</span>{" "}
+                {batchName}
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.labRoom")}:</span> {labRoomName}
+              </div>
+              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="info-label">{t("common.status")}:</span>{" "}
+                <span className={getStatusColor(log.status)}>
+                  {getStatusDisplay(log.status)}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.expectedSampleCountLabel")}:</span> {log.expectedSampleCount}
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.dateCreated")}:</span>{" "}
+                {formatDate(log.createdDate)}
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t("experimentLog.creator")}:</span> {creator}
+              </div>
+              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="info-label">{t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:</span>{" "}
+                <span className="current-stage">
+                  {currentStage}
+                </span>
+              </div>
+            </div>
+            <div className="info-column">
+              {log.notes && (
+                <div className="info-item">
+                  <span className="info-label">{t("common.description")}:</span> {log.notes}
+                </div>
+              )}
+              <div className="seedling-box">
+                <h3 className="seedling-title">
+                  {t("experimentLog.selectedSeedlings")}
+                </h3>
+                {renderSelectedSeedlings()}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Chemicals and Materials for current stage - mapped from method.methodStages */}
+        {(() => {
+          const currentMethodStage = log.method?.methodStages?.find(
+            (stage) => stage.order === log.currentStageOrder
+          );
+          const stageChemicals = currentMethodStage?.stageChemicals ?? [];
+          const stageMaterials = currentMethodStage?.stageMaterials ?? [];
+          
+          // Group materials by category
+          const materialsByCategory = stageMaterials.reduce((acc, sm) => {
+            const category = sm.material?.category ?? (t("common.other") ?? "Khác");
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(sm.material);
+            return acc;
+          }, {} as Record<string, Material[]>);
+
+          // Group chemicals by category
+          const chemicalsByCategory = stageChemicals.reduce((acc, sc) => {
+            const category = sc.chemical?.category ?? (t("common.other") ?? "Khác");
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(sc.chemical);
+            return acc;
+          }, {} as Record<string, Chemical[]>);
+
+          if (stageChemicals.length === 0 && stageMaterials.length === 0) {
+            return null;
+          }
+
+          return (
+            <section className="materials-card">
+              <h2 className="materials-title">
+                {t("experimentLog.chemicalsAndMaterials") || "Hóa chất và dụng cụ của giai đoạn hiện tại"}
+                <span className="stage-indicator">
+                  ({currentMethodStage?.stageDefinition?.name ?? currentStage})
+                </span>
+              </h2>
+              <div className="materials-grid">
+                {/* Chemicals section */}
+                <div>
+                  <h3 className="material-section-title">
+                    <span className="material-icon chemical-icon">🧪</span>
+                    {t("experimentLog.chemicalsUsed") || "Hóa chất sử dụng"}
+                    <span className="material-count">({stageChemicals.length})</span>
+                  </h3>
+                  {stageChemicals.length === 0 ? (
+                    <p className="no-materials">{t("experimentLog.noChemicals") || "Không có hóa chất"}</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {Object.entries(chemicalsByCategory).map(([category, chemicals]) => (
+                        <div key={category} className="material-category">
+                          <p className="category-name">{category}</p>
+                          <ul className="material-list">
+                            {chemicals.map((chem) => (
+                              <li key={chem.id} className="material-item">
+                                <span className="material-bullet chemical">•</span>
+                                <div>
+                                  <span className="material-name">{chem.name}</span>
+                                  {chem.concentrationUnit && (
+                                    <span className="material-unit">({chem.concentrationUnit})</span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Materials/Equipment section */}
+                <div>
+                  <h3 className="material-section-title">
+                    <span className="material-icon equipment-icon">🔧</span>
+                    {t("experimentLog.materialsUsed") || "Dụng cụ sử dụng"}
+                    <span className="material-count">({stageMaterials.length})</span>
+                  </h3>
+                  {stageMaterials.length === 0 ? (
+                    <p className="no-materials">{t("experimentLog.noMaterials") || "Không có dụng cụ"}</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {Object.entries(materialsByCategory).map(([category, materials]) => (
+                        <div key={category} className="material-category">
+                          <p className="category-name">{category}</p>
+                          <ul className="material-list">
+                            {materials.map((mat) => (
+                              <li key={mat.id} className="material-item">
+                                <span className="material-bullet equipment">•</span>
+                                <div>
+                                  <span className="material-name">{mat.name}</span>
+                                  {mat.unit && (
+                                    <span className="material-unit">({mat.unit})</span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* Stages Section - from method.methodStages */}
+        {log.method?.methodStages && log.method.methodStages.length > 0 && (
+          <section className="stages-card">
+            <h2 className="stages-title">
+              {t("experimentLog.stages") || "Các giai đoạn"}
+            </h2>
+            <div className="stages-grid">
+              {log.method.methodStages
+                .sort((a, b) => a.order - b.order)
+                .map((stage) => {
+                  const isCurrentStage = stage.order === log.currentStageOrder;
+                  return (
+                    <div
+                      key={stage.id}
+                      className={`stage-card ${isCurrentStage ? 'current' : 'normal'}`}
+                    >
+                      <div className="stage-header">
+                        <span className={`stage-number ${isCurrentStage ? 'current' : 'normal'}`}>
+                          {stage.order}
+                        </span>
+                        <span className="stage-name">
+                          {stage.stageDefinition?.name || t("experimentLog.notAvailable")}
+                        </span>
+                        {isCurrentStage && (
+                          <span className="current-badge">
+                            {t("experimentLog.currentStage") || "Hiện tại"}
+                          </span>
+                        )}
+                      </div>
+                      {stage.stageDefinition?.description && (
+                        <p className="stage-description">{stage.stageDefinition.description}</p>
+                      )}
+                      <div className="stage-tags">
+                        {stage.durationsDays && (
+                          <span className="stage-tag">
+                            {t("experimentLog.duration") || "Thời gian"}: {stage.durationsDays} {t("common.days") || "ngày"}
+                          </span>
+                        )}
+                        {/* isSampleGenerated indicator */}
+                        <span className={`stage-tag sample-generation ${stage.isSampleGenerated ? 'enabled' : 'disabled'}`}>
+                          <FaSeedling style={{ fontSize: '10px' }} />
+                          {stage.isSampleGenerated 
+                            ? (t("experimentLog.canGenerateSample") || "Sinh chồi")
+                            : (t("experimentLog.noSampleGeneration") || "Không sinh chồi")
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </section>
         )}
+
+        {/* Sample list section */}
+        <section className="samples-card">
+          <h2 className="samples-title">
+            {t("experimentLog.sampleList") || "Danh sách mẫu vật"}
+          </h2>
+          {samples.length === 0 ? (
+            <div className="samples-empty">
+              {t("experimentLog.noSamples") || "Chưa có mẫu vật nào"}
+            </div>
+          ) : (
+            <div className="samples-grid">
+              {samples.map((sample) => (
+                <div
+                  key={sample.id}
+                  className="sample-card"
+                >
+                  <div className="sample-name">{sample.name}</div>
+                  {sample.description && (
+                    <div className="sample-description">
+                      {sample.description}
+                    </div>
+                  )}
+                  <div className="sample-id">ID: {sample.id}</div>
+                  {sample.dob && (
+                    <div className="sample-date">
+                      {t("experimentLog.dateCreated") || "Ngày tạo"}: {formatDate(sample.dob)}
+                    </div>
+                  )}
+                  <div className="sample-status">
+                    <span className={getStatusColor(sample.status ?? sample.statusEnum)}>
+                      {getStatusDisplay(sample.status ?? sample.statusEnum)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
 };
 
-export default TechnicianExperimentLog;
+export default TechnicianExperimentLogDetail;

@@ -66,7 +66,11 @@
     "saving": "Đang lưu...",
     "deleting": "Đang xóa...",
     "details": "Chi tiết",
-    "category": "Danh mục"
+    "category": "Danh mục",
+    "processing": "Đang xử lý...",
+    "start": "Bắt đầu",
+    "create": "Tạo",
+    "days": "ngày"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -380,7 +384,27 @@
     "noSamples": "Không có mẫu cây nào.",
     "backToList": "Trở về",
     "notAvailable": "Không xác định",
-    "days": "ngày"
+    "days": "ngày",
+    "cancelExperiment": "Hủy thí nghiệm",
+    "cancelReason": "Lý do hủy thí nghiệm",
+    "enterCancelReason": "Nhập lý do hủy thí nghiệm...",
+    "createProtocorm": "Tạo Protocorm",
+    "protocormDisabledHint": "Chỉ được tạo protocorm khi giai đoạn hiện tại cho phép",
+    "expectedSampleCountLabel": "Mong muốn",
+    "currentLabel": "Hiện tại",
+    "waitingForChangeStage": "Chờ thay đổi giai đoạn",
+    "chemicalsAndMaterials": "Hóa chất và dụng cụ của giai đoạn hiện tại",
+    "chemicalsUsed": "Hóa chất sử dụng",
+    "noChemicals": "Không có hóa chất",
+    "materialsUsed": "Dụng cụ sử dụng",
+    "noMaterials": "Không có dụng cụ",
+    "stages": "Các giai đoạn",
+    "canGenerateSample": "Sinh chồi",
+    "noSampleGeneration": "Không sinh chồi",
+    "duration": "Thời gian",
+    "currentStage": "Giai đoạn hiện tại",
+    "exceedsExpected": "Vượt quá số còn lại",
+    "parent": "Cây mẹ"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

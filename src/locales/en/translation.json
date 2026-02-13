@@ -66,7 +66,11 @@
     "saving": "Saving...",
     "deleting": "Deleting...",
     "details": "Details",
-    "category": "Category"
+    "category": "Category",
+    "processing": "Processing...",
+    "start": "Start",
+    "create": "Create",
+    "days": "days"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -380,7 +384,27 @@
     "noSamples": "No samples available.",
     "backToList": "Back",
     "notAvailable": "Not available",
-    "days": "days"
+    "days": "days",
+    "cancelExperiment": "Cancel Experiment",
+    "cancelReason": "Cancel Reason",
+    "enterCancelReason": "Enter cancel reason...",
+    "createProtocorm": "Create Protocorm",
+    "protocormDisabledHint": "Protocorms can only be created when the current stage allows",
+    "expectedSampleCountLabel": "Expected Sample Count",
+    "currentLabel": "Current",
+    "waitingForChangeStage": "Waiting for Stage Change",
+    "chemicalsAndMaterials": "Chemicals and Materials of Current Stage",
+    "chemicalsUsed": "Chemicals Used",
+    "noChemicals": "No chemicals",
+    "materialsUsed": "Materials Used",
+    "noMaterials": "No materials",
+    "stages": "Stages",
+    "canGenerateSample": "Sample Generation",
+    "noSampleGeneration": "No Sample Generation",
+    "duration": "Duration",
+    "currentStage": "Current Stage",
+    "exceedsExpected": "Exceeds expected quantity",
+    "parent": "Parent"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
