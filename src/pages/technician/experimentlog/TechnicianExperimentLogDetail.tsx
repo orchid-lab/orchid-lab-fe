@@ -26,16 +26,19 @@
 // =============================================================================
 // IMPORTS
 // =============================================================================
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import { FaTimes, FaSeedling } from "react-icons/fa";
 import axiosInstance from "../../../api/axiosInstance";
 import type { User } from "../../../types/Auth";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./technicianExperimentLogDetail.css";
 
 Chart.register(ArcElement, Tooltip, Legend);
+gsap.registerPlugin(ScrollTrigger);
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -179,6 +182,26 @@ interface CancelModalProps {
 const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, isLoading }) => {
   const { t } = useTranslation();
   const [reason, setReason] = useState("");
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (isOpen && modalRef.current) {
+      gsap.fromTo(modalRef.current,
+        {
+          scale: 0.8,
+          opacity: 0,
+          y: -20
+        },
+        {
+          scale: 1,
+          opacity: 1,
+          y: 0,
+          duration: 0.3,
+          ease: "back.out(1.5)"
+        }
+      );
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -198,7 +221,7 @@ const CancelModal: React.FC<CancelModalProps> = ({ isOpen, onClose, onConfirm, i
       />
       {/* Modal */}
       <div className="modal-container">
-        <div className="modal-content">
+        <div ref={modalRef} className="modal-content">
           {/* Header */}
           <div className="modal-header">
             <h3 className="modal-title">
@@ -266,6 +289,13 @@ const TechnicianExperimentLogDetail = () => {
   const [isProtocormPopoverOpen, setIsProtocormPopoverOpen] = useState(false);
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
   const [protocormQuantity, setProtocormQuantity] = useState<string>("");
+
+  // Animation refs
+  const headerRef = useRef<HTMLDivElement>(null);
+  const infoCardRef = useRef<HTMLElement>(null);
+  const materialsCardRef = useRef<HTMLElement>(null);
+  const stagesCardRef = useRef<HTMLElement>(null);
+  const samplesCardRef = useRef<HTMLElement>(null);
 
   const samples = log?.samples ?? [];
 
@@ -384,6 +414,108 @@ const TechnicianExperimentLogDetail = () => {
         .catch(() => setCreator(t("experimentLog.notAvailable")));
     }
   }, [log, t]);
+
+  // GSAP Animations - Chạy sau khi component đã render và có data
+  useLayoutEffect(() => {
+    if (!log || loading) return;
+
+    const ctx = gsap.context(() => {
+      // Animation cho header - slide in from top
+      gsap.from(headerRef.current, {
+        y: -50,
+        opacity: 0,
+        duration: 0.6,
+        ease: "power3.out"
+      });
+
+      // Animation cho info card - fade in và scale up
+      gsap.from(infoCardRef.current, {
+        scale: 0.95,
+        opacity: 0,
+        duration: 0.6,
+        delay: 0.2,
+        ease: "power2.out"
+      });
+
+      // Animation cho materials card - slide from left
+      if (materialsCardRef.current) {
+        gsap.from(materialsCardRef.current, {
+          x: -50,
+          opacity: 0,
+          duration: 0.6,
+          delay: 0.3,
+          ease: "power2.out"
+        });
+      }
+
+      // Animation cho stages card - slide from right
+      if (stagesCardRef.current) {
+        gsap.from(stagesCardRef.current, {
+          x: 50,
+          opacity: 0,
+          duration: 0.6,
+          delay: 0.4,
+          ease: "power2.out"
+        });
+
+        // Animation cho từng stage card
+        const stageCards = stagesCardRef.current.querySelectorAll('.stage-card');
+        gsap.from(stageCards, {
+          y: 30,
+          opacity: 0,
+          duration: 0.4,
+          stagger: 0.1,
+          delay: 0.6,
+          ease: "back.out(1.2)"
+        });
+      }
+
+      // Animation cho samples card - fade in from bottom
+      if (samplesCardRef.current) {
+        gsap.from(samplesCardRef.current, {
+          y: 50,
+          opacity: 0,
+          duration: 0.6,
+          delay: 0.5,
+          ease: "power2.out"
+        });
+
+        // Animation cho từng sample card
+        const sampleCards = samplesCardRef.current.querySelectorAll('.sample-card');
+        if (sampleCards.length > 0) {
+          gsap.from(sampleCards, {
+            scale: 0.9,
+            opacity: 0,
+            duration: 0.4,
+            stagger: 0.08,
+            delay: 0.7,
+            ease: "back.out(1.5)"
+          });
+        }
+      }
+
+      // Hover animations cho cards
+      const allCards = document.querySelectorAll('.stage-card, .sample-card');
+      allCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+          gsap.to(card, {
+            y: -5,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          gsap.to(card, {
+            y: 0,
+            duration: 0.3,
+            ease: "power2.out"
+          });
+        });
+      });
+    });
+
+    return () => ctx.revert(); // Cleanup animations
+  }, [log, loading]);
 
   if (loading)
     return (
@@ -560,7 +692,7 @@ const TechnicianExperimentLogDetail = () => {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Header */}
-        <div className="detail-header">
+        <div ref={headerRef} className="detail-header">
           <button
             type="button"
             className="back-button"
@@ -697,7 +829,7 @@ const TechnicianExperimentLogDetail = () => {
         </div>
 
         {/* Info Card */}
-        <section className="info-card">
+        <section ref={infoCardRef} className="info-card">
           <div className="info-grid">
             <div className="info-column">
               <div className="info-item">
@@ -779,7 +911,7 @@ const TechnicianExperimentLogDetail = () => {
           }
 
           return (
-            <section className="materials-card">
+            <section ref={materialsCardRef} className="materials-card">
               <h2 className="materials-title">
                 {t("experimentLog.chemicalsAndMaterials") || "Hóa chất và dụng cụ của giai đoạn hiện tại"}
                 <span className="stage-indicator">
@@ -859,7 +991,7 @@ const TechnicianExperimentLogDetail = () => {
 
         {/* Stages Section - from method.methodStages */}
         {log.method?.methodStages && log.method.methodStages.length > 0 && (
-          <section className="stages-card">
+          <section ref={stagesCardRef} className="stages-card">
             <h2 className="stages-title">
               {t("experimentLog.stages") || "Các giai đoạn"}
             </h2>
@@ -912,7 +1044,7 @@ const TechnicianExperimentLogDetail = () => {
         )}
 
         {/* Sample list section */}
-        <section className="samples-card">
+        <section ref={samplesCardRef} className="samples-card">
           <h2 className="samples-title">
             {t("experimentLog.sampleList") || "Danh sách mẫu vật"}
           </h2>
