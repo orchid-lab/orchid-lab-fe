@@ -25,14 +25,14 @@ interface Task {
   id: string;
   name: string;
   description?: string;
-  stageId?: string;
+  stageId?: number;
+  taskTargetType?: string;
+  targetId?: string;
   researcherId: string;
-  researcher: string;
   technicianId: string;
-  experimentLogName?: string;
-  end_date: string;
-  create_at: string;
   status: StatusType;
+  expectedEndDate: string;
+  targetName?: string; // Added for display
 }
 
 type StatusType =
@@ -44,21 +44,18 @@ type StatusType =
   | "Cancel";
 
 interface ApiTaskResponse {
-  value?: {
-    totalCount?: number;
-    pageCount?: number;
-    pageSize?: number;
-    pageNumber?: number;
-    data?: Task[];
-  };
+  totalCount?: number;
+  pageCount?: number;
+  pageSize?: number;
+  pageNumber?: number;
+  data?: Task[];
 }
 
 function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   return (
     typeof obj === "object" &&
     obj !== null &&
-    "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object"
+    "data" in obj
   );
 }
 
@@ -125,6 +122,32 @@ export default function ListTask() {
 
   const tasksPerPage = 20;
 
+  // Helper function to fetch target name
+  const fetchTargetName = async (
+    targetType: string | undefined,
+    targetId: string | undefined
+  ): Promise<string> => {
+    if (!targetId || !targetType) return "-";
+
+    try {
+      let endpoint = "";
+      if (targetType === "ExperimentLog") {
+        endpoint = `/api/experiment-logs/${targetId}`;
+      } else if (targetType === "Sample") {
+        endpoint = `/api/sample/${targetId}`;
+      }
+
+      if (endpoint) {
+        const response = await axiosInstance.get(endpoint);
+        const data = response.data?.value ?? response.data;
+        return data?.name || "Không xác định";
+      }
+    } catch (error) {
+      console.error("Error fetching target:", error);
+    }
+    return "Không xác định";
+  };
+
   useEffect(() => {
     const loadSummaryData = async () => {
       try {
@@ -135,11 +158,13 @@ export default function ListTask() {
         const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
 
         if (isApiTaskResponse(response.data)) {
-          const allTasks = Array.isArray(response.data.value?.data)
-            ? response.data.value.data
+          const allTasks = Array.isArray(response.data.data)
+            ? response.data.data
             : [];
 
-          const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
+          // Tạm thời bỏ filter để test
+          // const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
+          const myTasks = [...allTasks]; // Hiện tất cả tasks để test
 
           const counts: Record<StatusType, number> = {
             Assigned: 0,
@@ -158,7 +183,7 @@ export default function ListTask() {
           today.setHours(0, 0, 0, 0);
 
           const todayTasks = myTasks.filter((task) => {
-            const taskEndDate = new Date(task.end_date);
+            const taskEndDate = new Date(task.expectedEndDate);
             taskEndDate.setHours(0, 0, 0, 0);
             return taskEndDate.getTime() === today.getTime();
           });
@@ -189,6 +214,7 @@ export default function ListTask() {
     const params = new URLSearchParams();
     params.append("PageNumber", "1");
     params.append("PageSize", "1000");
+    params.append("TechnicianId", user?.id ?? "");  
 
     if (searchTerm.trim()) {
       params.append("SearchTerm", searchTerm.trim());
@@ -200,23 +226,30 @@ export default function ListTask() {
   useEffect(() => {
     const timeoutId = setTimeout(
       () => {
-        setLoading(true);
-        setError(null);
+        const fetchTasks = async () => {
+          setLoading(true);
+          setError(null);
 
-        axiosInstance
-          .get(`/api/tasks?${buildApiQuery}`)
-          .then((res) => {
+          try {
+            const res = await axiosInstance.get(`/api/tasks?${buildApiQuery}`);
+            
             if (isApiTaskResponse(res.data)) {
-              const data = Array.isArray(res.data.value?.data)
-                ? res.data.value.data
+              const data = Array.isArray(res.data.data)
+                ? res.data.data
                 : [];
+              
+              console.log("Raw data from API:", data);
 
-              let filteredData = data.filter((task) => task.technicianId === user?.id);
+              // Tạm thời comment filter để test - bỏ comment nếu cần filter theo technicianId
+              // let filteredData = data.filter((task) => task.technicianId === user?.id);
+              let filteredData = [...data]; // Hiện tất cả tasks để test
+              
+              console.log("Filtered data (my tasks):", filteredData);
 
               filteredData = [...filteredData].sort((a, b) => {
-                const dateA = new Date(a.create_at);
-                const dateB = new Date(b.create_at);
-                return dateB.getTime() - dateA.getTime();
+                const dateA = new Date(a.expectedEndDate);
+                const dateB = new Date(b.expectedEndDate);
+                return dateA.getTime() - dateB.getTime();
               });
 
               if (statusFilter !== "All") {
@@ -228,7 +261,7 @@ export default function ListTask() {
                 today.setHours(0, 0, 0, 0);
 
                 filteredData = filteredData.filter((task) => {
-                  const taskEndDate = new Date(task.end_date);
+                  const taskEndDate = new Date(task.expectedEndDate);
                   taskEndDate.setHours(0, 0, 0, 0);
                   return taskEndDate.getTime() === today.getTime();
                 });
@@ -238,7 +271,7 @@ export default function ListTask() {
                 filteredData = filteredData.filter(
                   (task) =>
                     task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    task.researcher.toLowerCase().includes(searchTerm.toLowerCase())
+                    (task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
                 );
               }
 
@@ -246,17 +279,29 @@ export default function ListTask() {
               const endIndex = startIndex + tasksPerPage;
               const paginatedData = filteredData.slice(startIndex, endIndex);
 
-              setTasks(paginatedData);
+              // Fetch target names for each task
+              const tasksWithTargetNames = await Promise.all(
+                paginatedData.map(async (task) => {
+                  const targetName = await fetchTargetName(
+                    task.taskTargetType,
+                    task.targetId
+                  );
+                  return { ...task, targetName };
+                })
+              );
+
+              setTasks(tasksWithTargetNames);
               setTotalCount(filteredData.length);
             }
-          })
-          .catch(() => {
+          } catch {
             setError("Unable to load task list");
             enqueueSnackbar("Error loading data", { variant: "error" });
-          })
-          .finally(() => {
+          } finally {
             setLoading(false);
-          });
+          }
+        };
+
+        void fetchTasks();
       },
       searchTerm ? 300 : 0
     );
@@ -526,10 +571,10 @@ export default function ListTask() {
                     Task Name
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Created By
+                    Target Type
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Notes
+                    Target Name
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     Deadline
@@ -558,13 +603,15 @@ export default function ListTask() {
                       <td className="px-6 py-4 font-medium text-gray-900">
                         {task.name}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{task.researcher}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {task.taskTargetType ?? "-"}
+                      </td>
                       <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                        {task.description ?? task.experimentLogName ?? "No notes"}
+                        {task.targetName ?? "-"}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {task.end_date
-                          ? new Date(task.end_date).toLocaleDateString("en-US", {
+                        {task.expectedEndDate
+                          ? new Date(task.expectedEndDate).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
