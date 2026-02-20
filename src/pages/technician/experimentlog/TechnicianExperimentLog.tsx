@@ -51,7 +51,6 @@ interface Sample {
 interface ExperimentLogEntry {
   id: string;
   name: string;
-  methodName: string;
   description?: string;
   tissueCultureBatchName?: string;
   batchName?: string;
@@ -62,6 +61,7 @@ interface ExperimentLogEntry {
   currentStageName?: string;
   currentStageOrder?: number;
   expectedSampleCount?: number;
+  methodName: string;
 }
 
 interface ExperimentLogApiResponse {
@@ -720,14 +720,17 @@ const TechnicianExperimentLog = () => {
                     {t("common.status")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    {t("experimentLog.sampleCount")}
+                    {t("experimentLog.expectedSampleCount")}
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Số lượng mẫu hiện tại
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-12 text-center text-gray-500">
+                    <td colSpan={7} className="p-12 text-center text-gray-500">
                       {t("common.noData")}
                     </td>
                   </tr>
@@ -777,6 +780,18 @@ const TechnicianExperimentLog = () => {
                           {statusToVietnamese(log.status)}
                         </span>
                       </td>
+                      {/* Expected Sample Count */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-orange-100 px-3 py-1 rounded-full">
+                            <span className="font-semibold text-orange-700">
+                              {log.expectedSampleCount ?? 0}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">samples</span>
+                        </div>
+                      </td>
+                      {/* Current Sample Count */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="bg-purple-100 px-3 py-1 rounded-full">
