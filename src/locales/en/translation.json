@@ -336,6 +336,7 @@
     "inProgress": "In Progress",
     "completed": "Completed",
     "cancelled": "Cancelled",
+    "waitingForStageChange": "Waiting for stage change",
     "manageAndTrack": "Manage and track your experiments",
     "allStatuses": "All statuses",
     "method": "Method",

@@ -336,6 +336,7 @@
     "inProgress": "Đang thực hiện",
     "completed": "Hoàn thành",
     "cancelled": "Đã hủy",
+    "waitingForStageChange": "Chờ thay đổi giai đoạn",
     "manageAndTrack": "Quản lý và theo dõi các thí nghiệm của bạn",
     "allStatuses": "Tất cả trạng thái",
     "method": "Phương pháp",
