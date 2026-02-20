@@ -8,6 +8,7 @@ import "./ExperimentLogDetail.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import type { User } from "../../../types/Auth";
+import { FaSeedling } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import gsap from "gsap";
@@ -180,12 +181,8 @@ const ExperimentLogDetail = () => {
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       const logData = res.data.value ?? res.data;
       setLog(logData as ExperimentLogDetailType);
-    } catch (err: any) {
-      setChangeStageError(
-        err?.response?.data?.message ||
-          err?.message ||
-          t("common.errorOccurred"),
-      );
+    } catch (e) {
+      console.error(e);
     } finally {
       setChangingStage(false);
     }
@@ -601,7 +598,9 @@ const ExperimentLogDetail = () => {
                 className="btn-start"
                 style={{ minWidth: 120, marginLeft: 8 }}
                 onClick={handleChangeStage}
-                disabled={changingStage}
+                disabled={
+                  changingStage || normalizeStatus(log.status) === "InProgress"
+                }
               >
                 {changingStage
                   ? t("experimentLog.changingStage") || "Đang chuyển..."
@@ -632,7 +631,7 @@ const ExperimentLogDetail = () => {
       </section>
       <section className="materials-card" ref={materialsCardRef}>
         <h2 className="materials-title">
-          {t("experimentLog.chemicalsAndMaterialsForCurrentStage") ||
+          {t("experimentLog.chemicalsAndMaterials") ||
             "Hóa chất và dụng cụ của giai đoạn hiện tại"}
           <span className="stage-indicator">
             ({currentMethodStage?.stageDefinition?.name ?? currentStage})
@@ -727,60 +726,64 @@ const ExperimentLogDetail = () => {
           </div>
         </div>
       </section>
+      {/* Stages Section - from method.methodStages */}
       {log.method?.methodStages && log.method.methodStages.length > 0 && (
-        <section className="stages-card" ref={stagesCardRef}>
-          <div className="stages-title">
+        <section ref={stagesCardRef} className="stages-card">
+          <h2 className="stages-title">
             {t("experimentLog.stages") || "Các giai đoạn"}
-          </div>
+          </h2>
           <div className="stages-grid">
-            {log.method.methodStages.map((stage, idx) => (
-              <div
-                key={stage.id || idx}
-                className={
-                  "stage-card " +
-                  (stage.order === log.currentStageOrder ? "current" : "normal")
-                }
-              >
-                <div className="stage-header">
+            {log.method.methodStages
+              .sort((a, b) => a.order - b.order)
+              .map((stage) => {
+                const isCurrentStage = stage.order === log.currentStageOrder;
+                return (
                   <div
-                    className={
-                      "stage-number " +
-                      (stage.order === log.currentStageOrder
-                        ? "current"
-                        : "normal")
-                    }
+                    key={stage.id}
+                    className={`stage-card ${isCurrentStage ? "current" : "normal"}`}
                   >
-                    {stage.order}
+                    <div className="stage-header">
+                      <span
+                        className={`stage-number ${isCurrentStage ? "current" : "normal"}`}
+                      >
+                        {stage.order}
+                      </span>
+                      <span className="stage-name">
+                        {stage.stageDefinition?.name ||
+                          t("experimentLog.notAvailable")}
+                      </span>
+                      {isCurrentStage && (
+                        <span className="current-badge">
+                          {t("experimentLog.currentStage") || "Hiện tại"}
+                        </span>
+                      )}
+                    </div>
+                    {stage.stageDefinition?.description && (
+                      <p className="stage-description">
+                        {stage.stageDefinition.description}
+                      </p>
+                    )}
+                    <div className="stage-tags">
+                      {stage.durationsDays && (
+                        <span className="stage-tag">
+                          {t("experimentLog.duration") || "Thời gian"}:{" "}
+                          {stage.durationsDays} {t("common.days") || "ngày"}
+                        </span>
+                      )}
+                      {/* isSampleGenerated indicator */}
+                      <span
+                        className={`stage-tag sample-generation ${stage.isSampleGenerated ? "enabled" : "disabled"}`}
+                      >
+                        <FaSeedling style={{ fontSize: "10px" }} />
+                        {stage.isSampleGenerated
+                          ? t("experimentLog.canGenerateSample") || "Sinh chồi"
+                          : t("experimentLog.noSampleGeneration") ||
+                            "Không sinh chồi"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="stage-name">
-                    {stage.stageDefinition?.name}
-                  </div>
-                  {stage.order === log.currentStageOrder && (
-                    <span className="current-badge">
-                      {t("experimentLog.currentStage")}
-                    </span>
-                  )}
-                </div>
-                <div className="stage-description">
-                  {stage.stageDefinition?.description}
-                </div>
-                <div className="stage-tags">
-                  <span
-                    className={
-                      "stage-tag sample-generation " +
-                      (stage.isSampleGenerated ? "enabled" : "disabled")
-                    }
-                  >
-                    {stage.isSampleGenerated
-                      ? t("experimentLog.canCreateProtocorm")
-                      : t("experimentLog.cannotCreateProtocorm")}
-                  </span>
-                </div>
-                <div className="stage-tag">
-                  {t("experimentLog.durationDays")}: {stage.durationsDays}
-                </div>
-              </div>
-            ))}
+                );
+              })}
           </div>
         </section>
       )}
