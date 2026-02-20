@@ -336,6 +336,7 @@
     "inProgress": "In Progress",
     "completed": "Completed",
     "cancelled": "Cancelled",
+    "waitingForStageChange": "Waiting for stage change",
     "manageAndTrack": "Manage and track your experiments",
     "allStatuses": "All statuses",
     "method": "Method",
@@ -404,7 +405,8 @@
     "duration": "Duration",
     "currentStage": "Current Stage",
     "exceedsExpected": "Exceeds expected quantity",
-    "parent": "Parent"
+    "parent": "Parent",
+    "changingStage": "Changing stage..."
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
