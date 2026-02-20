@@ -1,0 +1,1040 @@
+/* =============================================================================
+   RESEARCHER EXPERIMENT LOG DETAIL PAGE STYLES
+============================================================================= */
+
+#experimentlog-detail {
+  margin-left: 260px;
+  margin-top: 48px;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  padding: 1.5rem;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+#experimentlog-detail .stage-card,
+#experimentlog-detail .sample-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+body[data-sidebar-collapsed="true"] #experimentlog-detail {
+  margin-left: 72px;
+}
+
+:root[data-theme='dark'] #experimentlog-detail {
+  background: linear-gradient(to bottom right, #1f2937, #111827);
+}
+
+#experimentlog-detail .detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+#experimentlog-detail .back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #166534;
+  color: #166534;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+#experimentlog-detail .back-button:hover {
+  background-color: #166534;
+  color: white;
+  transform: translateX(-2px);
+}
+
+:root[data-theme='dark'] #experimentlog-detail .back-button {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .back-button:hover {
+  background-color: #22c55e;
+  color: #111827;
+}
+
+#experimentlog-detail .detail-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .detail-title {
+  color: #86efac;
+}
+
+#experimentlog-detail .detail-title .experiment-name {
+  font-weight: normal;
+  color: #374151;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .detail-title .experiment-name {
+  color: #d1d5db;
+}
+
+#experimentlog-detail .action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+#experimentlog-detail .btn-start {
+  padding: 0.5rem 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 120px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#experimentlog-detail .btn-start:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+#experimentlog-detail .btn-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#experimentlog-detail .btn-protocorm {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#experimentlog-detail .btn-protocorm.enabled {
+  background-color: #059669;
+  color: white;
+  cursor: pointer;
+}
+
+#experimentlog-detail .btn-protocorm.enabled:hover {
+  background-color: #047857;
+  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);
+  transform: translateY(-2px);
+}
+
+#experimentlog-detail .btn-protocorm.disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .btn-protocorm.disabled {
+  background-color: #374151;
+  color: #6b7280;
+}
+
+#experimentlog-detail .btn-cancel {
+  padding: 0.5rem 1rem;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 120px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#experimentlog-detail .btn-cancel:hover {
+  background-color: #fecaca;
+  box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2);
+}
+
+:root[data-theme='dark'] #experimentlog-detail .btn-cancel {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border-color: #dc2626;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .btn-cancel:hover {
+  background-color: rgba(220, 38, 38, 0.3);
+}
+
+#experimentlog-detail .protocorm-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 50;
+  width: 360px;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-popover {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+}
+
+#experimentlog-detail .protocorm-popover-header {
+  padding: 0.75rem;
+  background: linear-gradient(to right, #d1fae5, #a7f3d0);
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-popover-header {
+  background: linear-gradient(to right, rgba(6, 95, 70, 0.4), rgba(5, 150, 105, 0.3));
+  border-bottom-color: #374151;
+}
+
+#experimentlog-detail .protocorm-popover-header .header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+#experimentlog-detail .protocorm-popover-header .header-icon {
+  color: #059669;
+  font-size: 0.875rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-popover-header .header-icon {
+  color: #34d399;
+}
+
+#experimentlog-detail .protocorm-popover-header .header-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-popover-header .header-text {
+  color: #f9fafb;
+}
+
+#experimentlog-detail .protocorm-popover-close {
+  padding: 0.25rem;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#experimentlog-detail .protocorm-popover-close:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-popover-close:hover {
+  color: #d1d5db;
+  background-color: #374151;
+}
+
+#experimentlog-detail .protocorm-popover-content {
+  padding: 0.75rem;
+}
+
+#experimentlog-detail .protocorm-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-info {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .protocorm-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#experimentlog-detail .protocorm-input {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: white;
+  color: #111827;
+}
+
+#experimentlog-detail .protocorm-input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-input {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-input:focus {
+  border-color: #34d399;
+  box-shadow: 0 0 0 1px #34d399;
+}
+
+#experimentlog-detail .protocorm-submit {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  color: white;
+  background-color: #059669;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#experimentlog-detail .protocorm-submit:hover:not(:disabled) {
+  background-color: #047857;
+}
+
+#experimentlog-detail .protocorm-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#experimentlog-detail .protocorm-warning {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #d97706;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .protocorm-warning {
+  color: #fbbf24;
+}
+
+#experimentlog-detail .info-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .info-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#experimentlog-detail .info-grid {
+ display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  #experimentlog-detail .info-grid {
+    flex-direction: row;
+  }
+}
+
+#experimentlog-detail .info-column {
+ flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+#experimentlog-detail .info-item {
+  font-size: 1rem;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .info-item {
+  color: #f9fafb;
+}
+
+#experimentlog-detail .info-label {
+  font-weight: bold;
+}
+
+#experimentlog-detail .info-value {
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .info-value {
+  color: #86efac;
+}
+
+#experimentlog-detail .status-badge {
+ display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#experimentlog-detail .status-badge.created {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+#experimentlog-detail .status-badge.in-progress {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+#experimentlog-detail .status-badge.waiting {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+#experimentlog-detail .status-badge.completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+#experimentlog-detail .status-badge.destroyed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .status-badge.created {
+ background-color: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .status-badge.in-progress {
+  background-color: rgba(234, 179, 8, 0.3);
+  color: #fde047;
+}
+:root[data-theme='dark'] #experimentlog-detail .status-badge.waiting {
+  background-color: rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .status-badge.completed {
+  background-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .status-badge.destroyed {
+  background-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+#experimentlog-detail .current-stage {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .current-stage {
+  color: #38bdf8;
+}
+
+#experimentlog-detail .seedling-box {
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .seedling-box {
+  background: #374151;
+}
+
+#experimentlog-detail .seedling-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .seedling-title {
+  color: #86efac;
+}
+
+#experimentlog-detail .seedling-content {
+  color: #166534;
+  font-size: 1rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .seedling-content {
+    color: #86efac;
+}
+
+#experimentlog-detail .materials-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .materials-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#experimentlog-detail .materials-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .materials-title {
+ color: #86efac;
+}
+
+#experimentlog-detail .stage-indicator {
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: #0284c7;
+  margin-left: 0.5rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-indicator {
+  color: #38bdf8;
+}
+
+#experimentlog-detail .materials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  #experimentlog-detail .materials-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+#experimentlog-detail .material-section-title {
+  font-weight: 600;
+  color: #166534;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .material-section-title {
+  color: #86efac;
+}
+
+#experimentlog-detail .material-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+#experimentlog-detail .chemical-icon {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+#experimentlog-detail .equipment-icon {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .chemical-icon {
+  background-color: rgba(126, 34, 206, 0.3);
+  color: #d8b4fe;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .equipment-icon {
+  background-color: rgba(217, 119, 6, 0.3);
+  color: #fbbf24;
+}
+
+#experimentlog-detail .material-count {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .material-count {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .material-category {
+  margin-bottom: 0.75rem;
+}
+
+#experimentlog-detail .category-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .category-name {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .material-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#experimentlog-detail .material-item {
+  font-size: 0.875rem;
+  color: #111827;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .material-item {
+  color: #f9fafb;
+}
+
+#experimentlog-detail .material-bullet {
+  margin-top: 0.25rem;
+}
+
+#experimentlog-detail .material-bullet.chemical {
+  color: #a855f7;
+}
+
+#experimentlog-detail .material-bullet.equipment {
+  color: #f59e0b;
+}
+
+#experimentlog-detail .material-name {
+  font-weight: 500;
+}
+
+#experimentlog-detail .material-unit {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .material-unit {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .no-materials {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .no-materials {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .stages-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stages-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#experimentlog-detail .stages-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stages-title {
+  color: #86efac;
+}
+
+#experimentlog-detail .stages-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #experimentlog-detail .stages-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #experimentlog-detail .stages-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+#experimentlog-detail .stage-card {
+  border: 1px solid;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+#experimentlog-detail .stage-card.current {
+  background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px #60a5fa;
+}
+
+#experimentlog-detail .stage-card.normal {
+  background: linear-gradient(to bottom right, #f0fdf4, #dcfce7);
+  border-color: #bbf7d0;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-card.current {
+  background: linear-gradient(to bottom right, rgba(30, 64, 175, 0.2), rgba(37, 99, 235, 0.15));
+  border-color: #3b82f6;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-card.normal {
+  background: linear-gradient(to bottom right, rgba(6, 95, 70, 0.2), rgba(5, 150, 105, 0.15));
+  border-color: #22c55e;
+}
+
+#experimentlog-detail .stage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#experimentlog-detail .stage-number {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+#experimentlog-detail .stage-number.current {
+  background-color: #2563eb;
+  color: white;
+}
+
+#experimentlog-detail .stage-number.normal {
+  background-color: #16a34a;
+  color: white;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-number.current {
+  background-color: #3b82f6;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-number.normal {
+  background-color: #22c55e;
+}
+
+#experimentlog-detail .stage-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-name {
+  color: #f9fafb;
+}
+
+#experimentlog-detail .current-badge {
+  margin-left: auto;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-radius: 9999px;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .current-badge {
+  background-color: rgba(37, 99, 235, 0.3);
+  color: #93c5fd;
+}
+
+#experimentlog-detail .stage-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-description {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .stage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+#experimentlog-detail .stage-tag {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-tag {
+  background-color: #374151;
+  color: #9ca3af;
+}
+
+#experimentlog-detail .stage-tag.sample-generation {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#experimentlog-detail .stage-tag.sample-generation.enabled {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+#experimentlog-detail .stage-tag.sample-generation.disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-tag.sample-generation.enabled {
+  background-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .stage-tag.sample-generation.disabled {
+  background-color: #374151;
+  color: #6b7280;
+}
+
+#experimentlog-detail .samples-card {
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .samples-card {
+  background: #1f2937;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+#experimentlog-detail .samples-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #166534;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .samples-title {
+  color: #86efac;
+}
+
+#experimentlog-detail .samples-empty {
+  color: #6b7280;
+  text-align: center;
+  padding: 2rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .samples-empty {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .samples-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #experimentlog-detail .samples-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #experimentlog-detail .samples-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+#experimentlog-detail .sample-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+#experimentlog-detail .sample-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme='dark'] #experimentlog-detail .sample-card {
+ background: #374151;
+  border-color: #4b5563;
+}
+
+#experimentlog-detail .sample-name {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .sample-name {
+  color: #f9fafb;
+}
+
+#experimentlog-detail .sample-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .sample-description {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .sample-id {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .sample-id {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .sample-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .sample-date {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .sample-status {
+  margin-top: 0.5rem;
+}
+
+#experimentlog-detail .modal-backdrop {
+  /* ...modal backdrop... */
+}
+
+#experimentlog-detail .modal-container {
+  /* ...modal container... */
+}
+
+#experimentlog-detail .modal-content {
+  /* ...modal content... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-content {
+  /* ...dark mode modal content... */
+}
+
+@keyframes fadeIn {
+  /* ...fade in animation... */
+}
+
+#experimentlog-detail .modal-header {
+  /* ...modal header... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-header {
+  /* ...dark mode modal header... */
+}
+
+#experimentlog-detail .modal-title {
+  /* ...modal title... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-title {
+  /* ...dark mode modal title... */
+}
+
+#experimentlog-detail .modal-close {
+  /* ...modal close... */
+}
+
+#experimentlog-detail .modal-close:hover {
+  /* ...modal close hover... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-close:hover {
+  /* ...dark mode modal close hover... */
+}
+
+#experimentlog-detail .modal-body {
+  /* ...modal body... */
+}
+
+#experimentlog-detail .modal-label {
+  /* ...modal label... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-label {
+  /* ...dark mode modal label... */
+}
+
+#experimentlog-detail .modal-required {
+  /* ...modal required... */
+}
+
+#experimentlog-detail .modal-textarea {
+  /* ...modal textarea... */
+}
+
+#experimentlog-detail .modal-textarea:focus {
+  /* ...modal textarea focus... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-textarea {
+  /* ...dark mode modal textarea... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-textarea:focus {
+  /* ...dark mode modal textarea focus... */
+}
+
+#experimentlog-detail .modal-footer {
+  /* ...modal footer... */
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-footer {
+  /* ...dark mode modal footer... */
+}
