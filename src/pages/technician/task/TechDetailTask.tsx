@@ -418,12 +418,19 @@ const TechDetailTask: React.FC = () => {
 
       const formData = new FormData();
       formData.append("image", selectedFile);
-      formData.append("description", reportInformation);
-      formData.append("taskid", taskData.id);
+      formData.append("targetType", "Task");
+      formData.append("targetId", taskData.id);
 
-      await axiosInstance.put("/api/tasks/update-report-task", formData, {
+      //for upload image to report task
+      await axiosInstance.post("/api/images", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
+      //for update task status into WaitingForApproval
+      await axiosInstance.put("/api/tasks/change-task-status", {
+        todoTaskId: taskData.id,
+        status: "WaitingForApproval"
+      })
 
       // Khi technician hoàn thành, chuyển sang WaitingForApproval (2)
       await updateTaskStatus(2); // WaitingForApproval
@@ -1093,7 +1100,7 @@ const TechDetailTask: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {/* File Upload */}
+              {/* File Upload & Image Preview */}
               <div>
                 <label className="block font-medium mb-2">
                   Chọn ảnh báo cáo *
@@ -1102,28 +1109,36 @@ const TechDetailTask: React.FC = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  id="fileInput"
+                  className="hidden"
                 />
-                {selectedFile && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Đã chọn: {selectedFile.name}
-                  </p>
+                
+                {previewUrl ? (
+                  <div className="space-y-3">
+                    <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-auto max-h-64 object-contain"
+                      />
+                    </div>
+                    <label
+                      htmlFor="fileInput"
+                      className="block w-full p-2 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
+                    >
+                      <p className="font-medium text-gray-600 text-sm">{selectedFile?.name}</p>
+                      <p className="text-gray-500 text-xs mt-1">Nhấp để thay đổi</p>
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="fileInput"
+                    className="block w-full p-6 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
+                  >
+                    <p className="text-gray-500">Nhấp để chọn ảnh</p>
+                  </label>
                 )}
               </div>
-
-              {/* Image Preview */}
-              {previewUrl && (
-                <div>
-                  <label className="block font-medium mb-2">Xem trước ảnh</label>
-                  <div className="border border-gray-300 rounded-md p-2">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="max-w-full h-auto max-h-64 object-contain"
-                    />
-                  </div>
-                </div>
-              )}
 
               {/* Report Information */}
               <div>
