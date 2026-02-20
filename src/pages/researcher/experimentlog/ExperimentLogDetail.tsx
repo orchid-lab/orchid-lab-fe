@@ -161,6 +161,35 @@ const ExperimentLogDetail = () => {
   const stagesCardRef = useRef<HTMLElement>(null);
   const samplesCardRef = useRef<HTMLElement>(null);
 
+  const [changingStage, setChangingStage] = useState(false);
+  const [changeStageError, setChangeStageError] = useState<string | null>(null);
+  const [batchId, setBatchId] = useState<number | string | undefined>(
+    undefined,
+  );
+
+  const handleChangeStage = async () => {
+    if (!id) return;
+    setChangingStage(true);
+    setChangeStageError(null);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        status: "ConfirmChangeStage",
+        batchId: batchId,
+      });
+      // Optionally, reload log data after successful change
+      const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
+      const logData = res.data.value ?? res.data;
+      setLog(logData as ExperimentLogDetailType);
+    } catch (err: any) {
+      setChangeStageError(
+        err?.response?.data?.message ||
+          err?.message ||
+          t("common.errorOccurred"),
+      );
+    } finally {
+      setChangingStage(false);
+    }
+  };
   const samples = log?.samples ?? [];
   useEffect(() => {
     if (!id) return;
@@ -199,8 +228,16 @@ const ExperimentLogDetail = () => {
           const name =
             (raw?.value?.labName as string) ?? (raw?.labName as string);
           setLabName(name ?? t("experimentLog.notAvailable"));
+          // Lưu batchId để dùng cho chuyển giai đoạn
+          const id = (raw?.value?.id ?? raw?.id ?? tcbId) as number | string;
+          setBatchId(id);
         })
-        .catch(() => setLabName(t("experimentLog.notAvailable")));
+        .catch(() => {
+          setLabName(t("experimentLog.notAvailable"));
+          setBatchId(undefined);
+        });
+    } else {
+      setBatchId(undefined);
     }
   }, [log, t]);
 
@@ -563,12 +600,18 @@ const ExperimentLogDetail = () => {
                 type="button"
                 className="btn-start"
                 style={{ minWidth: 120, marginLeft: 8 }}
-                onClick={() => {
-                  /* Change stage logic here */
-                }}
+                onClick={handleChangeStage}
+                disabled={changingStage}
               >
-                Chuyển giai đoạn
+                {changingStage
+                  ? t("experimentLog.changingStage") || "Đang chuyển..."
+                  : "Chuyển giai đoạn"}
               </button>
+              {changeStageError && (
+                <div style={{ color: "red", marginLeft: 8, fontSize: "0.9em" }}>
+                  {changeStageError}
+                </div>
+              )}
             </div>
           </div>
           <div className="info-column">

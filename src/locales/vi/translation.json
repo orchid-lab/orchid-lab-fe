@@ -405,7 +405,8 @@
     "duration": "Thời gian",
     "currentStage": "Giai đoạn hiện tại",
     "exceedsExpected": "Vượt quá số còn lại",
-    "parent": "Cây mẹ"
+    "parent": "Cây mẹ",
+    "changingStage": "Đang thay đổi..."
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",
