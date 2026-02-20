@@ -587,7 +587,7 @@ const TechDetailTask: React.FC = () => {
                     ...item,
                     mesuredValue: measuredValue,
                     measurementUnit: measurementUnit,
-                    status: "Completed" as CheckListItemStatus,
+                    status: "Complete" as CheckListItemStatus,
                     isPass: isPass,
                   }
                 : item
