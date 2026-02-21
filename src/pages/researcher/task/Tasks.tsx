@@ -2,16 +2,23 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 interface Task {
   id: string;
-  name: string;
-  researcher: string;
+  name?: string;
+  description?: string;
+  stageId?: string | number | null;
+  taskTargetType?: string | null;
+  targetId?: string | null;
+  researcherId?: string | null;
+  researcher?: string | null;
+  technicianId?: string | null;
   experimentLogName?: string;
-  end_date: string;
+  end_date?: string;
   create_at?: string;
-  status: StatusType;
+  status: string;
+  expectedEndDate?: string | null;
 }
 
 type StatusType =
@@ -24,28 +31,36 @@ type StatusType =
 
 interface ApiTaskResponse {
   value?: {
-    data?: Task[];
     totalCount?: number;
+    pageCount?: number;
+    pageSize?: number;
+    pageNumber?: number;
+    data?: Task[];
   };
 }
 
 function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
+  // Sửa lại: value phải là object và value.data là array
   return (
     typeof obj === "object" &&
     obj !== null &&
     "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object"
+    typeof (obj as { value: unknown }).value === "object" &&
+    Array.isArray((obj as any).value?.data)
   );
 }
 
-function getStatusLabel(status: StatusType, t: (key: string) => string): string {
+function getStatusLabel(
+  status: StatusType,
+  t: (key: string) => string,
+): string {
   const labels: Record<StatusType, string> = {
-    Assigned: t('status.assigned'),
-    Taken: t('status.taken'),
-    InProcess: t('status.inProcess'),
-    DoneInTime: t('status.doneInTime'),
-    DoneInLate: t('status.doneInLate'),
-    Cancel: t('status.cancel'),
+    Assigned: t("status.assigned"),
+    Taken: t("status.taken"),
+    InProcess: t("status.inProcess"),
+    DoneInTime: t("status.doneInTime"),
+    DoneInLate: t("status.doneInLate"),
+    Cancel: t("status.cancel"),
   };
   return labels[status] || status;
 }
@@ -73,7 +88,7 @@ export default function Tasks() {
 
   // State cho filters
   const [statusFilter, setStatusFilter] = useState<StatusType | "Tất cả">(
-    "Tất cả"
+    "Tất cả",
   );
   const [researcherFilter, setResearcherFilter] = useState<string>("Tất cả");
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,7 +104,12 @@ export default function Tasks() {
   });
   const [allResearchers, setAllResearchers] = useState<string[]>([]);
 
-  const tasksPerPage = 20; // Tăng pageSize để giảm số lần gọi API
+  // Map taskId -> technician name
+  const [technicianNames, setTechnicianNames] = useState<
+    Record<string, string>
+  >({});
+
+  const tasksPerPage = 8; // Tăng pageSize để giảm số lần gọi API
 
   // Load summary data chỉ 1 lần khi component mount
   useEffect(() => {
@@ -97,7 +117,7 @@ export default function Tasks() {
       try {
         // Lấy tất cả tasks để tính summary (có thể cache ở đây)
         const response = await axiosInstance.get(
-          `/api/tasks?pageNo=1&pageSize=1000`
+          `/api/tasks?pageNumber=1&pageSize=1000`,
         );
 
         if (isApiTaskResponse(response.data)) {
@@ -146,7 +166,7 @@ export default function Tasks() {
     const params = new URLSearchParams();
 
     // Luôn load tất cả tasks để sort và filter ở frontend
-    params.append("pageNo", "1");
+    params.append("pageNumber", "1");
     params.append("pageSize", "1000"); // Load tất cả để sort và filter
     console.log("Loading all tasks for frontend sorting and filtering");
 
@@ -188,88 +208,79 @@ export default function Tasks() {
 
         axiosInstance
           .get(`/api/tasks?${buildApiQuery}`)
-          .then((res) => {
+          .then(async (res) => {
             console.log("API Response:", res.data); // Debug log
+            // SỬA: fallback nếu không có value wrapper
+            let data: any[] = [];
             if (isApiTaskResponse(res.data)) {
-              const data = Array.isArray(res.data.value?.data)
+              data = Array.isArray(res.data.value?.data)
                 ? res.data.value.data
                 : [];
-              // const total =
-              //   typeof res.data.value?.totalCount === "number"
-              //     ? res.data.value.totalCount
-              //     : 0;
-
-              // Sort toàn bộ danh sách theo create_at (newest first)
-              const sortedData = [...data].sort((a, b) => {
-                const dateA = new Date(
-                  a.create_at ?? a.end_date ?? new Date(0)
-                );
-                const dateB = new Date(
-                  b.create_at ?? b.end_date ?? new Date(0)
-                );
-                return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
-              });
-
-              console.log(
-                "Sorted all tasks by create_at (newest first):",
-                sortedData.slice(0, 3).map((task) => ({
-                  name: task.name,
-                  create_at: task.create_at,
-                  end_date: task.end_date,
-                }))
-              );
-
-              // Filter trên data đã sort
-              let filteredData = sortedData;
-
-              // Filter by status
-              if (statusFilter !== "Tất cả") {
-                const beforeFilter = filteredData.length;
-                filteredData = filteredData.filter(
-                  (task) => task.status === statusFilter
-                );
-                console.log(
-                  `Filtered by status ${statusFilter}: ${beforeFilter} -> ${filteredData.length} tasks`
-                );
-                console.log("Available statuses in data:", [
-                  ...new Set(data.map((task) => task.status)),
-                ]);
-              }
-
-              // Filter by researcher
-              if (researcherFilter !== "Tất cả") {
-                filteredData = filteredData.filter(
-                  (task) => task.researcher === researcherFilter
-                );
-                console.log(
-                  `Filtered by researcher ${researcherFilter}: ${filteredData.length} tasks`
-                );
-              }
-
-              // Filter by search term
-              if (searchTerm.trim()) {
-                filteredData = filteredData.filter(
-                  (task) =>
-                    task.name
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase()) ||
-                    task.researcher
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase())
-                );
-                console.log(
-                  `Filtered by search "${searchTerm}": ${filteredData.length} tasks`
-                );
-              }
-
-              // Apply pagination to filtered/sorted data
-              const startIndex = (currentPage - 1) * tasksPerPage;
-              const endIndex = startIndex + tasksPerPage;
-              const paginatedData = filteredData.slice(startIndex, endIndex);
-
-              setTasks(paginatedData);
-              setTotalCount(filteredData.length); // Total filtered count
+            } else if (Array.isArray(res.data.data)) {
+              data = res.data.data;
             }
+            // Sort tasks theo expectedEndDate, end_date, create_at
+            const sortedData = [...data].sort((a, b) => {
+              const dateA = new Date(
+                a.expectedEndDate ?? a.end_date ?? a.create_at ?? 0,
+              );
+              const dateB = new Date(
+                b.expectedEndDate ?? b.end_date ?? b.create_at ?? 0,
+              );
+              return dateB.getTime() - dateA.getTime();
+            });
+            // Filter
+            let filteredData = sortedData;
+            if (statusFilter !== "Tất cả") {
+              filteredData = filteredData.filter(
+                (task) =>
+                  (task.status || "").toLowerCase() ===
+                  statusFilter.toLowerCase(),
+              );
+            }
+            if (researcherFilter !== "Tất cả") {
+              filteredData = filteredData.filter(
+                (task) => (task.researcherId || "") === researcherFilter,
+              );
+            }
+            if (searchTerm.trim()) {
+              filteredData = filteredData.filter(
+                (task) =>
+                  (task.name || "")
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                  (task.description || "")
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()),
+              );
+            }
+            // Pagination
+            const startIndex = (currentPage - 1) * tasksPerPage;
+            const endIndex = startIndex + tasksPerPage;
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+            // Debug log
+            console.log("FilteredData:", filteredData);
+            console.log("PaginatedData:", paginatedData);
+            setTasks(paginatedData);
+            setTotalCount(filteredData.length);
+            // Fetch technician names
+            const techIds = paginatedData
+              .map((task) => task.technicianId)
+              .filter((id): id is string => !!id);
+            const uniqueTechIds = Array.from(new Set(techIds));
+            const techNameMap: Record<string, string> = {};
+            await Promise.all(
+              uniqueTechIds.map(async (id) => {
+                try {
+                  const userRes = await axiosInstance.get(`/api/user/${id}`);
+                  const user = userRes.data?.value ?? userRes.data;
+                  techNameMap[id] = user?.name ?? id;
+                } catch {
+                  techNameMap[id] = id;
+                }
+              }),
+            );
+            setTechnicianNames(techNameMap);
           })
           .catch((error) => {
             console.error("API Error:", error); // Debug log
@@ -280,7 +291,7 @@ export default function Tasks() {
             setLoading(false);
           });
       },
-      searchTerm ? 300 : 0
+      searchTerm ? 300 : 0,
     ); // Debounce 300ms cho search, ngay lập tức cho các filter khác
 
     return () => clearTimeout(timeoutId);
@@ -323,7 +334,28 @@ export default function Tasks() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: translateY(6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+        .animate-slide-in-left { animation: slideInLeft 0.5s ease-out forwards; }
+        .hover-lift { transition: all 0.28s cubic-bezier(0.4,0,0.2,1); }
+        .hover-lift:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 24px -6px rgba(0,0,0,0.15); }
+        .row-hover { transition: all 0.2s ease; }
+        .row-hover:hover { transform: scale(1.01); box-shadow: 0 4px 12px rgba(34,197,94,0.12); }
+      `}</style>
       <div className="space-y-6">
         {/* Header + nút tạo task */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
@@ -361,27 +393,40 @@ export default function Tasks() {
         {/* 6 ô tổng hợp */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
           {Object.entries({
-            Assigned: t('status.taskAssigned'),
-            Taken: t('status.taskTaken'),
-            InProcess: t('status.taskInProcess'),
-            DoneInTime: t('status.taskDoneInTime'),
-            DoneInLate: t('status.taskDoneInLate'),
-            Cancel: t('status.taskCancelled'),
-          }).map(([key, label]) => (
-            <div
-              key={key}
-              className="rounded-lg border border-gray-200 bg-white px-6 py-4 flex flex-col justify-between min-w-[150px] items-center"
-            >
-              <span className="text-sm text-gray-600 mb-1">{label}</span>
-              <span
-                className={`text-2xl font-semibold ${
-                  STATUS_COLORS[key as StatusType]
-                } bg-white`}
+            Assigned: t("status.taskAssigned"),
+            Taken: t("status.taskTaken"),
+            InProcess: t("status.taskInProcess"),
+            DoneInTime: t("status.taskDoneInTime"),
+            DoneInLate: t("status.taskDoneInLate"),
+            Cancel: t("status.taskCancelled"),
+          }).map(([key, label], idx) => {
+            // Color and bg similar to ExperimentLog
+            let cardBg = "bg-blue-50 border-blue-200 text-blue-700";
+            if (key === "Taken")
+              cardBg = "bg-indigo-50 border-indigo-200 text-indigo-700";
+            if (key === "InProcess")
+              cardBg = "bg-yellow-50 border-yellow-200 text-yellow-700";
+            if (key === "DoneInTime")
+              cardBg = "bg-green-50 border-green-200 text-green-700";
+            if (key === "DoneInLate")
+              cardBg = "bg-orange-50 border-orange-200 text-orange-700";
+            if (key === "Cancel")
+              cardBg = "bg-red-50 border-red-200 text-red-700";
+            return (
+              <div
+                key={key}
+                className={`rounded-xl border px-6 py-4 flex flex-col items-center animate-scale-in hover-lift min-w-[150px] ${cardBg}`}
+                style={{ animationDelay: `${0.1 * (idx + 1)}s`, opacity: 0 }}
               >
-                {statusCounts[key as StatusType]}
-              </span>
-            </div>
-          ))}
+                <div className="text-sm text-gray-600 mb-2 font-medium">
+                  {label}
+                </div>
+                <div className={`text-3xl font-bold ${cardBg.split(" ")[2]}`}>
+                  {statusCounts[key as StatusType]}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* {t('common.filter')} */}
@@ -389,7 +434,7 @@ export default function Tasks() {
           <div className="flex flex-wrap items-center gap-4 mb-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-medium">
-                {t('common.status')}:
+                {t("common.status")}:
               </span>
               <select
                 value={statusFilter}
@@ -398,14 +443,14 @@ export default function Tasks() {
                 }
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">{t('common.all')}</option>
+                <option value="Tất cả">{t("common.all")}</option>
                 {Object.entries({
-                  Assigned: t('status.assigned'),
-                  Taken: t('status.taken'),
-                  InProcess: t('status.inProcess'),
-                  DoneInTime: t('status.doneInTime'),
-                  DoneInLate: t('status.doneInLate'),
-                  Cancel: t('status.cancel'),
+                  Assigned: t("status.assigned"),
+                  Taken: t("status.taken"),
+                  InProcess: t("status.inProcess"),
+                  DoneInTime: t("status.doneInTime"),
+                  DoneInLate: t("status.doneInLate"),
+                  Cancel: t("status.cancel"),
                 }).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
@@ -415,14 +460,14 @@ export default function Tasks() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 font-medium">
-                {t('task.researcher')}:
+                {t("task.researcher")}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
                 className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="Tất cả">{t('common.all')}</option>
+                <option value="Tất cả">{t("common.all")}</option>
                 {allResearchers.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -448,7 +493,7 @@ export default function Tasks() {
               }}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
             >
-              {t('common.clear')} {t('common.filter').toLowerCase()}
+              {t("common.clear")} {t("common.filter").toLowerCase()}
             </button>
           </div>
 
@@ -458,16 +503,16 @@ export default function Tasks() {
             searchTerm.trim()) && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
               <span className="text-xs text-gray-500">
-                {t('common.filter')} {t('common.selected').toLowerCase()}:
+                {t("common.filter")} {t("common.selected").toLowerCase()}:
               </span>
               {statusFilter !== "Tất cả" && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  {t('common.status')}: {getStatusLabel(statusFilter, t)}
+                  {t("common.status")}: {getStatusLabel(statusFilter, t)}
                 </span>
               )}
               {researcherFilter !== "Tất cả" && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                  {t('task.researcher')}: {researcherFilter}
+                  {t("task.researcher")}: {researcherFilter}
                 </span>
               )}
               {searchTerm.trim() && (
@@ -479,147 +524,144 @@ export default function Tasks() {
           )}
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-2 text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-              Đang tải {t('task.taskList').toLowerCase()}...
-            </div>
-          </div>
-        ) : error ? (
-          <div className="text-red-500 text-center py-8">{error}</div>
-        ) : (
-          <>
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+                <tr>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    Tên nhiệm vụ
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    Trạng thái
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    Thời hạn
+                  </th>
+                  <th className="text-left p-4 font-semibold text-gray-900">
+                    Kỹ thuật viên
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
                   <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      {t('task.taskName')}
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      {t('task.taskCreator')}
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      {t('task.experimentLog')}
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      {t('task.deadline')}
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      {t('common.status')}
-                    </th>
+                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                      <div className="flex items-center gap-2 justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        Đang tải {t("task.taskList").toLowerCase()}...
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {tasks.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-gray-500">
-                        {searchTerm.trim() ||
-                        statusFilter !== "Tất cả" ||
-                        researcherFilter !== "Tất cả"
-                          ? "Không tìm thấy nhiệm vụ nào phù hợp với bộ lọc hiện tại"
-                          : "Không có nhiệm vụ nào"}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-8 text-red-500">
+                      {error}
+                    </td>
+                  </tr>
+                ) : tasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                      Không có nhiệm vụ nào
+                    </td>
+                  </tr>
+                ) : (
+                  tasks.map((task, idx) => (
+                    <tr key={task.id} className="row-hover border-b">
+                      <td className="p-4 font-medium text-gray-900">
+                        {task.name || "-"}
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          {task.status || "-"}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {task.expectedEndDate
+                          ? new Date(task.expectedEndDate).toLocaleDateString(
+                              "vi-VN",
+                            )
+                          : task.end_date
+                            ? new Date(task.end_date).toLocaleDateString(
+                                "vi-VN",
+                              )
+                            : task.create_at
+                              ? new Date(task.create_at).toLocaleDateString(
+                                  "vi-VN",
+                                )
+                              : "-"}
+                      </td>
+                      <td className="p-4">
+                        {task.technicianId
+                          ? technicianNames[task.technicianId] ||
+                            task.technicianId
+                          : "-"}
                       </td>
                     </tr>
-                  ) : (
-                    tasks.map((task) => (
-                      <tr
-                        key={task.id}
-                        className="border-b hover:bg-green-50 cursor-pointer transition"
-                        onClick={() => {
-                          void navigate(`/tasks/${task.id}`);
-                        }}
-                      >
-                        <td className="p-4 text-gray-900">{task.name}</td>
-                        <td className="p-4 text-gray-600">{task.researcher}</td>
-                        <td className="p-4 text-gray-600">
-                          {task.experimentLogName ?? "Không có"}
-                        </td>
-                        <td className="p-4 text-gray-600">
-                          {task.end_date
-                            ? new Date(task.end_date).toLocaleDateString()
-                            : ""}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              STATUS_COLORS[task.status]
-                            }`}
-                          >
-                            {getStatusLabel(task.status, t)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
-                <span>
-                  Hiển thị {tasks.length} nhiệm vụ trên tổng số {totalCount}{" "}
-                  nhiệm vụ
-                </span>
-                <div className="flex gap-2">
-                  {/* Previous button */}
-                  {currentPage > 1 && (
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+              <span className="font-medium">
+                Hiển thị{" "}
+                {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
+                {Math.min(currentPage * tasksPerPage, totalCount)} của{" "}
+                {totalCount}
+              </span>
+              <div className="flex gap-2">
+                {currentPage > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => paginate(currentPage - 1)}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                  >
+                    ←
+                  </button>
+                )}
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
                     <button
+                      key={pageNum}
                       type="button"
-                      onClick={() => paginate(currentPage - 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
+                      onClick={() => paginate(pageNum)}
+                      className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
+                        currentPage === pageNum
+                          ? "bg-green-700 text-white"
+                          : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
+                      }`}
                     >
-                      ←
+                      {pageNum}
                     </button>
-                  )}
-
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        type="button"
-                        onClick={() => paginate(pageNum)}
-                        className={`px-3 py-1 rounded-lg ${
-                          currentPage === pageNum
-                            ? "bg-green-700 text-white"
-                            : "bg-gray-200 hover:bg-gray-300"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  {/* Next button */}
-                  {currentPage < totalPages && (
-                    <button
-                      type="button"
-                      onClick={() => paginate(currentPage + 1)}
-                      className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-                    >
-                      →
-                    </button>
-                  )}
-                </div>
+                  );
+                })}
+                {currentPage < totalPages && (
+                  <button
+                    type="button"
+                    onClick={() => paginate(currentPage + 1)}
+                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                  >
+                    →
+                  </button>
+                )}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
+        {/* ...existing code... */}
       </div>
     </main>
   );
