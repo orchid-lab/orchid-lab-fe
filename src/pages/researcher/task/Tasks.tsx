@@ -567,7 +567,11 @@ export default function Tasks() {
                   </tr>
                 ) : (
                   tasks.map((task, idx) => (
-                    <tr key={task.id} className="row-hover border-b">
+                    <tr
+                      key={task.id}
+                      className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                    >
                       <td className="p-4 font-medium text-gray-900">
                         {task.name || "-"}
                       </td>
@@ -578,23 +582,16 @@ export default function Tasks() {
                       </td>
                       <td className="p-4">
                         {task.expectedEndDate
-                          ? new Date(task.expectedEndDate).toLocaleDateString(
-                              "vi-VN",
-                            )
+                          ? new Date(task.expectedEndDate).toLocaleDateString("vi-VN")
                           : task.end_date
-                            ? new Date(task.end_date).toLocaleDateString(
-                                "vi-VN",
-                              )
+                            ? new Date(task.end_date).toLocaleDateString("vi-VN")
                             : task.create_at
-                              ? new Date(task.create_at).toLocaleDateString(
-                                  "vi-VN",
-                                )
+                              ? new Date(task.create_at).toLocaleDateString("vi-VN")
                               : "-"}
                       </td>
                       <td className="p-4">
                         {task.technicianId
-                          ? technicianNames[task.technicianId] ||
-                            task.technicianId
+                          ? technicianNames[task.technicianId] || task.technicianId
                           : "-"}
                       </td>
                     </tr>
