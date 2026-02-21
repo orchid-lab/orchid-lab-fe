@@ -35,8 +35,8 @@ import axiosInstance from "../../../api/axiosInstance";
 import type { User } from "../../../types/Auth";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import "./technicianExperimentLogDetail.css";
-
+import "./TechnicianExperimentLogDetail.css";
+  
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
 
