@@ -54,3 +54,4 @@ export default tseslint.config({
   },
 });
 ```
+This is a project for capstone
