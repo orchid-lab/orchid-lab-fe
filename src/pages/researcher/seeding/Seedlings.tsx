@@ -74,7 +74,7 @@ export default function Seedlings() {
   }, []);
 
   // Get user name from ID or return original value
-  const getUserName = (createdBy: string | undefined): string => {
+  const getUserName = (createdBy: string | null | undefined): string => {
     if (!createdBy) return "-";
     // If it's already a name (not UUID format), return as is
     if (!createdBy.includes("-")) return createdBy;
@@ -116,7 +116,7 @@ export default function Seedlings() {
   }, [searchTerm, searchCategory, creatorFilter]);
 
   // Format date
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
     try {
       const date = new Date(dateString);
@@ -290,6 +290,10 @@ export default function Seedlings() {
                   <th className="text-center p-4 font-semibold text-gray-900">Tên khoa học của cây lai</th>
                   <th className="text-center p-4 font-semibold text-gray-900">Ngày tạo</th>
                   <th className="text-center p-4 font-semibold text-gray-900">Người tạo</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Người xóa</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Người xóa</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Ngày thay đổi</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Người thay đổi</th>
                 </tr>
           </thead>
           <tbody>
@@ -322,6 +326,10 @@ export default function Seedlings() {
                   <td className="p-4 text-center">{seedling.parentAScientificName || "-"}</td>
                   <td className="p-4 text-center">{formatDate(seedling.createdDate)}</td>
                   <td className="p-4 text-center">{getUserName(seedling.createdBy)}</td>
+                  <td className="p-4 text-center">{getUserName(seedling.deletedBy) || "-"}</td>
+                  <td className="p-4 text-center">{formatDate(seedling.deletedDate) || "-"}</td>
+                  <td className="p-4 text-center">{getUserName(seedling.updatedBy) || "-"}</td>
+                  <td className="p-4 text-center">{formatDate(seedling.updatedDate) || "-"}</td>
                 </tr>
               ))
             )}
