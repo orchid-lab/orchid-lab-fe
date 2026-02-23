@@ -258,6 +258,9 @@
     "selectParent2": "Select seedling 2",
     "dateOfBirth": "Date of Birth",
     "createdBy": "Created By",
+    "createdDate": "Created Date",
+    "updatedDate": "Updated Date",
+    "updatedBy": "Updated By",
     "characteristics": "Characteristics",
     "noCharacteristics": "No characteristics",
     "addCharacteristic": "Add characteristic",
@@ -283,7 +286,15 @@
     "seedlings": "seedlings",
     "stem": "Stem",
     "flower": "Flower",
-    "leaf": "Leaf"
+    "leaf": "Leaf",
+    "basicInfo": "Basic Information",
+    "metadata": "Metadata",
+    "traits": "Plant Traits",
+    "parentA": "Parent Plant",
+    "noTraits": "No plant traits recorded",
+    "description": "Description",
+    "notFound": "Seedling not found",
+    "loadingError": "Failed to load seedling details"
   },
   "report": {
     "reportManagement": "Report Management",

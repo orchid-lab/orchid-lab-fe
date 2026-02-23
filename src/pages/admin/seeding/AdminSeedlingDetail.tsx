@@ -12,7 +12,6 @@ export default function AdminSeedlingDetail() {
   const page = searchParams.get("page") ?? "1";
   const [seedling, setSeedling] = useState<Seedling | null>(null);
   const [loading, setLoading] = useState(true);
-  const [allSeedlings, setAllSeedlings] = useState<Seedling[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -28,24 +27,8 @@ export default function AdminSeedlingDetail() {
         setLoading(false);
       }
     };
-    const fetchAllSeedlings = async () => {
-      try {
-        const res = await axiosInstance.get(
-          "/api/seedling?pageNumber=1&pageSize=1000"
-        );
-        const data = res.data as { value: { data: Seedling[] } };
-        setAllSeedlings(data.value.data || []);
-      } catch {
-        setAllSeedlings([]);
-      }
-    };
-    void fetchAllSeedlings();
     void fetchDetail();
   }, [id]);
-
-  const idToName = Object.fromEntries(
-    allSeedlings.map((s) => [s.id, s.localName])
-  );
 
   if (loading) {
     return (
@@ -89,11 +72,11 @@ export default function AdminSeedlingDetail() {
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.parent1")}:</span>{" "}
-            {idToName[seedling.parent1] || seedling.parent1}
+            {seedling.parentALocalName || seedling.parent1}
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.parent2")}:</span>{" "}
-            {idToName[seedling.parent2] || seedling.parent2}
+            {seedling.parentAScientificName || seedling.parent1}
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.description")}:</span>{" "}
@@ -105,13 +88,13 @@ export default function AdminSeedlingDetail() {
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.createdDate")}:</span>{" "}
-            {seedling.create_date
-              ? new Date(seedling.create_date).toLocaleString()
+            {seedling.createdDate
+              ? new Date(seedling.createdDate).toLocaleString()
               : ""}
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.createdBy")}:</span>{" "}
-            {seedling.create_by}
+            {seedling.createdBy}
           </div>
           <div className="mb-2">
             <span className="font-semibold">{t("seedling.characteristics")}:</span>

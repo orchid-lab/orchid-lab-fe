@@ -23,10 +23,11 @@ export default function AdminSeedlings() {
       setLoading(true);
       try {
         const allRes = await axiosInstance.get(
-          "/api/seedlings?pageNumber=1&pageSize=1000"
+          "api/seedlings?PageNumber=1&PageSize=1000"
         );
         const allJson = allRes.data as SeedlingApiResponse;
-        setAllSeedlings((allJson.value.data || []).reverse());
+        console.log("Fetched seedlings:", allJson.data);
+        setAllSeedlings((allJson.data || []).reverse());
       } catch {
         setAllSeedlings([]);
       } finally {
@@ -37,7 +38,7 @@ export default function AdminSeedlings() {
   }, []);
 
   const filteredSeedlings = allSeedlings
-    .filter((s) => s.delete_date === null)
+    .filter((s) => s.deletedDate === null)
     .filter((s) => {
       const searchMatch =
         !searchTerm ||
@@ -47,12 +48,6 @@ export default function AdminSeedlings() {
         s.parent2?.toLowerCase().includes(searchTerm.toLowerCase());
       return searchMatch;
     });
-
-  const getSeedlingNameById = (id: string | null) => {
-    if (!id) return "";
-    const found = allSeedlings.find((s) => s.id === id);
-    return found ? found.localName : id;
-  };
 
   const total = filteredSeedlings.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -366,12 +361,12 @@ export default function AdminSeedlings() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className="text-sm text-gray-600">
-                            {getSeedlingNameById(s.parent1) || "-"}
+                            {s.parentALocalName || "-"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className="text-sm text-gray-600">
-                            {getSeedlingNameById(s.parent2) || "-"}
+                            {s.parentAScientificName || "-"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
@@ -379,13 +374,13 @@ export default function AdminSeedlings() {
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className="text-sm text-gray-600">
-                            {s.create_date
-                              ? new Date(s.create_date).toLocaleDateString()
+                            {s.createdDate
+                              ? new Date(s.createdDate).toLocaleDateString()
                               : "-"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">{s.create_by || "-"}</span>
+                          <span className="text-sm text-gray-600">{s.createdBy || "-"}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <motion.button

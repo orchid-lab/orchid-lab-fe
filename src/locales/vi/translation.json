@@ -258,6 +258,9 @@
     "selectParent2": "Chọn cây giống 2",
     "dateOfBirth": "Ngày sinh",
     "createdBy": "Tạo bởi",
+    "createdDate": "Ngày tạo",
+    "updatedDate": "Ngày cập nhật",
+    "updatedBy": "Cập nhật bởi",
     "characteristics": "Đặc điểm",
     "noCharacteristics": "Không có",
     "addCharacteristic": "Thêm đặc điểm",
@@ -283,7 +286,15 @@
     "seedlings": "cây giống",
     "stem": "Thân",
     "flower": "Hoa",
-    "leaf": "Lá"
+    "leaf": "Lá",
+    "basicInfo": "Thông tin cơ bản",
+    "metadata": "Siêu dữ liệu",
+    "traits": "Tính trạng cây",
+    "parentA": "Cây bố mẹ",
+    "noTraits": "Không có tính trạng cây được ghi lại",
+    "description": "Mô tả",
+    "notFound": "Không tìm thấy cây giống",
+    "loadingError": "Không thể tải chi tiết cây giống"
   },
   "report": {
     "reportManagement": "Quản lý báo cáo",
