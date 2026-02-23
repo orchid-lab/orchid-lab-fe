@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Seedling } from "../../../types/Seedling";
+import type { User } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
 import { findClosestColorName } from "../../../utils/colorHelper";
 import "./SeedlingDetail.css";
@@ -16,6 +17,7 @@ export default function SeedlingDetail() {
   const [seedling, setSeedling] = useState<Seedling | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userMap, setUserMap] = useState<{ [userId: string]: string }>({});
 
   useEffect(() => {
     const fetchSeedlingDetail = async () => {
@@ -54,6 +56,28 @@ export default function SeedlingDetail() {
 
     void fetchSeedlingDetail();
   }, [id, t]);
+
+  // Fetch users for mapping IDs to names
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axiosInstance.get("/api/user?PageNumber=1&PageSize=1000");
+        const users = response.data?.data || [];
+        
+        // Build user map: ID -> Name
+        const map: { [userId: string]: string } = {};
+        users.forEach((user: User) => {
+          if (user.id && user.name) {
+            map[user.id] = user.name;
+          }
+        });
+        setUserMap(map);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    void fetchUsers();
+  }, []);
 
   if (loading) {
     return (
@@ -105,7 +129,7 @@ export default function SeedlingDetail() {
     );
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return "-";
     try {
       const date = new Date(dateString);
@@ -117,6 +141,15 @@ export default function SeedlingDetail() {
     } catch {
       return dateString;
     }
+  };
+
+  // Get user name from ID or return original value
+  const getUserName = (userId: string | null | undefined): string => {
+    if (!userId) return "-";
+    // If it's already a name (not UUID format), return as is
+    if (!userId.includes("-")) return userId;
+    // Try to map ID to name
+    return userMap[userId] || userId;
   };
 
   return (
@@ -225,7 +258,7 @@ export default function SeedlingDetail() {
                   {t("seedling.createdBy")}
                 </div>
                 <div className="text-gray-900 font-medium">
-                  {seedling.createdBy || "-"}
+                  {getUserName(seedling.createdBy)}
                 </div>
               </div>
 
@@ -246,7 +279,29 @@ export default function SeedlingDetail() {
                     {t("seedling.updatedBy")}
                   </div>
                   <div className="text-gray-900 font-medium">
-                    {seedling.updatedBy}
+                    {getUserName(seedling.updatedBy)}
+                  </div>
+                </div>
+              )}
+
+              {seedling.deletedDate && (
+                <div className="metadata-item">
+                  <div className="text-sm font-semibold text-gray-600 mb-1">
+                    {t("seedling.deletedDate")}
+                  </div>
+                  <div className="text-gray-900 font-medium">
+                    {formatDate(seedling.deletedDate)}
+                  </div>
+                </div>
+              )}
+
+              {seedling.deletedBy && (
+                <div className="metadata-item">
+                  <div className="text-sm font-semibold text-gray-600 mb-1">
+                    {t("seedling.deletedBy")}
+                  </div>
+                  <div className="text-gray-900 font-medium">
+                    {getUserName(seedling.deletedBy)}
                   </div>
                 </div>
               )}
