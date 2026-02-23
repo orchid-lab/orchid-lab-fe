@@ -1,18 +1,38 @@
+/**
+ * Component tạo mới Seedling (Cây giống) cho Researcher
+ * Cho phép nhập thông tin cơ bản, chọn tính trạng, và chọn màu hoa
+ * 
+ * @module SeedlingCreate
+ * @category Pages/Researcher
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { findClosestColorName, colorPalette } from "../../../utils/colorHelper";
 import type { Seedling } from "../../../types/Seedling";
 
+/**
+ * Interface định nghĩa cấu trúc Characteristic (Tính trạng)
+ */
 interface Characteristic {
-  id: string;
-  code: string;
-  name: string;
-  description?: string | null;
-  unit: string;
+  id: string;              // UUID của characteristic
+  code: string;            // Mã code (VD: PLANT_HEIGHT, LEAF_WIDTH)
+  name: string;            // Tên hiển thị tiếng Việt
+  description?: string | null;  // Mô tả chi tiết (optional)
+  unit: string;            // Đơn vị đo (cm, mm, %, ngày, ...)
 }
 
-// Hàm convert code thành tên hiển thị tiếng Việt
+/**
+ * Chuyển đổi characteristic code (tiếng Anh) sang tên hiển thị tiếng Việt
+ * 
+ * @param {string} code - Mã code của characteristic (VD: "PLANT_HEIGHT")
+ * @returns {string} Tên tiếng Việt tương ứng hoặc code gốc nếu không tìm thấy
+ * 
+ * @example
+ * codeToDisplayName("PLANT_HEIGHT") // returns "Chiều Cao Cây"
+ * codeToDisplayName("UNKNOWN_CODE") // returns "UNKNOWN_CODE"
+ */
 const codeToDisplayName = (code: string): string => {
   const codeMap: { [key: string]: string } = {
     "PLANT_HEIGHT": "Chiều Cao Cây",
@@ -64,7 +84,12 @@ export default function SeedlingCreate() {
   const [selectedMainColorName, setSelectedMainColorName] = useState("");
   const [selectedSubColorName, setSelectedSubColorName] = useState("");
 
-  // Tìm characteristic IDs cho màu
+  /**
+   * Tìm ID của characteristic màu hoa dựa vào type
+   * 
+   * @param {"primary" | "secondary"} type - Loại màu (chính hoặc phụ)
+   * @returns {string | null} ID của characteristic hoặc null nếu không tìm thấy
+   */
   const getColorCharacteristicId = (type: "primary" | "secondary"): string | null => {
     if (type === "primary") {
       return characteristics.find(c => c.code === "FLOWER_COLOR_PRIMARY")?.id || null;
@@ -119,6 +144,11 @@ export default function SeedlingCreate() {
   }, []);
 
   // ============= FORM HANDLERS =============
+  /**
+   * Xử lý thay đổi giá trị trong form (localName, scientificName, description, parentAId)
+   * 
+   * @param {React.ChangeEvent} e - Event từ input/select/textarea
+   */
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -127,6 +157,12 @@ export default function SeedlingCreate() {
     }));
   };
 
+  /**
+   * Xử lý thay đổi giá trị tính trạng (traits)
+   * 
+   * @param {string} characteristicId - ID của characteristic
+   * @param {string} value - Giá trị mới (string số)
+   */
   const handleTraitChange = (characteristicId: string, value: string) => {
     setSelectedTraits((prev) => ({
       ...prev,
@@ -134,6 +170,14 @@ export default function SeedlingCreate() {
     }));
   };
 
+  /**
+   * Xử lý bật/tắt checkbox màu hoa (chính/phụ)
+   * Khi bật: thêm giá trị màu vào selectedTraits
+   * Khi tắt: xóa giá trị màu khỏi selectedTraits và reset về màu mặc định
+   * 
+   * @param {"main" | "sub"} type - Loại màu (chính/phụ)
+   * @param {boolean} enabled - Trạng thái bật/tắt
+   */
   const handleColorToggle = (type: "main" | "sub", enabled: boolean) => {
     if (type === "main") {
       setHasMainColor(enabled);
@@ -184,6 +228,14 @@ export default function SeedlingCreate() {
     }
   };
 
+  /**
+   * Xử lý thay đổi giá trị RGB component (R, G, hoặc B) của màu
+   * Tự động cập nhật selectedTraits khi có thay đổi
+   * 
+   * @param {"main" | "sub"} type - Loại màu (chính/phụ)
+   * @param {"r" | "g" | "b"} component - Component RGB cần thay đổi
+   * @param {string} value - Giá trị mới (0-255)
+   */
   const handleColorChange = (
     type: "main" | "sub",
     component: "r" | "g" | "b",
@@ -219,6 +271,13 @@ export default function SeedlingCreate() {
     }
   };
 
+  /**
+   * Xử lý thay đổi màu từ color picker (input type="color")
+   * Convert hex sang RGB và cập nhật state
+   * 
+   * @param {"main" | "sub"} type - Loại màu (chính/phụ)
+   * @param {string} hexColor - Mã màu hex (VD: "#FF0000")
+   */
   const handleColorPickerChange = (
     type: "main" | "sub",
     hexColor: string
@@ -253,6 +312,13 @@ export default function SeedlingCreate() {
     }
   };
 
+  /**
+   * Xử lý thay đổi màu từ dropdown chọn tên màu
+   * Tìm màu trong palette và cập nhật RGB values
+   * 
+   * @param {"main" | "sub"} type - Loại màu (chính/phụ)
+   * @param {string} colorName - Tên màu được chọn (VD: "Đỏ tươi")
+   */
   const handleColorNameChange = (type: "main" | "sub", colorName: string) => {
     if (!colorName) return;
     
@@ -291,6 +357,15 @@ export default function SeedlingCreate() {
     }
   };
 
+  /**
+   * Chuyển đổi mã màu Hex sang RGB
+   * 
+   * @param {string} hex - Mã màu hex (VD: "#FF0000" hoặc "FF0000")
+   * @returns {{r: number, g: number, b: number} | null} Object RGB hoặc null nếu invalid
+   * 
+   * @example
+   * hexToRgb("#FF0000") // returns {r: 255, g: 0, b: 0}
+   */
   const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
@@ -302,6 +377,17 @@ export default function SeedlingCreate() {
       : null;
   };
 
+  /**
+   * Chuyển đổi RGB sang mã màu Hex
+   * 
+   * @param {number} r - Giá trị Red (0-255)
+   * @param {number} g - Giá trị Green (0-255)
+   * @param {number} b - Giá trị Blue (0-255)
+   * @returns {string} Mã màu hex (VD: "#FF0000")
+   * 
+   * @example
+   * rgbToHex(255, 0, 0) // returns "#FF0000"
+   */
   const rgbToHex = (r: number, g: number, b: number): string => {
     return "#" + [r, g, b].map((x) => {
       const hex = x.toString(16);
@@ -309,12 +395,28 @@ export default function SeedlingCreate() {
     }).join("").toUpperCase();
   };
 
-  // Convert RGB to RRRGGGBBB format
+  /**
+   * Chuyển đổi RGB sang định dạng RRRGGGBBB để lưu vào database
+   * 
+   * @param {number} r - Giá trị Red (0-255)
+   * @param {number} g - Giá trị Green (0-255)
+   * @param {number} b - Giá trị Blue (0-255)
+   * @returns {number} Giá trị số theo format RRRGGGBBB
+   * 
+   * @example
+   * rgbToTraitFormat(255, 0, 0) // returns 255000000
+   * rgbToTraitFormat(173, 216, 230) // returns 173216230
+   */
   const rgbToTraitFormat = (r: number, g: number, b: number): number => {
     return r * 1_000_000 + g * 1_000 + b;
   };
 
   // ============= VALIDATION & SUBMIT =============
+  /**
+   * Kiểm tra tính hợp lệ của form trước khi submit
+   * 
+   * @returns {boolean} true nếu form hợp lệ, false nếu có lỗi
+   */
   const validateForm = (): boolean => {
     if (!formData.localName.trim()) {
       setError("Vui lòng nhập tên địa phương");
@@ -327,6 +429,15 @@ export default function SeedlingCreate() {
     return true;
   };
 
+  /**
+   * Xử lý submit form tạo seedling mới
+   * - Build seedlingsTraits array từ selectedTraits
+   * - Gửi POST request đến API
+   * - Hiển thị success modal nếu thành công
+   * - Hiển thị error message nếu thất bại
+   * 
+   * @param {React.FormEvent} e - Form submit event
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -379,6 +490,9 @@ export default function SeedlingCreate() {
     }
   };
 
+  /**
+   * Đóng success modal và navigate về trang danh sách seedlings
+   */
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
     navigate("/seedlings?page=1");
