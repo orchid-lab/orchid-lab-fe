@@ -70,7 +70,8 @@
     "processing": "Processing...",
     "start": "Start",
     "create": "Create",
-    "days": "days"
+    "days": "days",
+    "loggingOut": "Logging out..."
   },
   "diseases": {
     "anthracnose": "Anthracnose",

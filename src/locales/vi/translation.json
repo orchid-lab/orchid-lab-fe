@@ -70,7 +70,8 @@
     "processing": "Đang xử lý...",
     "start": "Bắt đầu",
     "create": "Tạo",
-    "days": "ngày"
+    "days": "ngày",
+    "loggingOut": "Đang đăng xuất..."
   },
   "diseases": {
     "anthracnose": "Thán thư",
