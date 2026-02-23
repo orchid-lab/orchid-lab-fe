@@ -8,9 +8,9 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../../../api/axiosInstance";
-import { findClosestColorName, colorPalette } from "../../../utils/colorHelper";
-import type { Seedling } from "../../../types/Seedling";
+import axiosInstance from "../../../../api/axiosInstance";
+import { findClosestColorName, colorPalette } from "../../../../utils/colorHelper";
+import type { Seedling } from "../../../../types/Seedling";
 
 /**
  * Interface định nghĩa cấu trúc Characteristic (Tính trạng)

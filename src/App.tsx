@@ -14,7 +14,7 @@ import Tasks from "./pages/researcher/task/Tasks";
 import ExperimentLog from "./pages/researcher/experimentlog/ExperimentLog";
 import Seedlings from "./pages/researcher/seeding/Seedlings";
 import SeedlingDetail from "./pages/researcher/seeding/SeedlingDetail";
-import SeedlingCreate from "./pages/researcher/seeding/SeedlingCreate";
+import SeedlingCreate from "./pages/researcher/seeding/create/CreateSeedling";
 import ReportsDetails from "./pages/researcher/report/ReportsDetails";
 import ReportsFollowUpDetails from "./pages/researcher/report/ReportsFollowUpDetails";
 import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContainer";
