@@ -15,8 +15,6 @@ import ExperimentLog from "./pages/researcher/experimentlog/ExperimentLog";
 import Seedlings from "./pages/researcher/seeding/Seedlings";
 import ReportsDetails from "./pages/researcher/report/ReportsDetails";
 import ReportsFollowUpDetails from "./pages/researcher/report/ReportsFollowUpDetails";
-import SeedlingDetail from "./pages/researcher/seeding/SeedlingDetail";
-import { SeedlingFormProvider } from "./context/SeedlingFormContext";
 import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContainer";
 import SelectTechnicianContainer from "./pages/researcher/task/create/SelectTechnicianContainer";
 import ConfirmTaskContainer from "./pages/researcher/task/create/ConfirmTaskContainer";
@@ -28,9 +26,6 @@ import { ExperimentLogFormProvider } from "./context/ExperimentLogFormContext";
 import ProfilePage from "./pages/landing/ProfilePage";
 import MethodDetail from "./pages/researcher/method/MethodDetail";
 import MethodCreate from "./pages/researcher/method/MethodCreate";
-import SeedlingDetailsForm from "./pages/researcher/seeding/SeedlingDetailsForm";
-import SeedlingCharacteristicsForm from "./pages/researcher/seeding/SeedlingCharacteristicsForm";
-import SeedlingSummary from "./pages/researcher/seeding/SeedlingSummary";
 import ExperimentLogDetail from "./pages/researcher/experimentlog/ExperimentLogDetail";
 import SidebarAdmin from "./components/SidebarAdmin";
 import Login from "./pages/landing/Login";
@@ -199,31 +194,6 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <Seedlings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/seedlings/:id"
-              element={
-                <ProtectedRoute requiredRole="Researcher">
-                  <SeedlingDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/seedlings/new/*"
-              element={
-                <ProtectedRoute requiredRole="Researcher">
-                  <SeedlingFormProvider>
-                    <Routes>
-                      <Route path="" element={<SeedlingDetailsForm />} />
-                      <Route
-                        path="characteristics"
-                        element={<SeedlingCharacteristicsForm />}
-                      />
-                      <Route path="summary" element={<SeedlingSummary />} />
-                    </Routes>
-                  </SeedlingFormProvider>
                 </ProtectedRoute>
               }
             />

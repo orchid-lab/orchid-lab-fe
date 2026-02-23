@@ -15,12 +15,12 @@ export interface Seedling {
   parent2: string;
   doB: string;
   characteristics: SeedlingCharacteristic[];
-  create_by: string;
-  create_date: string;
-  update_by: string | null;
-  update_date: string | null;
-  delete_by: string | null;
-  delete_date: string | null;
+  createdBy: string;
+  createdDate: string;
+  updatedBy: string | null;
+  updatedDate: string | null;
+  deletedBy: string | null;
+  deletedDate: string | null;
 }
 
 export interface SeedlingFormInput {
@@ -34,11 +34,9 @@ export interface SeedlingFormInput {
 }
 
 export interface SeedlingApiResponse {
-  value: {
     totalCount: number;
     pageCount: number;
     pageSize: number;
     pageNumber: number;
     data: Seedling[];
-  };
 }
