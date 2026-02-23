@@ -21,6 +21,9 @@ export default function Seedlings() {
   const [searchCategory, setSearchCategory] = useState<SearchCategory>("localName");
   const [creatorFilter, setCreatorFilter] = useState<string>("Tất cả");
   const [allCreators, setAllCreators] = useState<string[]>([]);
+  
+  // User mapping: ID -> Name
+  const [userMap, setUserMap] = useState<{ [userId: string]: string }>({});
 
   // Fetch seedlings
   useEffect(() => {
@@ -48,16 +51,20 @@ export default function Seedlings() {
         const response = await axiosInstance.get("/api/user?PageNumber=1&PageSize=1000");
         const users = response.data?.data || [];
         
-        // Filter researchers (role = "Researcher")
-        const researchers = users
-          .filter((user: User) => user.role === "Researcher")
-          .map((user: User) => user.name);
+        // Build user map: ID -> Name
+        const map: { [userId: string]: string } = {};
+        users.forEach((user: User) => {
+          if (user.id && user.name) {
+            map[user.id] = user.name;
+          }
+        });
+        setUserMap(map);
         
-        console.log("Fetched users:", users);
-        console.log("Researchers:", researchers);
+        // Get unique creator names for filter
+        const creatorNames = users.map((user: User) => user.name);
         
         // Add "System" option
-        setAllCreators(["system", ...researchers]);
+        setAllCreators(["System", ...creatorNames]);
       } catch (error) {
         console.error("Error fetching users:", error);
         setAllCreators(["System"]);
@@ -66,15 +73,21 @@ export default function Seedlings() {
     void fetchUsers();
   }, []);
 
+  // Get user name from ID or return original value
+  const getUserName = (createdBy: string | undefined): string => {
+    if (!createdBy) return "-";
+    // If it's already a name (not UUID format), return as is
+    if (!createdBy.includes("-")) return createdBy;
+    // Try to map ID to name
+    return userMap[createdBy] || createdBy;
+  };
+
   // Filter and search logic
   const filteredSeedlings = allSeedlings.filter((seedling) => {
     // Filter by creator
     if (creatorFilter !== "Tất cả") {
-      if (creatorFilter === "System") {
-        if (seedling.createdBy !== "System") return false;
-      } else {
-        if (seedling.createdBy !== creatorFilter) return false;
-      }
+      const creatorName = getUserName(seedling.createdBy);
+      if (creatorName !== creatorFilter) return false;
     }
 
     // Search by category
@@ -146,6 +159,15 @@ export default function Seedlings() {
               Theo dõi và quản lý các giống cây lai tạo
             </p>
           </div>
+          <button
+            onClick={() => navigate("/seedlings/create")}
+            className="px-6 py-2 bg-blue-300 hover:bg-blue-400 text-blue-900 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            + Tạo
+          </button>
         </div>
 
         {/* Stats Section */}
@@ -296,10 +318,10 @@ export default function Seedlings() {
                   <td className="p-4 text-center">{startIndex + index + 1}</td>
                   <td className="p-4 text-center">{seedling.localName}</td>
                   <td className="p-4 text-center">{seedling.scientificName}</td>
-                  <td className="p-4 text-center">{seedling.parent1 || "-"}</td>
-                  <td className="p-4 text-center">{seedling.parent2 || "-"}</td>
+                  <td className="p-4 text-center">{seedling.parentALocalName || "-"}</td>
+                  <td className="p-4 text-center">{seedling.parentAScientificName || "-"}</td>
                   <td className="p-4 text-center">{formatDate(seedling.createdDate)}</td>
-                  <td className="p-4 text-center">{seedling.createdBy}</td>
+                  <td className="p-4 text-center">{getUserName(seedling.createdBy)}</td>
                 </tr>
               ))
             )}

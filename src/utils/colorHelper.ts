@@ -4,14 +4,14 @@ interface RGBColor {
   b: number;
 }
 
-interface ColorInfo {
+export interface ColorInfo {
   name: string;
   r: number;
   g: number;
   b: number;
 }
 
-const colorPalette: ColorInfo[] = [
+export const colorPalette: ColorInfo[] = [
   { name: "Đỏ tươi", r: 255, g: 0, b: 0 },
   { name: "Cam tươi", r: 255, g: 165, b: 0 },
   { name: "Vàng tươi", r: 255, g: 255, b: 0 },
