@@ -463,7 +463,7 @@ export default function Seedlings() {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!seedling.deletedDate && !seedling.deletedBy) {
-                            navigate(`/update/seedlings/${seedling.id}`);
+                            navigate(`/seedlings/update/${seedling.id}`);
                           }
                         }}
                         disabled={!!seedling.deletedDate || !!seedling.deletedBy}
