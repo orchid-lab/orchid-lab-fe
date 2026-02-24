@@ -1,0 +1,281 @@
+/* =============================================================================
+   SEEDLING DETAIL PAGE STYLES
+============================================================================= */
+
+.seedling-detail {
+  margin-left: 260px;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6);
+  padding: 2rem;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+body[data-sidebar-collapsed="true"] .seedling-detail {
+  margin-left: 72px;
+}
+
+:root[data-theme='dark'] .seedling-detail {
+  background: linear-gradient(to bottom right, #1f2937, #111827);
+}
+
+/* Back Button */
+.seedling-detail .back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #3b82f6;
+  color: #1d4ed8;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.seedling-detail .back-button:hover {
+  background-color: #eff6ff;
+  border-color: #1d4ed8;
+  transform: translateX(-2px);
+}
+
+:root[data-theme='dark'] .seedling-detail .back-button {
+  border-color: #60a5fa;
+  color: #93c5fd;
+  background: #1f2937;
+}
+
+:root[data-theme='dark'] .seedling-detail .back-button:hover {
+  background-color: #374151;
+  border-color: #60a5fa;
+}
+
+/* Detail Header */
+.seedling-detail .detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.seedling-detail .detail-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1e40af;
+  line-height: 1.2;
+}
+
+:root[data-theme='dark'] .seedling-detail .detail-title {
+  color: #60a5fa;
+}
+
+.seedling-detail .detail-header p {
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+:root[data-theme='dark'] .seedling-detail .detail-header p {
+  color: #d1d5db;
+}
+
+/* Info Row Styling */
+.seedling-detail .info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.seedling-detail .info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+:root[data-theme='dark'] .seedling-detail .info-row {
+  border-bottom-color: #374151;
+}
+
+.seedling-detail .info-label {
+  color: #4b5563;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+:root[data-theme='dark'] .seedling-detail .info-label {
+  color: #9ca3af;
+}
+
+.seedling-detail .info-value {
+  color: #1f2937;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+:root[data-theme='dark'] .seedling-detail .info-value {
+  color: #f3f4f6;
+}
+
+/* Metadata Items */
+.seedling-detail .metadata-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.seedling-detail .metadata-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+:root[data-theme='dark'] .seedling-detail .metadata-item {
+  border-bottom-color: #374151;
+}
+
+/* Trait Cards */
+.seedling-detail .trait-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.seedling-detail .trait-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.15);
+}
+
+:root[data-theme='dark'] .seedling-detail .trait-card {
+  background: linear-gradient(to br, #312e81, #4c1d95) !important;
+  border-color: #6d28d9;
+}
+
+:root[data-theme='dark'] .seedling-detail .trait-card .text-purple-700 {
+  color: #c4b5fd;
+}
+
+:root[data-theme='dark'] .seedling-detail .trait-card .text-gray-900 {
+  color: #f3f4f6;
+}
+
+:root[data-theme='dark'] .seedling-detail .trait-card .text-gray-600 {
+  color: #d1d5db;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .seedling-detail {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  body[data-sidebar-collapsed="true"] .seedling-detail {
+    margin-left: 0;
+  }
+
+  .seedling-detail .detail-title {
+    font-size: 1.5rem;
+  }
+
+  .seedling-detail .detail-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .seedling-detail {
+    padding: 0.75rem;
+  }
+
+  .seedling-detail .detail-title {
+    font-size: 1.25rem;
+  }
+
+  .seedling-detail .back-button {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Dark Theme Adjustments for Cards */
+:root[data-theme='dark'] .seedling-detail {
+  background: linear-gradient(to bottom right, #111827, #0f172a);
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-white {
+  background: #1f2937;
+  color: #f3f4f6;
+}
+
+:root[data-theme='dark'] .seedling-detail .border-blue-200 {
+  border-color: #1e3a8a;
+}
+
+:root[data-theme='dark'] .seedling-detail .border-green-200 {
+  border-color: #15803d;
+}
+
+:root[data-theme='dark'] .seedling-detail .border-purple-200 {
+  border-color: #6b21a8;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-blue-50 {
+  background: #1e3a8a;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-green-50 {
+  background: #15803d;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-purple-50 {
+  background: #6b21a8;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-blue-100 {
+  background: #1e40af;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-green-100 {
+  background: #166534;
+}
+
+:root[data-theme='dark'] .seedling-detail .bg-purple-100 {
+  background: #7e22ce;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-blue-700 {
+  color: #60a5fa;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-green-700 {
+  color: #86efac;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-gray-900 {
+  color: #f3f4f6;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-gray-600 {
+  color: #d1d5db;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-gray-700 {
+  color: #e5e7eb;
+}
+
+:root[data-theme='dark'] .seedling-detail .text-gray-500 {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] .seedling-detail .border-gray-200 {
+  border-color: #374151;
+}
+
+:root[data-theme='dark'] .seedling-detail .from-purple-50 {
+  --tw-gradient-from: #4c1d95;
+}
+
+:root[data-theme='dark'] .seedling-detail .to-blue-50 {
+  --tw-gradient-to: #1e3a8a;
+}

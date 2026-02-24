@@ -91,22 +91,19 @@ const ExperimentLog = () => {
   const normalizeStatus = (status?: number | string) => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
-      case "1":
+      case "Created":
         return "Created";
-      case "5":
+      case "WaitingForChangeStage":
         return "Waiting";
-      case "2":
-        return "InProcess";
-      case "3":
+      case "Completed":
         return "Done";
-      case "4":
+      case "InProgress":
+        return "InProcess";
+      case "Cancelled":
+        return "Cancel";
+      case "Destroyed":
         return "Cancel";
       default:
-        if (/waiting|pending|chờ|đợi/i.test(statusStr)) return "Waiting";
-        if (/inprocess|processing|đang/i.test(statusStr)) return "InProcess";
-        if (/done|completed|hoàn/i.test(statusStr)) return "Done";
-        if (/cancel|hủy/i.test(statusStr)) return "Cancel";
-        if (/created|mới/i.test(statusStr)) return "Created";
         return statusStr;
     }
   };

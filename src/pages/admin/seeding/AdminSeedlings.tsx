@@ -1,32 +1,37 @@
-/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import axiosInstance from "../../../api/axiosInstance";
 import type { Seedling, SeedlingApiResponse } from "../../../types/Seedling";
-import { useTranslation } from "react-i18next";
+import type { User } from "../../../types/Auth";
+import axiosInstance from "../../../api/axiosInstance";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
+
+type SearchCategory = "localName" | "scientificName";
 
 export default function AdminSeedlings() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
   const [page, setPage] = useState(initialPage);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [allSeedlings, setAllSeedlings] = useState<Seedling[]>([]);
 
+  // Search and Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchCategory, setSearchCategory] = useState<SearchCategory>("localName");
+  const [creatorFilter, setCreatorFilter] = useState<string>("Tất cả");
+  const [allCreators, setAllCreators] = useState<string[]>([]);
+
+  // Fetch seedlings
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const allRes = await axiosInstance.get(
-          "/api/seedlings?pageNumber=1&pageSize=1000"
+          "api/seedlings?PageNumber=1&PageSize=1000"
         );
         const allJson = allRes.data as SeedlingApiResponse;
-        setAllSeedlings((allJson.value.data || []).reverse());
+        setAllSeedlings((allJson.data || []).reverse());
       } catch {
         setAllSeedlings([]);
       } finally {
@@ -36,457 +41,316 @@ export default function AdminSeedlings() {
     void fetchData();
   }, []);
 
-  const filteredSeedlings = allSeedlings
-    .filter((s) => s.delete_date === null)
-    .filter((s) => {
-      const searchMatch =
-        !searchTerm ||
-        s.localName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.parent1?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.parent2?.toLowerCase().includes(searchTerm.toLowerCase());
-      return searchMatch;
-    });
+  // Fetch users for creator filter
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axiosInstance.get("/api/user?PageNumber=1&PageSize=1000");
+        const users = response.data?.data || [];
 
-  const getSeedlingNameById = (id: string | null) => {
-    if (!id) return "";
-    const found = allSeedlings.find((s) => s.id === id);
-    return found ? found.localName : id;
+        // Filter researchers (role = "Researcher")
+        const researchers = users
+          .filter((user: User) => user.role === "Researcher")
+          .map((user: User) => user.name);
+
+        // Add "System" option
+        setAllCreators(["system", ...researchers]);
+      } catch {
+        setAllCreators(["System"]);
+      }
+    };
+    void fetchUsers();
+  }, []);
+
+  // Filter and search logic
+  const filteredSeedlings = allSeedlings.filter((seedling) => {
+    // Filter by creator
+    if (creatorFilter !== "Tất cả") {
+      if (creatorFilter === "System") {
+        if (seedling.createdBy !== "System") return false;
+      } else {
+        if (seedling.createdBy !== creatorFilter) return false;
+      }
+    }
+
+    // Search by category
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      if (searchCategory === "localName") {
+        return seedling.localName?.toLowerCase().includes(searchLower);
+      } else if (searchCategory === "scientificName") {
+        return seedling.scientificName?.toLowerCase().includes(searchLower);
+      }
+    }
+
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredSeedlings.length / PAGE_SIZE);
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const currentSeedlings = filteredSeedlings.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+    navigate(`?page=1`, { replace: true });
+  }, [searchTerm, searchCategory, creatorFilter]);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "-";
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+
+      return `${day}/${month}/${year}`;
+    } catch {
+      return "-";
+    }
   };
 
-  const total = filteredSeedlings.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const pagedSeedlings = filteredSeedlings.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    navigate(`?page=${newPage}`);
+  };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  } as const;
-
-  const statsVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut" as const,
-      },
-    },
-  } as const;
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut" as const,
-      },
-    },
-  } as const;
-
-  const rowVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.05,
-        duration: 0.4,
-        ease: "easeOut" as const,
-      },
-    }),
-    exit: {
-      opacity: 0,
-      x: 20,
-      transition: {
-        duration: 0.3,
-      },
-    },
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSearchCategory("localName");
+    setCreatorFilter("Tất cả");
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <main className="ml-0 sm:ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 px-2 sm:px-4 md:px-8">
+      <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" as const }}
-        >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t("seedling.orchidSeedlings")}
-          </h1>
-          <p className="text-gray-600">
-            Quản lý và theo dõi cây con phong lan
-          </p>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-            variants={statsVariants}
-            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Tổng số cây con
-                </p>
-                <motion.p
-                  className="text-3xl font-bold text-gray-900"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
-                >
-                  {total}
-                </motion.p>
-              </div>
-              <motion.div
-                className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-            variants={statsVariants}
-            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Hiển thị trên trang
-                </p>
-                <motion.p
-                  className="text-3xl font-bold text-green-600"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4, duration: 0.5, type: "spring" }}
-                >
-                  {pagedSeedlings.length}
-                </motion.p>
-              </div>
-              <motion.div
-                className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-            variants={statsVariants}
-            whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Tổng số trang
-                </p>
-                <motion.p
-                  className="text-3xl font-bold text-purple-600"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-                >
-                  {totalPages}
-                </motion.p>
-              </div>
-              <motion.div
-                className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </motion.div>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Search */}
-        <motion.div
-          className="bg-white border border-gray-200 rounded-xl p-6 mb-6"
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div className="relative">
-            <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder={t("seedling.searchPlaceholder") || "Tìm kiếm cây con..."}
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-            />
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Quản lý Giống Cây</h1>
+            <p className="text-gray-600 mt-1">
+              Theo dõi và quản lý các giống cây lai tạo
+            </p>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Tổng số cây con</p>
+              <p className="text-3xl font-bold text-gray-900">{filteredSeedlings.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Hiển thị trên trang</p>
+              <p className="text-3xl font-bold text-green-700">{currentSeedlings.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Tổng số trang</p>
+              <p className="text-3xl font-bold text-purple-700">{totalPages}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex flex-wrap items-center gap-4 mb-3">
+            <div className="flex-1 min-w-[300px] flex gap-2">
+              <select
+                value={searchCategory}
+                onChange={(e) => setSearchCategory(e.target.value as SearchCategory)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+              >
+                <option value="localName">Tên địa phương</option>
+                <option value="scientificName">Tên khoa học</option>
+              </select>
+              <input
+                type="text"
+                placeholder={`Tìm kiếm theo ${searchCategory === "localName" ? "tên địa phương" : "tên khoa học"}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700 font-medium">Người tạo:</span>
+              <select
+                value={creatorFilter}
+                onChange={(e) => setCreatorFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="Tất cả">Tất cả</option>
+                {allCreators.map((creator) => (
+                  <option key={creator} value={creator}>
+                    {creator}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Xóa bộ lọc
+            </button>
+          </div>
+
+          {(searchTerm.trim() || creatorFilter !== "Tất cả") && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+              <span className="text-xs text-gray-500">Bộ lọc đã chọn:</span>
+              {searchTerm.trim() && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                  {searchCategory === "localName" ? "Tên địa phương" : "Tên khoa học"}: "{searchTerm}"
+                </span>
+              )}
+              {creatorFilter !== "Tất cả" && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                  Người tạo: {creatorFilter}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Table */}
-        <motion.div
-          className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-          variants={itemVariants}
-          initial="hidden"
-          animate="visible"
-        >
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.seedlingName")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.parent1")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.parent2")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.dateOfBirth")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.createdDate")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("seedling.createdBy")}
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    {t("common.action")}
-                  </th>
+                  <th className="text-center p-4 font-semibold text-gray-900">STT</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Tên địa phương</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Tên khoa học</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Tên địa phương của cây lai</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Tên khoa học của cây lai</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Ngày tạo</th>
+                  <th className="text-center p-4 font-semibold text-gray-900">Người tạo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                <AnimatePresence mode="wait">
-                  {loading ? (
-                    Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                      <motion.tr
-                        key={`skeleton-${idx}`}
-                        className="animate-pulse"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.05 }}
-                      >
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-32" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-24 mx-auto" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-24 mx-auto" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-20 mx-auto" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-28 mx-auto" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-5 bg-gray-200 rounded w-20 mx-auto" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-9 bg-gray-200 rounded-lg w-20 mx-auto" />
-                        </td>
-                      </motion.tr>
-                    ))
-                  ) : pagedSeedlings.length === 0 ? (
-                    <motion.tr
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="text-center p-8">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        <span className="ml-2">Đang tải...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentSeedlings.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center p-8 text-gray-500">
+                      Không có dữ liệu
+                    </td>
+                  </tr>
+                ) : (
+                  currentSeedlings.map((seedling, index) => (
+                    <tr
+                      key={seedling.id}
+                      onClick={() => navigate(`/admin/seedling/${seedling.id}?page=${page}`)}
+                      className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
                     >
-                      <td colSpan={7} className="px-6 py-16 text-center">
-                        <motion.svg
-                          className="w-12 h-12 text-gray-300 mx-auto mb-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          initial={{ rotate: 0 }}
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </motion.svg>
-                        <p className="text-gray-500 font-medium">{t("seedling.noSeedlings")}</p>
-                      </td>
-                    </motion.tr>
-                  ) : (
-                    pagedSeedlings.map((s, idx) => (
-                      <motion.tr
-                        key={s.id}
-                        className="hover:bg-gray-50 transition-colors"
-                        custom={idx}
-                        variants={rowVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        whileHover={{ backgroundColor: "rgba(249, 250, 251, 1)" }}
-                      >
-                        <td className="px-6 py-4">
-                          <span className="text-sm font-medium text-gray-900">{s.localName}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">
-                            {getSeedlingNameById(s.parent1) || "-"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">
-                            {getSeedlingNameById(s.parent2) || "-"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">{s.doB || "-"}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">
-                            {s.create_date
-                              ? new Date(s.create_date).toLocaleDateString()
-                              : "-"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-sm text-gray-600">{s.create_by || "-"}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <motion.button
-                            type="button"
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors"
-                            onClick={() =>
-                              void navigate(`/admin/seedling/${s.id}?page=${page}`)
-                            }
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: idx * 0.05 + 0.3 }}
-                          >
-                            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            {t("common.details")}
-                          </motion.button>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </AnimatePresence>
+                      <td className="p-4 text-center">{startIndex + index + 1}</td>
+                      <td className="p-4 text-center">{seedling.localName}</td>
+                      <td className="p-4 text-center">{seedling.scientificName}</td>
+                      <td className="p-4 text-center">{seedling.parent1 || "-"}</td>
+                      <td className="p-4 text-center">{seedling.parent2 || "-"}</td>
+                      <td className="p-4 text-center">{formatDate(seedling.createdDate)}</td>
+                      <td className="p-4 text-center">{seedling.createdBy}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
-        </motion.div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <motion.div
-            className="mt-6 flex items-center justify-between"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            <p className="text-sm text-gray-600">
-              Hiển thị <span className="font-medium text-gray-900">{pagedSeedlings.length}</span> trong tổng số{" "}
-              <span className="font-medium text-gray-900">{total}</span> cây con
-            </p>
-            <div className="flex items-center gap-2">
-              <motion.button
-                type="button"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                whileHover={{ scale: page === 1 ? 1 : 1.05 }}
-                whileTap={{ scale: page === 1 ? 1 : 0.95 }}
-              >
-                Trước
-              </motion.button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  return (
-                    <motion.button
-                      key={pageNum}
+          {/* Pagination */}
+          {!loading && filteredSeedlings.length > 0 && (
+            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+              <span className="font-medium">
+                Hiển thị{" "}
+                {(page - 1) * PAGE_SIZE + 1}-
+                {Math.min(page * PAGE_SIZE, filteredSeedlings.length)} của{" "}
+                {filteredSeedlings.length}
+              </span>
+              {totalPages > 1 && (
+                <div className="flex gap-2">
+                  {page > 1 && (
+                    <button
                       type="button"
-                      onClick={() => setPage(pageNum)}
-                      className={`w-10 h-10 text-sm font-medium rounded-lg transition-colors ${
-                        page === pageNum
-                          ? "bg-green-600 text-white"
-                          : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                      }`}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
+                      onClick={() => handlePageChange(page - 1)}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
                     >
-                      {pageNum}
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <motion.button
-                type="button"
-                onClick={() => setPage(page + 1)}
-                disabled={page === totalPages}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                whileHover={{ scale: page === totalPages ? 1 : 1.05 }}
-                whileTap={{ scale: page === totalPages ? 1 : 0.95 }}
-              >
-                Sau
-              </motion.button>
+                      ←
+                    </button>
+                  )}
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
+                          page === pageNum
+                            ? "bg-green-700 text-white"
+                            : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  {page < totalPages && (
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(page + 1)}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    >
+                      →
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          </motion.div>
-        )}
+          )}
+        </div>
       </div>
     </main>
   );
