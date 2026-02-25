@@ -338,9 +338,20 @@ const TaskDetailPage: React.FC = () => {
     if (!taskData) return;
     try {
       setLoading(true);
+      
+      // Determine status based on approval date vs expected end date
+      let approvalStatus = "CompletedInTime";
+      if (taskData.taskAssignments?.expectedEndDate) {
+        const approvalDate = new Date();
+        const expectedEndDate = new Date(taskData.taskAssignments.expectedEndDate);
+        if (approvalDate > expectedEndDate) {
+          approvalStatus = "CompletedOutTime";
+        }
+      }
+      
       await axiosInstance.put("/api/tasks/change-task-status", {
         todoTaskId: taskData.id,
-        status: "WaitingForApproval",
+        status: approvalStatus,
         endDate: new Date().toISOString(),
       });
       enqueueSnackbar(t("task.approvedSuccess"), { variant: "success" });
