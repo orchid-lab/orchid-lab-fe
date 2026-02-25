@@ -151,7 +151,6 @@ const TaskDetailPage: React.FC = () => {
   // editing state
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  // const [elements, setElements] = useState<ElementItem[]>([]); // Removed: no longer used
   const [updateRows, setUpdateRows] = useState<EditableUpdateAttribute[]>([]);
   const [createRows, setCreateRows] = useState<EditableCreateAttribute[]>([]);
 
@@ -200,14 +199,14 @@ const TaskDetailPage: React.FC = () => {
 
   const handleDelete = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa nhiệm vụ này?")) {
-      setSaving(true);
+      setLoading(true);
       axiosInstance
-        .delete(`/api/tasks/${id}`)
+        .delete(`/api/tasks`, { data: { taskId: id } }) // Updated API call to match the provided API details
         .then(() => {
           enqueueSnackbar("Xóa nhiệm vụ thành công", {
             variant: "success",
           });
-          navigate("/tasks");
+          void navigate("/tasks");
         })
         .catch((err) => {
           const errorMessage =
@@ -220,8 +219,30 @@ const TaskDetailPage: React.FC = () => {
           });
         })
         .finally(() => {
-          setSaving(false);
+          setLoading(false);
         });
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!taskData) return;
+    try {
+      setLoading(true);
+      await axiosInstance.put("/api/tasks/change-task-status", {
+        todoTaskId: taskData.id,
+        status: "WaitingForApproval",
+        endDate: new Date().toISOString(),
+      });
+      enqueueSnackbar("Đã duyệt nhiệm vụ thành công", { variant: "success" });
+      // Optionally refresh task data
+      window.location.reload();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Đã xảy ra lỗi khi duyệt nhiệm vụ";
+      setError(errorMessage);
+      enqueueSnackbar("Không thể duyệt nhiệm vụ", { variant: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -253,7 +274,7 @@ const TaskDetailPage: React.FC = () => {
   const sortedChecklistItems =
     taskData?.taskCheckList?.checkListItemDtos
       ?.slice()
-      .sort((a, b) => a.order - b.order) || [];
+      .sort((a, b) => a.order - b.order) ?? [];
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4">
@@ -269,6 +290,7 @@ const TaskDetailPage: React.FC = () => {
           <div className="text-center">
             <p className="text-red-600 mb-4">Lỗi: {error}</p>
             <button
+              type="button"
               onClick={handleBack}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
             >
@@ -283,6 +305,7 @@ const TaskDetailPage: React.FC = () => {
               Không tìm thấy dữ liệu nhiệm vụ
             </p>
             <button
+              type="button"
               onClick={handleBack}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
             >
@@ -310,13 +333,24 @@ const TaskDetailPage: React.FC = () => {
               </div>
               <div className="flex gap-3">
                 {!isEditing && (
-                  <button
-                    type="button"
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-orange-700 font-semibold rounded-lg shadow hover:bg-orange-50 transition-colors"
-                  >
-                    <span>✏️</span> Chỉnh sửa
-                  </button>
+                  <>
+                    {taskData.status === "WaitingForApproval" && (
+                      <button
+                        type="button"
+                        onClick={handleApprove}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow hover:bg-green-700 transition-colors"
+                      >
+                        <span>✔️</span> Duyệt
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleEdit}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-orange-700 font-semibold rounded-lg shadow hover:bg-orange-50 transition-colors"
+                    >
+                      <span>✏️</span> Chỉnh sửa
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
@@ -388,16 +422,16 @@ const TaskDetailPage: React.FC = () => {
                   {taskData.taskAttributes.map((attr, idx) => (
                     <div className="grid grid-cols-4 gap-3 mb-2" key={idx}>
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                        {attr.materialName || "-"}
+                        {attr.materialName ?? "-"}
                       </div>
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                        {attr.unit || "-"}
+                        {attr.unit ?? "-"}
                       </div>
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
                         {attr.value ?? "-"}
                       </div>
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                        {attr.chemicalName || "-"}
+                        {attr.chemicalName ?? "-"}
                       </div>
                     </div>
                   ))}
@@ -476,7 +510,7 @@ const TaskDetailPage: React.FC = () => {
                           {item.order}
                         </div>
                         <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.measurementUnit || item.expectedUnit || "-"}
+                          {item.measurementUnit ?? item.expectedUnit ?? "-"}
                         </div>
                         <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
                           {item.mesuredValue ?? "-"}
