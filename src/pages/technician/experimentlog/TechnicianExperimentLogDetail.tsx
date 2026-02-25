@@ -170,6 +170,75 @@ interface ExperimentLogDetailType {
 }
 
 // =============================================================================
+// CHANGE STAGE SUCCESS MODAL COMPONENT
+// =============================================================================
+interface ChangeStageSuccessModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const ChangeStageSuccessModal: React.FC<ChangeStageSuccessModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (isOpen && modalRef.current) {
+      gsap.fromTo(modalRef.current,
+        {
+          opacity: 0,
+          scale: 0.95
+        },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.3,
+          ease: "power2.out"
+        }
+      );
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="modal-backdrop"
+        onClick={onClose}
+      />
+      {/* Modal */}
+      <div className="modal-container">
+        <div ref={modalRef} className="modal-content modal-success">
+          {/* Header */}
+          <div className="modal-header modal-header-success">
+            <h3 className="modal-title">
+              ✓ {t("experimentLog.changeStageSuccess") || "Chuyển giai đoạn thành công"}
+            </h3>
+          </div>
+          {/* Content */}
+          <div className="modal-body modal-body-success">
+            <p className="success-message">
+              {t("experimentLog.waitingForApprovalDescription") || "Yêu cầu chuyển giai đoạn của bạn đã được gửi thành công. Vui lòng chờ duyệt từ quản lý."}
+            </p>
+          </div>
+          {/* Footer */}
+          <div className="modal-footer">
+            <button
+              type="button"
+              onClick={onClose}
+              className="modal-btn-confirm modal-btn-success"
+            >
+              {t("common.close") || "Đóng"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// =============================================================================
 // CANCEL MODAL COMPONENT
 // =============================================================================
 interface CancelModalProps {
@@ -286,6 +355,8 @@ const TechnicianExperimentLogDetail = () => {
   const [isProtocormPopoverOpen, setIsProtocormPopoverOpen] = useState(false);
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
   const [protocormQuantity, setProtocormQuantity] = useState<string>("");
+  const [isChangingStage, setIsChangingStage] = useState(false);
+  const [isChangeStageSuccessModalOpen, setIsChangeStageSuccessModalOpen] = useState(false);
 
   // Animation refs
   const headerRef = useRef<HTMLDivElement>(null);
@@ -345,6 +416,22 @@ const TechnicianExperimentLogDetail = () => {
       setError(t("common.errorLoading"));
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleChangeStage = async () => {
+    if (!id) return;
+    setIsChangingStage(true);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        status: "WaitingForChangeStage",
+      });
+      setLog((prev) => (prev ? { ...prev, status: "WaitingForChangeStage" } : prev));
+      setIsChangeStageSuccessModalOpen(true);
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setIsChangingStage(false);
     }
   };
 
@@ -657,6 +744,12 @@ const TechnicianExperimentLogDetail = () => {
         isLoading={isCancelling}
       />
 
+      {/* Change Stage Success Modal */}
+      <ChangeStageSuccessModal
+        isOpen={isChangeStageSuccessModalOpen}
+        onClose={() => setIsChangeStageSuccessModalOpen(false)}
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Header */}
         <div ref={headerRef} className="detail-header">
@@ -790,6 +883,17 @@ const TechnicianExperimentLogDetail = () => {
                 className="btn-cancel"
               >
                 {t("common.cancel") || "Hủy thí nghiệm"}
+              </button>
+            )}
+            {/* Change Stage Button */}
+            {normalizeStatus(log.status) === "InProgress" && (
+              <button
+                type="button"
+                onClick={() => void handleChangeStage()}
+                disabled={isChangingStage}
+                className="btn-change-stage"
+              >
+                {isChangingStage ? (t("experimentLog.changingStage") || "Đang thay đổi...") : (t("experimentLog.changeStage") || "Chuyển giai đoạn")}
               </button>
             )}
           </div>
