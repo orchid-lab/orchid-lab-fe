@@ -480,7 +480,7 @@ export default function Tasks() {
         <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+              <thead className="bg-green-50 border-b-2 border-green-200">
                 <tr>
                   <th className="text-left p-4 font-semibold text-gray-900">
                     {t("task.taskName")}

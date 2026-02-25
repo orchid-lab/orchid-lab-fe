@@ -505,6 +505,14 @@ body {
   background-color: #6b21a8 !important;
 }
 
+.dark .bg-blue-50 {
+  background-color: #1e3a5f !important;
+}
+
+.dark .bg-indigo-50 {
+  background-color: #2e1065 !important;
+}
+
 .dark .bg-yellow-50 {
   background-color: #854d0e !important;
 }
@@ -535,6 +543,10 @@ body {
   color: var(--text-secondary) !important;
 }
 
+.dark .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
 .dark .text-purple-700 {
   color: #d8b4fe !important;
 }
@@ -543,8 +555,28 @@ body {
   color: #bfdbfe !important;
 }
 
+.dark .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+
 .dark .text-green-700 {
   color: #a7f3d0 !important;
+}
+
+.dark .text-yellow-700 {
+  color: #fde68a !important;
+}
+
+.dark .text-orange-700 {
+  color: #fed7aa !important;
+}
+
+.dark .text-red-700 {
+  color: #fca5a5 !important;
 }
 
 /* Border Colors */
@@ -554,6 +586,10 @@ body {
 
 .dark .border-blue-200 {
   border-color: #3b82f6 !important;
+}
+
+.dark .border-indigo-200 {
+  border-color: #6366f1 !important;
 }
 
 .dark .border-purple-200 {
@@ -1662,6 +1698,14 @@ body {
   background-color: #6b21a8 !important;
 }
 
+.dark .bg-blue-50 {
+  background-color: #1e3a5f !important;
+}
+
+.dark .bg-indigo-50 {
+  background-color: #2e1065 !important;
+}
+
 .dark .bg-yellow-50 {
   background-color: #854d0e !important;
 }
@@ -1692,6 +1736,10 @@ body {
   color: var(--text-secondary) !important;
 }
 
+.dark .text-gray-800 {
+  color: #e5e7eb !important;
+}
+
 .dark .text-purple-700 {
   color: #d8b4fe !important;
 }
@@ -1700,8 +1748,28 @@ body {
   color: #bfdbfe !important;
 }
 
+.dark .text-blue-800 {
+  color: #bfdbfe !important;
+}
+
+.dark .text-indigo-700 {
+  color: #a5b4fc !important;
+}
+
 .dark .text-green-700 {
   color: #a7f3d0 !important;
+}
+
+.dark .text-yellow-700 {
+  color: #fde68a !important;
+}
+
+.dark .text-orange-700 {
+  color: #fed7aa !important;
+}
+
+.dark .text-red-700 {
+  color: #fca5a5 !important;
 }
 
 /* Border Colors */
@@ -1711,6 +1779,10 @@ body {
 
 .dark .border-blue-200 {
   border-color: #3b82f6 !important;
+}
+
+.dark .border-indigo-200 {
+  border-color: #6366f1 !important;
 }
 
 .dark .border-purple-200 {
