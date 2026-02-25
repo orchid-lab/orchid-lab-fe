@@ -268,7 +268,9 @@ const TaskDetailPage: React.FC = () => {
               : null,
         },
       );
-      enqueueSnackbar(t("task.checklistUpdatedSuccess"), { variant: "success" });
+      enqueueSnackbar(t("task.checklistUpdatedSuccess"), {
+        variant: "success",
+      });
       setChecklistEditItem(null);
       // Refresh
       const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
@@ -287,11 +289,12 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleDeleteChecklistItem = async (itemId: string) => {
-    if (!id || !window.confirm(t("task.confirmDeleteChecklist")))
-      return;
+    if (!id || !window.confirm(t("task.confirmDeleteChecklist"))) return;
     try {
       await axiosInstance.delete(`/api/tasks/${id}/checklist-items/${itemId}`);
-      enqueueSnackbar(t("task.checklistDeletedSuccess"), { variant: "success" });
+      enqueueSnackbar(t("task.checklistDeletedSuccess"), {
+        variant: "success",
+      });
       // Refresh
       const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
         `/api/tasks/${id}`,
@@ -319,9 +322,7 @@ const TaskDetailPage: React.FC = () => {
         })
         .catch((err) => {
           const errorMessage =
-            err instanceof Error
-              ? err.message
-              : t("task.deleteError");
+            err instanceof Error ? err.message : t("task.deleteError");
           setError(errorMessage);
           enqueueSnackbar(t("task.taskDeleteFailed"), {
             variant: "error",
@@ -365,7 +366,7 @@ const TaskDetailPage: React.FC = () => {
       .sort((a, b) => a.order - b.order) ?? [];
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4">
+    <main className="ml-64 mt-8 w-[calc(95vw-16rem)] min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4 overflow-x-hidden">
       {loading ? (
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
@@ -376,7 +377,9 @@ const TaskDetailPage: React.FC = () => {
       ) : error ? (
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 mb-4">{t("common.error")}: {error}</p>
+            <p className="text-red-600 mb-4">
+              {t("common.error")}: {error}
+            </p>
             <button
               type="button"
               onClick={handleBack}
@@ -389,9 +392,7 @@ const TaskDetailPage: React.FC = () => {
       ) : !taskData ? (
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              {t("task.taskDataNotFound")}
-            </p>
+            <p className="text-gray-600 mb-4">{t("task.taskDataNotFound")}</p>
             <button
               type="button"
               onClick={handleBack}
@@ -404,8 +405,8 @@ const TaskDetailPage: React.FC = () => {
       ) : (
         <>
           {/* Header + Status badge */}
-          <div className="w-full max-w-[1600px] mb-6">
-            <div className="flex items-center justify-between">
+          <div className="w-full max-w-full mb-6">
+            <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-sm text-gray-500 mb-2">
                   {t("task.breadcrumb")}
@@ -430,7 +431,9 @@ const TaskDetailPage: React.FC = () => {
                       disabled={savingTask}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors disabled:opacity-60"
                     >
-                      {savingTask ? t("common.saving") : `💾 ${t("common.save")}`}
+                      {savingTask
+                        ? t("common.saving")
+                        : `💾 ${t("common.save")}`}
                     </button>
                     <button
                       type="button"
@@ -467,17 +470,19 @@ const TaskDetailPage: React.FC = () => {
                   onClick={handleDelete}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow hover:bg-red-700 transition-colors"
                 >
-                  <span>🗑️</span> {t("task.deleteTask")}
+                  <span>🗑️</span> {t("common.delete")}
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="w-full max-w-[1600px] flex flex-col gap-8">
+          <div className="w-full max-w-full flex flex-col gap-8">
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">{t("common.name")}:</span>
+                  <span className="font-semibold text-gray-700">
+                    {t("common.name")}:
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
@@ -490,7 +495,9 @@ const TaskDetailPage: React.FC = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">{t("task.id")}:</span>
+                  <span className="font-semibold text-gray-700">
+                    {t("task.id")}:
+                  </span>
                   <span className="text-gray-800">{taskData.id}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -502,7 +509,9 @@ const TaskDetailPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">{t("common.createdAt")}:</span>
+                  <span className="font-semibold text-gray-700">
+                    {t("common.createdAt")}:
+                  </span>
                   <span className="text-gray-800">
                     {formatDate(taskData.createdDate)}
                   </span>
@@ -517,7 +526,9 @@ const TaskDetailPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-6">
-                <span className="font-semibold text-gray-700">{t("common.description")}:</span>
+                <span className="font-semibold text-gray-700">
+                  {t("common.description")}:
+                </span>
                 {isEditing ? (
                   <textarea
                     value={editTaskDescription}
@@ -628,9 +639,6 @@ const TaskDetailPage: React.FC = () => {
                             {t("task.checklistName")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            {t("common.description")}
-                          </th>
-                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
                             {t("task.expectedUnit")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
@@ -667,9 +675,6 @@ const TaskDetailPage: React.FC = () => {
                             </td>
                             <td className="px-3 py-2 border border-gray-200 text-gray-700">
                               {item.name}
-                            </td>
-                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
-                              {item.description ?? "-"}
                             </td>
                             <td className="px-3 py-2 border border-gray-200 text-gray-700">
                               {item.expectedUnit ?? "-"}
