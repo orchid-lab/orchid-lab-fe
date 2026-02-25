@@ -178,6 +178,44 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   background-color: rgba(220, 38, 38, 0.3);
 }
 
+#technician-experimentlog-detail .btn-change-stage {
+  padding: 0.5rem 1rem;
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 140px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
+  background-color: #bfdbfe;
+  border-color: #60a5fa;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+#technician-experimentlog-detail .btn-change-stage:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage {
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #93c5fd;
+  border-color: #3b82f6;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
+  background-color: rgba(37, 99, 235, 0.3);
+  border-color: #60a5fa;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+
 /* ==================== PROTOCORM POPOVER ==================== */
 #technician-experimentlog-detail .protocorm-popover {
   position: absolute;
@@ -1152,6 +1190,60 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .modal-btn-confirm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ==================== SUCCESS MODAL ==================== */
+#technician-experimentlog-detail .modal-success {
+  max-width: 24rem;
+}
+
+#technician-experimentlog-detail .modal-header-success {
+  background: linear-gradient(to right, #d1fae5, #a7f3d0);
+  border-bottom: 1px solid #6ee7b7;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-header-success {
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2));
+  border-bottom-color: #10b981;
+}
+
+#technician-experimentlog-detail .modal-header-success .modal-title {
+  color: #065f46;
+  font-size: 1rem;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-header-success .modal-title {
+  color: #d1fae5;
+}
+
+#technician-experimentlog-detail .modal-body-success {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+#technician-experimentlog-detail .success-message {
+  color: #111827;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .success-message {
+  color: #f9fafb;
+}
+
+#technician-experimentlog-detail .modal-btn-success {
+  background-color: #10b981;
+  color: white;
+  margin: 0 auto;
+}
+
+#technician-experimentlog-detail .modal-btn-success:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .modal-btn-success {
+  background-color: #10b981;
 }
 
 /* ==================== LOADING & ERROR STATES ==================== */

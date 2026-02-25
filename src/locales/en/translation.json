@@ -490,7 +490,10 @@
     "currentStage": "Current Stage",
     "exceedsExpected": "Exceeds expected quantity",
     "parent": "Parent",
-    "changingStage": "Changing stage..."
+    "changingStage": "Changing stage...",
+    "changeStage": "Change Stage",
+    "changeStageSuccess": "Change Stage Request Successful",
+    "waitingForApprovalDescription": "Your stage change request has been successfully submitted. Please wait for approval from the administrator."
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",

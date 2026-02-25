@@ -191,6 +191,7 @@ const TechDetailTask: React.FC = () => {
   const [reportInformation, setReportInformation] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [submittingReport, setSubmittingReport] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Checklist editing states
   const [editingChecklistItem, setEditingChecklistItem] = useState<string | null>(null);
@@ -436,7 +437,7 @@ const TechDetailTask: React.FC = () => {
       await updateTaskStatus(2); // WaitingForApproval
 
       handleClosePopup();
-      enqueueSnackbar("Báo cáo đã được gửi thành công!", { variant: "success" });
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error submitting report:", error);
       const apiError = error as {
@@ -752,7 +753,7 @@ const TechDetailTask: React.FC = () => {
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              {updatingStatus ? "Đang cập nhật..." : "Hoàn thành"}
+              {updatingStatus ? "Đang cập nhật..." : "Yêu cầu duyệt"}
             </button>
           </div>
         </div>
@@ -1182,6 +1183,32 @@ const TechDetailTask: React.FC = () => {
                 {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 w-full max-w-md mx-4 text-center">
+            <div className="mb-4">
+              <span className="text-5xl text-green-600">✓</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              Yêu cầu duyệt thành công
+            </h3>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              {`Báo cáo của bạn đã được gửi thành công. Vui lòng chờ researcher phê duyệt công việc.`}
+            </p>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setTimeout(() => navigate("/technician/task"), 300);
+              }}
+              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+            >
+              Quay lại danh sách
+            </button>
           </div>
         </div>
       )}
