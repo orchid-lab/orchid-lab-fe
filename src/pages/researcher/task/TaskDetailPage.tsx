@@ -3,14 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 
-type StatusType =
-  | "Assigned"
-  | "Taken"
-  | "InProcess"
-  | "DoneInTime"
-  | "DoneInLate"
-  | "Cancel";
-
 interface TaskAttribute {
   chemicalName: string | null;
   materialName: string | null;
@@ -46,21 +38,6 @@ interface CheckListItemDto {
 interface TaskCheckList {
   id: string;
   checkListItemDtos: CheckListItemDto[];
-}
-
-interface EditableUpdateAttribute {
-  attributeId: string;
-  elementName: string;
-  measurementUnit: string;
-  value: number;
-  description: string;
-}
-
-interface EditableCreateAttribute {
-  elementName: string;
-  measurementUnit: string;
-  value: number;
-  description: string;
 }
 
 interface TaskData {
@@ -147,31 +124,23 @@ const TaskDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-
-  // editing state
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [updateRows, setUpdateRows] = useState<EditableUpdateAttribute[]>([]);
-  const [createRows, setCreateRows] = useState<EditableCreateAttribute[]>([]);
-
-  const [creatorName, setCreatorName] = useState<string>(""); // Ensure creatorName is defined
+  const [creatorName, setCreatorName] = useState<string>("");
 
   useEffect(() => {
     const fetchTaskDetail = async () => {
       if (!id) return;
       try {
         setLoading(true);
-        const response = await axiosInstance.get(`/api/tasks/${id}`);
-        const value: TaskData = response.data?.value ?? response.data; // Added type annotation
+        const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(`/api/tasks/${id}`);
+        const raw = response.data as { value?: TaskData };
+        const value: TaskData = raw.value ?? (response.data as TaskData);
         if (value?.id) {
           setTaskData(value);
           const creatorId = value.createdBy;
           if (creatorId) {
             try {
-              const userResponse = await axiosInstance.get(
-                `/api/user/${creatorId}`,
-              ); // Updated API endpoint
-              setCreatorName(userResponse.data?.name ?? creatorId); // Replaced || with ??
+              const userResponse = await axiosInstance.get<{ name?: string }>(`/api/user/${creatorId}`);
+              setCreatorName(userResponse.data?.name ?? creatorId);
             } catch {
               setCreatorName(creatorId);
             }
@@ -247,29 +216,8 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate("/tasks");
+    void navigate("/tasks");
   };
-
-  const addCreateRow = () => {};
-  const createRowChange = (idx, field, value) => {};
-  const handleSave = () => {};
-
-  useEffect(() => {
-    if (taskData?.createdBy) {
-      axiosInstance
-        .get(`/api/users/${taskData.createdBy}`)
-        .then((res) => {
-          if (res.data && res.data.name) {
-            setCreatorName(res.data.name);
-          } else {
-            setCreatorName(taskData.createdBy);
-          }
-        })
-        .catch(() => {
-          setCreatorName(taskData.createdBy);
-        });
-    }
-  }, [taskData?.createdBy]);
 
   const sortedChecklistItems =
     taskData?.taskCheckList?.checkListItemDtos
@@ -337,7 +285,7 @@ const TaskDetailPage: React.FC = () => {
                     {taskData.status === "WaitingForApproval" && (
                       <button
                         type="button"
-                        onClick={handleApprove}
+                        onClick={() => { void handleApprove(); }}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow hover:bg-green-700 transition-colors"
                       >
                         <span>✔️</span> Duyệt
@@ -419,8 +367,8 @@ const TaskDetailPage: React.FC = () => {
                     <span>Số lượng</span>
                     <span>Tên hóa chất</span>
                   </div>
-                  {taskData.taskAttributes.map((attr, idx) => (
-                    <div className="grid grid-cols-4 gap-3 mb-2" key={idx}>
+                  {taskData.taskAttributes.map((attr) => (
+                    <div className="grid grid-cols-4 gap-3 mb-2" key={`${attr.materialName ?? ''}-${attr.chemicalName ?? ''}-${attr.unit ?? ''}-${String(attr.value ?? '')}`}>
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
                         {attr.materialName ?? "-"}
                       </div>

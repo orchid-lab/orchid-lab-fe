@@ -40,13 +40,14 @@ interface ApiTaskResponse {
 }
 
 function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
-  // Sửa lại: value phải là object và value.data là array
   return (
     typeof obj === "object" &&
     obj !== null &&
     "value" in obj &&
     typeof (obj as { value: unknown }).value === "object" &&
-    Array.isArray((obj as any).value?.data)
+    Array.isArray(
+      ((obj as { value: { data?: unknown } }).value)?.data
+    )
   );
 }
 
@@ -64,15 +65,6 @@ function getStatusLabel(
   };
   return labels[status] || status;
 }
-
-const STATUS_COLORS: Record<StatusType, string> = {
-  Assigned: "text-blue-700",
-  Taken: "text-purple-700",
-  InProcess: "text-yellow-700",
-  DoneInTime: "text-green-700",
-  DoneInLate: "text-orange-700",
-  Cancel: "text-red-700",
-};
 
 export default function Tasks() {
   const navigate = useNavigate();
@@ -127,8 +119,8 @@ export default function Tasks() {
 
           // Sort all tasks by create_at (newest first) for summary
           allTasks.sort((a, b) => {
-            const dateA = new Date(a.create_at ?? a.end_date ?? new Date(0));
-            const dateB = new Date(b.create_at ?? b.end_date ?? new Date(0));
+            const dateA = new Date(a.create_at ?? a.end_date ?? 0);
+            const dateB = new Date(b.create_at ?? b.end_date ?? 0);
             return dateB.getTime() - dateA.getTime();
           });
 
@@ -146,8 +138,9 @@ export default function Tasks() {
           const researcherSet = new Set<string>();
 
           allTasks.forEach((task) => {
-            counts[task.status] = (counts[task.status] || 0) + 1;
-            researcherSet.add(task.researcher);
+            const s = task.status as StatusType;
+            if (s in counts) counts[s] = (counts[s] ?? 0) + 1;
+            if (task.researcher) researcherSet.add(task.researcher);
           });
 
           setStatusCounts(counts);
@@ -165,12 +158,9 @@ export default function Tasks() {
   const buildApiQuery = useMemo(() => {
     const params = new URLSearchParams();
 
-    // Luôn load tất cả tasks để sort và filter ở frontend
     params.append("pageNumber", "1");
-    params.append("pageSize", "1000"); // Load tất cả để sort và filter
-    console.log("Loading all tasks for frontend sorting and filtering");
+    params.append("pageSize", "1000");
 
-    // Backend không hỗ trợ status filter, chỉ có thể filter ở frontend
     if (researcherFilter !== "Tất cả") {
       params.append("researcher", researcherFilter);
     }
@@ -178,18 +168,8 @@ export default function Tasks() {
       params.append("search", searchTerm.trim());
     }
 
-    const queryString = params.toString();
-    console.log("Built query parameters:", {
-      pageNo: currentPage,
-      pageSize: tasksPerPage,
-      statusFilter,
-      researcherFilter,
-      searchTerm,
-      finalQuery: queryString,
-    });
-
-    return queryString;
-  }, [currentPage, statusFilter, researcherFilter, searchTerm]);
+    return params.toString();
+  }, [researcherFilter, searchTerm]);
 
   // Load tasks với debounce cho search
   useEffect(() => {
@@ -198,26 +178,16 @@ export default function Tasks() {
         setLoading(true);
         setError(null);
 
-        console.log("API Query:", buildApiQuery); // Debug log
-        console.log("Current filters:", {
-          statusFilter,
-          researcherFilter,
-          searchTerm,
-          currentPage,
-        });
-
         axiosInstance
           .get(`/api/tasks?${buildApiQuery}`)
           .then(async (res) => {
-            console.log("API Response:", res.data); // Debug log
-            // SỬA: fallback nếu không có value wrapper
-            let data: any[] = [];
+            let data: Task[] = [];
             if (isApiTaskResponse(res.data)) {
               data = Array.isArray(res.data.value?.data)
                 ? res.data.value.data
                 : [];
-            } else if (Array.isArray(res.data.data)) {
-              data = res.data.data;
+            } else if (Array.isArray((res.data as { data?: Task[] }).data)) {
+              data = ((res.data as { data: Task[] }).data);
             }
             // Sort tasks theo expectedEndDate, end_date, create_at
             const sortedData = [...data].sort((a, b) => {
@@ -240,16 +210,16 @@ export default function Tasks() {
             }
             if (researcherFilter !== "Tất cả") {
               filteredData = filteredData.filter(
-                (task) => (task.researcherId || "") === researcherFilter,
+                (task) => (task.researcherId ?? "") === researcherFilter,
               );
             }
             if (searchTerm.trim()) {
               filteredData = filteredData.filter(
                 (task) =>
-                  (task.name || "")
+                  (task.name ?? "")
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
-                  (task.description || "")
+                  (task.description ?? "")
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()),
               );
@@ -258,9 +228,6 @@ export default function Tasks() {
             const startIndex = (currentPage - 1) * tasksPerPage;
             const endIndex = startIndex + tasksPerPage;
             const paginatedData = filteredData.slice(startIndex, endIndex);
-            // Debug log
-            console.log("FilteredData:", filteredData);
-            console.log("PaginatedData:", paginatedData);
             setTasks(paginatedData);
             setTotalCount(filteredData.length);
             // Fetch technician names
@@ -273,8 +240,8 @@ export default function Tasks() {
               uniqueTechIds.map(async (id) => {
                 try {
                   const userRes = await axiosInstance.get(`/api/user/${id}`);
-                  const user = userRes.data?.value ?? userRes.data;
-                  techNameMap[id] = user?.name ?? id;
+                  const userData = userRes.data as { value?: { name?: string }; name?: string };
+                  techNameMap[id] = userData?.value?.name ?? userData?.name ?? id;
                 } catch {
                   techNameMap[id] = id;
                 }
@@ -282,8 +249,7 @@ export default function Tasks() {
             );
             setTechnicianNames(techNameMap);
           })
-          .catch((error) => {
-            console.error("API Error:", error); // Debug log
+          .catch(() => {
             setError("Không thể tải danh sách nhiệm vụ");
             enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
           })
@@ -306,11 +272,6 @@ export default function Tasks() {
 
   // Reset về trang 1 khi filter thay đổi (chỉ khi có filter)
   useEffect(() => {
-    console.log("Filter changed:", {
-      statusFilter,
-      researcherFilter,
-      searchTerm,
-    });
     if (
       statusFilter !== "Tất cả" ||
       researcherFilter !== "Tất cả" ||
@@ -321,15 +282,6 @@ export default function Tasks() {
   }, [statusFilter, researcherFilter, searchTerm]);
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
-
-  // Debug logs cho pagination
-  console.log("Pagination debug:", {
-    totalCount,
-    tasksPerPage,
-    totalPages,
-    currentPage,
-    tasksLength: tasks.length,
-  });
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -566,14 +518,14 @@ export default function Tasks() {
                     </td>
                   </tr>
                 ) : (
-                  tasks.map((task, idx) => (
+                  tasks.map((task) => (
                     <tr
                       key={task.id}
                       className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
-                      onClick={() => navigate(`/tasks/${task.id}`)}
+                      onClick={() => { void navigate(`/tasks/${task.id}`); }}
                     >
                       <td className="p-4 font-medium text-gray-900">
-                        {task.name || "-"}
+                        {task.name ?? "-"}
                       </td>
                       <td className="p-4">
                         <span className="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
