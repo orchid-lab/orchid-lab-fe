@@ -45,9 +45,7 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
     obj !== null &&
     "value" in obj &&
     typeof (obj as { value: unknown }).value === "object" &&
-    Array.isArray(
-      ((obj as { value: { data?: unknown } }).value)?.data
-    )
+    Array.isArray((obj as { value: { data?: unknown } }).value?.data)
   );
 }
 
@@ -187,7 +185,7 @@ export default function Tasks() {
                 ? res.data.value.data
                 : [];
             } else if (Array.isArray((res.data as { data?: Task[] }).data)) {
-              data = ((res.data as { data: Task[] }).data);
+              data = (res.data as { data: Task[] }).data;
             }
             // Sort tasks theo expectedEndDate, end_date, create_at
             const sortedData = [...data].sort((a, b) => {
@@ -240,8 +238,12 @@ export default function Tasks() {
               uniqueTechIds.map(async (id) => {
                 try {
                   const userRes = await axiosInstance.get(`/api/user/${id}`);
-                  const userData = userRes.data as { value?: { name?: string }; name?: string };
-                  techNameMap[id] = userData?.value?.name ?? userData?.name ?? id;
+                  const userData = userRes.data as {
+                    value?: { name?: string };
+                    name?: string;
+                  };
+                  techNameMap[id] =
+                    userData?.value?.name ?? userData?.name ?? id;
                 } catch {
                   techNameMap[id] = id;
                 }
@@ -314,11 +316,10 @@ export default function Tasks() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Quản lý nghiên cứu lai tạo
+              {t("task.researchTaskManagement")}
             </h1>
             <p className="text-gray-600 mt-1">
-              Theo dõi và quản lý các nhiệm vụ nghiên cứu lai tạo và kết quả thí
-              nghiệm
+              {t("task.researchTaskSubtitle")}
             </p>
           </div>
           <div className="flex gap-3">
@@ -470,7 +471,7 @@ export default function Tasks() {
               )}
               {searchTerm.trim() && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                    {t("common.search")}: "{searchTerm}"
+                  {t("common.search")}: "{searchTerm}"
                 </span>
               )}
             </div>
@@ -523,7 +524,9 @@ export default function Tasks() {
                     <tr
                       key={task.id}
                       className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
-                      onClick={() => { void navigate(`/tasks/${task.id}`); }}
+                      onClick={() => {
+                        void navigate(`/tasks/${task.id}`);
+                      }}
                     >
                       <td className="p-4 font-medium text-gray-900">
                         {task.name ?? "-"}
@@ -535,16 +538,23 @@ export default function Tasks() {
                       </td>
                       <td className="p-4">
                         {task.expectedEndDate
-                          ? new Date(task.expectedEndDate).toLocaleDateString("vi-VN")
+                          ? new Date(task.expectedEndDate).toLocaleDateString(
+                              "vi-VN",
+                            )
                           : task.end_date
-                            ? new Date(task.end_date).toLocaleDateString("vi-VN")
+                            ? new Date(task.end_date).toLocaleDateString(
+                                "vi-VN",
+                              )
                             : task.create_at
-                              ? new Date(task.create_at).toLocaleDateString("vi-VN")
+                              ? new Date(task.create_at).toLocaleDateString(
+                                  "vi-VN",
+                                )
                               : "-"}
                       </td>
                       <td className="p-4">
                         {task.technicianId
-                          ? technicianNames[task.technicianId] || task.technicianId
+                          ? technicianNames[task.technicianId] ||
+                            task.technicianId
                           : "-"}
                       </td>
                     </tr>
@@ -559,8 +569,8 @@ export default function Tasks() {
               <span className="font-medium">
                 {t("common.showing")}{" "}
                 {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
-                {Math.min(currentPage * tasksPerPage, totalCount)} {t("common.of")}{" "}
-                {totalCount}
+                {Math.min(currentPage * tasksPerPage, totalCount)}{" "}
+                {t("common.of")} {totalCount}
               </span>
               <div className="flex gap-2">
                 {currentPage > 1 && (

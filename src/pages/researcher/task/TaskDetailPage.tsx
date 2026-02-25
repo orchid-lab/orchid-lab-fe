@@ -496,12 +496,6 @@ const TaskDetailPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">
-                    {t("task.id")}:
-                  </span>
-                  <span className="text-gray-800">{taskData.id}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">
                     {t("task.creator")}:
                   </span>
                   <span className="text-gray-800">
