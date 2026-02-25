@@ -250,8 +250,8 @@ export default function Tasks() {
             setTechnicianNames(techNameMap);
           })
           .catch(() => {
-            setError("Không thể tải danh sách nhiệm vụ");
-            enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
+            setError(t("task.cannotLoadList"));
+            enqueueSnackbar(t("common.errorLoading"), { variant: "error" });
           })
           .finally(() => {
             setLoading(false);
@@ -268,6 +268,7 @@ export default function Tasks() {
     searchTerm,
     currentPage,
     enqueueSnackbar,
+    t,
   ]);
 
   // Reset về trang 1 khi filter thay đổi (chỉ khi có filter)
@@ -328,7 +329,7 @@ export default function Tasks() {
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
-              Mẫu nhiệm vụ
+              {t("task.taskTemplates")}
             </button>
             <button
               type="button"
@@ -337,7 +338,7 @@ export default function Tasks() {
               }}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
             >
-              + Tạo nhiệm vụ nghiên cứu
+              {t("task.createResearchTask")}
             </button>
           </div>
         </div>
@@ -469,7 +470,7 @@ export default function Tasks() {
               )}
               {searchTerm.trim() && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                  Tìm kiếm: "{searchTerm}"
+                    {t("common.search")}: "{searchTerm}"
                 </span>
               )}
             </div>
@@ -482,16 +483,16 @@ export default function Tasks() {
               <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
                 <tr>
                   <th className="text-left p-4 font-semibold text-gray-900">
-                    Tên nhiệm vụ
+                    {t("task.taskName")}
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-900">
-                    Trạng thái
+                    {t("common.status")}
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-900">
-                    Thời hạn
+                    {t("task.deadline")}
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-900">
-                    Kỹ thuật viên
+                    {t("task.technician")}
                   </th>
                 </tr>
               </thead>
@@ -501,7 +502,7 @@ export default function Tasks() {
                     <td colSpan={4} className="text-center py-8 text-gray-500">
                       <div className="flex items-center gap-2 justify-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                        Đang tải {t("task.taskList").toLowerCase()}...
+                        {t("common.loadingData")}
                       </div>
                     </td>
                   </tr>
@@ -514,7 +515,7 @@ export default function Tasks() {
                 ) : tasks.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-8 text-gray-500">
-                      Không có nhiệm vụ nào
+                      {t("task.noTasks")}
                     </td>
                   </tr>
                 ) : (
@@ -556,9 +557,9 @@ export default function Tasks() {
           {totalPages > 1 && (
             <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
               <span className="font-medium">
-                Hiển thị{" "}
+                {t("common.showing")}{" "}
                 {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
-                {Math.min(currentPage * tasksPerPage, totalCount)} của{" "}
+                {Math.min(currentPage * tasksPerPage, totalCount)} {t("common.of")}{" "}
                 {totalCount}
               </span>
               <div className="flex gap-2">

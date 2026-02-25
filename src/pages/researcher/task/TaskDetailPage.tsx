@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 
 interface TaskAttribute {
   chemicalName: string | null;
@@ -82,29 +83,29 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getStatusLabel = (status: string) => {
+const getStatusLabel = (status: string, t: (key: string) => string) => {
   switch (status) {
     case "Assigned":
-      return "Đã giao";
+      return t("status.assigned");
     case "Taken":
-      return "Đã nhận";
+      return t("status.taken");
     case "InProcess":
-      return "Đang thực hiện";
+      return t("status.inProcess");
     case "DoneInTime":
-      return "Hoàn thành đúng hạn";
+      return t("status.doneInTime");
     case "DoneInLate":
-      return "Hoàn thành trễ hạn";
+      return t("status.doneInLate");
     case "Cancel":
-      return "Bị hủy";
+      return t("status.cancel");
     case "WaitingForApproval":
-      return "Chờ phê duyệt";
+      return t("task.waitingForApproval");
     default:
       return status;
   }
 };
 
 const formatDate = (dateString: string) => {
-  if (!dateString) return "Không có";
+  if (!dateString) return "–";
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return dateString;
   return date.toLocaleDateString("vi-VN", {
@@ -120,6 +121,7 @@ const TaskDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
   const [taskData, setTaskData] = useState<TaskData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,9 +173,9 @@ const TaskDetailPage: React.FC = () => {
         }
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu";
+          err instanceof Error ? err.message : t("task.loadError");
         setError(errorMessage);
-        enqueueSnackbar("Không thể tải chi tiết nhiệm vụ", {
+        enqueueSnackbar(t("task.taskDetailLoadError"), {
           variant: "error",
         });
       } finally {
@@ -181,7 +183,7 @@ const TaskDetailPage: React.FC = () => {
       }
     };
     void fetchTaskDetail();
-  }, [id, enqueueSnackbar]);
+  }, [id, enqueueSnackbar, t]);
 
   const handleEdit = () => {
     if (!taskData) return;
@@ -214,7 +216,7 @@ const TaskDetailPage: React.FC = () => {
             }
           : null,
       });
-      enqueueSnackbar("Cập nhật nhiệm vụ thành công", { variant: "success" });
+      enqueueSnackbar(t("task.taskUpdatedSuccess"), { variant: "success" });
       setIsEditing(false);
       // Refresh data
       const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
@@ -225,7 +227,7 @@ const TaskDetailPage: React.FC = () => {
       setTaskData(value);
     } catch (err) {
       enqueueSnackbar(
-        err instanceof Error ? err.message : "Không thể cập nhật nhiệm vụ",
+        err instanceof Error ? err.message : t("task.taskUpdateFailed"),
         { variant: "error" },
       );
     } finally {
@@ -266,7 +268,7 @@ const TaskDetailPage: React.FC = () => {
               : null,
         },
       );
-      enqueueSnackbar("Cập nhật checklist thành công", { variant: "success" });
+      enqueueSnackbar(t("task.checklistUpdatedSuccess"), { variant: "success" });
       setChecklistEditItem(null);
       // Refresh
       const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
@@ -276,7 +278,7 @@ const TaskDetailPage: React.FC = () => {
       setTaskData(raw.value ?? (response.data as TaskData));
     } catch (err) {
       enqueueSnackbar(
-        err instanceof Error ? err.message : "Không thể cập nhật checklist",
+        err instanceof Error ? err.message : t("task.checklistUpdateFailed"),
         { variant: "error" },
       );
     } finally {
@@ -285,11 +287,11 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleDeleteChecklistItem = async (itemId: string) => {
-    if (!id || !window.confirm("Bạn có chắc chắn muốn xóa checklist item này?"))
+    if (!id || !window.confirm(t("task.confirmDeleteChecklist")))
       return;
     try {
       await axiosInstance.delete(`/api/tasks/${id}/checklist-items/${itemId}`);
-      enqueueSnackbar("Đã xóa checklist item", { variant: "success" });
+      enqueueSnackbar(t("task.checklistDeletedSuccess"), { variant: "success" });
       // Refresh
       const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
         `/api/tasks/${id}`,
@@ -298,19 +300,19 @@ const TaskDetailPage: React.FC = () => {
       setTaskData(raw.value ?? (response.data as TaskData));
     } catch (err) {
       enqueueSnackbar(
-        err instanceof Error ? err.message : "Không thể xóa checklist item",
+        err instanceof Error ? err.message : t("task.checklistDeleteFailed"),
         { variant: "error" },
       );
     }
   };
 
   const handleDelete = () => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa nhiệm vụ này?")) {
+    if (window.confirm(t("task.confirmDeleteTask"))) {
       setLoading(true);
       axiosInstance
         .delete(`/api/tasks`, { data: { taskId: id } }) // Updated API call to match the provided API details
         .then(() => {
-          enqueueSnackbar("Xóa nhiệm vụ thành công", {
+          enqueueSnackbar(t("task.taskDeletedSuccess"), {
             variant: "success",
           });
           void navigate("/tasks");
@@ -319,9 +321,9 @@ const TaskDetailPage: React.FC = () => {
           const errorMessage =
             err instanceof Error
               ? err.message
-              : "Đã xảy ra lỗi khi xóa nhiệm vụ";
+              : t("task.deleteError");
           setError(errorMessage);
-          enqueueSnackbar("Không thể xóa nhiệm vụ", {
+          enqueueSnackbar(t("task.taskDeleteFailed"), {
             variant: "error",
           });
         })
@@ -340,14 +342,14 @@ const TaskDetailPage: React.FC = () => {
         status: "WaitingForApproval",
         endDate: new Date().toISOString(),
       });
-      enqueueSnackbar("Đã duyệt nhiệm vụ thành công", { variant: "success" });
+      enqueueSnackbar(t("task.approvedSuccess"), { variant: "success" });
       // Optionally refresh task data
       window.location.reload();
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Đã xảy ra lỗi khi duyệt nhiệm vụ";
+        err instanceof Error ? err.message : t("task.approveError");
       setError(errorMessage);
-      enqueueSnackbar("Không thể duyệt nhiệm vụ", { variant: "error" });
+      enqueueSnackbar(t("task.approveFailed"), { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -368,19 +370,19 @@ const TaskDetailPage: React.FC = () => {
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải dữ liệu...</p>
+            <p className="text-gray-600">{t("common.loadingData")}</p>
           </div>
         </main>
       ) : error ? (
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-red-600 mb-4">Lỗi: {error}</p>
+            <p className="text-red-600 mb-4">{t("common.error")}: {error}</p>
             <button
               type="button"
               onClick={handleBack}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
             >
-              Quay lại
+              {t("common.back")}
             </button>
           </div>
         </main>
@@ -388,14 +390,14 @@ const TaskDetailPage: React.FC = () => {
         <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-600 mb-4">
-              Không tìm thấy dữ liệu nhiệm vụ
+              {t("task.taskDataNotFound")}
             </p>
             <button
               type="button"
               onClick={handleBack}
               className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
             >
-              Quay lại
+              {t("common.back")}
             </button>
           </div>
         </main>
@@ -406,14 +408,14 @@ const TaskDetailPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm text-gray-500 mb-2">
-                  Nhiệm vụ / Chi tiết
+                  {t("task.breadcrumb")}
                 </div>
                 <div className="text-4xl font-bold text-gray-900 mb-2">
                   {taskData.name}
                 </div>
                 {taskData.status === "WaitingForApproval" && (
                   <span className={`w-fit ${getStatusColor(taskData.status)}`}>
-                    {getStatusLabel(taskData.status)}
+                    {getStatusLabel(taskData.status, t)}
                   </span>
                 )}
               </div>
@@ -428,14 +430,14 @@ const TaskDetailPage: React.FC = () => {
                       disabled={savingTask}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors disabled:opacity-60"
                     >
-                      {savingTask ? "Đang lưu..." : "💾 Lưu"}
+                      {savingTask ? t("common.saving") : `💾 ${t("common.save")}`}
                     </button>
                     <button
                       type="button"
                       onClick={handleCancelEdit}
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-50 transition-colors"
                     >
-                      Hủy
+                      {t("common.cancel")}
                     </button>
                   </>
                 ) : (
@@ -448,7 +450,7 @@ const TaskDetailPage: React.FC = () => {
                         }}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow hover:bg-green-700 transition-colors"
                       >
-                        <span>✔️</span> Duyệt
+                        <span>✔️</span> {t("task.approve")}
                       </button>
                     )}
                     <button
@@ -456,7 +458,7 @@ const TaskDetailPage: React.FC = () => {
                       onClick={handleEdit}
                       className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-orange-700 font-semibold rounded-lg shadow hover:bg-orange-50 transition-colors"
                     >
-                      <span>✏️</span> Chỉnh sửa
+                      <span>✏️</span> {t("common.edit")}
                     </button>
                   </>
                 )}
@@ -465,7 +467,7 @@ const TaskDetailPage: React.FC = () => {
                   onClick={handleDelete}
                   className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow hover:bg-red-700 transition-colors"
                 >
-                  <span>🗑️</span> Xóa nhiệm vụ
+                  <span>🗑️</span> {t("task.deleteTask")}
                 </button>
               </div>
             </div>
@@ -475,7 +477,7 @@ const TaskDetailPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">Tên:</span>
+                  <span className="font-semibold text-gray-700">{t("common.name")}:</span>
                   {isEditing ? (
                     <input
                       type="text"
@@ -488,26 +490,26 @@ const TaskDetailPage: React.FC = () => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">ID:</span>
+                  <span className="font-semibold text-gray-700">{t("task.id")}:</span>
                   <span className="text-gray-800">{taskData.id}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">
-                    Người tạo:
+                    {t("task.creator")}:
                   </span>
                   <span className="text-gray-800">
                     {creatorName || taskData.createdBy}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-700">Ngày tạo:</span>
+                  <span className="font-semibold text-gray-700">{t("common.createdAt")}:</span>
                   <span className="text-gray-800">
                     {formatDate(taskData.createdDate)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">
-                    Ngày cập nhật:
+                    {t("common.updatedAt")}:
                   </span>
                   <span className="text-gray-800">
                     {formatDate(taskData.updatedDate)}
@@ -515,7 +517,7 @@ const TaskDetailPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-6">
-                <span className="font-semibold text-gray-700">Mô tả:</span>
+                <span className="font-semibold text-gray-700">{t("common.description")}:</span>
                 {isEditing ? (
                   <textarea
                     value={editTaskDescription}
@@ -534,16 +536,16 @@ const TaskDetailPage: React.FC = () => {
             {/* Card 2: Nguyên vật liệu */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h3 className="text-xl font-bold text-gray-800 mb-4">
-                Nguyên vật liệu
+                {t("task.materials")}
               </h3>
               {Array.isArray(taskData.taskAttributes) &&
               taskData.taskAttributes.length > 0 ? (
                 <div className="space-y-2">
                   <div className="grid grid-cols-4 gap-3 mb-2 font-medium text-sm text-gray-700">
-                    <span>Tên vật liệu</span>
-                    <span>Đơn vị</span>
-                    <span>Số lượng</span>
-                    <span>Tên hóa chất</span>
+                    <span>{t("task.materialName")}</span>
+                    <span>{t("task.unit")}</span>
+                    <span>{t("task.quantity")}</span>
+                    <span>{t("task.chemicalName")}</span>
                   </div>
                   {taskData.taskAttributes.map((attr) => (
                     <div
@@ -567,7 +569,7 @@ const TaskDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 italic">
-                  Không có nguyên vật liệu nào được ghi nhận
+                  {t("task.noMaterialsRecorded")}
                 </div>
               )}
             </div>
@@ -575,15 +577,15 @@ const TaskDetailPage: React.FC = () => {
             {/* Card 3: Phân công & Checklist */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h3 className="text-xl font-bold text-gray-800 mb-4">
-                Thông tin phân công
+                {t("task.assignmentInfo")}
               </h3>
               {taskData.taskAssignments ? (
                 <div className="space-y-2">
                   <div className="grid grid-cols-4 gap-3 mb-2 font-medium text-sm text-gray-700">
-                    <span>Kỹ thuật viên</span>
-                    <span>Ngày bắt đầu</span>
-                    <span>Ngày kết thúc</span>
-                    <span>Ngày dự kiến kết thúc</span>
+                    <span>{t("task.technician")}</span>
+                    <span>{t("common.startDate")}</span>
+                    <span>{t("task.endDate")}</span>
+                    <span>{t("task.expectedEndDate")}</span>
                   </div>
                   <div className="grid grid-cols-4 gap-3 mb-2">
                     <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
@@ -605,12 +607,12 @@ const TaskDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 italic">
-                  Không có thông tin phân công
+                  {t("task.noAssignmentInfo")}
                 </div>
               )}
               <div className="mt-8">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">
-                  Checklist nhiệm vụ
+                  {t("task.taskChecklist")}
                 </h3>
                 {taskData.taskCheckList &&
                 Array.isArray(taskData.taskCheckList.checkListItemDtos) &&
@@ -620,40 +622,40 @@ const TaskDetailPage: React.FC = () => {
                       <thead>
                         <tr className="bg-gray-100 text-gray-700 font-medium">
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Thứ tự
+                            {t("task.checklistOrder")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Tên checklist
+                            {t("task.checklistName")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Mô tả
+                            {t("common.description")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Đơn vị kỳ vọng
+                            {t("task.expectedUnit")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Min kỳ vọng
+                            {t("task.minExpected")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Max kỳ vọng
+                            {t("task.maxExpected")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Đơn vị đo
+                            {t("task.measureUnit")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Giá trị đo
+                            {t("task.measuredValue")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Đạt
+                            {t("task.checklistPassLabel")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Đánh giá
+                            {t("task.checklistEvaluation")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Trạng thái
+                            {t("common.status")}
                           </th>
                           <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
-                            Hành động
+                            {t("common.action")}
                           </th>
                         </tr>
                       </thead>
@@ -688,8 +690,8 @@ const TaskDetailPage: React.FC = () => {
                               {item.isPass === null
                                 ? "-"
                                 : item.isPass
-                                  ? "✅ Đạt"
-                                  : "❌ Không đạt"}
+                                  ? t("task.checklistPassResult")
+                                  : t("task.checklistFailResult")}
                             </td>
                             <td className="px-3 py-2 border border-gray-200 text-gray-700">
                               {item.evaluated ?? "-"}
@@ -704,7 +706,7 @@ const TaskDetailPage: React.FC = () => {
                                   onClick={() => handleOpenChecklistEdit(item)}
                                   className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
                                 >
-                                  ✏️ Sửa
+                                  ✏️ {t("common.edit")}
                                 </button>
                                 <button
                                   type="button"
@@ -713,7 +715,7 @@ const TaskDetailPage: React.FC = () => {
                                   }}
                                   className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                                 >
-                                  🗑️ Xóa
+                                  🗑️ {t("common.delete")}
                                 </button>
                               </div>
                             </td>
@@ -724,7 +726,7 @@ const TaskDetailPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 italic">
-                    Không có checklist nào
+                    {t("task.noChecklist")}
                   </div>
                 )}
               </div>
@@ -780,12 +782,12 @@ const TaskDetailPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg mx-4">
             <h3 className="text-xl font-bold text-gray-800 mb-6">
-              Chỉnh sửa Checklist Item
+              {t("task.editChecklistItem")}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên <span className="text-red-500">*</span>
+                  {t("common.name")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -801,7 +803,7 @@ const TaskDetailPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
+                  {t("common.description")}
                 </label>
                 <textarea
                   value={checklistEditForm.description}
@@ -817,7 +819,7 @@ const TaskDetailPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Đơn vị kỳ vọng
+                  {t("task.expectedUnit")}
                 </label>
                 <input
                   type="text"
@@ -834,7 +836,7 @@ const TaskDetailPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Min kỳ vọng
+                    {t("task.minExpected")}
                   </label>
                   <input
                     type="number"
@@ -850,7 +852,7 @@ const TaskDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Max kỳ vọng
+                    {t("task.maxExpected")}
                   </label>
                   <input
                     type="number"
@@ -872,7 +874,7 @@ const TaskDetailPage: React.FC = () => {
                 onClick={() => setChecklistEditItem(null)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
               >
-                Hủy
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -882,7 +884,7 @@ const TaskDetailPage: React.FC = () => {
                 disabled={savingChecklist || !checklistEditForm.name.trim()}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60"
               >
-                {savingChecklist ? "Đang lưu..." : "Lưu"}
+                {savingChecklist ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </div>
