@@ -126,12 +126,31 @@ const TaskDetailPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [creatorName, setCreatorName] = useState<string>("");
 
+  // Task edit state
+  const [editTaskName, setEditTaskName] = useState("");
+  const [editTaskDescription, setEditTaskDescription] = useState("");
+  const [savingTask, setSavingTask] = useState(false);
+
+  // Checklist item edit modal state
+  const [checklistEditItem, setChecklistEditItem] =
+    useState<CheckListItemDto | null>(null);
+  const [checklistEditForm, setChecklistEditForm] = useState({
+    name: "",
+    description: "",
+    expectedMeasureUnit: "",
+    expectedMinValue: "",
+    expectedMaxValue: "",
+  });
+  const [savingChecklist, setSavingChecklist] = useState(false);
+
   useEffect(() => {
     const fetchTaskDetail = async () => {
       if (!id) return;
       try {
         setLoading(true);
-        const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(`/api/tasks/${id}`);
+        const response = await axiosInstance.get<
+          { value?: TaskData } | TaskData
+        >(`/api/tasks/${id}`);
         const raw = response.data as { value?: TaskData };
         const value: TaskData = raw.value ?? (response.data as TaskData);
         if (value?.id) {
@@ -139,7 +158,9 @@ const TaskDetailPage: React.FC = () => {
           const creatorId = value.createdBy;
           if (creatorId) {
             try {
-              const userResponse = await axiosInstance.get<{ name?: string }>(`/api/user/${creatorId}`);
+              const userResponse = await axiosInstance.get<{ name?: string }>(
+                `/api/user/${creatorId}`,
+              );
               setCreatorName(userResponse.data?.name ?? creatorId);
             } catch {
               setCreatorName(creatorId);
@@ -163,7 +184,124 @@ const TaskDetailPage: React.FC = () => {
   }, [id, enqueueSnackbar]);
 
   const handleEdit = () => {
+    if (!taskData) return;
+    setEditTaskName(taskData.name);
+    setEditTaskDescription(taskData.description);
     setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveTask = async () => {
+    if (!taskData || !id) return;
+    try {
+      setSavingTask(true);
+      await axiosInstance.put("/api/tasks", {
+        taskId: id,
+        stageId: taskData.stageId ?? 0,
+        name: editTaskName,
+        description: editTaskDescription,
+        createTaskAttribute: [],
+        updateTaskAttribute: [],
+        updateTaskAssignment: taskData.taskAssignments
+          ? {
+              taskAssignmentId: taskData.taskAssignments.taskId,
+              targetType: taskData.taskAssignments.targetType,
+              targetId: taskData.taskAssignments.targetId,
+              expectedEndDate: taskData.taskAssignments.expectedEndDate,
+            }
+          : null,
+      });
+      enqueueSnackbar("Cập nhật nhiệm vụ thành công", { variant: "success" });
+      setIsEditing(false);
+      // Refresh data
+      const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
+        `/api/tasks/${id}`,
+      );
+      const raw = response.data as { value?: TaskData };
+      const value: TaskData = raw.value ?? (response.data as TaskData);
+      setTaskData(value);
+    } catch (err) {
+      enqueueSnackbar(
+        err instanceof Error ? err.message : "Không thể cập nhật nhiệm vụ",
+        { variant: "error" },
+      );
+    } finally {
+      setSavingTask(false);
+    }
+  };
+
+  const handleOpenChecklistEdit = (item: CheckListItemDto) => {
+    setChecklistEditItem(item);
+    setChecklistEditForm({
+      name: item.name,
+      description: item.description ?? "",
+      expectedMeasureUnit: item.expectedUnit ?? "",
+      expectedMinValue:
+        item.expectedMinValue !== null ? String(item.expectedMinValue) : "",
+      expectedMaxValue:
+        item.expectedMaxValue !== null ? String(item.expectedMaxValue) : "",
+    });
+  };
+
+  const handleSaveChecklistItem = async () => {
+    if (!checklistEditItem || !id) return;
+    try {
+      setSavingChecklist(true);
+      await axiosInstance.put(
+        `/api/tasks/${id}/checklist-items/${checklistEditItem.id}`,
+        {
+          name: checklistEditForm.name,
+          description: checklistEditForm.description || null,
+          expectedMeasureUnit: checklistEditForm.expectedMeasureUnit || null,
+          expectedMinValue:
+            checklistEditForm.expectedMinValue !== ""
+              ? Number(checklistEditForm.expectedMinValue)
+              : null,
+          expectedMaxValue:
+            checklistEditForm.expectedMaxValue !== ""
+              ? Number(checklistEditForm.expectedMaxValue)
+              : null,
+        },
+      );
+      enqueueSnackbar("Cập nhật checklist thành công", { variant: "success" });
+      setChecklistEditItem(null);
+      // Refresh
+      const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
+        `/api/tasks/${id}`,
+      );
+      const raw = response.data as { value?: TaskData };
+      setTaskData(raw.value ?? (response.data as TaskData));
+    } catch (err) {
+      enqueueSnackbar(
+        err instanceof Error ? err.message : "Không thể cập nhật checklist",
+        { variant: "error" },
+      );
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
+  const handleDeleteChecklistItem = async (itemId: string) => {
+    if (!id || !window.confirm("Bạn có chắc chắn muốn xóa checklist item này?"))
+      return;
+    try {
+      await axiosInstance.delete(`/api/tasks/${id}/checklist-items/${itemId}`);
+      enqueueSnackbar("Đã xóa checklist item", { variant: "success" });
+      // Refresh
+      const response = await axiosInstance.get<{ value?: TaskData } | TaskData>(
+        `/api/tasks/${id}`,
+      );
+      const raw = response.data as { value?: TaskData };
+      setTaskData(raw.value ?? (response.data as TaskData));
+    } catch (err) {
+      enqueueSnackbar(
+        err instanceof Error ? err.message : "Không thể xóa checklist item",
+        { variant: "error" },
+      );
+    }
   };
 
   const handleDelete = () => {
@@ -264,7 +402,7 @@ const TaskDetailPage: React.FC = () => {
       ) : (
         <>
           {/* Header + Status badge */}
-          <div className="w-full max-w-[1100px] mb-6">
+          <div className="w-full max-w-[1600px] mb-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm text-gray-500 mb-2">
@@ -280,12 +418,34 @@ const TaskDetailPage: React.FC = () => {
                 )}
               </div>
               <div className="flex gap-3">
-                {!isEditing && (
+                {isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleSaveTask();
+                      }}
+                      disabled={savingTask}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors disabled:opacity-60"
+                    >
+                      {savingTask ? "Đang lưu..." : "💾 Lưu"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg shadow hover:bg-gray-50 transition-colors"
+                    >
+                      Hủy
+                    </button>
+                  </>
+                ) : (
                   <>
                     {taskData.status === "WaitingForApproval" && (
                       <button
                         type="button"
-                        onClick={() => { void handleApprove(); }}
+                        onClick={() => {
+                          void handleApprove();
+                        }}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow hover:bg-green-700 transition-colors"
                       >
                         <span>✔️</span> Duyệt
@@ -311,12 +471,21 @@ const TaskDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full max-w-[1100px] flex flex-col gap-8">
+          <div className="w-full max-w-[1600px] flex flex-col gap-8">
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">Tên:</span>
-                  <span className="text-gray-800">{taskData.name}</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editTaskName}
+                      onChange={(e) => setEditTaskName(e.target.value)}
+                      className="flex-1 px-3 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
+                    />
+                  ) : (
+                    <span className="text-gray-800">{taskData.name}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">ID:</span>
@@ -347,9 +516,18 @@ const TaskDetailPage: React.FC = () => {
               </div>
               <div className="mt-6">
                 <span className="font-semibold text-gray-700">Mô tả:</span>
-                <div className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 min-h-[80px]">
-                  {taskData.description}
-                </div>
+                {isEditing ? (
+                  <textarea
+                    value={editTaskDescription}
+                    onChange={(e) => setEditTaskDescription(e.target.value)}
+                    rows={4}
+                    className="mt-2 w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 resize-y"
+                  />
+                ) : (
+                  <div className="mt-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 min-h-[80px]">
+                    {taskData.description}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -368,7 +546,10 @@ const TaskDetailPage: React.FC = () => {
                     <span>Tên hóa chất</span>
                   </div>
                   {taskData.taskAttributes.map((attr) => (
-                    <div className="grid grid-cols-4 gap-3 mb-2" key={`${attr.materialName ?? ''}-${attr.chemicalName ?? ''}-${attr.unit ?? ''}-${String(attr.value ?? '')}`}>
+                    <div
+                      className="grid grid-cols-4 gap-3 mb-2"
+                      key={`${attr.materialName ?? ""}-${attr.chemicalName ?? ""}-${attr.unit ?? ""}-${String(attr.value ?? "")}`}
+                    >
                       <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
                         {attr.materialName ?? "-"}
                       </div>
@@ -434,40 +615,112 @@ const TaskDetailPage: React.FC = () => {
                 {taskData.taskCheckList &&
                 Array.isArray(taskData.taskCheckList.checkListItemDtos) &&
                 taskData.taskCheckList.checkListItemDtos.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-6 gap-3 mb-2 font-medium text-sm text-gray-700">
-                      <span>Tên checklist</span>
-                      <span>Mô tả</span>
-                      <span>Thứ tự</span>
-                      <span>Đơn vị</span>
-                      <span>Giá trị đo</span>
-                      <span>Trạng thái</span>
-                    </div>
-                    {sortedChecklistItems.map((item, idx) => (
-                      <div
-                        className="grid grid-cols-6 gap-3 mb-2"
-                        key={item.id || idx}
-                      >
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.name}
-                        </div>
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.description || "-"}
-                        </div>
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.order}
-                        </div>
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.measurementUnit ?? item.expectedUnit ?? "-"}
-                        </div>
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.mesuredValue ?? "-"}
-                        </div>
-                        <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-                          {item.status}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100 text-gray-700 font-medium">
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Thứ tự
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Tên checklist
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Mô tả
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Đơn vị kỳ vọng
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Min kỳ vọng
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Max kỳ vọng
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Đơn vị đo
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Giá trị đo
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Đạt
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Đánh giá
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Trạng thái
+                          </th>
+                          <th className="px-3 py-2 text-left border border-gray-200 whitespace-nowrap">
+                            Hành động
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedChecklistItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.order}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.name}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.description ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.expectedUnit ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.expectedMinValue ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.expectedMaxValue ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.measurementUnit ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.mesuredValue ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.isPass === null
+                                ? "-"
+                                : item.isPass
+                                  ? "✅ Đạt"
+                                  : "❌ Không đạt"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.evaluated ?? "-"}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 text-gray-700">
+                              {item.status}
+                            </td>
+                            <td className="px-3 py-2 border border-gray-200 whitespace-nowrap">
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenChecklistEdit(item)}
+                                  className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors"
+                                >
+                                  ✏️ Sửa
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void handleDeleteChecklistItem(item.id);
+                                  }}
+                                  className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                                >
+                                  🗑️ Xóa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 italic">
@@ -520,6 +773,120 @@ const TaskDetailPage: React.FC = () => {
             </div> */}
           </div>
         </>
+      )}
+
+      {/* Checklist Item Edit Modal */}
+      {checklistEditItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-6">
+              Chỉnh sửa Checklist Item
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tên <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={checklistEditForm.name}
+                  onChange={(e) =>
+                    setChecklistEditForm((f) => ({
+                      ...f,
+                      name: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mô tả
+                </label>
+                <textarea
+                  value={checklistEditForm.description}
+                  onChange={(e) =>
+                    setChecklistEditForm((f) => ({
+                      ...f,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Đơn vị kỳ vọng
+                </label>
+                <input
+                  type="text"
+                  value={checklistEditForm.expectedMeasureUnit}
+                  onChange={(e) =>
+                    setChecklistEditForm((f) => ({
+                      ...f,
+                      expectedMeasureUnit: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Min kỳ vọng
+                  </label>
+                  <input
+                    type="number"
+                    value={checklistEditForm.expectedMinValue}
+                    onChange={(e) =>
+                      setChecklistEditForm((f) => ({
+                        ...f,
+                        expectedMinValue: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max kỳ vọng
+                  </label>
+                  <input
+                    type="number"
+                    value={checklistEditForm.expectedMaxValue}
+                    onChange={(e) =>
+                      setChecklistEditForm((f) => ({
+                        ...f,
+                        expectedMaxValue: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setChecklistEditItem(null)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSaveChecklistItem();
+                }}
+                disabled={savingChecklist || !checklistEditForm.name.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-60"
+              >
+                {savingChecklist ? "Đang lưu..." : "Lưu"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
