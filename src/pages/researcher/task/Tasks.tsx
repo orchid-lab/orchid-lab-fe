@@ -49,6 +49,26 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   );
 }
 
+// Map API-returned status values → internal StatusType
+const STATUS_NORMALIZE_MAP: Record<string, StatusType> = {
+  Assigned: "Assigned",
+  Taken: "Taken",
+  InProcess: "InProcess",
+  InProgress: "InProcess",
+  DoneInTime: "DoneInTime",
+  CompletedInTime: "DoneInTime",
+  DoneInLate: "DoneInLate",
+  CompletedLate: "DoneInLate",
+  CompletedInLate: "DoneInLate",
+  Cancel: "Cancel",
+  Cancelled: "Cancel",
+  Canceled: "Cancel",
+};
+
+function normalizeStatus(status: string): StatusType | null {
+  return STATUS_NORMALIZE_MAP[status] ?? null;
+}
+
 function getStatusLabel(
   status: StatusType,
   t: (key: string) => string,
@@ -99,58 +119,7 @@ export default function Tasks() {
     Record<string, string>
   >({});
 
-  const tasksPerPage = 8; // Tăng pageSize để giảm số lần gọi API
-
-  // Load summary data chỉ 1 lần khi component mount
-  useEffect(() => {
-    const loadSummaryData = async () => {
-      try {
-        // Lấy tất cả tasks để tính summary (có thể cache ở đây)
-        const response = await axiosInstance.get(
-          `/api/tasks?pageNumber=1&pageSize=1000`,
-        );
-
-        if (isApiTaskResponse(response.data)) {
-          const allTasks = Array.isArray(response.data.value?.data)
-            ? response.data.value.data
-            : [];
-
-          // Sort all tasks by create_at (newest first) for summary
-          allTasks.sort((a, b) => {
-            const dateA = new Date(a.create_at ?? a.end_date ?? 0);
-            const dateB = new Date(b.create_at ?? b.end_date ?? 0);
-            return dateB.getTime() - dateA.getTime();
-          });
-
-          // Tính status counts
-          const counts: Record<StatusType, number> = {
-            Assigned: 0,
-            Taken: 0,
-            InProcess: 0,
-            DoneInTime: 0,
-            DoneInLate: 0,
-            Cancel: 0,
-          };
-
-          // Lấy unique researchers
-          const researcherSet = new Set<string>();
-
-          allTasks.forEach((task) => {
-            const s = task.status as StatusType;
-            if (s in counts) counts[s] = (counts[s] ?? 0) + 1;
-            if (task.researcher) researcherSet.add(task.researcher);
-          });
-
-          setStatusCounts(counts);
-          setAllResearchers(Array.from(researcherSet));
-        }
-      } catch (err) {
-        console.error("Error loading summary data:", err);
-      }
-    };
-
-    void loadSummaryData();
-  }, []);
+  const tasksPerPage = 8;
 
   // Build query parameters cho API call chính
   const buildApiQuery = useMemo(() => {
@@ -187,6 +156,21 @@ export default function Tasks() {
             } else if (Array.isArray((res.data as { data?: Task[] }).data)) {
               data = (res.data as { data: Task[] }).data;
             }
+
+            // Compute status counts and researchers from full unfiltered data
+            const counts: Record<StatusType, number> = {
+              Assigned: 0, Taken: 0, InProcess: 0,
+              DoneInTime: 0, DoneInLate: 0, Cancel: 0,
+            };
+            const researcherSet = new Set<string>();
+            data.forEach((task) => {
+              const normalized = normalizeStatus(task.status);
+              if (normalized) counts[normalized] = (counts[normalized] ?? 0) + 1;
+              if (task.researcher) researcherSet.add(task.researcher);
+            });
+            setStatusCounts(counts);
+            setAllResearchers(Array.from(researcherSet));
+
             // Sort tasks theo expectedEndDate, end_date, create_at
             const sortedData = [...data].sort((a, b) => {
               const dateA = new Date(
@@ -201,9 +185,7 @@ export default function Tasks() {
             let filteredData = sortedData;
             if (statusFilter !== "Tất cả") {
               filteredData = filteredData.filter(
-                (task) =>
-                  (task.status || "").toLowerCase() ===
-                  statusFilter.toLowerCase(),
+                (task) => normalizeStatus(task.status) === statusFilter,
               );
             }
             if (researcherFilter !== "Tất cả") {
