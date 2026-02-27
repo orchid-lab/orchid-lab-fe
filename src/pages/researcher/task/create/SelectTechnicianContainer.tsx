@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CreateTaskStepper from "./CreateTaskStepper";
 import { useCreateTask } from "../../../../context/CreateTaskContext";
 import axiosInstance from "../../../../api/axiosInstance";
@@ -16,6 +17,7 @@ const SelectTechnicianContainer: React.FC = () => {
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { state, setState } = useCreateTask();
 
   // If template mode, skip this step
@@ -109,7 +111,7 @@ const SelectTechnicianContainer: React.FC = () => {
           )}
           {!loading && technicians.length === 0 && (
             <div className="text-center py-10 text-red-400 font-medium">
-              Không có kỹ thuật viên nào!
+              {t("task.noTechniciansAvailable")}
             </div>
           )}
           {technicians.map((tech) => (
@@ -166,14 +168,14 @@ const SelectTechnicianContainer: React.FC = () => {
             className="px-6 py-2.5 rounded-lg text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
             onClick={handleBack}
           >
-            Quay lại
+            {t("common.back")}
           </button>
           <button
             type="submit"
             className="px-8 py-2.5 rounded-lg text-base font-semibold transition-colors bg-green-700 text-white hover:bg-green-800 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             disabled={selectedTech === null}
           >
-            Tiếp theo →
+            {t("common.next")} →
           </button>
         </div>
       </form>

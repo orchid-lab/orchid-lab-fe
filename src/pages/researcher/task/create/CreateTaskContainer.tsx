@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CreateTaskStepper from "./CreateTaskStepper";
 import { useCreateTask } from "../../../../context/CreateTaskContext";
 import type {
@@ -79,6 +80,7 @@ const emptyChecklist = (order: number): KeyedCL => ({
 
 const CreateTaskContainer: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { setState } = useCreateTask();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -121,11 +123,11 @@ const CreateTaskContainer: React.FC = () => {
         );
       })
       .catch(() =>
-        enqueueSnackbar("Không thể tải danh sách hóa chất", {
+        enqueueSnackbar(t("task.fetchChemicalsFailed"), {
           variant: "error",
         }),
       );
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   // Fetch materials
   useEffect(() => {
@@ -143,11 +145,11 @@ const CreateTaskContainer: React.FC = () => {
         );
       })
       .catch(() =>
-        enqueueSnackbar("Không thể tải danh sách dụng cụ", {
+        enqueueSnackbar(t("task.fetchMaterialsFailed"), {
           variant: "error",
         }),
       );
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   // Fetch experiment logs
   useEffect(() => {
@@ -164,11 +166,11 @@ const CreateTaskContainer: React.FC = () => {
         );
       })
       .catch(() =>
-        enqueueSnackbar("Không thể tải danh sách nhật ký thí nghiệm", {
+        enqueueSnackbar(t("task.fetchELFailed"), {
           variant: "error",
         }),
       );
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, t]);
 
   // Fetch samples when targetType = Sample
   useEffect(() => {
@@ -180,11 +182,11 @@ const CreateTaskContainer: React.FC = () => {
         setSamples(list.map((s) => ({ id: s.id, name: s.name })));
       })
       .catch(() =>
-        enqueueSnackbar("Không thể tải danh sách mẫu", {
+        enqueueSnackbar(t("task.fetchSamplesFailed"), {
           variant: "error",
         }),
       );
-  }, [taskMode, targetType, enqueueSnackbar]);
+  }, [taskMode, targetType, enqueueSnackbar, t]);
 
   // ── Attribute handlers ──────────────────────────────────────────────────
   const handleAttrTypeChange = (idx: number, type: "chemical" | "material") => {
@@ -326,7 +328,9 @@ const CreateTaskContainer: React.FC = () => {
         className="bg-white rounded-2xl px-10 pt-8 pb-10 shadow-md w-full max-w-4xl mt-6"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-2xl font-bold text-gray-800 mb-8">Tạo nhiệm vụ</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-8">
+          {t("task.createTaskPageTitle")}
+        </h2>
 
         {/* Task Mode */}
         <div className="flex gap-6 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
@@ -337,7 +341,9 @@ const CreateTaskContainer: React.FC = () => {
               onChange={() => setTaskMode("regular")}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="font-semibold text-gray-700">Nhiệm vụ thường</span>
+            <span className="font-semibold text-gray-700">
+              {t("task.taskModeRegular")}
+            </span>
           </label>
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
@@ -346,33 +352,37 @@ const CreateTaskContainer: React.FC = () => {
               onChange={() => setTaskMode("template")}
               className="w-4 h-4 accent-green-600"
             />
-            <span className="font-semibold text-gray-700">Template (mẫu)</span>
+            <span className="font-semibold text-gray-700">
+              {t("task.taskModeTemplate")}
+            </span>
           </label>
         </div>
 
         {/* Name */}
         <div className="flex flex-col mb-5">
           <label className="font-semibold text-gray-700 mb-1.5">
-            Tên nhiệm vụ *
+            {t("task.taskName")} *
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            placeholder="Nhập tên nhiệm vụ"
+            placeholder={t("task.taskName")}
             className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
 
         {/* Description */}
         <div className="flex flex-col mb-5">
-          <label className="font-semibold text-gray-700 mb-1.5">Mô tả</label>
+          <label className="font-semibold text-gray-700 mb-1.5">
+            {t("common.description")}
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="Mô tả nhiệm vụ..."
+            placeholder={t("common.description") + "..."}
             className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 resize-y focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
@@ -383,7 +393,7 @@ const CreateTaskContainer: React.FC = () => {
             <div className="grid grid-cols-2 gap-5 mb-5">
               <div className="flex flex-col">
                 <label className="font-semibold text-gray-700 mb-1.5">
-                  Loại đối tượng *
+                  {t("task.targetType")} *
                 </label>
                 <select
                   value={targetType}
@@ -395,14 +405,16 @@ const CreateTaskContainer: React.FC = () => {
                   required
                   className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Chọn loại đối tượng...</option>
-                  <option value="ExperimentLog">Nhật ký thí nghiệm</option>
-                  <option value="Sample">Mẫu thí nghiệm</option>
+                  <option value="">{t("task.selectTargetType")}</option>
+                  <option value="ExperimentLog">
+                    {t("task.experimentLog")}
+                  </option>
+                  <option value="Sample">{t("task.targetTypeSample")}</option>
                 </select>
               </div>
               <div className="flex flex-col">
                 <label className="font-semibold text-gray-700 mb-1.5">
-                  Ngày hoàn thành dự kiến *
+                  {t("task.expectedEndDate")} *
                 </label>
                 <input
                   type="date"
@@ -417,7 +429,7 @@ const CreateTaskContainer: React.FC = () => {
             {targetType === "ExperimentLog" && (
               <div className="flex flex-col mb-5">
                 <label className="font-semibold text-gray-700 mb-1.5">
-                  Nhật ký thí nghiệm *
+                  {t("task.experimentLog")} *
                 </label>
                 <select
                   value={selectedELId}
@@ -425,7 +437,7 @@ const CreateTaskContainer: React.FC = () => {
                   required
                   className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Chọn nhật ký thí nghiệm...</option>
+                  <option value="">{t("task.experimentLog")}...</option>
                   {experimentLogs.map((el) => (
                     <option key={el.id} value={el.id}>
                       {el.name}
@@ -438,7 +450,7 @@ const CreateTaskContainer: React.FC = () => {
             {targetType === "Sample" && (
               <div className="flex flex-col mb-5">
                 <label className="font-semibold text-gray-700 mb-1.5">
-                  Mẫu thí nghiệm *
+                  {t("task.targetTypeSample")} *
                 </label>
                 <select
                   value={selectedSampleId}
@@ -446,7 +458,7 @@ const CreateTaskContainer: React.FC = () => {
                   required
                   className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="">Chọn mẫu thí nghiệm...</option>
+                  <option value="">{t("task.targetTypeSample")}...</option>
                   {samples.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -462,14 +474,14 @@ const CreateTaskContainer: React.FC = () => {
         {!isRegular && (
           <div className="flex flex-col mb-5">
             <label className="font-semibold text-gray-700 mb-1.5">
-              Nhật ký thí nghiệm (lấy stage hiện tại)
+              {t("task.templateStageLabel")}
             </label>
             <select
               value={templateELId}
               onChange={(e) => setTemplateELId(e.target.value)}
               className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="">Không chọn (stageId = 0)</option>
+              <option value="">{t("task.noStageOption")}</option>
               {experimentLogs.map((el) => (
                 <option key={el.id} value={el.id}>
                   {el.name}
@@ -481,7 +493,7 @@ const CreateTaskContainer: React.FC = () => {
             </select>
             {templateELId && (
               <p className="text-xs text-gray-500 mt-1.5">
-                StageId sẽ được đặt là{" "}
+                {t("task.stageIdWillBe")}{" "}
                 <strong>
                   {experimentLogs.find((x) => x.id === templateELId)
                     ?.currentStageOrder ?? 0}
@@ -496,10 +508,10 @@ const CreateTaskContainer: React.FC = () => {
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
             <div>
               <h3 className="font-semibold text-gray-800">
-                Thuộc tính nhiệm vụ
+                {t("task.taskAttributesTitle")}
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                Hóa chất hoặc dụng cụ sử dụng
+                {t("task.taskAttributesSubtitle")}
               </p>
             </div>
             <button
@@ -507,12 +519,12 @@ const CreateTaskContainer: React.FC = () => {
               onClick={addAttribute}
               className="flex items-center gap-1.5 text-sm text-white bg-green-600 hover:bg-green-700 font-semibold px-3 py-1.5 rounded-lg transition-colors"
             >
-              + Thêm
+              + {t("common.add")}
             </button>
           </div>
           {attributes.length === 0 && (
             <p className="text-sm text-gray-400 italic text-center py-4">
-              Chưa có thuộc tính nào.
+              {t("task.noAttributes")}
             </p>
           )}
           <div className="space-y-3">
@@ -523,7 +535,7 @@ const CreateTaskContainer: React.FC = () => {
               >
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    Loại
+                    {t("task.attrType")}
                   </label>
                   <select
                     value={attr.type}
@@ -535,22 +547,24 @@ const CreateTaskContainer: React.FC = () => {
                     }
                     className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="chemical">Hóa chất</option>
-                    <option value="material">Dụng cụ / vật liệu</option>
+                    <option value="chemical">{t("element.chemical")}</option>
+                    <option value="material">
+                      {t("task.attrMaterialEquipment")}
+                    </option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">
                     {attr.type === "chemical"
-                      ? "Chọn hóa chất"
-                      : "Chọn dụng cụ"}
+                      ? t("task.selectChemical")
+                      : t("task.selectMaterial")}
                   </label>
                   <select
                     value={attr.itemId || ""}
                     onChange={(e) => handleAttrItemChange(idx, e.target.value)}
                     className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="">Chọn...</option>
+                    <option value="">...</option>
                     {(attr.type === "chemical" ? chemicals : materials).map(
                       (item) => (
                         <option key={item.id} value={item.id}>
@@ -562,19 +576,19 @@ const CreateTaskContainer: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    Đơn vị
+                    {t("task.unit")}
                   </label>
                   <input
                     type="text"
                     value={attr.unit}
                     onChange={(e) => handleAttrUnitChange(idx, e.target.value)}
-                    placeholder="Đơn vị"
+                    placeholder={t("task.unit")}
                     className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    Số lượng
+                    {t("task.quantity")}
                   </label>
                   <input
                     type="number"
@@ -605,10 +619,10 @@ const CreateTaskContainer: React.FC = () => {
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
             <div>
               <h3 className="font-semibold text-gray-800">
-                Danh sách kiểm tra (Checklist)
+                {t("task.checklistTitle")}
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                Các mục cần kiểm tra khi thực hiện nhiệm vụ
+                {t("task.checklistSubtitle")}
               </p>
             </div>
             <button
@@ -616,12 +630,12 @@ const CreateTaskContainer: React.FC = () => {
               onClick={addChecklist}
               className="flex items-center gap-1.5 text-sm text-white bg-green-600 hover:bg-green-700 font-semibold px-3 py-1.5 rounded-lg transition-colors"
             >
-              + Thêm
+              + {t("common.add")}
             </button>
           </div>
           {checklistItems.length === 0 && (
             <p className="text-sm text-gray-400 italic text-center py-4">
-              Chưa có mục kiểm tra nào.
+              {t("task.noChecklistItems")}
             </p>
           )}
           <div className="space-y-3">
@@ -649,7 +663,7 @@ const CreateTaskContainer: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
-                      Tên mục *
+                      {t("task.taskName")} *
                     </label>
                     <input
                       type="text"
@@ -658,13 +672,13 @@ const CreateTaskContainer: React.FC = () => {
                       onChange={(e) =>
                         handleChecklistField(idx, "name", e.target.value)
                       }
-                      placeholder="Tên mục kiểm tra"
+                      placeholder={t("task.checklistItemPlaceholder")}
                       className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
-                      Mô tả
+                      {t("common.description")}
                     </label>
                     <input
                       type="text"
@@ -672,7 +686,7 @@ const CreateTaskContainer: React.FC = () => {
                       onChange={(e) =>
                         handleChecklistField(idx, "description", e.target.value)
                       }
-                      placeholder="Mô tả (tùy chọn)"
+                      placeholder={t("task.checklistDescPlaceholder")}
                       className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
@@ -682,7 +696,7 @@ const CreateTaskContainer: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
-                      Đơn vị đo
+                      {t("task.expectedUnit")}
                     </label>
                     <input
                       type="text"
@@ -694,13 +708,13 @@ const CreateTaskContainer: React.FC = () => {
                           e.target.value,
                         )
                       }
-                      placeholder="mg/L, cái, ml..."
+                      placeholder={t("task.checklistUnitPlaceholder")}
                       className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
-                      Giá trị min (tùy chọn)
+                      {t("task.checklistMinOptional")}
                     </label>
                     <input
                       type="number"
@@ -719,7 +733,7 @@ const CreateTaskContainer: React.FC = () => {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-gray-500 mb-1 block">
-                      Giá trị max (tùy chọn)
+                      {t("task.checklistMaxOptional")}
                     </label>
                     <input
                       type="number"
@@ -748,14 +762,14 @@ const CreateTaskContainer: React.FC = () => {
             onClick={() => void navigate("/tasks")}
             className="px-6 py-2.5 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
           >
-            Hủy
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
             disabled={!canSubmit || loading}
             className="px-8 py-2.5 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            {isRegular ? "Tiếp theo →" : "Xem lại →"}
+            {isRegular ? `${t("common.next")} →` : t("task.reviewBtn")}
           </button>
         </div>
       </form>

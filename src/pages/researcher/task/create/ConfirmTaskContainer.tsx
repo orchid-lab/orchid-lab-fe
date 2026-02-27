@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import CreateTaskStepper from "./CreateTaskStepper";
 import { useCreateTask } from "../../../../context/CreateTaskContext";
 import axiosInstance from "../../../../api/axiosInstance";
@@ -7,6 +8,7 @@ import { useSnackbar } from "notistack";
 
 const ConfirmTaskContainer: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { state } = useCreateTask();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -73,14 +75,13 @@ const ConfirmTaskContainer: React.FC = () => {
 
     try {
       await axiosInstance.post("/api/tasks", body);
-      enqueueSnackbar("Nhiệm vụ đã được tạo thành công!", {
-        variant: "success",
-      });
+      enqueueSnackbar(t("task.createTaskSuccess"), { variant: "success" });
       void navigate("/tasks");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       enqueueSnackbar(
-        "Tạo nhiệm vụ thất bại! " +
+        t("task.createTaskFailed") +
+          " " +
           (error?.response?.data?.message ??
             JSON.stringify(error?.response?.data) ??
             ""),
@@ -99,26 +100,28 @@ const ConfirmTaskContainer: React.FC = () => {
         }}
       >
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Xác nhận thông tin nhiệm vụ
+          {t("task.confirmTaskTitle")}
         </h2>
         <p className="text-sm text-gray-400 mb-8">
-          Kiểm tra lại thông tin trước khi tạo nhiệm vụ
+          {t("task.confirmTaskSubtitle")}
         </p>
 
         {/* ── Basic info ── */}
         <div className="mb-8">
           <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-            Thông tin cơ bản
+            {t("task.stepBasicInfo")}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-medium text-gray-400 mb-1">
-                Tên nhiệm vụ
+                {t("task.taskName")}
               </p>
               <p className="text-gray-800 font-medium">{state.name}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">Loại</p>
+              <p className="text-xs font-medium text-gray-400 mb-1">
+                {t("common.status")}
+              </p>
               <span
                 className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${
                   isTemplate
@@ -126,12 +129,16 @@ const ConfirmTaskContainer: React.FC = () => {
                     : "bg-blue-100 text-blue-700"
                 }`}
               >
-                {isTemplate ? "Template (mẫu)" : "Nhiệm vụ thường"}
+                {isTemplate
+                  ? t("task.taskModeTemplate")
+                  : t("task.taskModeRegular")}
               </span>
             </div>
             {state.description && (
               <div className="col-span-2">
-                <p className="text-xs font-medium text-gray-400 mb-1">Mô tả</p>
+                <p className="text-xs font-medium text-gray-400 mb-1">
+                  {t("common.description")}
+                </p>
                 <p className="text-gray-700 whitespace-pre-wrap">
                   {state.description}
                 </p>
@@ -144,22 +151,22 @@ const ConfirmTaskContainer: React.FC = () => {
         {!isTemplate && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              Phân công
+              {t("task.sectionAssignment")}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-1">
-                  Loại đối tượng
+                  {t("task.targetType")}
                 </p>
                 <p className="text-gray-800">
                   {state.targetType === "ExperimentLog"
-                    ? "Nhật ký thí nghiệm"
-                    : "Mẫu thí nghiệm"}
+                    ? t("task.experimentLog")
+                    : t("task.targetTypeSample")}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-1">
-                  Đối tượng
+                  {t("task.targetObject")}
                 </p>
                 <p className="text-gray-800">
                   {state.targetType === "ExperimentLog"
@@ -169,7 +176,7 @@ const ConfirmTaskContainer: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-1">
-                  Kỹ thuật viên
+                  {t("task.technician")}
                 </p>
                 <p className="text-gray-800 font-medium">
                   {state.technician?.name ?? "-"}
@@ -177,7 +184,7 @@ const ConfirmTaskContainer: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-1">
-                  Ngày hoàn thành dự kiến
+                  {t("task.expectedEndDate")}
                 </p>
                 <p className="text-gray-800">
                   {state.expectedEndDate
@@ -194,11 +201,11 @@ const ConfirmTaskContainer: React.FC = () => {
         {isTemplate && state.templateEL && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              Template
+              {t("task.sectionTemplate")}
             </h3>
             <div>
               <p className="text-xs font-medium text-gray-400 mb-1">
-                Nhật ký thí nghiệm / StageId
+                {t("task.experimentLog")} / StageId
               </p>
               <p className="text-gray-800">
                 {state.templateEL.name} — Stage{" "}
@@ -212,7 +219,7 @@ const ConfirmTaskContainer: React.FC = () => {
         {state.attributes.filter((a) => a.itemId > 0).length > 0 && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              Thuộc tính nhiệm vụ
+              {t("task.taskAttributesTitle")}
             </h3>
             <div className="space-y-2">
               {state.attributes
@@ -229,7 +236,9 @@ const ConfirmTaskContainer: React.FC = () => {
                           : "bg-orange-100 text-orange-700"
                       }`}
                     >
-                      {a.type === "chemical" ? "Hóa chất" : "Dụng cụ"}
+                      {a.type === "chemical"
+                        ? t("element.chemical")
+                        : t("element.material")}
                     </span>
                     <span className="flex-1 text-gray-800 font-medium">
                       {a.itemName}
@@ -247,7 +256,7 @@ const ConfirmTaskContainer: React.FC = () => {
         {state.checklistItems.length > 0 && (
           <div className="mb-8">
             <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              Danh sách kiểm tra
+              {t("task.taskChecklist")}
             </h3>
             <div className="space-y-2">
               {state.checklistItems.map((item) => (
@@ -292,13 +301,13 @@ const ConfirmTaskContainer: React.FC = () => {
             className="px-6 py-2.5 rounded-lg text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
             onClick={handleBack}
           >
-            Quay lại
+            {t("common.back")}
           </button>
           <button
             type="submit"
             className="px-8 py-2.5 rounded-lg text-base font-semibold bg-green-700 text-white hover:bg-green-800 transition-colors"
           >
-            Tạo nhiệm vụ
+            {t("task.confirmCreateTask")}
           </button>
         </div>
       </form>
