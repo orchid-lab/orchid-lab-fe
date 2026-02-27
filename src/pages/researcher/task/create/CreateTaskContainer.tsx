@@ -1,506 +1,761 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CreateTaskStepper from "./CreateTaskStepper";
 import { useCreateTask } from "../../../../context/CreateTaskContext";
 import type {
-  Attribute,
+  Chemical,
+  Material,
   ExperimentLog,
   Sample,
-  Element,
+  TaskAttribute,
+  ChecklistItem,
+  TargetType,
+  TaskMode,
 } from "../../../../context/CreateTaskContext";
 import axiosInstance from "../../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
-import AutoCreateTaskContainer from "./AutoCreateTaskContainer";
 
-interface ApiElementResponse {
+interface ApiChemicalResponse {
+  data?: {
+    id: number;
+    name: string;
+    category: string;
+    concentrationUnit: string;
+  }[];
   value?: {
-    data?: { id: string; name: string; description: string }[];
+    data?: {
+      id: number;
+      name: string;
+      category: string;
+      concentrationUnit: string;
+    }[];
   };
 }
 
-interface ApiExperimentLogResponse {
+interface ApiMaterialResponse {
+  data?: { id: number; name: string; category: string; unit: string }[];
   value?: {
-    data?: { id: string; name: string }[];
+    data?: { id: number; name: string; category: string; unit: string }[];
   };
+}
+
+interface ApiELResponse {
+  value?: { data?: { id: string; name: string; currentStageOrder?: number }[] };
+  data?: { id: string; name: string; currentStageOrder?: number }[];
 }
 
 interface ApiSampleResponse {
-  value?: {
-    data?: { id: string; name: string }[];
-  };
+  value?: { data?: { id: string; name: string }[] };
+  data?: { id: string; name: string }[];
 }
 
-const CreateTaskContainer: React.FC = () => {
-  const [name, setName] = useState("");
-  const [experimentLogs, setExperimentLogs] = useState<ExperimentLog[]>([]);
-  const [selectedEL, setSelectedEL] = useState<string>("");
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [selectedSample, setSelectedSample] = useState<string>("");
-  const [description, setDescription] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [isDaily, setIsDaily] = useState(false);
-  const [elements, setElements] = useState<Element[]>([]);
-  const [attributes, setAttributes] = useState<Attribute[]>([
-    {
-      elementId: "",
-      elementName: "",
-      measurementUnit: "",
-      value: 0,
-      description: "",
-    },
-  ]);
+type KeyedAttr = TaskAttribute & { _key: number };
+type KeyedCL = ChecklistItem & { _key: number };
 
-  const [loadingEL, setLoadingEL] = useState(false);
-  const [loadingSample, setLoadingSample] = useState(false);
-  const [loadingElements, setLoadingElements] = useState(false);
-  const [loadingSampleDetails, setLoadingSampleDetails] = useState(false);
+let _attrKeyCounter = 0;
+let _clKeyCounter = 0;
+
+const emptyAttribute = (): KeyedAttr => ({
+  type: "chemical",
+  itemId: 0,
+  itemName: "",
+  unit: "",
+  value: 1,
+  _key: ++_attrKeyCounter,
+});
+
+const emptyChecklist = (order: number): KeyedCL => ({
+  name: "",
+  description: "",
+  order,
+  sourceType: "none",
+  sourceId: null,
+  sourceName: "",
+  expectedUnit: "",
+  expectedMinValue: null,
+  expectedMaxValue: null,
+  _key: ++_clKeyCounter,
+});
+
+const CreateTaskContainer: React.FC = () => {
   const navigate = useNavigate();
   const { setState } = useCreateTask();
   const { enqueueSnackbar } = useSnackbar();
 
-  // Fetch elements
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [taskMode, setTaskMode] = useState<TaskMode>("regular");
+
+  // Regular task fields
+  const [targetType, setTargetType] = useState<TargetType | "">("");
+  const [selectedELId, setSelectedELId] = useState("");
+  const [selectedSampleId, setSelectedSampleId] = useState("");
+  const [expectedEndDate, setExpectedEndDate] = useState("");
+
+  // Template field
+  const [templateELId, setTemplateELId] = useState("");
+
+  // Data lists
+  const [chemicals, setChemicals] = useState<Chemical[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [experimentLogs, setExperimentLogs] = useState<ExperimentLog[]>([]);
+  const [samples, setSamples] = useState<Sample[]>([]);
+
+  const [loading, setLoading] = useState(false);
+  const [attributes, setAttributes] = useState<KeyedAttr[]>([emptyAttribute()]);
+  const [checklistItems, setChecklistItems] = useState<KeyedCL[]>([]);
+
+  // Fetch chemicals
   useEffect(() => {
-    setLoadingElements(true);
     axiosInstance
-      .get("/api/element?pageNumber=1&pageSize=100")
-      .then((res: { data: ApiElementResponse }) => {
-        const data = Array.isArray(res.data?.value?.data)
-          ? res.data.value.data
-          : [];
-        setElements(
-          data.map((el) => ({
-            id: el.id,
-            name: el.name,
-            description: el.description,
-          }))
+      .get<ApiChemicalResponse>("/api/chemical?PageNo=1&PageSize=200")
+      .then((res) => {
+        const list = res.data?.data ?? res.data?.value?.data ?? [];
+        setChemicals(
+          list.map((c) => ({
+            id: c.id,
+            name: c.name,
+            category: c.category,
+            concentrationUnit: c.concentrationUnit,
+          })),
         );
       })
-      .catch(() => {
-        setElements([]);
-        enqueueSnackbar("Không thể tải danh sách nguyên vật liệu!", {
+      .catch(() =>
+        enqueueSnackbar("Không thể tải danh sách hóa chất", {
           variant: "error",
-        });
-      })
-      .finally(() => setLoadingElements(false));
+        }),
+      );
   }, [enqueueSnackbar]);
 
-  // Fetch experiment logs (EL)
+  // Fetch materials
   useEffect(() => {
-    setLoadingEL(true);
     axiosInstance
-      .get("/api/experimentlog?pageNumber=1&pageSize=100")
-      .then((res: { data: ApiExperimentLogResponse }) => {
-        const data = Array.isArray(res.data?.value?.data)
-          ? res.data.value.data
-          : [];
-        setExperimentLogs(data.map((el) => ({ id: el.id, name: el.name })));
+      .get<ApiMaterialResponse>("/api/material?PageNo=1&PageSize=200")
+      .then((res) => {
+        const list = res.data?.data ?? res.data?.value?.data ?? [];
+        setMaterials(
+          list.map((m) => ({
+            id: m.id,
+            name: m.name,
+            category: m.category,
+            unit: m.unit,
+          })),
+        );
       })
-      .catch(() => {
-        setExperimentLogs([]);
-        enqueueSnackbar("Không thể tải danh sách nhật ký thí nghiệm!", {
+      .catch(() =>
+        enqueueSnackbar("Không thể tải danh sách dụng cụ", {
           variant: "error",
-        });
-      })
-      .finally(() => setLoadingEL(false));
+        }),
+      );
   }, [enqueueSnackbar]);
 
-  // Fetch samples when EL changes
+  // Fetch experiment logs
   useEffect(() => {
-    if (!selectedEL) {
-      setSamples([]);
-      setSelectedSample("");
-      return;
-    }
-    setLoadingSample(true);
     axiosInstance
-      .get(`/api/sample?pageNo=1&pageSize=100&experimentLogId=${selectedEL}`)
-      .then((res: { data: ApiSampleResponse }) => {
-        const data = Array.isArray(res.data?.value?.data)
-          ? res.data.value.data
-          : [];
-        setSamples(data.map((s) => ({ id: s.id, name: s.name })));
+      .get<ApiELResponse>("/api/experiment-logs?PageNo=1&PageSize=100")
+      .then((res) => {
+        const list = res.data?.value?.data ?? res.data?.data ?? [];
+        setExperimentLogs(
+          list.map((el) => ({
+            id: el.id,
+            name: el.name,
+            currentStageOrder: el.currentStageOrder,
+          })),
+        );
       })
-      .catch(() => {
-        setSamples([]);
-        enqueueSnackbar("Không thể tải danh sách mẫu thí nghiệm!", {
+      .catch(() =>
+        enqueueSnackbar("Không thể tải danh sách nhật ký thí nghiệm", {
           variant: "error",
-        });
-      })
-      .finally(() => setLoadingSample(false));
-  }, [selectedEL, enqueueSnackbar]);
+        }),
+      );
+  }, [enqueueSnackbar]);
 
-  // Attribute handlers
-  const handleAttributeChange = (
-    idx: number,
-    field: keyof Attribute,
-    value: string | number
-  ) => {
+  // Fetch samples when targetType = Sample
+  useEffect(() => {
+    if (taskMode !== "regular" || targetType !== "Sample") return;
+    axiosInstance
+      .get<ApiSampleResponse>("/api/samples?PageNo=1&PageSize=100")
+      .then((res) => {
+        const list = res.data?.value?.data ?? res.data?.data ?? [];
+        setSamples(list.map((s) => ({ id: s.id, name: s.name })));
+      })
+      .catch(() =>
+        enqueueSnackbar("Không thể tải danh sách mẫu", {
+          variant: "error",
+        }),
+      );
+  }, [taskMode, targetType, enqueueSnackbar]);
+
+  // ── Attribute handlers ──────────────────────────────────────────────────
+  const handleAttrTypeChange = (idx: number, type: "chemical" | "material") => {
     setAttributes((prev) =>
-      prev.map((attr, i) => {
-        if (i === idx) {
-          if (field === "elementId") {
-            // Khi chọn element, tự động cập nhật tên và đơn vị
-            const selectedElement = elements.find((el) => el.id === value);
-            return {
-              ...attr,
-              elementId: value as string,
-              elementName: selectedElement?.name ?? "",
-              measurementUnit: selectedElement?.description ?? "",
-            };
-          }
-          return { ...attr, [field]: value };
-        }
-        return attr;
-      })
+      prev.map((a, i) =>
+        i === idx ? { ...a, type, itemId: 0, itemName: "", unit: "" } : a,
+      ),
     );
   };
 
-  const handleAddAttribute = () => {
-    setAttributes((prev) => [
-      ...prev,
-      {
-        elementId: "",
-        elementName: "",
-        measurementUnit: "",
-        value: 0,
-        description: "",
-      },
-    ]);
-  };
-
-  const handleRemoveAttribute = (idx: number) => {
-    setAttributes((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  // Submit (Next)
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-    e.preventDefault();
-
-    // Chuyển đổi startDate và endDate sang múi giờ Việt Nam (thêm 7 tiếng)
-    let startDateWithTimezone = startDate;
-    let endDateWithTimezone = endDate;
-
-    if (startDate) {
-      // Tạo Date object từ chuỗi YYYY-MM-DD
-      const startDateObj = new Date(startDate);
-      // Đặt thời gian về 00:00:00 và thêm 7 tiếng
-      startDateObj.setHours(7, 0, 0, 0);
-      startDateWithTimezone = startDateObj.toISOString();
-    }
-
-    if (endDate) {
-      // Tạo Date object từ chuỗi YYYY-MM-DD
-      const endDateObj = new Date(endDate);
-      // Đặt thời gian về 00:00:00 và thêm 7 tiếng
-      endDateObj.setHours(7, 0, 0, 0);
-      endDateWithTimezone = endDateObj.toISOString();
-    }
-
-    setState((prev) => ({
-      ...prev,
-      name,
-      experimentLog: experimentLogs.find((el) => el.id === selectedEL) ?? null,
-      stage: null,
-      sample: samples.find((s) => s.id === selectedSample) ?? null,
-      description,
-      start_date: startDateWithTimezone,
-      end_date: endDateWithTimezone,
-      isDaily,
-      attribute: attributes,
-    }));
-    void navigate("/create-task/step-2");
-  };
-
-  // Check if this is auto-create mode
-  const [searchParams] = useSearchParams();
-  const autoCreate = searchParams.get("autoCreate") === "true";
-  const experimentLogId = searchParams.get("experimentLogId");
-  const stageId = searchParams.get("stageId");
-  const sampleId = searchParams.get("sampleId");
-
-  // Debug: Log URL parameters
-  console.log("CreateTaskContainer URL params:", {
-    autoCreate,
-    experimentLogId,
-    stageId,
-    sampleId,
-  });
-
-  // Fetch sample details when sampleId is provided
-  // Fetch sample details khi có sampleId
-  useEffect(() => {
-    if (!sampleId) return;
-
-    const fetchSampleDetails = async () => {
-      setLoadingSampleDetails(true);
-      try {
-        const res = await axiosInstance.get<{ value: Sample }>(
-          `/api/sample/${sampleId}`
-        );
-        const data = res.data.value;
-        if (data) {
-          setSelectedSample(data.id);
-          setSamples([{ id: data.id, name: data.name }]); // để UI hiển thị
+  const handleAttrItemChange = (idx: number, idStr: string) => {
+    const id = Number(idStr);
+    setAttributes((prev) =>
+      prev.map((a, i) => {
+        if (i !== idx) return a;
+        if (a.type === "chemical") {
+          const c = chemicals.find((x) => x.id === id);
+          return {
+            ...a,
+            itemId: id,
+            itemName: c?.name ?? "",
+            unit: c?.concentrationUnit ?? "",
+          };
+        } else {
+          const m = materials.find((x) => x.id === id);
+          return {
+            ...a,
+            itemId: id,
+            itemName: m?.name ?? "",
+            unit: m?.unit ?? "",
+          };
         }
-      } catch (err) {
-        console.error("Error fetching sample details:", err);
-        enqueueSnackbar("Không thể tải thông tin mẫu!", { variant: "error" });
-      } finally {
-        setLoadingSampleDetails(false);
-      }
-    };
+      }),
+    );
+  };
 
-    void fetchSampleDetails();
-  }, [sampleId, enqueueSnackbar]);
+  const handleAttrValueChange = (idx: number, value: number) => {
+    setAttributes((prev) =>
+      prev.map((a, i) => (i === idx ? { ...a, value } : a)),
+    );
+  };
 
-  // If auto-create mode, show auto-create component
-  if (autoCreate && experimentLogId && stageId) {
-    console.log("Rendering AutoCreateTaskContainer");
-    return <AutoCreateTaskContainer />;
-  }
+  const handleAttrUnitChange = (idx: number, unit: string) => {
+    setAttributes((prev) =>
+      prev.map((a, i) => (i === idx ? { ...a, unit } : a)),
+    );
+  };
+
+  const addAttribute = () =>
+    setAttributes((prev) => [...prev, emptyAttribute()]);
+  const removeAttribute = (idx: number) =>
+    setAttributes((prev) => prev.filter((_, i) => i !== idx));
+
+  // ── Checklist handlers ──────────────────────────────────────────────────
+  const handleChecklistField = (
+    idx: number,
+    field: keyof ChecklistItem,
+    value: string | number | null,
+  ) => {
+    setChecklistItems((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, [field]: value } : item)),
+    );
+  };
+
+  const addChecklist = () =>
+    setChecklistItems((prev) => [...prev, emptyChecklist(prev.length + 1)]);
+  const removeChecklist = (idx: number) =>
+    setChecklistItems((prev) =>
+      prev
+        .filter((_, i) => i !== idx)
+        .map((item, i) => ({ ...item, order: i + 1 })),
+    );
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (taskMode === "regular") {
+      const el =
+        targetType === "ExperimentLog"
+          ? (experimentLogs.find((x) => x.id === selectedELId) ?? null)
+          : null;
+      const sample =
+        targetType === "Sample"
+          ? (samples.find((x) => x.id === selectedSampleId) ?? null)
+          : null;
+
+      setState((prev) => ({
+        ...prev,
+        name,
+        description,
+        taskMode,
+        targetType,
+        selectedEL: el,
+        selectedSample: sample,
+        expectedEndDate,
+        technician: null,
+        templateEL: null,
+        attributes: attributes.filter((a) => a.itemId > 0),
+        checklistItems,
+      }));
+      void navigate("/create-task/step-2");
+    } else {
+      // Template mode — skip technician step
+      const tplEL = experimentLogs.find((x) => x.id === templateELId) ?? null;
+      setState((prev) => ({
+        ...prev,
+        name,
+        description,
+        taskMode,
+        targetType: "",
+        selectedEL: null,
+        selectedSample: null,
+        expectedEndDate: "",
+        technician: null,
+        templateEL: tplEL,
+        attributes: attributes.filter((a) => a.itemId > 0),
+        checklistItems,
+      }));
+      void navigate("/create-task/step-3");
+    }
+    setLoading(false);
+  };
+
+  const isRegular = taskMode === "regular";
+  const canSubmitRegular =
+    !!name &&
+    !!targetType &&
+    (targetType === "ExperimentLog" ? !!selectedELId : !!selectedSampleId) &&
+    !!expectedEndDate;
+  const canSubmitTemplate = !!name;
+  const canSubmit = isRegular ? canSubmitRegular : canSubmitTemplate;
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6">
       <CreateTaskStepper currentStep={1} />
       <form
-        className="bg-white rounded-2xl px-8 pt-8 pb-6 shadow-lg max-w-4xl w-full mx-auto"
+        className="bg-white rounded-2xl px-10 pt-8 pb-10 shadow-md w-full max-w-4xl mt-6"
         onSubmit={handleSubmit}
       >
-        <h2 className="text-xl font-semibold mb-6">Tạo nhiệm vụ</h2>
-        <div className="flex flex-col mb-4 flex-1">
-          <label className="font-medium mb-1.5">Tên nhiệm vụ *</label>
+        <h2 className="text-2xl font-bold text-gray-800 mb-8">Tạo nhiệm vụ</h2>
+
+        {/* Task Mode */}
+        <div className="flex gap-6 mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="radio"
+              checked={taskMode === "regular"}
+              onChange={() => setTaskMode("regular")}
+              className="w-4 h-4 accent-green-600"
+            />
+            <span className="font-semibold text-gray-700">Nhiệm vụ thường</span>
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="radio"
+              checked={taskMode === "template"}
+              onChange={() => setTaskMode("template")}
+              className="w-4 h-4 accent-green-600"
+            />
+            <span className="font-semibold text-gray-700">Template (mẫu)</span>
+          </label>
+        </div>
+
+        {/* Name */}
+        <div className="flex flex-col mb-5">
+          <label className="font-semibold text-gray-700 mb-1.5">
+            Tên nhiệm vụ *
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            placeholder="Nhập tên nhiệm vụ"
+            className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
-        {!sampleId && (
-          <div className="flex flex-col mb-4 flex-1">
-            <label className="font-medium mb-1.5">
-              Chọn nhật ký thí nghiệm
-            </label>
-            <select
-              value={selectedEL}
-              onChange={(e) => setSelectedEL(e.target.value)}
-              className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">Chọn nhật ký thí nghiệm...</option>
-              {experimentLogs.map((el) => (
-                <option key={el.id} value={el.id}>
-                  {el.name}
-                </option>
-              ))}
-            </select>
-            {loadingEL && (
-              <span className="text-xs text-gray-400">Đang tải...</span>
-            )}
-          </div>
-        )}
 
-        {/* Show sample info when sampleId is provided from URL */}
-        {sampleId && (
-          <div className="flex flex-col mb-4 flex-1">
-            <label className="font-medium mb-1.5">Mẫu thí nghiệm đã chọn</label>
-            <div className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-100">
-              {samples.find((s) => s.id === selectedSample)?.name ??
-                "Đang tải..."}
-            </div>
-            {loadingSampleDetails && (
-              <span className="text-xs text-gray-400">
-                Đang tải thông tin mẫu...
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Show sample dropdown when sampleId is not provided and samples are available */}
-        {!sampleId && samples.length > 0 && (
-          <div className="flex flex-col mb-4 flex-1">
-            <label className="font-medium mb-1.5">
-              Chọn mẫu thí nghiệm (Tùy chọn)
-            </label>
-            <select
-              value={selectedSample}
-              onChange={(e) => setSelectedSample(e.target.value)}
-              className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">Chọn mẫu thí nghiệm...</option>
-              {samples.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            {loadingSample && (
-              <span className="text-xs text-gray-400">Đang tải...</span>
-            )}
-          </div>
-        )}
-        <div className="flex flex-col mb-4 flex-1">
-          <label className="font-medium mb-1.5">Mô tả nhiệm vụ</label>
+        {/* Description */}
+        <div className="flex flex-col mb-5">
+          <label className="font-semibold text-gray-700 mb-1.5">Mô tả</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 min-h-[60px] resize-y"
+            rows={3}
+            placeholder="Mô tả nhiệm vụ..."
+            className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 placeholder-gray-400 resize-y focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
-        <div className="flex gap-6">
-          <div className="flex flex-col mb-4 flex-1">
-            <label className="font-medium mb-1.5">Ngày bắt đầu *</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              required
-              className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50"
-            />
+
+        {/* Regular task: target type + target + date */}
+        {isRegular && (
+          <>
+            <div className="grid grid-cols-2 gap-5 mb-5">
+              <div className="flex flex-col">
+                <label className="font-semibold text-gray-700 mb-1.5">
+                  Loại đối tượng *
+                </label>
+                <select
+                  value={targetType}
+                  onChange={(e) => {
+                    setTargetType(e.target.value as TargetType | "");
+                    setSelectedELId("");
+                    setSelectedSampleId("");
+                  }}
+                  required
+                  className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">Chọn loại đối tượng...</option>
+                  <option value="ExperimentLog">Nhật ký thí nghiệm</option>
+                  <option value="Sample">Mẫu thí nghiệm</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="font-semibold text-gray-700 mb-1.5">
+                  Ngày hoàn thành dự kiến *
+                </label>
+                <input
+                  type="date"
+                  value={expectedEndDate}
+                  onChange={(e) => setExpectedEndDate(e.target.value)}
+                  required
+                  className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {targetType === "ExperimentLog" && (
+              <div className="flex flex-col mb-5">
+                <label className="font-semibold text-gray-700 mb-1.5">
+                  Nhật ký thí nghiệm *
+                </label>
+                <select
+                  value={selectedELId}
+                  onChange={(e) => setSelectedELId(e.target.value)}
+                  required
+                  className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">Chọn nhật ký thí nghiệm...</option>
+                  {experimentLogs.map((el) => (
+                    <option key={el.id} value={el.id}>
+                      {el.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {targetType === "Sample" && (
+              <div className="flex flex-col mb-5">
+                <label className="font-semibold text-gray-700 mb-1.5">
+                  Mẫu thí nghiệm *
+                </label>
+                <select
+                  value={selectedSampleId}
+                  onChange={(e) => setSelectedSampleId(e.target.value)}
+                  required
+                  className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">Chọn mẫu thí nghiệm...</option>
+                  {samples.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Template: pick EL for stageId */}
+        {!isRegular && (
+          <div className="flex flex-col mb-5">
+            <label className="font-semibold text-gray-700 mb-1.5">
+              Nhật ký thí nghiệm (lấy stage hiện tại)
+            </label>
+            <select
+              value={templateELId}
+              onChange={(e) => setTemplateELId(e.target.value)}
+              className="w-full py-2.5 px-4 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">Không chọn (stageId = 0)</option>
+              {experimentLogs.map((el) => (
+                <option key={el.id} value={el.id}>
+                  {el.name}
+                  {el.currentStageOrder != null
+                    ? ` — Stage ${el.currentStageOrder}`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            {templateELId && (
+              <p className="text-xs text-gray-500 mt-1.5">
+                StageId sẽ được đặt là{" "}
+                <strong>
+                  {experimentLogs.find((x) => x.id === templateELId)
+                    ?.currentStageOrder ?? 0}
+                </strong>
+              </p>
+            )}
           </div>
-          <div className="flex flex-col mb-4 flex-1">
-            <label className="font-medium mb-1.5">Ngày kết thúc *</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              required
-              className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50"
-            />
+        )}
+
+        {/* ── Task Attributes ── */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+            <div>
+              <h3 className="font-semibold text-gray-800">
+                Thuộc tính nhiệm vụ
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Hóa chất hoặc dụng cụ sử dụng
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addAttribute}
+              className="flex items-center gap-1.5 text-sm text-white bg-green-600 hover:bg-green-700 font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              + Thêm
+            </button>
+          </div>
+          {attributes.length === 0 && (
+            <p className="text-sm text-gray-400 italic text-center py-4">
+              Chưa có thuộc tính nào.
+            </p>
+          )}
+          <div className="space-y-3">
+            {attributes.map((attr, idx) => (
+              <div
+                key={attr._key}
+                className="grid grid-cols-[1fr_2fr_1fr_1fr_auto] gap-3 items-end bg-gray-50 border border-gray-200 rounded-xl p-4"
+              >
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">
+                    Loại
+                  </label>
+                  <select
+                    value={attr.type}
+                    onChange={(e) =>
+                      handleAttrTypeChange(
+                        idx,
+                        e.target.value as "chemical" | "material",
+                      )
+                    }
+                    className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="chemical">Hóa chất</option>
+                    <option value="material">Dụng cụ / vật liệu</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">
+                    {attr.type === "chemical"
+                      ? "Chọn hóa chất"
+                      : "Chọn dụng cụ"}
+                  </label>
+                  <select
+                    value={attr.itemId || ""}
+                    onChange={(e) => handleAttrItemChange(idx, e.target.value)}
+                    className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">Chọn...</option>
+                    {(attr.type === "chemical" ? chemicals : materials).map(
+                      (item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">
+                    Đơn vị
+                  </label>
+                  <input
+                    type="text"
+                    value={attr.unit}
+                    onChange={(e) => handleAttrUnitChange(idx, e.target.value)}
+                    placeholder="Đơn vị"
+                    className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">
+                    Số lượng
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={attr.value}
+                    onChange={(e) =>
+                      handleAttrValueChange(idx, Number(e.target.value))
+                    }
+                    className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeAttribute(idx)}
+                  className="mb-0.5 text-red-400 hover:text-red-600 text-xl font-bold leading-none"
+                  title="Xóa"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Daily checkbox */}
-        <div className="flex items-center mb-4">
-          <input
-            type="checkbox"
-            id="isDaily"
-            checked={isDaily}
-            onChange={(e) => setIsDaily(e.target.checked)}
-            className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-          />
-          <label
-            htmlFor="isDaily"
-            className="ml-2 text-sm font-medium text-gray-700"
-          >
-            Nhiệm vụ hàng ngày
-          </label>
-        </div>
-        <div className="flex flex-col mb-4 flex-1">
-          <label className="font-medium mb-1.5">Nguyên vật liệu</label>
-          {loadingElements && (
-            <span className="text-xs text-gray-400 mb-2">
-              Đang tải danh sách nguyên vật liệu...
-            </span>
-          )}
-          {/* {selectedTemplateId && (
-            <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-              Đã tự động điền từ mẫu nhiệm vụ "{taskTemplates.find(t => t.id === selectedTemplateId)?.name}"
+        {/* ── Checklist ── */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+            <div>
+              <h3 className="font-semibold text-gray-800">
+                Danh sách kiểm tra (Checklist)
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Các mục cần kiểm tra khi thực hiện nhiệm vụ
+              </p>
             </div>
-          )} */}
-          <div className="space-y-4">
-            {attributes.map((attr, idx) => (
-              // eslint-disable-next-line react-x/no-array-index-key
+            <button
+              type="button"
+              onClick={addChecklist}
+              className="flex items-center gap-1.5 text-sm text-white bg-green-600 hover:bg-green-700 font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            >
+              + Thêm
+            </button>
+          </div>
+          {checklistItems.length === 0 && (
+            <p className="text-sm text-gray-400 italic text-center py-4">
+              Chưa có mục kiểm tra nào.
+            </p>
+          )}
+          <div className="space-y-3">
+            {checklistItems.map((item, idx) => (
               <div
-                key={idx}
-                className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                key={item._key}
+                className="bg-gray-50 border border-gray-200 rounded-xl p-4"
               >
-                {/* Dòng 1: Select box nguyên vật liệu */}
-                <div className="mb-3">
-                  <select
-                    value={attr.elementId}
-                    onChange={(e) =>
-                      handleAttributeChange(idx, "elementId", e.target.value)
-                    }
-                    className="w-full py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Chọn nguyên vật liệu...</option>
-                    {elements.map((element) => (
-                      <option key={element.id} value={element.id}>
-                        {element.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* Dòng 2: 4 field còn lại */}
-                <div className="grid grid-cols-4 gap-3">
-                  <input
-                    type="text"
-                    placeholder="Tên nguyên vật liệu"
-                    value={attr.elementName}
-                    readOnly
-                    className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-200 cursor-not-allowed"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Đơn vị"
-                    value={attr.measurementUnit}
-                    readOnly
-                    className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-200 cursor-not-allowed"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Số lượng"
-                    value={attr.value}
-                    onChange={(e) =>
-                      handleAttributeChange(
-                        idx,
-                        "value",
-                        Number(e.target.value)
-                      )
-                    }
-                    className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  />
-                  <input
-                    type="text"
-                    placeholder="Mô tả"
-                    value={attr.description}
-                    onChange={(e) =>
-                      handleAttributeChange(idx, "description", e.target.value)
-                    }
-                    className="py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-                {/* Nút xóa/thêm */}
-                <div className="flex justify-end mt-3">
+                {/* Header row */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-0.5 rounded-full">
+                    #{idx + 1}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveAttribute(idx)}
-                    className="text-red-500 px-2 text-lg font-bold hover:text-red-700"
-                    disabled={attributes.length === 1}
+                    onClick={() => removeChecklist(idx)}
+                    className="text-red-400 hover:text-red-600 text-xl font-bold leading-none"
+                    title="Xóa"
                   >
-                    -
+                    ×
                   </button>
-                  {idx === attributes.length - 1 && (
-                    <button
-                      type="button"
-                      onClick={handleAddAttribute}
-                      className="text-green-600 px-2 text-lg font-bold hover:text-green-800"
-                    >
-                      +
-                    </button>
-                  )}
+                </div>
+
+                {/* Name + Description */}
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      Tên mục *
+                    </label>
+                    <input
+                      type="text"
+                      value={item.name}
+                      required={checklistItems.length > 0}
+                      onChange={(e) =>
+                        handleChecklistField(idx, "name", e.target.value)
+                      }
+                      placeholder="Tên mục kiểm tra"
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      Mô tả
+                    </label>
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={(e) =>
+                        handleChecklistField(idx, "description", e.target.value)
+                      }
+                      placeholder="Mô tả (tùy chọn)"
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Unit + Min + Max */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      Đơn vị đo
+                    </label>
+                    <input
+                      type="text"
+                      value={item.expectedUnit}
+                      onChange={(e) =>
+                        handleChecklistField(
+                          idx,
+                          "expectedUnit",
+                          e.target.value,
+                        )
+                      }
+                      placeholder="mg/L, cái, ml..."
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      Giá trị min (tùy chọn)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={item.expectedMinValue ?? ""}
+                      onChange={(e) =>
+                        handleChecklistField(
+                          idx,
+                          "expectedMinValue",
+                          e.target.value === "" ? null : Number(e.target.value),
+                        )
+                      }
+                      placeholder="Min"
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">
+                      Giá trị max (tùy chọn)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={item.expectedMaxValue ?? ""}
+                      onChange={(e) =>
+                        handleChecklistField(
+                          idx,
+                          "expectedMaxValue",
+                          e.target.value === "" ? null : Number(e.target.value),
+                        )
+                      }
+                      placeholder="Max"
+                      className="w-full py-2 px-3 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="flex justify-end mt-6">
+
+        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => void navigate("/tasks")}
+            className="px-6 py-2.5 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+          >
+            Hủy
+          </button>
           <button
             type="submit"
-            className="bg-green-700 text-white border-none py-2.5 px-8 rounded-lg text-base cursor-pointer hover:bg-green-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            disabled={
-              !name ||
-              !startDate ||
-              !endDate ||
-              attributes.some((a) => !a.elementId || !a.value) ||
-              loadingElements
-            }
+            disabled={!canSubmit || loading}
+            className="px-8 py-2.5 rounded-lg bg-green-700 text-white font-semibold hover:bg-green-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Next
+            {isRegular ? "Tiếp theo →" : "Xem lại →"}
           </button>
         </div>
       </form>

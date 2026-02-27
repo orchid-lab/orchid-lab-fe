@@ -7,7 +7,8 @@ import axiosInstance from "../../../../api/axiosInstance";
 interface TechnicianApi {
   id: string;
   name: string;
-  roleID: number;
+  role: string;
+  roleID?: number;
 }
 
 const SelectTechnicianContainer: React.FC = () => {
@@ -15,17 +16,37 @@ const SelectTechnicianContainer: React.FC = () => {
   const [selectedTech, setSelectedTech] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setState } = useCreateTask();
+  const { state, setState } = useCreateTask();
+
+  // If template mode, skip this step
+  useEffect(() => {
+    if (state.taskMode === "template") {
+      void navigate("/create-task/step-3", { replace: true });
+    }
+  }, [state.taskMode, navigate]);
 
   useEffect(() => {
     setLoading(true);
     axiosInstance
-      .get("/api/user?pageNumber=1&pageSize=100")
+      .get("/api/user?PageNumber=1&PageSize=100")
       .then((res) => {
-        const data = Array.isArray(res.data?.data)
-          ? (res.data.data as TechnicianApi[])
-          : [];
-        setTechnicians(data.filter((t) => String(t.roleID) === "3"));
+        const raw = res.data as {
+          data?: TechnicianApi[];
+          value?: { data?: TechnicianApi[] };
+        };
+        const data = Array.isArray(raw?.data)
+          ? raw.data
+          : Array.isArray(raw?.value?.data)
+            ? raw.value.data
+            : [];
+        // Filter technicians: role = "Technician" or roleID = 3
+        const techs = data.filter(
+          (t) =>
+            (typeof t.role === "string" &&
+              t.role.toLowerCase().includes("technician")) ||
+            String(t.roleID) === "3",
+        );
+        setTechnicians(techs);
       })
       .catch(() => setTechnicians([]))
       .finally(() => setLoading(false));
@@ -37,9 +58,7 @@ const SelectTechnicianContainer: React.FC = () => {
       const techObj = technicians.find((t) => t.id === selectedTech);
       setState((prev) => ({
         ...prev,
-        assignCommand: techObj
-          ? [{ technicianId: techObj.id, technicianName: techObj.name }]
-          : [],
+        technician: techObj ? { id: techObj.id, name: techObj.name } : null,
       }));
       void navigate("/create-task/step-3");
     }
@@ -50,69 +69,111 @@ const SelectTechnicianContainer: React.FC = () => {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6">
       <CreateTaskStepper currentStep={2} />
       <form
-        className="bg-white rounded-xl px-8 pt-8 pb-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] max-w-[900px] mx-auto mt-8"
+        className="bg-white rounded-2xl px-10 pt-8 pb-10 shadow-md w-full max-w-4xl mt-6"
         onSubmit={handleNext}
       >
-        <h2 className="text-2xl font-semibold mb-6">Chọn kỹ thuật viên</h2>
-        <div className="flex flex-col gap-4 my-6 mb-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          Chọn kỹ thuật viên
+        </h2>
+        <p className="text-sm text-gray-400 mb-8">
+          Chọn kỹ thuật viên sẽ thực hiện nhiệm vụ này
+        </p>
+
+        <div className="flex flex-col gap-3 mb-8">
           {loading && (
-            <div className="text-gray-500">
+            <div className="flex items-center gap-3 text-gray-500 py-8 justify-center">
+              <svg
+                className="animate-spin w-5 h-5 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                />
+              </svg>
               Đang tải danh sách kỹ thuật viên...
             </div>
           )}
           {!loading && technicians.length === 0 && (
-            <div className="text-red-500">Không có kỹ thuật viên nào!</div>
+            <div className="text-center py-10 text-red-400 font-medium">
+              Không có kỹ thuật viên nào!
+            </div>
           )}
           {technicians.map((tech) => (
             <div
               key={tech.id}
-              className={`border-[1.5px] rounded-[10px] py-[18px] px-6 cursor-pointer transition-all duration-200 relative ${
+              className={`flex items-center gap-4 rounded-xl py-4 px-5 cursor-pointer border-2 transition-all duration-150 ${
                 selectedTech === tech.id
-                  ? "border-2 border-green-700 bg-green-50 shadow-[0_2px_8px_rgba(56,142,60,0.08)]"
-                  : "border-gray-300 bg-[#fafbfc] hover:border-2 hover:border-blue-600 hover:bg-[#f1f8ff]"
+                  ? "border-green-600 bg-green-50 shadow-sm"
+                  : "border-gray-200 bg-white hover:border-green-300 hover:bg-gray-50"
               }`}
               onClick={() => setSelectedTech(tech.id)}
             >
-              <div className="flex items-center gap-[14px] mb-2">
-                <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-[1.1rem] text-white mr-2 bg-green-700">
-                  {tech.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 flex flex-col">
-                  <span className="font-semibold text-[1.08rem]">
-                    {tech.name}
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  checked={selectedTech === tech.id}
-                  className="ml-4 w-[18px] h-[18px]"
-                  readOnly
-                />
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-base text-white flex-shrink-0 ${
+                  selectedTech === tech.id ? "bg-green-600" : "bg-gray-400"
+                }`}
+              >
+                {tech.name.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-800">{tech.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{tech.role}</p>
+              </div>
+              <div
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  selectedTech === tech.id
+                    ? "border-green-600 bg-green-600"
+                    : "border-gray-300"
+                }`}
+              >
+                {selectedTech === tech.id && (
+                  <svg
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                )}
               </div>
             </div>
           ))}
         </div>
-        <div className="flex justify-end gap-3 mt-6">
+
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
           <button
             type="button"
-            className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
+            className="px-6 py-2.5 rounded-lg text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
             onClick={handleBack}
           >
-            Back
+            Quay lại
           </button>
           <button
             type="submit"
-            className={`min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold transition-colors duration-200 ${
-              selectedTech === null
-                ? "bg-gray-400 text-white cursor-not-allowed"
-                : "bg-green-700 text-white cursor-pointer hover:bg-green-800"
-            }`}
+            className="px-8 py-2.5 rounded-lg text-base font-semibold transition-colors bg-green-700 text-white hover:bg-green-800 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
             disabled={selectedTech === null}
           >
-            Next
+            Tiếp theo →
           </button>
         </div>
       </form>

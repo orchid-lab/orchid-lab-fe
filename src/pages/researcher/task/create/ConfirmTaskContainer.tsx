@@ -10,196 +10,295 @@ const ConfirmTaskContainer: React.FC = () => {
   const { state } = useCreateTask();
   const { enqueueSnackbar } = useSnackbar();
 
+  const isTemplate = state.taskMode === "template";
+
   const handleBack = (): void => {
-    void navigate("/create-task/step-2");
+    void navigate(isTemplate ? "/create-task/step-1" : "/create-task/step-2");
   };
 
   const handleCreate = async (
-    e: React.FormEvent<HTMLFormElement>
+    e: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     e.preventDefault();
-    // Chuẩn bị body đúng format
+
+    // Build createTaskAttribute
+    const createTaskAttribute = state.attributes
+      .filter((a) => a.itemId > 0)
+      .map((a) => ({
+        chemicalId: a.type === "chemical" ? a.itemId : null,
+        materialId: a.type === "material" ? a.itemId : null,
+        unit: a.unit,
+        value: a.value,
+      }));
+
+    // Build createTaskCheckListItemDtos
+    const createTaskCheckListItemDtos = state.checklistItems.map((item, i) => ({
+      name: item.name,
+      description: item.description,
+      order: i + 1,
+      expectedUnit: item.expectedUnit,
+      expectedMinValue: item.expectedMinValue ?? 0,
+      expectedMaxValue: item.expectedMaxValue ?? 0,
+    }));
+
+    // Build createTaskAssignment (null for template)
+    let createTaskAssignment = null;
+    if (!isTemplate && state.technician) {
+      const targetId =
+        state.targetType === "ExperimentLog"
+          ? state.selectedEL?.id
+          : state.selectedSample?.id;
+
+      createTaskAssignment = {
+        technicianId: state.technician.id,
+        targetType: state.targetType,
+        targetId: targetId ?? "",
+        expectedEndDate: state.expectedEndDate
+          ? new Date(state.expectedEndDate).toISOString()
+          : new Date().toISOString(),
+      };
+    }
+
+    // stageId: only for template, from templateEL's currentStageOrder
+    const stageId = isTemplate ? (state.templateEL?.currentStageOrder ?? 0) : 0;
+
     const body = {
-      experimentLogID: state.experimentLog?.id ?? "",
-      stageID: state.stage?.id ?? "",
-      sampleID: state.sample?.id ?? "",
       name: state.name,
       description: state.description,
-      start_date: state.start_date
-        ? new Date(state.start_date).toISOString()
-        : "",
-      end_date: state.end_date ? new Date(state.end_date).toISOString() : "",
-      isDaily: state.isDaily,
-      attribute: state.attribute.map((attr) => ({
-        elementId: attr.elementId,
-        name: attr.elementName, // Thêm field name cho API
-        measurementUnit: attr.measurementUnit,
-        value: attr.value,
-        description: attr.description,
-      })),
-      assignCommand: state.assignCommand,
+      createTaskAssignment,
+      stageId,
+      createTaskAttribute,
+      createTaskCheckListItemDtos,
     };
+
     try {
       await axiosInstance.post("/api/tasks", body);
-      enqueueSnackbar("Task đã được tạo thành công!", { variant: "success" });
+      enqueueSnackbar("Nhiệm vụ đã được tạo thành công!", {
+        variant: "success",
+      });
       void navigate("/tasks");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       enqueueSnackbar(
-        "Tạo task thất bại!\n" +
+        "Tạo nhiệm vụ thất bại! " +
           (error?.response?.data?.message ??
             JSON.stringify(error?.response?.data) ??
             ""),
-        { variant: "error" }
+        { variant: "error" },
       );
     }
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6">
       <CreateTaskStepper currentStep={3} />
       <form
-        className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[900px] mx-auto mt-8"
+        className="bg-white rounded-2xl px-10 pt-8 pb-10 shadow-md w-full max-w-4xl mt-6"
         onSubmit={(e) => {
           void handleCreate(e);
         }}
       >
-        <h2 className="text-2xl font-semibold mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">
           Xác nhận thông tin nhiệm vụ
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên nhiệm vụ</label>
-            <input
-              type="text"
-              value={state.name}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Nhật ký thí nghiệm</label>
-            <input
-              type="text"
-              value={state.experimentLog ? state.experimentLog.name : ""}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Giai đoạn</label>
-            <input
-              type="text"
-              value={state.stage ? state.stage.name : ""}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Mẫu thí nghiệm</label>
-            <input
-              type="text"
-              value={state.sample ? state.sample.name : ""}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Ngày bắt đầu</label>
-            <input
-              type="text"
-              value={state.start_date}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Ngày kết thúc</label>
-            <input
-              type="text"
-              value={state.end_date}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Kỹ thuật viên</label>
-            <input
-              type="text"
-              value={
-                state.assignCommand && state.assignCommand.length > 0
-                  ? state.assignCommand[0].technicianName ?? ""
-                  : ""
-              }
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Nhiệm vụ hàng ngày</label>
-            <input
-              type="text"
-              value={state.isDaily ? "Có" : "Không"}
-              disabled
-              className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
-            />
-          </div>
-        </div>
-        {/* Hiển thị mô tả và nguyên vật liệu */}
-        <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Mô tả nhiệm vụ</label>
-          <textarea
-            value={state.description}
-            disabled
-            className="px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 min-h-[80px] resize-none"
-          />
-        </div>
-        <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Nguyên vật liệu</label>
-          <div className="space-y-2">
-            {state.attribute.map((mat, idx) => (
-              <div key={idx} className="flex gap-2">
-                <input
-                  type="text"
-                  value={mat.elementName}
-                  disabled
-                  className="flex-1 py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-100 text-gray-500 cursor-not-allowed"
-                />
-                <input
-                  type="number"
-                  value={mat.value}
-                  disabled
-                  className="w-24 py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-100 text-gray-500 cursor-not-allowed"
-                />
-                <input
-                  type="text"
-                  value={mat.measurementUnit}
-                  disabled
-                  className="w-20 py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-100 text-gray-500 cursor-not-allowed"
-                />
-                <input
-                  type="text"
-                  value={mat.description}
-                  disabled
-                  className="flex-1 py-2 px-3 border border-gray-300 rounded-md text-base bg-gray-100 text-gray-500 cursor-not-allowed"
-                />
+        <p className="text-sm text-gray-400 mb-8">
+          Kiểm tra lại thông tin trước khi tạo nhiệm vụ
+        </p>
+
+        {/* ── Basic info ── */}
+        <div className="mb-8">
+          <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
+            Thông tin cơ bản
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">
+                Tên nhiệm vụ
+              </p>
+              <p className="text-gray-800 font-medium">{state.name}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">Loại</p>
+              <span
+                className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${
+                  isTemplate
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {isTemplate ? "Template (mẫu)" : "Nhiệm vụ thường"}
+              </span>
+            </div>
+            {state.description && (
+              <div className="col-span-2">
+                <p className="text-xs font-medium text-gray-400 mb-1">Mô tả</p>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {state.description}
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
-        <div className="flex justify-end gap-3 pt-4">
+
+        {/* ── Assignment info ── */}
+        {!isTemplate && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
+              Phân công
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium text-gray-400 mb-1">
+                  Loại đối tượng
+                </p>
+                <p className="text-gray-800">
+                  {state.targetType === "ExperimentLog"
+                    ? "Nhật ký thí nghiệm"
+                    : "Mẫu thí nghiệm"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-400 mb-1">
+                  Đối tượng
+                </p>
+                <p className="text-gray-800">
+                  {state.targetType === "ExperimentLog"
+                    ? (state.selectedEL?.name ?? "-")
+                    : (state.selectedSample?.name ?? "-")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-400 mb-1">
+                  Kỹ thuật viên
+                </p>
+                <p className="text-gray-800 font-medium">
+                  {state.technician?.name ?? "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-400 mb-1">
+                  Ngày hoàn thành dự kiến
+                </p>
+                <p className="text-gray-800">
+                  {state.expectedEndDate
+                    ? new Date(state.expectedEndDate).toLocaleDateString(
+                        "vi-VN",
+                      )
+                    : "-"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isTemplate && state.templateEL && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
+              Template
+            </h3>
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-1">
+                Nhật ký thí nghiệm / StageId
+              </p>
+              <p className="text-gray-800">
+                {state.templateEL.name} — Stage{" "}
+                {state.templateEL.currentStageOrder ?? 0}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Attributes ── */}
+        {state.attributes.filter((a) => a.itemId > 0).length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
+              Thuộc tính nhiệm vụ
+            </h3>
+            <div className="space-y-2">
+              {state.attributes
+                .filter((a) => a.itemId > 0)
+                .map((a) => (
+                  <div
+                    key={`attr-${a.type}-${a.itemId}`}
+                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                  >
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        a.type === "chemical"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-orange-100 text-orange-700"
+                      }`}
+                    >
+                      {a.type === "chemical" ? "Hóa chất" : "Dụng cụ"}
+                    </span>
+                    <span className="flex-1 text-gray-800 font-medium">
+                      {a.itemName}
+                    </span>
+                    <span className="text-gray-500 text-sm bg-white border border-gray-200 px-3 py-1 rounded-lg">
+                      {a.value} {a.unit}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Checklist ── */}
+        {state.checklistItems.length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
+              Danh sách kiểm tra
+            </h3>
+            <div className="space-y-2">
+              {state.checklistItems.map((item) => (
+                <div
+                  key={`cl-${item.order}-${item.name}`}
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                      {item.order}
+                    </span>
+                    <span className="font-semibold text-gray-800 flex-1">
+                      {item.name}
+                    </span>
+                    {item.expectedUnit && (
+                      <span className="text-xs text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-lg">
+                        {item.expectedUnit}
+                      </span>
+                    )}
+                    {(item.expectedMinValue != null ||
+                      item.expectedMaxValue != null) && (
+                      <span className="text-xs text-gray-500">
+                        {item.expectedMinValue ?? "–"} →{" "}
+                        {item.expectedMaxValue ?? "–"}
+                      </span>
+                    )}
+                  </div>
+                  {item.description && (
+                    <p className="text-xs text-gray-400 mt-1.5 ml-9">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
           <button
             type="button"
-            className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
+            className="px-6 py-2.5 rounded-lg text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
             onClick={handleBack}
           >
-            Back
+            Quay lại
           </button>
           <button
             type="submit"
-            className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-green-700 text-white hover:bg-green-800"
+            className="px-8 py-2.5 rounded-lg text-base font-semibold bg-green-700 text-white hover:bg-green-800 transition-colors"
           >
-            Create
+            Tạo nhiệm vụ
           </button>
         </div>
       </form>
