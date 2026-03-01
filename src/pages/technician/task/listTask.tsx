@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
@@ -32,16 +33,20 @@ interface Task {
   technicianId: string;
   status: StatusType;
   expectedEndDate: string;
+  createdDate?: string;
   targetName?: string; // Added for display
 }
 
 type StatusType =
   | "Assigned"
-  | "Taken"
-  | "InProcess"
-  | "DoneInTime"
-  | "DoneInLate"
-  | "Cancel";
+  | "InProgress"
+  | "WaitingForApproval"
+  | "CompletedInTime"
+  | "CompletedOutTime"
+  | "Deleted"
+  | "DeclinedByTechnician"
+  | "ReworkRequired"
+  | "Unknown";
 
 interface ApiTaskResponse {
   totalCount?: number;
@@ -61,35 +66,103 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
 
 const STATUS_LABELS: Record<StatusType, string> = {
   Assigned: "Assigned",
-  Taken: "Received",
-  InProcess: "In Progress",
-  DoneInTime: "Completed On Time",
-  DoneInLate: "Completed Late",
-  Cancel: "Cancelled",
+  InProgress: "In Progress",
+  WaitingForApproval: "Waiting For Approval",
+  CompletedInTime: "Completed On Time",
+  CompletedOutTime: "Completed Late",
+  Deleted: "Deleted",
+  DeclinedByTechnician: "Declined",
+  ReworkRequired: "Rework Required",
+  Unknown: "Unknown",
+};
+
+const STATUS_TRANSLATION_KEYS: Record<StatusType, string> = {
+  Assigned: "status.assigned",
+  InProgress: "status.inProgress",
+  WaitingForApproval: "status.waitingForApproval",
+  CompletedInTime: "status.completedInTime",
+  CompletedOutTime: "status.completedOutTime",
+  Deleted: "status.deleted",
+  DeclinedByTechnician: "status.declinedByTechnician",
+  ReworkRequired: "status.reworkRequired",
+  Unknown: "status.unknown",
 };
 
 const STATUS_COLORS: Record<StatusType, string> = {
   Assigned: "bg-purple-100 text-purple-700 border-purple-200",
-  Taken: "bg-blue-100 text-blue-700 border-blue-200",
-  InProcess: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  DoneInTime: "bg-green-100 text-green-700 border-green-200",
-  DoneInLate: "bg-orange-100 text-orange-700 border-orange-200",
-  Cancel: "bg-red-100 text-red-700 border-red-200",
+  InProgress: "bg-blue-100 text-blue-700 border-blue-200",
+  WaitingForApproval: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  CompletedInTime: "bg-green-100 text-green-700 border-green-200",
+  CompletedOutTime: "bg-orange-100 text-orange-700 border-orange-200",
+  Deleted: "bg-gray-100 text-gray-700 border-gray-200",
+  DeclinedByTechnician: "bg-red-100 text-red-700 border-red-200",
+  ReworkRequired: "bg-amber-100 text-amber-700 border-amber-200",
+  Unknown: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
 const STATUS_ICON_COLORS: Record<StatusType, string> = {
   Assigned: "text-purple-500",
-  Taken: "text-blue-500",
-  InProcess: "text-yellow-500",
-  DoneInTime: "text-green-500",
-  DoneInLate: "text-orange-500",
-  Cancel: "text-red-500",
+  InProgress: "text-blue-500",
+  WaitingForApproval: "text-indigo-500",
+  CompletedInTime: "text-green-500",
+  CompletedOutTime: "text-orange-500",
+  Deleted: "text-gray-500",
+  DeclinedByTechnician: "text-red-500",
+  ReworkRequired: "text-amber-500",
+  Unknown: "text-gray-500",
+};
+
+const STATUS_FILTER_ORDER: StatusType[] = [
+  "Assigned",
+  "InProgress",
+  "WaitingForApproval",
+  "CompletedInTime",
+  "CompletedOutTime",
+  "Deleted",
+  "DeclinedByTechnician",
+  "ReworkRequired",
+];
+
+const normalizeTaskStatus = (status: string): StatusType => {
+  if (status in STATUS_LABELS) {
+    return status as StatusType;
+  }
+
+  return "Unknown";
+};
+
+const createEmptyStatusCounts = (): Record<StatusType, number> => ({
+  Assigned: 0,
+  InProgress: 0,
+  WaitingForApproval: 0,
+  CompletedInTime: 0,
+  CompletedOutTime: 0,
+  Deleted: 0,
+  DeclinedByTechnician: 0,
+  ReworkRequired: 0,
+  Unknown: 0,
+});
+
+const formatDateVi = (value?: string): string => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 };
 
 export default function ListTask() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuth();
+
+  const getStatusLabel = (status: StatusType) =>
+    t(STATUS_TRANSLATION_KEYS[status], { defaultValue: STATUS_LABELS[status] });
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
@@ -101,14 +174,9 @@ export default function ListTask() {
   const [searchTerm, setSearchTerm] = useState("");
   const [todayFilter, setTodayFilter] = useState(false);
 
-  const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
-    Assigned: 0,
-    Taken: 0,
-    InProcess: 0,
-    DoneInTime: 0,
-    DoneInLate: 0,
-    Cancel: 0,
-  });
+  const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>(
+    createEmptyStatusCounts()
+  );
 
   const [stats, setStats] = useState<{
     totalToday: number;
@@ -160,20 +228,16 @@ export default function ListTask() {
         if (isApiTaskResponse(response.data)) {
           const allTasks = Array.isArray(response.data.data)
             ? response.data.data
+                .filter((task) => String(task.status ?? "") !== "Template")
+                .map((task) => ({
+                ...task,
+                status: normalizeTaskStatus(String(task.status ?? "")),
+              }))
             : [];
 
-          // Tạm thời bỏ filter để test
-          // const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
-          const myTasks = [...allTasks]; // Hiện tất cả tasks để test
+          const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
 
-          const counts: Record<StatusType, number> = {
-            Assigned: 0,
-            Taken: 0,
-            InProcess: 0,
-            DoneInTime: 0,
-            DoneInLate: 0,
-            Cancel: 0,
-          };
+          const counts: Record<StatusType, number> = createEmptyStatusCounts();
 
           myTasks.forEach((task) => {
             counts[task.status] = (counts[task.status] || 0) + 1;
@@ -190,13 +254,15 @@ export default function ListTask() {
 
           const totalToday = todayTasks.length;
           const completed = todayTasks.filter(
-            (task) => task.status === "DoneInTime" || task.status === "DoneInLate"
+            (task) =>
+              task.status === "CompletedInTime" ||
+              task.status === "CompletedOutTime"
           ).length;
           const inProgress = todayTasks.filter(
             (task) =>
               task.status === "Assigned" ||
-              task.status === "Taken" ||
-              task.status === "InProcess"
+              task.status === "InProgress" ||
+              task.status === "ReworkRequired"
           ).length;
 
           setStatusCounts(counts);
@@ -236,13 +302,16 @@ export default function ListTask() {
             if (isApiTaskResponse(res.data)) {
               const data = Array.isArray(res.data.data)
                 ? res.data.data
+                    .filter((task) => String(task.status ?? "") !== "Template")
+                    .map((task) => ({
+                      ...task,
+                      status: normalizeTaskStatus(String(task.status ?? "")),
+                    }))
                 : [];
               
               console.log("Raw data from API:", data);
 
-              // Tạm thời comment filter để test - bỏ comment nếu cần filter theo technicianId
-              // let filteredData = data.filter((task) => task.technicianId === user?.id);
-              let filteredData = [...data]; // Hiện tất cả tasks để test
+              let filteredData = data.filter((task) => task.technicianId === user?.id);
               
               console.log("Filtered data (my tasks):", filteredData);
 
@@ -359,15 +428,21 @@ export default function ListTask() {
     switch (status) {
       case "Assigned":
         return <UserPlus className={iconClass} />;
-      case "Taken":
-        return <Inbox className={iconClass} />;
-      case "InProcess":
+      case "InProgress":
         return <Loader className={iconClass} />;
-      case "DoneInTime":
+      case "WaitingForApproval":
+        return <Clock className={iconClass} />;
+      case "CompletedInTime":
         return <CheckCheck className={iconClass} />;
-      case "DoneInLate":
+      case "CompletedOutTime":
         return <AlertCircle className={iconClass} />;
-      case "Cancel":
+      case "Deleted":
+        return <XCircle className={iconClass} />;
+      case "DeclinedByTechnician":
+        return <Inbox className={iconClass} />;
+      case "ReworkRequired":
+        return <AlertCircle className={iconClass} />;
+      case "Unknown":
         return <XCircle className={iconClass} />;
     }
   };
@@ -441,11 +516,11 @@ export default function ListTask() {
         </div>
 
         {/* Status Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           <div className="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <UserPlus className="w-5 h-5 text-purple-500" />
-              <span className="text-sm text-gray-600 font-medium">Assigned:</span>
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("Assigned")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
               {statusCounts.Assigned}
@@ -454,51 +529,61 @@ export default function ListTask() {
 
           <div className="bg-white rounded-xl p-5 border border-blue-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <Inbox className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-600 font-medium">Received:</span>
+              <Loader className="w-5 h-5 text-blue-500" />
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("InProgress")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.Taken}
+              {statusCounts.InProgress}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-5 border border-yellow-200 shadow-sm">
+          <div className="bg-white rounded-xl p-5 border border-indigo-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <Loader className="w-5 h-5 text-yellow-500" />
-              <span className="text-sm text-gray-600 font-medium">In Progress:</span>
+              <Clock className="w-5 h-5 text-indigo-500" />
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("WaitingForApproval")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.InProcess}
+              {statusCounts.WaitingForApproval}
             </div>
           </div>
 
           <div className="bg-white rounded-xl p-5 border border-green-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <CheckCheck className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-gray-600 font-medium">Completed On Time:</span>
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("CompletedInTime")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.DoneInTime}
+              {statusCounts.CompletedInTime}
             </div>
           </div>
 
           <div className="bg-white rounded-xl p-5 border border-orange-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-5 h-5 text-orange-500" />
-              <span className="text-sm text-gray-600 font-medium">Completed Late:</span>
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("CompletedOutTime")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.DoneInLate}
+              {statusCounts.CompletedOutTime}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle className="w-5 h-5 text-gray-500" />
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("Deleted")}:</span>
+            </div>
+            <div className="text-3xl font-bold text-gray-900">
+              {statusCounts.Deleted}
             </div>
           </div>
 
           <div className="bg-white rounded-xl p-5 border border-red-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <XCircle className="w-5 h-5 text-red-500" />
-              <span className="text-sm text-gray-600 font-medium">Cancelled:</span>
+              <Inbox className="w-5 h-5 text-red-500" />
+              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("DeclinedByTechnician")}:</span>
             </div>
             <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.Cancel}
+              {statusCounts.DeclinedByTechnician}
             </div>
           </div>
         </div>
@@ -514,9 +599,9 @@ export default function ListTask() {
                 className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
                 <option value="All">Status</option>
-                {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                {STATUS_FILTER_ORDER.map((key) => (
                   <option key={key} value={key}>
-                    {label}
+                      {getStatusLabel(key)}
                   </option>
                 ))}
               </select>
@@ -580,6 +665,9 @@ export default function ListTask() {
                     Deadline
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                    Ngày tạo
+                  </th>
+                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     Status
                   </th>
                 </tr>
@@ -587,7 +675,7 @@ export default function ListTask() {
               <tbody className="divide-y divide-gray-200">
                 {tasks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-12 text-center text-gray-500">
+                    <td colSpan={6} className="p-12 text-center text-gray-500">
                       No tasks found
                     </td>
                   </tr>
@@ -618,6 +706,9 @@ export default function ListTask() {
                             })
                           : ""}
                       </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {formatDateVi(task.createdDate)}
+                      </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
@@ -625,7 +716,7 @@ export default function ListTask() {
                           }`}
                         >
                           {getStatusIcon(task.status)}
-                          {STATUS_LABELS[task.status]}
+                          {getStatusLabel(task.status)}
                         </span>
                       </td>
                     </tr>
