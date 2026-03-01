@@ -51,9 +51,9 @@ interface CheckListItem {
   name: string;
   description: string;
   order: number;
-  expectedUnit: string;
-  expectedMinValue: number;
-  expectedMaxValue: number;
+  expectedUnit: string | null;
+  expectedMinValue: number | null;
+  expectedMaxValue: number | null;
   status: CheckListItemStatus;
   measurementUnit: string | null;
   mesuredValue: number | null;
@@ -494,11 +494,14 @@ const TechDetailTask: React.FC = () => {
       });
 
       setEditingChecklistItem(itemId);
+      const currentItem = taskData.taskCheckList?.checkListItemDtos.find(
+        (item) => item.id === itemId
+      );
       setChecklistValues((prev) => ({
         ...prev,
         [itemId]: {
           measuredValue: "",
-          measurementUnit: "",
+          measurementUnit: currentItem?.expectedUnit || "",
         },
       }));
 
@@ -542,6 +545,10 @@ const TechDetailTask: React.FC = () => {
     const values = checklistValues[itemId];
     if (!values || !taskData?.id) return;
 
+    const currentItem = taskData.taskCheckList?.checkListItemDtos.find(
+      (item) => item.id === itemId
+    );
+
     // Cho phép giá trị đo là null (khi để trống hoặc undefined)
     const rawMeasuredValue = values.measuredValue ?? "";
     const measuredValue = rawMeasuredValue.trim() === "" 
@@ -556,9 +563,10 @@ const TechDetailTask: React.FC = () => {
 
     // Cho phép đơn vị đo là null khi để trống
     const rawMeasurementUnit = values.measurementUnit ?? "";
-    const measurementUnit = rawMeasurementUnit.trim() === "" 
-      ? null 
-      : rawMeasurementUnit;
+    const measurementUnit =
+      rawMeasurementUnit.trim() === ""
+        ? currentItem?.expectedUnit?.trim() || null
+        : rawMeasurementUnit;
 
     try {
       setUpdatingChecklistItem(itemId);
@@ -572,8 +580,6 @@ const TechDetailTask: React.FC = () => {
         }
       );
 
-      // Tìm item hiện tại để lấy thông tin expectedMinValue và expectedMaxValue
-      const currentItem = taskData.taskCheckList?.checkListItemDtos.find((i) => i.id === itemId);
       if (!currentItem) return;
 
       // Tự động đánh giá isPass nếu có khoảng kỳ vọng VÀ có giá trị đo
@@ -922,6 +928,9 @@ const TechDetailTask: React.FC = () => {
                       Khoảng kỳ vọng
                     </th>
                     <th className="px-3 py-2 text-center text-sm font-medium text-gray-700 border border-gray-300">
+                      Đơn vị kỳ vọng
+                    </th>
+                    <th className="px-3 py-2 text-center text-sm font-medium text-gray-700 border border-gray-300">
                       Giá trị đo
                     </th>
                     <th className="px-3 py-2 text-center text-sm font-medium text-gray-700 border border-gray-300">
@@ -957,8 +966,15 @@ const TechDetailTask: React.FC = () => {
                           <td className="px-3 py-2 text-sm text-gray-600 border border-gray-300 text-center">
                             {item.expectedMinValue != null &&
                             item.expectedMaxValue != null
-                              ? `${item.expectedMinValue} - ${item.expectedMaxValue} ${item.expectedUnit || ""}`
+                              ? `${item.expectedMinValue} - ${item.expectedMaxValue}`
                               : <span className="text-gray-400 italic">Không có tiêu chí đo đạc</span>}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 text-center">
+                            {item.expectedUnit?.trim() ? (
+                              item.expectedUnit
+                            ) : (
+                              <span className="text-gray-400 italic">—</span>
+                            )}
                           </td>
                           <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 text-center">
                             {isEditing ? (
