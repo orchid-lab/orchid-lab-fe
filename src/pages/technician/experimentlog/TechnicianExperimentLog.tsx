@@ -17,6 +17,7 @@ import {
   TrendingUp,
   BarChart3,
   Microscope,
+  AlertCircle,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
@@ -28,7 +29,7 @@ import { useGSAP } from "@gsap/react";
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(useGSAP); 
 
-type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel";
+type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel" | "WaitingForChangeStage";
 
 interface Stage {
   id: string;
@@ -110,12 +111,14 @@ const TechnicianExperimentLog = () => {
     InProcess: number;
     Done: number;
     Cancel: number;
+    WaitingForChangeStage: number;
   }>({
     total: 0,
     Created: 0,
     InProcess: 0,
     Done: 0,
     Cancel: 0,
+    WaitingForChangeStage: 0,
   });
 
 
@@ -169,10 +172,10 @@ const TechnicianExperimentLog = () => {
       case "Created":
         return "Created";
       case "2":
-      case "InProgress": // Thêm dòng này để khớp API
-      case "InProcess":
-      case "WaitingForChangeStage":
+      case "InProgress":
         return "InProcess";
+      case "WaitingForChangeStage":
+        return "WaitingForChangeStage";
       case "3":
       case "Done":
       case "Completed":
@@ -195,6 +198,8 @@ const TechnicianExperimentLog = () => {
         return t("experimentLog.completed");
       case "Cancel":
         return t("experimentLog.cancelled");
+      case "WaitingForChangeStage":
+        return t("experimentLog.waitingForStageChange");
       default:
         return t("common.none");
     }
@@ -204,13 +209,14 @@ const TechnicianExperimentLog = () => {
     labels: [
       statusToVietnamese("Created"),
       statusToVietnamese("InProcess"),
+      statusToVietnamese("WaitingForChangeStage"),
       statusToVietnamese("Done"),
       statusToVietnamese("Cancel"),
     ],
     datasets: [
       {
-        data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
-        backgroundColor: ["#ec4899", "#22c55e", "#93c5fd", "#ef4444"],
+        data: [stats.Created, stats.InProcess, stats.WaitingForChangeStage, stats.Done, stats.Cancel],
+        backgroundColor: ["#ec4899", "#22c55e", "#f97316", "#93c5fd", "#ef4444"],
         borderWidth: 0,
         spacing: 2,
       },
@@ -299,27 +305,19 @@ const TechnicianExperimentLog = () => {
     const fetchMethods = async () => {
       try {
         const res = await axiosInstance.get(
-          "/api/methods?PageNo=1&PageSize=100"
+          "/api/methods?PageNumber=1&PageSize=1000"
         );
         const raw = res.data;
-        if (
-          typeof raw === "object" &&
-          raw !== null &&
-          "data" in raw &&
-          Array.isArray((raw as { data: unknown[] }).data)
-        ) {
-          const arr = (raw as { data: { id: string; name: string }[] }).data;
-          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-        } else if (typeof raw === "object" && raw !== null && "value" in raw) {
-          const val = (
-            raw as { value?: { data?: { id: string; name: string }[] } }
-          ).value;
-          const arr = Array.isArray(val?.data) ? val.data : [];
-          setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
+        
+        // API returns: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
+        if (typeof raw === "object" && raw !== null && "data" in raw && Array.isArray(raw.data)) {
+          const arr = raw.data as any[];
+          setMethods(arr.map((m) => ({ id: String(m.id), name: m.name })));
         } else {
           setMethods([]);
         }
-      } catch {
+      } catch (err) {
+        console.error("Error fetching methods:", err);
         setMethods([]);
       }
     };
@@ -338,6 +336,7 @@ const TechnicianExperimentLog = () => {
       InProcess: 0,
       Done: 0,
       Cancel: 0,
+      WaitingForChangeStage: 0,
     };
 
     allLogs.forEach((log) => {
@@ -347,10 +346,11 @@ const TechnicianExperimentLog = () => {
       else if (normalized === "InProcess") counts.InProcess++;
       else if (normalized === "Done") counts.Done++;
       else if (normalized === "Cancel") counts.Cancel++;
+      else if (normalized === "WaitingForChangeStage") counts.WaitingForChangeStage++;
     });
 
     setStats({
-      total: counts.Created + counts.InProcess + counts.Done + counts.Cancel,
+      total: counts.Created + counts.InProcess + counts.Done + counts.Cancel + counts.WaitingForChangeStage,
       ...counts,
     });
   } catch (err) {
@@ -418,6 +418,8 @@ const TechnicianExperimentLog = () => {
         return "bg-pink-100 text-pink-700 border-pink-200";
       case "InProcess":
         return "bg-blue-100 text-blue-700 border-blue-200";
+      case "WaitingForChangeStage":
+        return "bg-orange-100 text-orange-700 border-orange-200";
       case "Done":
         return "bg-green-100 text-green-700 border-green-200";
       case "Cancel":
@@ -434,6 +436,8 @@ const TechnicianExperimentLog = () => {
         return <Beaker className={`${iconClass} text-pink-600`} />;
       case "InProcess":
         return <Clock className={`${iconClass} text-blue-600`} />;
+      case "WaitingForChangeStage":
+        return <AlertCircle className={`${iconClass} text-orange-600`} />;
       case "Done":
         return <CheckCircle2 className={`${iconClass} text-green-600`} />;
       case "Cancel":
@@ -452,7 +456,9 @@ const TechnicianExperimentLog = () => {
         .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
+      statusFilter === "all" || 
+      (statusFilter === "WaitingForChangeStage" && normalizeStatus(log.status) === "WaitingForChangeStage") ||
+      normalizeStatus(log.status) === statusFilter;
 
     let matchesStage = true;
     if (stageFilter !== "all") {
@@ -544,7 +550,18 @@ const TechnicianExperimentLog = () => {
                 </div>
               </div>
 
-              {/* Card 3: Done */}
+              {/* Card 3: Waiting for Stage Change */}
+              <div className="bg-orange-100 rounded-xl p-5 border border-orange-200 gsap-stat-card transition-colors">
+                <AlertCircle className="w-8 h-8 text-orange-600 mb-3" />
+                <div className="text-sm text-orange-700 font-medium mb-1">
+                  {statusToVietnamese("WaitingForChangeStage")}
+                </div>
+                <div className="text-3xl font-bold text-orange-900">
+                  {stats.WaitingForChangeStage}
+                </div>
+              </div>
+
+              {/* Card 4: Done */}
               <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card transition-colors">
                 <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
                 <div className="text-sm text-green-700 font-medium mb-1">
@@ -555,8 +572,8 @@ const TechnicianExperimentLog = () => {
                 </div>
               </div>
 
-              {/* Card 4: Cancel */}
-              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card transition-colors">
+              {/* Card 5: Cancel */}
+              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card transition-colors col-span-2 sm:col-span-1">
                 <XCircle className="w-8 h-8 text-red-600 mb-3" />
                 <div className="text-sm text-red-700 font-medium mb-1">
                   {statusToVietnamese("Cancel")}
@@ -601,6 +618,12 @@ const TechnicianExperimentLog = () => {
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
               </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {stats.WaitingForChangeStage}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Waiting</div>
+              </div>
             </div>
           </div>
         </div>
@@ -627,6 +650,7 @@ const TechnicianExperimentLog = () => {
                 <option value="all">{t("experimentLog.allStatuses")}</option>
                 <option value="Created">{t("status.created")}</option>
                 <option value="InProcess">{t("status.inProgress")}</option>
+                <option value="WaitingForChangeStage">{t("experimentLog.waitingForStageChange")}</option>
                 <option value="Done">{t("status.completed")}</option>
                 <option value="Cancel">{t("status.cancelled")}</option>
               </select>
