@@ -794,89 +794,202 @@ body[data-sidebar-collapsed="true"] #experimentlog-detail {
 }
 
 #experimentlog-detail .modal-backdrop {
-  /* ...modal backdrop... */
+  position: fixed;
+  inset: 0;
+  background-color: rgba(17, 24, 39, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 1rem;
 }
 
 #experimentlog-detail .modal-container {
-  /* ...modal container... */
+  width: 100%;
+  max-width: 560px;
 }
 
 #experimentlog-detail .modal-content {
-  /* ...modal content... */
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.18s ease-out;
+  border: 1px solid #e5e7eb;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-content {
-  /* ...dark mode modal content... */
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.45), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes fadeIn {
-  /* ...fade in animation... */
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 #experimentlog-detail .modal-header {
-  /* ...modal header... */
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-header {
-  /* ...dark mode modal header... */
+  border-bottom-color: #374151;
 }
 
 #experimentlog-detail .modal-title {
-  /* ...modal title... */
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #166534;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-title {
-  /* ...dark mode modal title... */
+  color: #86efac;
 }
 
 #experimentlog-detail .modal-close {
-  /* ...modal close... */
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
 }
 
 #experimentlog-detail .modal-close:hover {
-  /* ...modal close hover... */
+  background: #f3f4f6;
+  color: #111827;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-close:hover {
-  /* ...dark mode modal close hover... */
+  background: #374151;
+  color: #f9fafb;
 }
 
 #experimentlog-detail .modal-body {
-  /* ...modal body... */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
 }
 
 #experimentlog-detail .modal-label {
-  /* ...modal label... */
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-label {
-  /* ...dark mode modal label... */
+  color: #f9fafb;
 }
 
 #experimentlog-detail .modal-required {
-  /* ...modal required... */
+  margin-left: 0.25rem;
+  color: #dc2626;
+}
+
+#experimentlog-detail .modal-input,
+#experimentlog-detail .modal-select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  color: #111827;
+  background: white;
+}
+
+#experimentlog-detail .modal-input:focus,
+#experimentlog-detail .modal-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-input,
+:root[data-theme='dark'] #experimentlog-detail .modal-select {
+  background: #111827;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-input:focus,
+:root[data-theme='dark'] #experimentlog-detail .modal-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 #experimentlog-detail .modal-textarea {
-  /* ...modal textarea... */
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  color: #111827;
+  resize: vertical;
 }
 
 #experimentlog-detail .modal-textarea:focus {
-  /* ...modal textarea focus... */
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-textarea {
-  /* ...dark mode modal textarea... */
+  background: #111827;
+  border-color: #4b5563;
+  color: #f9fafb;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-textarea:focus {
-  /* ...dark mode modal textarea focus... */
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+#experimentlog-detail .modal-helper-text {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+#experimentlog-detail .modal-error {
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0.82rem;
+  color: #dc2626;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .modal-helper-text {
+  color: #9ca3af;
 }
 
 #experimentlog-detail .modal-footer {
-  /* ...modal footer... */
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
 }
 
 :root[data-theme='dark'] #experimentlog-detail .modal-footer {
-  /* ...dark mode modal footer... */
+  border-top-color: #374151;
 }
