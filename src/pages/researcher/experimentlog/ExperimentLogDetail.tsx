@@ -142,6 +142,13 @@ interface ExperimentLogDetailType {
   create_by?: string;
 }
 
+interface ApiListResponse<T> {
+  value?: {
+    data?: T[];
+  };
+  data?: T[];
+}
+
 const ExperimentLogDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -164,25 +171,103 @@ const ExperimentLogDetail = () => {
 
   const [changingStage, setChangingStage] = useState(false);
   const [changeStageError, setChangeStageError] = useState<string | null>(null);
-  const [batchId, setBatchId] = useState<number | string | undefined>(
+  const [isChangeStageModalOpen, setIsChangeStageModalOpen] = useState(false);
+  const [readyBatches, setReadyBatches] = useState<Batch[]>([]);
+  const [batchesLoading, setBatchesLoading] = useState(false);
+  const [batchesError, setBatchesError] = useState<string | null>(null);
+  const [currentBatchId, setCurrentBatchId] = useState<number | undefined>(
     undefined,
   );
+  const [selectedBatchId, setSelectedBatchId] = useState<number | "">("");
+  const [changeReason, setChangeReason] = useState("");
+
+  const parseBatchId = (value: unknown): number | undefined => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = Number.parseInt(value, 10);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return undefined;
+  };
+
+  const fetchReadyBatches = async (preferredBatchId?: number) => {
+    setBatchesLoading(true);
+    setBatchesError(null);
+    try {
+      const res = await axiosInstance.get("/api/batches?pageNo=1&pageSize=1000");
+      const raw = res.data as ApiListResponse<Batch> | Batch[];
+
+      let batches: Batch[] = [];
+      if ((raw as ApiListResponse<Batch>)?.value?.data) {
+        batches = (raw as ApiListResponse<Batch>).value?.data ?? [];
+      } else if ((raw as ApiListResponse<Batch>)?.data) {
+        batches = (raw as ApiListResponse<Batch>).data ?? [];
+      } else if (Array.isArray(raw)) {
+        batches = raw;
+      }
+
+      const readyOnly = batches.filter(
+        (batch) => String(batch.status ?? "").toLowerCase() === "ready",
+      );
+
+      if (
+        preferredBatchId !== undefined &&
+        !readyOnly.some((batch) => batch.id === preferredBatchId)
+      ) {
+        const currentBatch = batches.find((batch) => batch.id === preferredBatchId);
+        if (currentBatch) {
+          setReadyBatches([currentBatch, ...readyOnly]);
+        } else {
+          setReadyBatches(readyOnly);
+        }
+      } else {
+        setReadyBatches(readyOnly);
+      }
+    } catch (error) {
+      console.error("Error loading ready batches:", error);
+      setBatchesError(t("common.errorLoading"));
+      setReadyBatches([]);
+    } finally {
+      setBatchesLoading(false);
+    }
+  };
+
+  const openChangeStageModal = () => {
+    setIsChangeStageModalOpen(true);
+    setChangeStageError(null);
+    setChangeReason("");
+    setSelectedBatchId(currentBatchId ?? "");
+    void fetchReadyBatches(currentBatchId);
+  };
+
+  const closeChangeStageModal = () => {
+    if (changingStage) return;
+    setIsChangeStageModalOpen(false);
+  };
 
   const handleChangeStage = async () => {
-    if (!id) return;
+    if (!id || selectedBatchId === "") {
+      setChangeStageError("Vui lòng chọn lồng thí nghiệm.");
+      return;
+    }
+
     setChangingStage(true);
     setChangeStageError(null);
     try {
       await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
         status: "ConfirmChangeStage",
-        batchId: batchId,
+        batchId: selectedBatchId,
+        reason: changeReason.trim() || null,
       });
-      // Optionally, reload log data after successful change
+
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       const logData = res.data.value ?? res.data;
       setLog(logData as ExperimentLogDetailType);
+      setCurrentBatchId(selectedBatchId);
+      setIsChangeStageModalOpen(false);
     } catch (e) {
       console.error(e);
+      setChangeStageError(t("common.errorLoading"));
     } finally {
       setChangingStage(false);
     }
@@ -212,6 +297,18 @@ const ExperimentLogDetail = () => {
 
   useEffect(() => {
     if (!log) return;
+    const rawLog = log as unknown as Record<string, unknown>;
+    const inferredBatchId =
+      parseBatchId(log.batch?.id) ??
+      parseBatchId(rawLog.tissueCultureBatchId) ??
+      parseBatchId(rawLog.tissueCultureBatchID);
+
+    setCurrentBatchId(inferredBatchId);
+    setSelectedBatchId(inferredBatchId ?? "");
+  }, [log]);
+
+  useEffect(() => {
+    if (!log) return;
     const tcbId =
       ((log as unknown as Record<string, unknown>)
         ?.tissueCultureBatchId as string) ??
@@ -225,16 +322,16 @@ const ExperimentLogDetail = () => {
           const name =
             (raw?.value?.labName as string) ?? (raw?.labName as string);
           setLabName(name ?? t("experimentLog.notAvailable"));
-          // Lưu batchId để dùng cho chuyển giai đoạn
-          const id = (raw?.value?.id ?? raw?.id ?? tcbId) as number | string;
-          setBatchId(id);
+
+          const fetchedBatchId = parseBatchId(raw?.value?.id ?? raw?.id ?? tcbId);
+          if (fetchedBatchId !== undefined) {
+            setCurrentBatchId(fetchedBatchId);
+            setSelectedBatchId(fetchedBatchId);
+          }
         })
         .catch(() => {
           setLabName(t("experimentLog.notAvailable"));
-          setBatchId(undefined);
         });
-    } else {
-      setBatchId(undefined);
     }
   }, [log, t]);
 
@@ -477,6 +574,16 @@ const ExperimentLogDetail = () => {
 
   // Helper to get lab room name
   const labRoomName = log?.batch?.labRoomName ?? labName;
+  const getBatchOptionLabel = (batch: Batch): string => {
+    const name = batch.batchName ?? `Batch #${batch.id}`;
+    const room = batch.labRoomName ? ` - ${batch.labRoomName}` : "";
+    const current =
+      currentBatchId !== undefined && batch.id === currentBatchId
+        ? " (Đang dùng)"
+        : "";
+    return `${name}${room}${current}`;
+  };
+
   const currentMethodStage = log.method?.methodStages?.find(
     (stage) => stage.order === log.currentStageOrder,
   );
@@ -571,7 +678,7 @@ const ExperimentLogDetail = () => {
             </div>
             <div className="info-item">
               <span className="info-label">
-                {t("experimentLog.expectedSampleCountLabel")}:
+                {t("experimentLog.expectedSampleCount")}:
               </span>
               <span className="info-value">{log.expectedSampleCount}</span>
             </div>
@@ -597,14 +704,12 @@ const ExperimentLogDetail = () => {
                 type="button"
                 className="btn-start"
                 style={{ minWidth: 120, marginLeft: 8 }}
-                onClick={handleChangeStage}
+                onClick={openChangeStageModal}
                 disabled={
                   changingStage || normalizeStatus(log.status) === "InProgress"
                 }
               >
-                {changingStage
-                  ? t("experimentLog.changingStage") || "Đang chuyển..."
-                  : "Chuyển giai đoạn"}
+                {t("experimentLog.changeStage") || "Chuyển giai đoạn"}
               </button>
               {changeStageError && (
                 <div style={{ color: "red", marginLeft: 8, fontSize: "0.9em" }}>
@@ -825,6 +930,107 @@ const ExperimentLogDetail = () => {
           </div>
         )}
       </section>
+
+      {isChangeStageModalOpen && (
+        <div className="modal-backdrop" onClick={closeChangeStageModal}>
+          <div
+            className="modal-container"
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">Xác nhận chuyển giai đoạn</h3>
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={closeChangeStageModal}
+                  disabled={changingStage}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div>
+                  <label htmlFor="change-stage-batch" className="modal-label">
+                    Batch
+                    <span className="modal-required">*</span>
+                  </label>
+                  <select
+                    id="change-stage-batch"
+                    className="modal-select"
+                    value={selectedBatchId}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedBatchId(
+                        value === "" ? "" : Number.parseInt(value, 10),
+                      );
+                    }}
+                    disabled={batchesLoading || changingStage}
+                  >
+                    <option value="">-- Chọn lồng thí nghiệm --</option>
+                    {readyBatches.map((batch) => (
+                      <option key={batch.id} value={batch.id}>
+                        {getBatchOptionLabel(batch)}
+                      </option>
+                    ))}
+                  </select>
+                  {batchesLoading && (
+                    <p className="modal-helper-text">Đang tải danh sách lồng...</p>
+                  )}
+                  {batchesError && <p className="modal-error">{batchesError}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="change-stage-reason" className="modal-label">
+                    Lý do (tuỳ chọn)
+                  </label>
+                  <textarea
+                    id="change-stage-reason"
+                    className="modal-textarea"
+                    value={changeReason}
+                    onChange={(event) => {
+                      setChangeReason(event.target.value);
+                    }}
+                    rows={3}
+                    placeholder="Nhập lý do nếu cần"
+                    disabled={changingStage}
+                  />
+                </div>
+
+                {changeStageError && (
+                  <p className="modal-error" style={{ marginBottom: 0 }}>
+                    {changeStageError}
+                  </p>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={closeChangeStageModal}
+                  disabled={changingStage}
+                >
+                  Huỷ
+                </button>
+                <button
+                  type="button"
+                  className="btn-start"
+                  onClick={handleChangeStage}
+                  disabled={changingStage || selectedBatchId === ""}
+                >
+                  {changingStage
+                    ? t("experimentLog.changingStage") || "Đang chuyển..."
+                    : "Xác nhận chuyển"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
