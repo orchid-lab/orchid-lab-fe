@@ -829,7 +829,7 @@ const TechnicianExperimentLogDetail = () => {
                     <div className="protocorm-popover-content">
                       {/* Info - compact */}
                       <div className="protocorm-info">
-                        <span>{t("experimentLog.expectedSampleCountLabel") || "Mong muốn"}: <b>{log.expectedSampleCount ?? 0}</b></span>
+                        <span>{t("experimentLog.expectedSampleCount") || "Mong muốn"}: <b>{log.expectedSampleCount ?? 0}</b></span>
                         <span>{t("experimentLog.currentLabel") || "Hiện tại"}: <b>{samples.length}</b></span>
                       </div>
                       {/* Input */}
@@ -921,7 +921,7 @@ const TechnicianExperimentLogDetail = () => {
                 </span>
               </div>
               <div className="info-item">
-                <span className="info-label">{t("experimentLog.expectedSampleCountLabel")}:</span> {log.expectedSampleCount}
+                <span className="info-label">{t("experimentLog.expectedSampleCount")}:</span> {log.expectedSampleCount}
               </div>
               <div className="info-item">
                 <span className="info-label">{t("experimentLog.dateCreated")}:</span>{" "}
