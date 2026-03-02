@@ -7,9 +7,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import {
-  Calendar,
   Clock,
-  CheckCircle2,
   UserPlus,
   Inbox,
   Loader,
@@ -178,15 +176,7 @@ export default function ListTask() {
     createEmptyStatusCounts()
   );
 
-  const [stats, setStats] = useState<{
-    totalToday: number;
-    completed: number;
-    inProgress: number;
-  }>({
-    totalToday: 0,
-    completed: 0,
-    inProgress: 0,
-  });
+  const [totalTasks, setTotalTasks] = useState(0);
 
   const tasksPerPage = 20;
 
@@ -243,30 +233,11 @@ export default function ListTask() {
             counts[task.status] = (counts[task.status] || 0) + 1;
           });
 
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-
-          const todayTasks = myTasks.filter((task) => {
-            const taskEndDate = new Date(task.expectedEndDate);
-            taskEndDate.setHours(0, 0, 0, 0);
-            return taskEndDate.getTime() === today.getTime();
-          });
-
-          const totalToday = todayTasks.length;
-          const completed = todayTasks.filter(
-            (task) =>
-              task.status === "CompletedInTime" ||
-              task.status === "CompletedOutTime"
-          ).length;
-          const inProgress = todayTasks.filter(
-            (task) =>
-              task.status === "Assigned" ||
-              task.status === "InProgress" ||
-              task.status === "ReworkRequired"
-          ).length;
+          console.log("All my tasks:", myTasks.length);
+          console.log("Tasks by status:", counts);
 
           setStatusCounts(counts);
-          setStats({ totalToday, completed, inProgress });
+          setTotalTasks(myTasks.length);
         }
       } catch (err) {
         console.error("Error loading summary data:", err);
@@ -384,12 +355,27 @@ export default function ListTask() {
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
+  // Status colors for chart
+  const CHART_COLORS: Record<StatusType, string> = {
+    Assigned: "#8b5cf6", // purple
+    InProgress: "#3b82f6", // blue
+    WaitingForApproval: "#6366f1", // indigo
+    CompletedInTime: "#10b981", // green
+    CompletedOutTime: "#f59e0b", // orange
+    Deleted: "#6b7280", // gray
+    DeclinedByTechnician: "#ef4444", // red
+    ReworkRequired: "#f97316", // orange-red
+    Unknown: "#9ca3af", // gray
+  };
+
+  const activeStatuses = STATUS_FILTER_ORDER; // Hiển thị tất cả statuses, kể cả 0
+
   const chartData = {
-    labels: ["Completed", "In Progress", "Pending"],
+    labels: activeStatuses.map((status) => getStatusLabel(status)),
     datasets: [
       {
-        data: [stats.completed, stats.inProgress, stats.totalToday - stats.completed - stats.inProgress],
-        backgroundColor: ["#ec4899", "#22c55e", "#93c5fd"],
+        data: activeStatuses.map((status) => statusCounts[status]),
+        backgroundColor: activeStatuses.map((status) => CHART_COLORS[status]),
         borderWidth: 0,
         spacing: 2,
       },
@@ -397,19 +383,11 @@ export default function ListTask() {
   };
 
   const chartOptions = {
+    maintainAspectRatio: true,
+    responsive: true,
     plugins: {
       legend: {
-        display: true,
-        position: "right" as const,
-        labels: {
-          usePointStyle: true,
-          pointStyle: "circle",
-          padding: 15,
-          font: {
-            size: 13,
-            family: "'Inter', sans-serif",
-          },
-        },
+        display: false, // Tắt legend mặc định, sẽ tự tạo bên ngoài
       },
       tooltip: {
         callbacks: {
@@ -461,55 +439,46 @@ export default function ListTask() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="grid grid-cols-1 gap-6">
+          {/* Chart spanning full width */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Today's Task Distribution
+              Overall Task Distribution
             </h3>
-            <div className="flex items-center justify-center h-[280px]">
-              <div className="relative w-[280px]">
-                <Doughnut data={chartData} options={chartOptions} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="text-4xl font-bold text-gray-900">
-                    {stats.totalToday}
+            <div className="flex items-center justify-between gap-6">
+              {/* Chart Container */}
+              <div className="flex items-center justify-center w-[240px] h-[240px] flex-shrink-0">
+                <div className="relative w-full h-full">
+                  <Doughnut data={chartData} options={chartOptions} />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="flex flex-col items-center">
+                      <div className="text-4xl font-bold text-gray-900">
+                        {totalTasks}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">Tasks</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">Tasks</div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Today's Status Cards */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">Today's Status</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
-                <Calendar className="w-8 h-8 text-blue-600 mb-3" />
-                <div className="text-sm text-blue-700 font-medium mb-1">
-                  Tasks Today:
-                </div>
-                <div className="text-3xl font-bold text-blue-900">
-                  {stats.totalToday}
-                </div>
-              </div>
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
-                <Clock className="w-8 h-8 text-blue-600 mb-3" />
-                <div className="text-sm text-blue-700 font-medium mb-1">
-                  Incomplete:
-                </div>
-                <div className="text-3xl font-bold text-blue-900">
-                  {stats.inProgress}
-                </div>
-              </div>
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200">
-                <CheckCircle2 className="w-8 h-8 text-blue-600 mb-3" />
-                <div className="text-sm text-blue-700 font-medium mb-1">
-                  Completed:
-                </div>
-                <div className="text-3xl font-bold text-blue-900">
-                  {stats.completed}
-                </div>
+              
+              {/* Custom Legend - Grid Layout */}
+              <div className="flex-1 grid grid-cols-3 gap-3">
+                {activeStatuses.map((status) => (
+                  <div key={status} className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: CHART_COLORS[status] }}
+                    ></div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm text-gray-700 font-medium truncate">
+                        {getStatusLabel(status)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {statusCounts[status]}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

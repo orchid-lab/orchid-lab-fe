@@ -320,30 +320,37 @@ const TechDetailTask: React.FC = () => {
     void navigate("/technician/tasks");
   };
 
-  const updateTaskStatus = async (newStatus: number) => {
-    if (!taskData?.id) return;
+  const updateTaskStatus = async (newStatus: number): Promise<boolean> => {
+    if (!taskData?.id) return false;
+
+    // Map number status sang string status name cho API
+    const statusMap: Record<number, TaskStatus> = {
+      0: "Assigned",
+      1: "InProgress",
+      2: "WaitingForApproval",
+      3: "CompletedInTime",
+      4: "CompletedOutTime",
+      5: "Deleted",
+      6: "DeclinedByTechnician",
+      7: "ReworkRequired",
+    };
+
+    const statusString = statusMap[newStatus];
+    if (!statusString) {
+      enqueueSnackbar("Trạng thái không hợp lệ", { variant: "error" });
+      return false;
+    }
 
     try {
       setUpdatingStatus(true);
-      const response = await axiosInstance.put("/api/tasks/update-status", {
-        taskId: taskData.id,
-        status: newStatus,
+      const response = await axiosInstance.put("/api/tasks/change-task-status", {
+        todoTaskId: taskData.id,
+        status: statusString, // Gửi string thay vì number
       });
 
       if (response.status === 200) {
-        const statusMap: Record<number, TaskStatus> = {
-          0: "Assigned",
-          1: "InProgress",
-          2: "WaitingForApproval",
-          3: "CompletedInTime",
-          4: "CompletedOutTime",
-          5: "Deleted",
-          6: "DeclinedByTechnician",
-          7: "ReworkRequired",
-        };
-
         setTaskData((prev) =>
-          prev ? { ...prev, status: statusMap[newStatus] || prev.status } : null
+          prev ? { ...prev, status: statusString } : null
         );
 
         const statusLabels: Record<number, string> = {
@@ -360,7 +367,11 @@ const TechDetailTask: React.FC = () => {
         enqueueSnackbar(`Cập nhật trạng thái thành công: ${statusLabels[newStatus]}`, {
           variant: "success",
         });
+
+        return true;
       }
+
+      return false;
     } catch (error) {
       console.error("Error updating task status:", error);
       const apiError = error as {
@@ -374,6 +385,8 @@ const TechDetailTask: React.FC = () => {
         variant: "error",
         autoHideDuration: 5000,
       });
+
+      return false;
     } finally {
       setUpdatingStatus(false);
     }
@@ -427,14 +440,11 @@ const TechDetailTask: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      //for update task status into WaitingForApproval
-      await axiosInstance.put("/api/tasks/change-task-status", {
-        todoTaskId: taskData.id,
-        status: "WaitingForApproval"
-      })
-
-      // Khi technician hoàn thành, chuyển sang WaitingForApproval (2)
-      await updateTaskStatus(2); // WaitingForApproval
+      // Tái sử dụng luồng cập nhật trạng thái dùng chung
+      const isStatusUpdated = await updateTaskStatus(2); // WaitingForApproval
+      if (!isStatusUpdated) {
+        return;
+      }
 
       handleClosePopup();
       setShowSuccessModal(true);
