@@ -7,6 +7,7 @@ import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import "./ExperimentLogDetail.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import type { AxiosError } from "axios";
 import type { User } from "../../../types/Auth";
 import { FaSeedling } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
@@ -149,6 +150,12 @@ interface ApiListResponse<T> {
   data?: T[];
 }
 
+interface ApiErrorResponse {
+  title?: string;
+  detail?: string;
+  status?: number;
+}
+
 const ExperimentLogDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -251,12 +258,17 @@ const ExperimentLogDetail = () => {
       return;
     }
 
+    const requestBatchId =
+      currentBatchId !== undefined && selectedBatchId === currentBatchId
+        ? null
+        : selectedBatchId;
+
     setChangingStage(true);
     setChangeStageError(null);
     try {
       await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
         status: "ConfirmChangeStage",
-        batchId: selectedBatchId,
+        batchId: requestBatchId,
         reason: changeReason.trim() || null,
       });
 
@@ -267,7 +279,10 @@ const ExperimentLogDetail = () => {
       setIsChangeStageModalOpen(false);
     } catch (e) {
       console.error(e);
-      setChangeStageError(t("common.errorLoading"));
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      setChangeStageError(apiDetail || apiTitle || t("common.errorLoading"));
     } finally {
       setChangingStage(false);
     }
