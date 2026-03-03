@@ -722,7 +722,10 @@ const TechnicianExperimentLogDetail = () => {
   // Check if current stage allows protocorm creation (isSampleGenerated = true)
   const canCreateProtocorm = (): boolean => {
     const currentMethodStage = getCurrentMethodStage();
-    return currentMethodStage?.isSampleGenerated === true;
+    // Only allow protocorm creation when:
+    // 1. Current stage has isSampleGenerated = true
+    // 2. No samples exist yet (samples.length === 0)
+    return currentMethodStage?.isSampleGenerated === true && samples.length === 0;
   };
 
   // Helper to get method name
