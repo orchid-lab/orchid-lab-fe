@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -29,8 +29,12 @@ const formatDate = (value?: string | null): string => {
 export default function TechDetailSample() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation();
+
+  // Get navigation source from location state
+  const navigationSource = location.state as { from?: 'experimentLogDetail' | 'sampleList'; experimentLogId?: string } | null;
 
   const [sample, setSample] = useState<SampleDetail | null>(null);
   const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>(
@@ -45,6 +49,9 @@ export default function TechDetailSample() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
+  const [showDestroyForm, setShowDestroyForm] = useState(false);
+  const [destroyReason, setDestroyReason] = useState("");
+  const [isDestroying, setIsDestroying] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -93,7 +100,15 @@ export default function TechDetailSample() {
   }, [id, enqueueSnackbar]);
 
   const handleBack = () => {
-    navigate("/technician/samples");
+    // Navigate back to the source page based on location state
+    if (navigationSource?.from === 'experimentLogDetail' && navigationSource.experimentLogId) {
+      navigate(`/technician/experiment-log/${navigationSource.experimentLogId}`);
+    } else if (navigationSource?.from === 'sampleList') {
+      navigate("/technician/samples");
+    } else {
+      // Default fallback to sample list
+      navigate("/technician/samples");
+    }
   };
 
   const handleAnalyzeDisease = async () => {
@@ -155,6 +170,47 @@ export default function TechDetailSample() {
     setImagePreview("");
   };
 
+  const isHealthyAnalysis = useMemo(() => {
+    if (!analysisResult) return true;
+
+    const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
+    const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
+
+    if (diseaseCode.includes("healthy") || diseaseName.includes("healthy") || diseaseName.includes("khỏe")) {
+      return true;
+    }
+
+    const values = Object.entries(analysisResult.analyticResult)
+      .filter(([key]) => key !== "healthy")
+      .map(([, value]) => value as number);
+    const maxNonHealthy = values.length > 0 ? Math.max(...values) : 0;
+
+    return analysisResult.analyticResult.healthy >= maxNonHealthy;
+  }, [analysisResult]);
+
+  const handleDestroySample = async () => {
+    if (!id || !analysisResult || isDestroying) return;
+
+    const finalReason = destroyReason.trim() || `Mẫu vật nhiễm ${analysisResult.disease.name}`;
+    setIsDestroying(true);
+
+    try {
+      await axiosInstance.delete(`/api/samples/${id}`, {
+        data: { reason: finalReason },
+      });
+
+      enqueueSnackbar("Tiêu hủy mẫu vật thành công", { variant: "success" });
+      setShowDestroyForm(false);
+      setDestroyReason("");
+      setShowAnalysisModal(false);
+      handleBack();
+    } catch {
+      enqueueSnackbar("Không thể tiêu hủy mẫu vật", { variant: "error" });
+    } finally {
+      setIsDestroying(false);
+    }
+  };
+
   const getStatusLabel = (status: SampleStatus): string => {
     const statusMap: Record<SampleStatus, string> = {
       [SampleStatusValue.Created]: t("sample.statusCreated"),
@@ -210,22 +266,24 @@ export default function TechDetailSample() {
   }
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4">
-      <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1000px] mx-auto">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
+      <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
           <div className="flex gap-3">
-            <button
-              onClick={handleAnalyzeDisease}
-              disabled={analyzing}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
-                analyzing
-                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {analyzing ? t("sample.analyzing") : t("sample.analyzeDisease")}
-            </button>
+            {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
+              <button
+                onClick={handleAnalyzeDisease}
+                disabled={analyzing}
+                className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
+                  analyzing
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {analyzing ? t("sample.analyzing") : t("sample.analyzeDisease")}
+              </button>
+            )}
             <span
               className={`px-3 py-2 rounded-md text-sm font-medium ${
                 STATUS_COLOR_MAP[sample.status] || "bg-gray-100 text-gray-800"
@@ -295,7 +353,6 @@ export default function TechDetailSample() {
                   <tr>
                     <th className="text-left p-3 text-sm font-semibold text-gray-900">STT</th>
                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Chỉ số</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Mã</th>
                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Giá trị đo</th>
                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Kỳ vọng</th>
                     <th className="text-left p-3 text-sm font-semibold text-gray-900">Khoảng chuẩn</th>
@@ -312,7 +369,6 @@ export default function TechDetailSample() {
                       <tr key={row.id} className="border-b">
                         <td className="p-3 text-sm text-gray-800">{index + 1}</td>
                         <td className="p-3 text-sm text-gray-800">{sampleReq.name}</td>
-                        <td className="p-3 text-sm text-gray-600">{sampleReq.characteristicCode}</td>
                         <td className="p-3 text-sm text-gray-800">{row.measuredValue}</td>
                         <td className="p-3 text-sm text-gray-800">{req.expectedValue}</td>
                         <td className="p-3 text-sm text-gray-800">
@@ -449,7 +505,11 @@ export default function TechDetailSample() {
             <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
               <h3 className="text-xl font-semibold">{t("sample.analysisResults")}</h3>
               <button
-                onClick={() => setShowAnalysisModal(false)}
+                onClick={() => {
+                  setShowAnalysisModal(false);
+                  setShowDestroyForm(false);
+                  setDestroyReason("");
+                }}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >
                 ×
@@ -503,11 +563,71 @@ export default function TechDetailSample() {
                   ))}
                 </div>
               </div>
+
+              {!isHealthyAnalysis && (
+                <div className="border border-red-200 bg-red-50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-red-700 font-medium">
+                      Mẫu vật có dấu hiệu bệnh. Bạn có thể tiêu hủy mẫu vật này.
+                    </p>
+                    {!showDestroyForm && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDestroyForm(true)}
+                        className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      >
+                        Tiêu hủy mẫu vật
+                      </button>
+                    )}
+                  </div>
+
+                  {showDestroyForm && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-700">Lý do tiêu hủy (có thể để trống)</label>
+                        <textarea
+                          value={destroyReason}
+                          onChange={(e) => setDestroyReason(e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                          placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowDestroyForm(false);
+                            setDestroyReason("");
+                          }}
+                          disabled={isDestroying}
+                          className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDestroySample()}
+                          disabled={isDestroying}
+                          className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                        >
+                          {isDestroying ? "Đang xử lý..." : "Xác nhận tiêu hủy"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="border-t p-6 flex justify-end">
               <button
-                onClick={() => setShowAnalysisModal(false)}
+                onClick={() => {
+                  setShowAnalysisModal(false);
+                  setShowDestroyForm(false);
+                  setDestroyReason("");
+                }}
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
               >
                 {t("common.close")}

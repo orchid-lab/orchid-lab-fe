@@ -23,6 +23,10 @@ export interface Sample {
   updatedDate: string | null;
   updatedBy: string | null;
   status: SampleStatus;
+  // Legacy fields for backward compatibility
+  description?: string;
+  dob?: string;
+  statusEnum?: string;
 }
 
 // API Response wrapper

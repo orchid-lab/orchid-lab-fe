@@ -27,12 +27,20 @@
 // IMPORTS
 // =============================================================================
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import { FaTimes, FaSeedling } from "react-icons/fa";
 import axiosInstance from "../../../api/axiosInstance";
 import type { User } from "../../../types/Auth";
+import type {
+  ExperimentLogDetail,
+  MethodStage,
+  Material,
+  Chemical,
+} from "../../../types/ExperimentLog";
+
+import { SampleStatus } from "../../../types/Sample";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./TechnicianExperimentLogDetail.css";
@@ -40,134 +48,14 @@ import "./TechnicianExperimentLogDetail.css";
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
 
-// =============================================================================
-// TYPE DEFINITIONS
-// =============================================================================
-
-/**
- * Sample - Represents a sample in the experiment
- */
-interface Sample {
-  id: string;
-  name: string;
-  experimentLogId?: string;
-  currentSampleStage?: string;
-  notes?: string;
-  reason?: string;
-  executionDate?: string;
-  status?: string;
-  // Legacy fields
-  description?: string;
-  dob?: string;
-  statusEnum?: string;
-}
-
-interface StageDefinition {
-  id: number;
-  name: string;
-  description?: string;
-}
-
-interface Material {
-  id: number;
-  name: string;
-  category?: string;
-  description?: string;
-  unit?: string;
-}
-
-interface Chemical {
-  id: number;
-  name: string;
-  category?: string;
-  description?: string;
-  concentrationUnit?: string;
-}
-
-interface StageMaterial {
-  id: string;
-  material: Material;
-}
-
-interface StageChemical {
-  id: string;
-  chemical: Chemical;
-}
-
-interface MethodStage {
-  id: number;
-  durationsDays: number;
-  order: number;
-  stageDefinition: StageDefinition;
-  stageMaterials?: StageMaterial[];
-  stageChemicals?: StageChemical[];
-  isSampleGenerated?: boolean; // Determines if protocorm creation is allowed at this stage
-}
-
-interface Method {
-  id: number;
-  name: string;
-  description?: string;
-  totalDurationDays?: number;
-  methodStages?: MethodStage[];
-}
-
-interface Batch {
-  id: number;
-  labRoomId?: number;
-  labRoomName?: string;
-  batchName?: string;
-  batchSizeWidth?: number;
-  batchSizeHeight?: number;
-  widthUnit?: string;
-  heightUnit?: string;
-  status?: string;
-}
-
-interface Trait {
-  name: string;
-  value: number;
-  unit: string;
-}
-
-interface Seedling {
-  id: string;
-  localName: string;
-  scientificName?: string;
-  description?: string;
-  parentAId?: string;
-  parentALocalName?: string;
-  parentAScientificName?: string;
-  traits?: Trait[];
-  createdDate?: string;
-  createdBy?: string;
-}
-
-interface ExperimentLogDetailType {
-  id: string;
-  name: string;
-  seedling?: Seedling;
-  method?: Method;
-  batch?: Batch;
-  expectedSampleCount?: number;
-  currentStageOrder?: number;
-  assignedTo?: string;
-  startDate?: string;
-  endDate?: string;
-  notes?: string;
-  reason?: string;
-  status?: string;
-  createdDate?: string;
-  createdBy?: string;
-  updatedDate?: string;
-  updatedBy?: string;
-  samples?: Sample[];
-  // Legacy fields for backward compatibility
-  methodName?: string;
-  tissueCultureBatchName?: string;
-  create_date?: string;
-  create_by?: string;
-}
+// Status color mapping for samples - matching ListSample
+const SAMPLE_STATUS_COLOR_MAP: Record<string, string> = {
+  [SampleStatus.Created]: "bg-blue-100 text-blue-800",
+  [SampleStatus.InProgressed]: "bg-yellow-100 text-yellow-800",
+  [SampleStatus.Completed]: "bg-green-100 text-green-800",
+  [SampleStatus.ExecutedBecauseOfDisease]: "bg-red-100 text-red-800",
+  [SampleStatus.ConvertedToSeedling]: "bg-purple-100 text-purple-800",
+};
 
 // =============================================================================
 // CHANGE STAGE SUCCESS MODAL COMPONENT
@@ -343,7 +231,7 @@ const TechnicianExperimentLogDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
+  const [log, setLog] = useState<ExperimentLogDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [labName, setLabName] = useState<string>(t("experimentLog.loadingData"));
@@ -367,6 +255,18 @@ const TechnicianExperimentLogDetail = () => {
 
   const samples = log?.samples ?? [];
 
+  // Get translation for sample status
+  const getStatusLabelForSample = (status?: string): string => {
+    const statusMap: Record<string, string> = {
+      [SampleStatus.Created]: t('sample.statusCreated'),
+      [SampleStatus.InProgressed]: t('sample.statusInProgressed'),
+      [SampleStatus.Completed]: t('sample.statusCompleted'),
+      [SampleStatus.ExecutedBecauseOfDisease]: t('sample.statusExecutedBecauseOfDisease'),
+      [SampleStatus.ConvertedToSeedling]: t('sample.statusConvertedToSeedling'),
+    };
+    return statusMap[status ?? ''] || status || t('common.none');
+  };
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -377,11 +277,11 @@ const TechnicianExperimentLogDetail = () => {
       .then((res) => {
         const logData = res.data.value ?? res.data;
         const anyLog = logData as Record<string, unknown>;
-        const normalized: Partial<ExperimentLogDetailType> = {
-          ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+        const normalized: Partial<ExperimentLogDetail> = {
+          ...(anyLog as unknown as Partial<ExperimentLogDetail>),
           createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
         };
-        setLog(normalized as ExperimentLogDetailType);
+        setLog(normalized as ExperimentLogDetail);
       })
       .catch(() => setError(t("common.errorLoading")))
       .finally(() => setLoading(false));
@@ -452,11 +352,11 @@ const TechnicianExperimentLogDetail = () => {
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       const logData = res.data.value ?? res.data;
       const anyLog = logData as Record<string, unknown>;
-      const normalized: Partial<ExperimentLogDetailType> = {
-        ...(anyLog as unknown as Partial<ExperimentLogDetailType>),
+      const normalized: Partial<ExperimentLogDetail> = {
+        ...(anyLog as unknown as Partial<ExperimentLogDetail>),
         createdDate: (anyLog.createdDate as string | undefined) ?? (anyLog.create_date as string | undefined),
       };
-      setLog(normalized as ExperimentLogDetailType);
+      setLog(normalized as ExperimentLogDetail);
       setIsProtocormPopoverOpen(false);
       setProtocormQuantity("");
     } catch {
@@ -1132,28 +1032,20 @@ const TechnicianExperimentLogDetail = () => {
           ) : (
             <div className="samples-grid">
               {samples.map((sample) => (
-                <div
+                <Link
                   key={sample.id}
+                  to={`/technician/samples/${sample.id}`}
+                  state={{ from: 'experimentLogDetail', experimentLogId: id }}
                   className="sample-card"
+                  style={{ textDecoration: 'none' }}
                 >
                   <div className="sample-name">{sample.name}</div>
-                  {sample.description && (
-                    <div className="sample-description">
-                      {sample.description}
-                    </div>
-                  )}
-                  <div className="sample-id">ID: {sample.id}</div>
-                  {sample.dob && (
-                    <div className="sample-date">
-                      {t("experimentLog.dateCreated") || "Ngày tạo"}: {formatDate(sample.dob)}
-                    </div>
-                  )}
                   <div className="sample-status">
-                    <span className={getStatusColor(sample.status ?? sample.statusEnum)}>
-                      {getStatusDisplay(sample.status ?? sample.statusEnum)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${SAMPLE_STATUS_COLOR_MAP[sample.status ?? ''] || 'bg-gray-100 text-gray-800'}`}>
+                      {getStatusLabelForSample(sample.status)}
                     </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
