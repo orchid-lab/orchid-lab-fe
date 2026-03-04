@@ -1,90 +1,37 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+import type { Sample, SampleApiResponse, ExperimentLogApiResponse } from "../../../types/Sample";
+import { SampleStatus } from "../../../types/Sample";
 
-type SampleStatus = string; // backend returns string like "Process" per swagger screenshot
-
-interface ReportAttribute {
-  name: string;
-  value: number;
-  status: number | boolean;
-  valueFrom?: number;
-  valueTo?: number;
-  measurementUnit?: string;
-}
-
-interface SampleItem {
-  id: string;
-  name: string;
-  description?: string;
-  dob?: string;
-  statusEnum: SampleStatus;
-  reportAttributes?: ReportAttribute[];
-}
-
-interface ApiListEnvelope<T> {
-  value?:
-    | {
-        data?: T[];
-        totalCount?: number;
-      }
-    | T[];
-}
-
-function normalizeSamplesResponse(data: unknown): {
-  items: SampleItem[];
-  total: number;
-} {
-  // Accept multiple shapes: value.data[], value as [], or []
-  const defaultResult = { items: [], total: 0 };
-  if (!data || typeof data !== "object") return defaultResult;
-
-  const d = data as ApiListEnvelope<SampleItem>;
-  // shape 1: { value: { data: T[], totalCount } }
-  if (d.value && !Array.isArray(d.value)) {
-    const items = Array.isArray(d.value.data) ? d.value.data : [];
-    const total =
-      typeof d.value.totalCount === "number"
-        ? d.value.totalCount
-        : items.length;
-    return { items, total };
-  }
-  // shape 2: { value: T[] }
-  if (Array.isArray(d.value)) {
-    return { items: d.value, total: d.value.length };
-  }
-  // shape 3: T[]
-  if (Array.isArray(data)) {
-    return {
-      items: data as SampleItem[],
-      total: (data as SampleItem[]).length,
-    };
-  }
-  return defaultResult;
-}
-
-const STATUS_COLOR_MAP: Record<string, string> = {
-  Process: "text-yellow-700",
-  Suspended: "text-orange-700",
-  Destroyed: "text-red-700",
-
-  ChangedToSeedling: "text-green-700",
+// Helper function to format date in Vietnamese format (dd/MM/yyyy)
+const formatVietnameseDate = (dateString: string | null): string => {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
-const STATUS_LABEL_MAP: Record<string, string> = {
-  Process: "Đang xử lý",
-  Suspended: "Tạm dừng",
-  Destroyed: "Đã tiêu hủy",
-
-  ChangedToSeedling: "Đã chuyển thành cây con",
+// Status color mapping
+const STATUS_COLOR_MAP: Record<SampleStatus, string> = {
+  [SampleStatus.Created]: "bg-blue-100 text-blue-800",
+  [SampleStatus.InProgressed]: "bg-yellow-100 text-yellow-800",
+  [SampleStatus.Completed]: "bg-green-100 text-green-800",
+  [SampleStatus.ExecutedBecauseOfDisease]: "bg-red-100 text-red-800",
+  [SampleStatus.ConvertedToSeedling]: "bg-purple-100 text-purple-800",
 };
 
 export default function ListSample() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
-  const [samples, setSamples] = useState<SampleItem[]>([]);
+  const [samples, setSamples] = useState<Sample[]>([]);
+  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,58 +40,99 @@ export default function ListSample() {
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 20;
 
-  const query = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("pageNo", "1");
-    params.set("pageSize", "1000");
-    if (searchTerm.trim()) params.set("search", searchTerm.trim());
-    return params.toString();
-  }, [searchTerm]);
+  // Fetch experiment logs to map IDs to names
+  useEffect(() => {
+    const fetchExperimentLogs = async () => {
+      try {
+        const params = new URLSearchParams({
+          PageNo: "1",
+          PageSize: "1000"
+        });
+        
+        const response = await axiosInstance.get<ExperimentLogApiResponse>(
+          `/api/experiment-logs?${params.toString()}`
+        );
+        
+        // Create a map from ID to name
+        const logMap: Record<string, string> = {};
+        response.data.data.forEach(log => {
+          logMap[log.id] = log.name;
+        });
+        
+        setExperimentLogMap(logMap);
+      } catch (err) {
+        console.error("Error fetching experiment logs:", err);
+        // Don't show error to user, just use IDs as fallback
+      }
+    };
+
+    fetchExperimentLogs();
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(
-      () => {
-        setLoading(true);
-        setError(null);
-        axiosInstance
-          .get(`/api/sample?${query}`)
-          .then((res) => {
-            const { items } = normalizeSamplesResponse(res.data);
+    const fetchSamples = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({
+          pageNo: "1",
+          pageSize: "1000"
+        });
+        
+        const response = await axiosInstance.get<SampleApiResponse>(`/api/samples?${params.toString()}`);
+        
+        let filteredSamples = response.data.data || [];
+        
+        // Apply filters
+        if (searchTerm.trim()) {
+          filteredSamples = filteredSamples.filter(s =>
+            s.name.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        
+        if (statusFilter) {
+          filteredSamples = filteredSamples.filter(s => s.status === statusFilter);
+        }
+        
+        // Sort by created date (newest first)
+        filteredSamples.sort((a, b) => 
+          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        );
+        
+        setTotalCount(filteredSamples.length);
+        
+        // Paginate
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        setSamples(filteredSamples.slice(start, end));
+        
+      } catch (err) {
+        setError(t('sample.fetchError') || "Không thể tải danh sách mẫu thí nghiệm");
+        enqueueSnackbar(t('common.error'), { variant: "error" });
+        console.error("Error fetching samples:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-            const sorted = [...items].sort((a, b) => {
-              const da = a.dob ? new Date(a.dob) : new Date(0);
-              const db = b.dob ? new Date(b.dob) : new Date(0);
-              return db.getTime() - da.getTime();
-            });
-
-            const filtered = sorted.filter((s) => {
-              const matchesSearch = searchTerm
-                ? s.name.toLowerCase().includes(searchTerm.toLowerCase())
-                : true;
-              const matchesStatus = statusFilter
-                ? s.statusEnum === statusFilter
-                : true;
-              return matchesSearch && matchesStatus;
-            });
-
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            setSamples(filtered.slice(start, end));
-            setTotalCount(filtered.length);
-          })
-          .catch(() => {
-            setError("Không thể tải danh sách mẫu thí nghiệm");
-            enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
-          })
-          .finally(() => setLoading(false));
-      },
-      searchTerm ? 300 : 0
-    );
-    return () => clearTimeout(t);
-  }, [query, searchTerm, statusFilter, currentPage, enqueueSnackbar]);
+    const timeout = setTimeout(fetchSamples, searchTerm ? 300 : 0);
+    return () => clearTimeout(timeout);
+  }, [searchTerm, statusFilter, currentPage, enqueueSnackbar, t]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
   const paginate = (p: number) => setCurrentPage(p);
+
+  // Get translation for status
+  const getStatusLabel = (status: SampleStatus): string => {
+    const statusMap: Record<SampleStatus, string> = {
+      [SampleStatus.Created]: t('sample.statusCreated'),
+      [SampleStatus.InProgressed]: t('sample.statusInProgressed'),
+      [SampleStatus.Completed]: t('sample.statusCompleted'),
+      [SampleStatus.ExecutedBecauseOfDisease]: t('sample.statusExecutedBecauseOfDisease'),
+      [SampleStatus.ConvertedToSeedling]: t('sample.statusConvertedToSeedling'),
+    };
+    return statusMap[status] || status;
+  };
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
@@ -152,10 +140,10 @@ export default function ListSample() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Danh sách mẫu thí nghiệm
+              {t('sample.sampleList')}
             </h1>
             <p className="text-gray-600 mt-1">
-              Theo dõi các mẫu thí nghiệm của bạn
+              {t('sample.sampleManagement')}
             </p>
           </div>
         </div>
@@ -165,25 +153,30 @@ export default function ListSample() {
             <div className="flex-1 min-w-[200px]">
               <input
                 type="text"
-                placeholder="Tìm kiếm mẫu thí nghiệm..."
+                placeholder={t('sample.searchPlaceholder')}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
             <div className="min-w-[200px]">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="">Tất cả trạng thái</option>
-                <option value="Process">Đang xử lý</option>
-                <option value="Suspended">Tạm dừng</option>
-                <option value="Destroyed">Đã tiêu hủy</option>
-                <option value="ChangedToSeedling">
-                  Đã chuyển thành cây con
-                </option>
+                <option value="">{t('sample.allStatus')}</option>
+                <option value={SampleStatus.Created}>{t('sample.statusCreated')}</option>
+                <option value={SampleStatus.InProgressed}>{t('sample.statusInProgressed')}</option>
+                <option value={SampleStatus.Completed}>{t('sample.statusCompleted')}</option>
+                <option value={SampleStatus.ExecutedBecauseOfDisease}>{t('sample.statusExecutedBecauseOfDisease')}</option>
+                <option value={SampleStatus.ConvertedToSeedling}>{t('sample.statusConvertedToSeedling')}</option>
               </select>
             </div>
             <button
@@ -195,74 +188,101 @@ export default function ListSample() {
               }}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
             >
-              Xóa bộ lọc
+              {t('common.clearFilters')}
             </button>
           </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">Đang tải danh sách mẫu...</div>
+            <div className="text-gray-500">{t('common.loadingData')}</div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-8">{error}</div>
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Tên mẫu
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Ngày sinh
-                    </th>
-                    <th className="text-left p-4 font-medium text-gray-900">
-                      Trạng thái
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {samples.length === 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
                     <tr>
-                      <td colSpan={3} className="p-8 text-center text-gray-500">
-                        Không có mẫu thí nghiệm
-                      </td>
+                      <th className="text-left p-4 font-medium text-gray-900 w-20">
+                        {t('sample.number')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('common.name')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('sample.experimentLog')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('sample.currentStage')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('sample.notes')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('common.status')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900">
+                        {t('sample.executionDate')}
+                      </th>
                     </tr>
-                  ) : (
-                    samples.map((s) => (
-                      <tr
-                        key={s.id}
-                        className="border-b hover:bg-green-50 cursor-pointer transition"
-                        onClick={() => {
-                          void navigate(`/technician/samples/${s.id}`);
-                        }}
-                      >
-                        <td className="p-4 text-gray-900">{s.name}</td>
-                        <td className="p-4 text-gray-600">
-                          {s.dob ? new Date(s.dob).toLocaleDateString() : ""}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              STATUS_COLOR_MAP[s.statusEnum] || "text-gray-700"
-                            }`}
-                          >
-                            {STATUS_LABEL_MAP[s.statusEnum] || s.statusEnum}
-                          </span>
+                  </thead>
+                  <tbody>
+                    {samples.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-gray-500">
+                          {t('common.noData')}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      samples.map((sample, index) => {
+                        const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                        return (
+                          <tr
+                            key={sample.id}
+                            className="border-b hover:bg-green-50 cursor-pointer transition"
+                            onClick={() => {
+                              navigate(`/technician/samples/${sample.id}`);
+                            }}
+                          >
+                            <td className="p-4 text-gray-900 font-medium">
+                              {rowNumber}
+                            </td>
+                            <td className="p-4 text-gray-900">
+                              {sample.name}
+                            </td>
+                            <td className="p-4 text-gray-600 text-sm">
+                              {experimentLogMap[sample.experimentLogId] || sample.experimentLogId.substring(0, 8) + '...'}
+                            </td>
+                            <td className="p-4 text-gray-600">
+                              {sample.currentSampleStage || "-"}
+                            </td>
+                            <td className="p-4 text-gray-600 max-w-xs truncate">
+                              {sample.notes || "-"}
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLOR_MAP[sample.status] || "bg-gray-100 text-gray-800"}`}>
+                                {getStatusLabel(sample.status)}
+                              </span>
+                            </td>
+                            <td className="p-4 text-gray-600">
+                              {formatVietnameseDate(sample.executionDate)}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {totalPages > 1 && (
               <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
                 <span>
-                  Hiển thị {samples.length} mẫu trên tổng số {totalCount} mẫu
+                  {t('sample.showing')} {samples.length} {t('sample.outOf')} {totalCount} {t('sample.samples')}
                 </span>
                 <div className="flex gap-2">
                   {currentPage > 1 && (

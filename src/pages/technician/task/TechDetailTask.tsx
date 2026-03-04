@@ -184,19 +184,19 @@ const TechDetailTask: React.FC = () => {
 
   // Action states
   const [updatingStatus, setUpdatingStatus] = useState(false);
-
-  // Report popup states
-  const [showReportPopup, setShowReportPopup] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [reportInformation, setReportInformation] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [submittingReport, setSubmittingReport] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Checklist editing states
   const [editingChecklistItem, setEditingChecklistItem] = useState<string | null>(null);
   const [checklistValues, setChecklistValues] = useState<Record<string, { measuredValue: string; measurementUnit: string }>>({});
   const [updatingChecklistItem, setUpdatingChecklistItem] = useState<string | null>(null);
+
+  // Checklist item report popup states
+  const [showChecklistReportPopup, setShowChecklistReportPopup] = useState(false);
+  const [reportingChecklistItemId, setReportingChecklistItemId] = useState<string | null>(null);
+  const [checklistItemSelectedFiles, setChecklistItemSelectedFiles] = useState<File[]>([]);
+  const [checklistItemPreviewUrls, setChecklistItemPreviewUrls] = useState<string[]>([]);
+  const [submittingChecklistItemReport, setSubmittingChecklistItemReport] = useState(false);
 
   // ==================== Status Labels ====================
 
@@ -307,13 +307,6 @@ const TechDetailTask: React.FC = () => {
     return new Date() > endDate;
   }, [taskData]);
 
-  const isTaskLate = useCallback((): boolean => {
-    const endDateStr = taskData?.taskAssignments?.endDate;
-    if (!endDateStr || isDefaultDate(endDateStr)) return false;
-    const endDate = new Date(endDateStr);
-    return new Date() > endDate;
-  }, [taskData]);
-
   // ==================== Actions ====================
 
   const handleBack = (): void => {
@@ -407,73 +400,11 @@ const TechDetailTask: React.FC = () => {
   };
 
   // Hoàn thành công việc: InProgress/ReworkRequired → WaitingForApproval
-  const handleCompleteTask = () => {
-    setShowReportPopup(true);
-  };
-
-  // ==================== Report Handlers ====================
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmitReport = async () => {
-    if (!selectedFile || !reportInformation || !taskData?.id) {
-      enqueueSnackbar("Vui lòng điền đầy đủ thông tin báo cáo", { variant: "error" });
-      return;
-    }
-
-    try {
-      setSubmittingReport(true);
-
-      const formData = new FormData();
-      formData.append("image", selectedFile);
-      formData.append("targetType", "Task");
-      formData.append("targetId", taskData.id);
-
-      //for upload image to report task
-      await axiosInstance.post("/api/images", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      // Tái sử dụng luồng cập nhật trạng thái dùng chung
-      const isStatusUpdated = await updateTaskStatus(2); // WaitingForApproval
-      if (!isStatusUpdated) {
-        return;
-      }
-
-      handleClosePopup();
+  const handleCompleteTask = async () => {
+    const isStatusUpdated = await updateTaskStatus(2); // WaitingForApproval
+    if (isStatusUpdated) {
       setShowSuccessModal(true);
-    } catch (error) {
-      console.error("Error submitting report:", error);
-      const apiError = error as {
-        response?: { data?: string; status?: number };
-        message?: string;
-      };
-      const backendMessage =
-        apiError.response?.data ?? apiError.message ?? "Gửi báo cáo thất bại!";
-
-      enqueueSnackbar(backendMessage, {
-        variant: "error",
-        autoHideDuration: 5000,
-      });
-    } finally {
-      setSubmittingReport(false);
     }
-  };
-
-  const handleClosePopup = () => {
-    setShowReportPopup(false);
-    setSelectedFile(null);
-    setReportInformation("");
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    setPreviewUrl(null);
   };
 
   // ==================== Checklist Handlers ====================
@@ -550,7 +481,14 @@ const TechDetailTask: React.FC = () => {
     }));
   };
 
-  // Hoàn thành checklist item (InProgress → Completed)
+  // Hoàn thành checklist item (InProgress → Completed) - mở popup để upload hình
+  const handleOpenChecklistReportPopup = (itemId: string) => {
+    setReportingChecklistItemId(itemId);
+    setShowChecklistReportPopup(true);
+    setChecklistItemSelectedFiles([]);
+    setChecklistItemPreviewUrls([]);
+  };
+
   const handleCompleteChecklistItem = async (itemId: string) => {
     const values = checklistValues[itemId];
     if (!values || !taskData?.id) return;
@@ -637,6 +575,82 @@ const TechDetailTask: React.FC = () => {
       });
     } finally {
       setUpdatingChecklistItem(null);
+    }
+  };
+
+  // ==================== Checklist Item Report Handlers ====================
+
+  const handleChecklistItemFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    setChecklistItemSelectedFiles((prev) => [...prev, ...files]);
+    setChecklistItemPreviewUrls((prev) => [...prev, ...files.map((file) => URL.createObjectURL(file))]);
+
+    event.target.value = "";
+  };
+
+  const handleRemoveChecklistItemImage = (index: number) => {
+    setChecklistItemPreviewUrls((prev) => {
+      const target = prev[index];
+      if (target) {
+        URL.revokeObjectURL(target);
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
+
+    setChecklistItemSelectedFiles((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleCloseChecklistReportPopup = () => {
+    setShowChecklistReportPopup(false);
+    checklistItemPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setChecklistItemPreviewUrls([]);
+    setChecklistItemSelectedFiles([]);
+    setReportingChecklistItemId(null);
+  };
+
+  const handleSubmitChecklistItemReport = async () => {
+    if (checklistItemSelectedFiles.length === 0 || !taskData?.id || !reportingChecklistItemId) {
+      enqueueSnackbar("Vui lòng tải lên ít nhất 1 hình ảnh bằng chứng", { variant: "error" });
+      return;
+    }
+
+    try {
+      setSubmittingChecklistItemReport(true);
+
+      // Upload các hình ảnh với targetType là Task và targetId là taskId
+      for (const file of checklistItemSelectedFiles) {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("targetType", "Task");
+        formData.append("targetId", taskData.id);
+
+        await axiosInstance.post("/api/images", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      // Sau khi upload xong hình, hoàn thành checklist item
+      await handleCompleteChecklistItem(reportingChecklistItemId);
+
+      handleCloseChecklistReportPopup();
+      enqueueSnackbar("Đã hoàn thành và lưu bằng chứng thành công!", { variant: "success" });
+    } catch (error) {
+      console.error("Error submitting checklist item report:", error);
+      const apiError = error as {
+        response?: { data?: string; status?: number };
+        message?: string;
+      };
+      const backendMessage =
+        apiError.response?.data ?? apiError.message ?? "Gửi báo cáo thất bại!";
+
+      enqueueSnackbar(backendMessage, {
+        variant: "error",
+        autoHideDuration: 5000,
+      });
+    } finally {
+      setSubmittingChecklistItemReport(false);
     }
   };
 
@@ -1039,7 +1053,7 @@ const TechDetailTask: React.FC = () => {
                                 <div className="flex flex-col gap-1.5 min-w-[100px]">
                                   {item.status === "InProgress" && (
                                     <button
-                                      onClick={() => handleCompleteChecklistItem(item.id)}
+                                      onClick={() => handleOpenChecklistReportPopup(item.id)}
                                       disabled={isUpdating}
                                       className="px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-medium"
                                     >
@@ -1110,109 +1124,6 @@ const TechDetailTask: React.FC = () => {
         </div>
       </div>
 
-      {/* Report Popup */}
-      {showReportPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold">
-                Báo cáo hoàn thành công việc
-              </h3>
-              <button
-                onClick={handleClosePopup}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {/* File Upload & Image Preview */}
-              <div>
-                <label className="block font-medium mb-2">
-                  Chọn ảnh báo cáo *
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  id="fileInput"
-                  className="hidden"
-                />
-                
-                {previewUrl ? (
-                  <div className="space-y-3">
-                    <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-full h-auto max-h-64 object-contain"
-                      />
-                    </div>
-                    <label
-                      htmlFor="fileInput"
-                      className="block w-full p-2 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
-                    >
-                      <p className="font-medium text-gray-600 text-sm">{selectedFile?.name}</p>
-                      <p className="text-gray-500 text-xs mt-1">Nhấp để thay đổi</p>
-                    </label>
-                  </div>
-                ) : (
-                  <label
-                    htmlFor="fileInput"
-                    className="block w-full p-6 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
-                  >
-                    <p className="text-gray-500">Nhấp để chọn ảnh</p>
-                  </label>
-                )}
-              </div>
-
-              {/* Report Information */}
-              <div>
-                <label className="block font-medium mb-2">
-                  Thông tin báo cáo *
-                </label>
-                <textarea
-                  value={reportInformation}
-                  onChange={(e) => setReportInformation(e.target.value)}
-                  placeholder="Mô tả chi tiết công việc đã hoàn thành..."
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-md resize-none"
-                />
-              </div>
-
-              {/* Deadline Warning */}
-              {isTaskLate() && (
-                <div className="p-3 bg-orange-100 border border-orange-300 rounded-md">
-                  <p className="text-orange-800 text-sm">
-                    ⚠️ Công việc này đã quá hạn kết thúc. Researcher sẽ xem xét và quyết định
-                    trạng thái cuối cùng.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <button
-                onClick={handleClosePopup}
-                disabled={submittingReport}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSubmitReport}
-                disabled={submittingReport || !selectedFile || !reportInformation}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Success Modal */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1224,7 +1135,7 @@ const TechDetailTask: React.FC = () => {
               Yêu cầu duyệt thành công
             </h3>
             <p className="text-gray-600 mb-6 leading-relaxed">
-              {`Báo cáo của bạn đã được gửi thành công. Vui lòng chờ researcher phê duyệt công việc.`}
+              Công việc đã được chuyển sang trạng thái chờ phê duyệt. Vui lòng chờ researcher phê duyệt.
             </p>
             <button
               onClick={() => {
@@ -1235,6 +1146,100 @@ const TechDetailTask: React.FC = () => {
             >
               Quay lại danh sách
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Checklist Item Report Popup */}
+      {showChecklistReportPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold">
+                Hoàn thành tiêu chí với bằng chứng
+              </h3>
+              <button
+                onClick={handleCloseChecklistReportPopup}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* File Upload & Image Preview */}
+              <div>
+                <label className="block font-medium mb-2">
+                  Chụp / chọn ảnh bằng chứng hoàn thành tiêu chí *
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleChecklistItemFileChange}
+                  id="checklistFileInput"
+                  className="hidden"
+                />
+                
+                {checklistItemPreviewUrls.length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border border-gray-300 rounded-md p-3 bg-gray-50">
+                      {checklistItemPreviewUrls.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative rounded-md overflow-hidden border border-gray-200 bg-white">
+                          <img
+                            src={url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-28 object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveChecklistItemImage(index)}
+                            disabled={submittingChecklistItemReport}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs hover:bg-black/75 disabled:opacity-50"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <label
+                      htmlFor="checklistFileInput"
+                      className="block w-full p-2 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
+                    >
+                      <p className="font-medium text-gray-600 text-sm">
+                        Đã chọn {checklistItemSelectedFiles.length} ảnh
+                      </p>
+                      <p className="text-gray-500 text-xs mt-1">Nhấp để thêm ảnh khác</p>
+                    </label>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="checklistFileInput"
+                    className="block w-full p-6 border-2 border-dashed border-gray-300 rounded-md text-center cursor-pointer hover:border-blue-500 transition"
+                  >
+                    <p className="text-gray-500">Nhấp để chọn hoặc chụp ảnh</p>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <button
+                onClick={handleCloseChecklistReportPopup}
+                disabled={submittingChecklistItemReport}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSubmitChecklistItemReport}
+                disabled={submittingChecklistItemReport || checklistItemSelectedFiles.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingChecklistItemReport ? "Đang gửi..." : "Hoàn thành"}
+              </button>
+            </div>
           </div>
         </div>
       )}
