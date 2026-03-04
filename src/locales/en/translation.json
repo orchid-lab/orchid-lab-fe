@@ -333,7 +333,23 @@
   "sample": {
     "sampleManagement": "Sample Management",
     "sampleDetails": "Sample Details",
-    "sampleList": "Sample List"
+    "sampleList": "Sample List",
+    "number": "No.",
+    "experimentLog": "Experiment Log",
+    "notes": "Notes",
+    "currentStage": "Current Stage",
+    "executionDate": "Execution Date",
+    "searchPlaceholder": "Search samples...",
+    "allStatus": "All Status",
+    "statusCreated": "Created",
+    "statusInProgressed": "In Progress",
+    "statusCompleted": "Completed",
+    "statusExecutedBecauseOfDisease": "Executed Due to Disease",
+    "statusConvertedToSeedling": "Converted to Seedling",
+    "totalSamples": "Total Samples",
+    "showing": "Showing",
+    "outOf": "out of",
+    "samples": "samples"
   },
   "method": {
     "methodManagement": "Method Management",

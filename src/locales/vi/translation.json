@@ -333,7 +333,23 @@
   "sample": {
     "sampleManagement": "Quản lý mẫu",
     "sampleDetails": "Chi tiết mẫu",
-    "sampleList": "Danh sách mẫu"
+    "sampleList": "Danh sách mẫu",
+    "number": "STT",
+    "experimentLog": "Nhật ký thí nghiệm",
+    "notes": "Ghi chú",
+    "currentStage": "Giai đoạn hiện tại",
+    "executionDate": "Ngày thực hiện",
+    "searchPlaceholder": "Tìm kiếm mẫu...",
+    "allStatus": "Tất cả trạng thái",
+    "statusCreated": "Đã tạo",
+    "statusInProgressed": "Đang tiến hành",
+    "statusCompleted": "Hoàn thành",
+    "statusExecutedBecauseOfDisease": "Tiêu hủy do bệnh",
+    "statusConvertedToSeedling": "Chuyển thành cây giống",
+    "totalSamples": "Tổng số mẫu",
+    "showing": "Hiển thị",
+    "outOf": "trên tổng số",
+    "samples": "mẫu"
   },
   "method": {
     "methodManagement": "Quản lý phương pháp",
