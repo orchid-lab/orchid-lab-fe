@@ -510,6 +510,19 @@
     "actual": "Thực tế",
     "backToList": "Trở về"
   },
+  "monitoringLog": {
+    "title": "Báo cáo giám sát",
+    "createNew": "Tạo báo cáo mới",
+    "reportName": "Tên báo cáo",
+    "createdDate": "Ngày tạo",
+    "sampleName": "Tên mẫu vật",
+    "newest": "Mới nhất",
+    "totalReports": "Tổng số báo cáo",
+    "noReports": "Không tìm thấy báo cáo",
+    "statusCreated": "Đã tạo",
+    "statusWaitingForApproval": "Chờ phê duyệt",
+    "statusApproved": "Đã duyệt"
+  },
   "experimentLog": {
     "experimentLogManagement": "Quản lý nhật ký thí nghiệm",
     "experimentLogDetails": "Chi tiết nhật ký thí nghiệm",
@@ -737,5 +750,70 @@
     "fillAllFields": "Vui lòng điền đầy đủ thông tin",
     "outOf": "trên tổng số",
     "materials": "vật liệu"
+  },
+  "technicianTask": {
+    "pendingProcess": "Chờ xử lý",
+    "inProgress": "Đang thực hiện",
+    "completed": "Hoàn thành",
+    "failed": "Thất bại",
+    "sample": "Mẫu thí nghiệm",
+    "experimentLog": "Nhật ký thí nghiệm",
+    "assigned": "Đã giao",
+    "waitingForApproval": "Chờ phê duyệt",
+    "completedOnTime": "Hoàn thành đúng hạn",
+    "completedLate": "Hoàn thành trễ hạn",
+    "cancelled": "Đã xóa",
+    "declined": "Đã từ chối",
+    "reworkRequired": "Yêu cầu làm lại",
+    "unknown": "Không xác định",
+    "invalidStatus": "Trạng thái không hợp lệ",
+    "updateStatusSuccess": "Cập nhật trạng thái thành công:",
+    "cannotTakeLateTask": "Không thể nhận công việc đã quá hạn kết thúc",
+    "cannotLoadTaskDetails": "Không thể tải chi tiết công việc",
+    "errorLoadingData": "Lỗi khi tải dữ liệu"
+  },
+  "technicianSample": {
+    "sampleDetails": "Chi tiết mẫu thí nghiệm:",
+    "errorLoadingDetails": "Không thể tải chi tiết mẫu thí nghiệm",
+    "loadingError": "Lỗi khi tải dữ liệu",
+    "loading": "Đang tải dữ liệu...",
+    "noData": "Không tìm thấy dữ liệu",
+    "basicInfo": "Thông tin cơ bản",
+    "sampleName": "Tên mẫu",
+    "experiment": "Thí nghiệm",
+    "currentStage": "Giai đoạn phát triển hiện tại",
+    "notes": "Ghi chú",
+    "createdBy": "Người tạo",
+    "noCreatorInfo": "Không có thông tin hiển thị",
+    "reportByStage": "Báo cáo theo giai đoạn",
+    "noReportsData": "Không có dữ liệu báo cáo",
+    "attributeTableHeaders": {
+      "order": "STT",
+      "index": "Chỉ số",
+      "measuredValue": "Giá trị đo",
+      "expected": "Kỳ vọng",
+      "standard": "Khoảng chuẩn",
+      "unit": "Đơn vị",
+      "result": "Kết quả"
+    },
+    "pass": "Đạt",
+    "notPass": "Không đạt",
+    "back": "Quay lại",
+    "close": "×"
+  },
+  "technicianExperiment": {
+    "manageExperiments": "Monitor and manage cultivation experiments efficiently.",
+    "errorTitle": "Không thể tải danh sách thí nghiệm",
+    "errorMessage": "Lỗi khi tải dữ liệu"
+  },
+  "technicianReport": {
+    "createNewReport": "Tạo báo cáo mới",
+    "newReportForm": "Tạo báo cáo mới",
+    "collectAttributes": "Thuộc tính thu thập được của mẫu",
+    "addAttribute": "+ Thêm thuộc tính",
+    "saveReport": "Lưu báo cáo",
+    "loading": "Đang tải...",
+    "errorLoading": "Không thể tải dữ liệu",
+    "errorSaving": "Lỗi khi lưu báo cáo"
   }
 }

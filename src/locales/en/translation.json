@@ -510,6 +510,19 @@
     "actual": "Actual",
     "backToList": "Back"
   },
+  "monitoringLog": {
+    "title": "Monitoring Reports",
+    "createNew": "Create New Report",
+    "reportName": "Report Name",
+    "createdDate": "Created Date",
+    "sampleName": "Sample Name",
+    "newest": "Newest",
+    "totalReports": "Total Reports",
+    "noReports": "No reports found",
+    "statusCreated": "Created",
+    "statusWaitingForApproval": "Waiting for Approval",
+    "statusApproved": "Approved"
+  },
   "experimentLog": {
     "experimentLogManagement": "Experiment Log Management",
     "experimentLogDetails": "Experiment Log Details",
@@ -718,7 +731,7 @@
     "outOf": "out of",
     "chemicals": "chemicals"
   },
-    "material": {
+  "material": {
     "management": "Material Management",
     "add": "Add Material",
     "edit": "Edit Material",
@@ -737,5 +750,70 @@
     "fillAllFields": "Please fill all fields",
     "outOf": "out of",
     "materials": "materials"
+  },
+  "technicianTask": {
+    "pendingProcess": "Waiting for Processing",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "failed": "Failed",
+    "sample": "Sample",
+    "experimentLog": "Experiment Log",
+    "assigned": "Assigned",
+    "waitingForApproval": "Waiting for Approval",
+    "completedOnTime": "Completed on Time",
+    "completedLate": "Completed Late",
+    "cancelled": "Cancelled",
+    "declined": "Declined",
+    "reworkRequired": "Rework Required",
+    "unknown": "Unknown",
+    "invalidStatus": "Invalid Status",
+    "updateStatusSuccess": "Update status success:",
+    "cannotTakeLateTask": "Cannot take a task that is overdue",
+    "cannotLoadTaskDetails": "Unable to load task details",
+    "errorLoadingData": "Error loading data"
+  },
+  "technicianSample": {
+    "sampleDetails": "Sample Details:",
+    "errorLoadingDetails": "Failed to load sample details",
+    "loadingError": "Error loading data",
+    "loading": "Loading data...",
+    "noData": "No data found",
+    "basicInfo": "Basic Information",
+    "sampleName": "Sample Name",
+    "experiment": "Experiment",
+    "currentStage": "Current Development Stage",
+    "notes": "Notes",
+    "createdBy": "Created By",
+    "noCreatorInfo": "No information available",
+    "reportByStage": "Reports by Stage",
+    "noReportsData": "No report data",
+    "attributeTableHeaders": {
+      "order": "Order",
+      "index": "Index",
+      "measuredValue": "Measured Value",
+      "expected": "Expected",
+      "standard": "Standard Range",
+      "unit": "Unit",
+      "result": "Result"
+    },
+    "pass": "Pass",
+    "notPass": "Not Pass",
+    "back": "Back",
+    "close": "×"
+  },
+  "technicianExperiment": {
+    "manageExperiments": "Monitor and manage cultivation experiments efficiently.",
+    "errorTitle": "Unable to load experiment list",
+    "errorMessage": "Error loading data"
+  },
+  "technicianReport": {
+    "createNewReport": "Create New Report",
+    "newReportForm": "Create New Report",
+    "collectAttributes": "Collected Attributes of Sample",
+    "addAttribute": "+ Add Attribute",
+    "saveReport": "Save Report",
+    "loading": "Loading...",
+    "errorLoading": "Failed to load data",
+    "errorSaving": "Error saving report"
   }
 }

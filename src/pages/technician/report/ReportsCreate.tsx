@@ -37,7 +37,7 @@ export default function ReportsCreate() {
         const referentData = referentRes.data as ReferentApiResponse;
         const sampleData = sampleRes.data as SampleApiResponse;
         setReferents(referentData.value.data);
-        setSamples(sampleData.value.data);
+        setSamples(sampleData.data);
       } catch {
         setReferents([]);
         setSamples([]);
