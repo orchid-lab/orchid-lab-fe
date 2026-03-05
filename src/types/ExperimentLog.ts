@@ -150,3 +150,85 @@ export interface ExperimentLogApiResponse {
   value?: ExperimentLogDetail;
   data?: ExperimentLogDetail;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXPERIMENT LOG LIST VIEW TYPES
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Experiment Status - Status values for experiment logs
+ */
+export type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel" | "WaitingForChangeStage";
+
+/**
+ * Stage - Stage information for list views
+ */
+export interface StageList {
+  id: string;
+  name: string;
+  description?: string;
+  dateOfProcessing?: number;
+  step: number;
+  status: boolean;
+  elementDTO?: unknown[];
+}
+
+/**
+ * Sample - Sample information for list views
+ */
+export interface SampleList {
+  id: string;
+  name: string;
+  description?: string;
+  dob?: string;
+  status?: boolean;
+}
+
+/**
+ * Experiment Log Entry - Experiment log for list view
+ */
+export interface ExperimentLogEntryList {
+  id: string;
+  name: string;
+  description?: string;
+  tissueCultureBatchName?: string;
+  batchName?: string;
+  createdDate?: string;
+  status?: number | string;
+  samples?: SampleList[];
+  stages?: StageList[];
+  currentStageName?: string;
+  currentStageOrder?: number;
+  expectedSampleCount?: number;
+  methodName: string;
+}
+
+/**
+ * Experiment Log List API Response
+ */
+export interface ExperimentLogListApiResponse {
+  totalCount: number;
+  pageCount: number;
+  pageSize: number;
+  pageNumber: number;
+  data: ExperimentLogEntryList[];
+}
+
+/**
+ * Method Option - Simple method option for dropdowns
+ */
+export interface MethodOption {
+  id: string;
+  name: string;
+}
+
+/**
+ * Sample List API Response
+ */
+export interface SampleListApiResponse {
+  totalCount: number;
+  pageCount: number;
+  pageSize: number;
+  pageNumber: number;
+  data: unknown[];
+}

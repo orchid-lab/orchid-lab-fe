@@ -3,86 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-
-// ==================== Types ====================
-
-// Task Status Enum (matches backend)
-// 0: Assigned - Task vừa được tạo xong
-// 1: InProgress - Technician nhận task để làm
-// 2: WaitingForApproval - Technician hoàn thành, chờ approval từ researcher
-// 3: CompletedInTime - Researcher đã approve, hoàn thành đúng hạn
-// 4: CompletedOutTime - Hoàn thành trễ hạn
-// 5: Deleted - Researcher xóa task
-// 6: DeclinedByTechnician - Technician từ chối nhận task
-// 7: ReworkRequired - Researcher yêu cầu làm lại
-type TaskStatus =
-  | "Assigned"
-  | "InProgress"
-  | "WaitingForApproval"
-  | "CompletedInTime"
-  | "CompletedOutTime"
-  | "Deleted"
-  | "DeclinedByTechnician"
-  | "ReworkRequired";
-
-type TargetType = "Sample" | "ExperimentLog";
-
-type CheckListItemStatus = "Pending" | "InProgress" | "Complete" | "Failed";
-
-interface TaskAttribute {
-  chemicalName: string | null;
-  materialName: string | null;
-  unit: string;
-  value: number;
-}
-
-interface TaskAssignment {
-  taskId: string;
-  technicianName: string;
-  targetType: TargetType;
-  targetId: string;
-  startDate: string;
-  endDate: string;
-  expectedEndDate: string;
-}
-
-interface CheckListItem {
-  id: string;
-  name: string;
-  description: string;
-  order: number;
-  expectedUnit: string | null;
-  expectedMinValue: number | null;
-  expectedMaxValue: number | null;
-  status: CheckListItemStatus;
-  measurementUnit: string | null;
-  mesuredValue: number | null;
-  isPass: boolean | null;
-  evaluated: string;
-}
-
-interface TaskCheckList {
-  id: string;
-  checkListItemDtos: CheckListItem[];
-}
-
-interface TaskData {
-  id: string;
-  name: string;
-  description: string;
-  stageId: number | null;
-  researcherId: string;
-  status: TaskStatus;
-  createdDate: string;
-  createdBy: string;
-  updatedDate: string | null;
-  updatedBy: string | null;
-  deletedDate: string | null;
-  deletedBy: string | null;
-  taskAttributes: TaskAttribute[];
-  taskAssignments: TaskAssignment;
-  taskCheckList: TaskCheckList | null;
-}
+import type {
+  TaskStatus,
+  TargetType,
+  CheckListItemStatus,
+  TaskData,
+} from "../../../types/TechnicianTask";
 
 // ==================== Helper Functions ====================
 

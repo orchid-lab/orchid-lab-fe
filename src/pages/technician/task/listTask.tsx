@@ -6,6 +6,7 @@ import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import type { TaskStatusType, TaskItem, TaskListApiResponse } from "../../../types/TechnicianTask";
 import {
   Clock,
   UserPlus,
@@ -20,41 +21,7 @@ import {
 
 Chart.register(ArcElement, Tooltip, Legend);
 
-interface Task {
-  id: string;
-  name: string;
-  description?: string;
-  stageId?: number;
-  taskTargetType?: string;
-  targetId?: string;
-  researcherId: string;
-  technicianId: string;
-  status: StatusType;
-  expectedEndDate: string;
-  createdDate?: string;
-  targetName?: string; // Added for display
-}
-
-type StatusType =
-  | "Assigned"
-  | "InProgress"
-  | "WaitingForApproval"
-  | "CompletedInTime"
-  | "CompletedOutTime"
-  | "Deleted"
-  | "DeclinedByTechnician"
-  | "ReworkRequired"
-  | "Unknown";
-
-interface ApiTaskResponse {
-  totalCount?: number;
-  pageCount?: number;
-  pageSize?: number;
-  pageNumber?: number;
-  data?: Task[];
-}
-
-function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
+function isTaskListApiResponse(obj: unknown): obj is TaskListApiResponse {
   return (
     typeof obj === "object" &&
     obj !== null &&
@@ -62,7 +29,7 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
   );
 }
 
-const STATUS_LABELS: Record<StatusType, string> = {
+const STATUS_LABELS: Record<TaskStatusType, string> = {
   Assigned: "Assigned",
   InProgress: "In Progress",
   WaitingForApproval: "Waiting For Approval",
@@ -74,7 +41,7 @@ const STATUS_LABELS: Record<StatusType, string> = {
   Unknown: "Unknown",
 };
 
-const STATUS_TRANSLATION_KEYS: Record<StatusType, string> = {
+const STATUS_TRANSLATION_KEYS: Record<TaskStatusType, string> = {
   Assigned: "status.assigned",
   InProgress: "status.inProgress",
   WaitingForApproval: "status.waitingForApproval",
@@ -86,7 +53,7 @@ const STATUS_TRANSLATION_KEYS: Record<StatusType, string> = {
   Unknown: "status.unknown",
 };
 
-const STATUS_COLORS: Record<StatusType, string> = {
+const STATUS_COLORS: Record<TaskStatusType, string> = {
   Assigned: "bg-purple-100 text-purple-700 border-purple-200",
   InProgress: "bg-blue-100 text-blue-700 border-blue-200",
   WaitingForApproval: "bg-indigo-100 text-indigo-700 border-indigo-200",
@@ -98,7 +65,7 @@ const STATUS_COLORS: Record<StatusType, string> = {
   Unknown: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-const STATUS_ICON_COLORS: Record<StatusType, string> = {
+const STATUS_ICON_COLORS: Record<TaskStatusType, string> = {
   Assigned: "text-purple-500",
   InProgress: "text-blue-500",
   WaitingForApproval: "text-indigo-500",
@@ -110,7 +77,7 @@ const STATUS_ICON_COLORS: Record<StatusType, string> = {
   Unknown: "text-gray-500",
 };
 
-const STATUS_FILTER_ORDER: StatusType[] = [
+const STATUS_FILTER_ORDER: TaskStatusType[] = [
   "Assigned",
   "InProgress",
   "WaitingForApproval",
@@ -121,15 +88,15 @@ const STATUS_FILTER_ORDER: StatusType[] = [
   "ReworkRequired",
 ];
 
-const normalizeTaskStatus = (status: string): StatusType => {
+const normalizeTaskStatus = (status: string): TaskStatusType => {
   if (status in STATUS_LABELS) {
-    return status as StatusType;
+    return status as TaskStatusType;
   }
 
   return "Unknown";
 };
 
-const createEmptyStatusCounts = (): Record<StatusType, number> => ({
+const createEmptyStatusCounts = (): Record<TaskStatusType, number> => ({
   Assigned: 0,
   InProgress: 0,
   WaitingForApproval: 0,
@@ -159,20 +126,20 @@ export default function ListTask() {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuth();
 
-  const getStatusLabel = (status: StatusType) =>
+  const getStatusLabel = (status: TaskStatusType) =>
     t(STATUS_TRANSLATION_KEYS[status], { defaultValue: STATUS_LABELS[status] });
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [statusFilter, setStatusFilter] = useState<StatusType | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<TaskStatusType | "All">("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [todayFilter, setTodayFilter] = useState(false);
 
-  const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>(
+  const [statusCounts, setStatusCounts] = useState<Record<TaskStatusType, number>>(
     createEmptyStatusCounts()
   );
 
@@ -215,7 +182,7 @@ export default function ListTask() {
 
         const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
 
-        if (isApiTaskResponse(response.data)) {
+        if (isTaskListApiResponse(response.data)) {
           const allTasks = Array.isArray(response.data.data)
             ? response.data.data
                 .filter((task) => String(task.status ?? "") !== "Template")
@@ -227,7 +194,7 @@ export default function ListTask() {
 
           const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
 
-          const counts: Record<StatusType, number> = createEmptyStatusCounts();
+          const counts: Record<TaskStatusType, number> = createEmptyStatusCounts();
 
           myTasks.forEach((task) => {
             counts[task.status] = (counts[task.status] || 0) + 1;
@@ -270,7 +237,7 @@ export default function ListTask() {
           try {
             const res = await axiosInstance.get(`/api/tasks?${buildApiQuery}`);
             
-            if (isApiTaskResponse(res.data)) {
+            if (isTaskListApiResponse(res.data)) {
               const data = Array.isArray(res.data.data)
                 ? res.data.data
                     .filter((task) => String(task.status ?? "") !== "Template")
@@ -356,7 +323,7 @@ export default function ListTask() {
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
   // Status colors for chart
-  const CHART_COLORS: Record<StatusType, string> = {
+  const CHART_COLORS: Record<TaskStatusType, string> = {
     Assigned: "#8b5cf6", // purple
     InProgress: "#3b82f6", // blue
     WaitingForApproval: "#6366f1", // indigo
@@ -401,7 +368,7 @@ export default function ListTask() {
     cutout: "70%",
   };
 
-  const getStatusIcon = (status: StatusType) => {
+  const getStatusIcon = (status: TaskStatusType) => {
     const iconClass = `w-5 h-5 ${STATUS_ICON_COLORS[status]}`;
     switch (status) {
       case "Assigned":
@@ -564,7 +531,7 @@ export default function ListTask() {
               <Filter className="w-5 h-5 text-gray-500" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as StatusType | "All")}
+                onChange={(e) => setStatusFilter(e.target.value as TaskStatusType | "All")}
                 className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
                 <option value="All">Status</option>

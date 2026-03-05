@@ -25,66 +25,16 @@ import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import type {
+  ExperimentStatus,
+  ExperimentLogEntryList,
+  ExperimentLogListApiResponse,
+  MethodOption,
+  SampleListApiResponse,
+} from "../../../types/ExperimentLog";
 
 Chart.register(ArcElement, Tooltip, Legend);
-gsap.registerPlugin(useGSAP); 
-
-type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel" | "WaitingForChangeStage";
-
-interface Stage {
-  id: string;
-  name: string;
-  description?: string;
-  dateOfProcessing?: number;
-  step: number;
-  status: boolean;
-  elementDTO?: unknown[];
-}
-
-interface Sample {
-  id: string;
-  name: string;
-  description?: string;
-  dob?: string;
-  status?: boolean;
-}
-
-interface ExperimentLogEntry {
-  id: string;
-  name: string;
-  description?: string;
-  tissueCultureBatchName?: string;
-  batchName?: string;
-  createdDate?: string;
-  status?: number | string;
-  samples?: Sample[];
-  stages?: Stage[];
-  currentStageName?: string;
-  currentStageOrder?: number;
-  expectedSampleCount?: number;
-  methodName: string;
-}
-
-interface ExperimentLogApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: ExperimentLogEntry[];
-}
-
-interface MethodOption {
-  id: string;
-  name: string;
-}
-
-interface SampleApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: unknown[];
-}
+gsap.registerPlugin(useGSAP);
 
 const TechnicianExperimentLog = () => {
   const { t } = useTranslation();
@@ -99,7 +49,7 @@ const TechnicianExperimentLog = () => {
   const [stageFilter, setStageFilter] = useState<
     "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
   >("all");
-  const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
+  const [logs, setLogs] = useState<ExperimentLogEntryList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -247,23 +197,23 @@ const TechnicianExperimentLog = () => {
 
   const parseApiResponse = (
     data: unknown
-  ): { logs: ExperimentLogEntry[]; totalCount: number } => {
+  ): { logs: ExperimentLogEntryList[]; totalCount: number } => {
     if (
       typeof data === "object" &&
       data !== null &&
       "data" in data &&
       "totalCount" in data
     ) {
-      const res = data as ExperimentLogApiResponse;
+      const res = data as ExperimentLogListApiResponse;
       if (Array.isArray(res.data)) {
         return {
-          logs: res.data as ExperimentLogEntry[],
+          logs: res.data as ExperimentLogEntryList[],
           totalCount: res.totalCount ?? res.data.length,
         };
       }
     }
     if (Array.isArray(data)) {
-      return { logs: data as ExperimentLogEntry[], totalCount: data.length };
+      return { logs: data as ExperimentLogEntryList[], totalCount: data.length };
     }
     return { logs: [], totalCount: 0 };
   };
@@ -276,10 +226,10 @@ const TechnicianExperimentLog = () => {
       const data = response.data;
 
       if (typeof data === "object" && data !== null && "totalCount" in data) {
-        return (data as SampleApiResponse).totalCount ?? 0;
+        return (data as SampleListApiResponse).totalCount ?? 0;
       }
       if (typeof data === "object" && data !== null && "data" in data) {
-        const inner = (data as SampleApiResponse).data;
+        const inner = (data as SampleListApiResponse).data;
         return Array.isArray(inner) ? inner.length : 0;
       }
       return Array.isArray(data) ? data.length : 0;
@@ -289,7 +239,7 @@ const TechnicianExperimentLog = () => {
   };
 
   const fetchAllSampleCounts = useCallback(
-    async (experimentLogs: ExperimentLogEntry[]) => {
+    async (experimentLogs: ExperimentLogEntryList[]) => {
       const counts: Record<string, number> = {};
       const promises = experimentLogs.map(async (log) => {
         const count = await fetchSampleCount(log.id);
