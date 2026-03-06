@@ -53,6 +53,12 @@ export default function TechDetailSample() {
   const [destroyReason, setDestroyReason] = useState("");
   const [isDestroying, setIsDestroying] = useState(false);
 
+  const stageNameMap: Record<string, string> = {
+    "coppice": "Chồi",
+    "tissue": "Mầm",
+    "tree": "Cây hoàn chỉnh"
+  };
+
   useEffect(() => {
     const load = async () => {
       if (!id) return;
@@ -519,26 +525,22 @@ export default function TechDetailSample() {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-medium text-sm text-gray-600">{t("sample.stageName")}</label>
-                  <p className="mt-1 text-gray-900">{analysisResult.stageName}</p>
+                  <label className="font-medium text-sm text-gray-600">Giai đoạn</label>
+                  <p className="mt-1 text-gray-900">{stageNameMap[analysisResult.stageName] || analysisResult.stageName}</p>
                 </div>
                 <div>
-                  <label className="font-medium text-sm text-gray-600">{t("sample.diseaseName")}</label>
+                  <label className="font-medium text-sm text-gray-600">Tên bệnh</label>
                   <p className="mt-1 text-gray-900">{analysisResult.disease.name}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-sm text-gray-600">{t("sample.diseaseCode")}</label>
-                  <p className="mt-1 text-gray-900">{analysisResult.disease.code}</p>
                 </div>
               </div>
 
               <div>
-                <label className="font-medium text-sm text-gray-600">{t("sample.diseaseDescription")}</label>
+                <label className="font-medium text-sm text-gray-600">Mô tả bệnh</label>
                 <p className="mt-1 text-gray-900">{analysisResult.disease.description}</p>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-3">{t("sample.analyticResultTitle")}</h4>
+                <h4 className="font-semibold mb-3">Kết quả phân tích chi tiết</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
                     { key: "healthy", label: t("sample.healthy") },
