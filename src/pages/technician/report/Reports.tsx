@@ -4,8 +4,13 @@ import { useEffect, useState, useMemo } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { MonitoringLog, MonitoringLogApiResponse, MonitoringLogStatus } from "../../../types/MonitoringLog";
 import { useTranslation } from "react-i18next";
+import { Doughnut } from "react-chartjs-2";
+import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import type { ChartOptions, TooltipItem } from "chart.js";
 
 const PAGE_SIZE = 10;
+
+Chart.register(ArcElement, Tooltip, Legend);
 
 export default function ReportsTechnician() {
   const { user } = useAuth();
@@ -57,6 +62,57 @@ export default function ReportsTechnician() {
     });
   }, [data]);
 
+  const statusSummary = useMemo(() => {
+    return data.reduce(
+      (acc, log) => {
+        if (log.status === "WaitingForApproval") {
+          acc.waitingForApproval += 1;
+        }
+        if (log.status === "Approved") {
+          acc.approved += 1;
+        }
+        return acc;
+      },
+      { waitingForApproval: 0, approved: 0 }
+    );
+  }, [data]);
+
+  const chartData = useMemo(
+    () => ({
+      labels: [
+        t("monitoringLog.statusWaitingForApproval"),
+        t("monitoringLog.statusApproved"),
+      ],
+      datasets: [
+        {
+          data: [statusSummary.waitingForApproval, statusSummary.approved],
+          backgroundColor: ["#f59e0b", "#22c55e"],
+          borderWidth: 0,
+          spacing: 2,
+        },
+      ],
+    }),
+    [statusSummary.waitingForApproval, statusSummary.approved, t]
+  );
+
+  const chartOptions: ChartOptions<"doughnut"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label(context: TooltipItem<"doughnut">) {
+            return `${context.label}: ${context.parsed}`;
+          },
+        },
+      },
+    },
+    cutout: "68%",
+  };
+
   // Format date to Vietnamese format (dd/mm/yyyy)
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -102,20 +158,46 @@ export default function ReportsTechnician() {
         </h1>
         <button
           type="button"
-          className="bg-green-800 text-white px-5 py-2 rounded-full font-semibold hover:bg-green-950 transition cursor-pointer"
+          className="bg-indigo-600 text-white px-5 py-2 rounded-full font-semibold hover:bg-indigo-800 transition cursor-pointer"
           onClick={() => void navigate("/reports/new")}
         >
           + {t("monitoringLog.createNew")}
         </button>
       </div>
 
-      {/* Summary card */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded p-4 flex-1">
-          <div className="font-semibold text-blue-700">
+      {/* Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm min-h-[240px] lg:col-span-2 lg:row-span-2">
+          <div className="font-semibold text-gray-700 mb-4">
             {t("monitoringLog.totalReports")}
           </div>
-          <div className="text-2xl font-bold text-blue-700">{total}</div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <div className="text-4xl font-bold text-gray-900">{total}</div>
+              <div className="text-sm text-gray-500 mt-1">{t("monitoringLog.totalReports")}</div>
+            </div>
+            <div className="h-36 w-36 sm:h-44 sm:w-44">
+              <Doughnut data={chartData} options={chartOptions} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-orange-200 shadow-sm min-h-[112px]">
+          <div className="flex items-center gap-2 mb-2 text-orange-700">
+            <span className="inline-block h-3 w-3 rounded-full bg-orange-500" aria-hidden="true"></span>
+            <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusWaitingForApproval")}</span>
+          </div>
+          <div className="text-2xl font-bold text-orange-800">
+            {statusSummary.waitingForApproval}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm min-h-[112px]">
+          <div className="flex items-center gap-2 mb-2 text-green-700">
+            <span className="inline-block h-3 w-3 rounded-full bg-green-500" aria-hidden="true"></span>
+            <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusApproved")}</span>
+          </div>
+          <div className="text-2xl font-bold text-green-800">{statusSummary.approved}</div>
         </div>
       </div>
 
