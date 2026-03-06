@@ -521,7 +521,23 @@
     "noReports": "Không tìm thấy báo cáo",
     "statusCreated": "Đã tạo",
     "statusWaitingForApproval": "Chờ phê duyệt",
-    "statusApproved": "Đã duyệt"
+    "statusApproved": "Đã duyệt",
+    "createForm": {
+      "selectSampleTitle": "Chọn mẫu vật đang phát triển",
+      "onlyInProgressSamples": "Chỉ hiển thị các mẫu có trạng thái",
+      "inProgressStatus": "Đang phát triển",
+      "sampleName": "Tên mẫu vật",
+      "selectSamplePlaceholder": "Chọn mẫu vật",
+      "experimentLogName": "Tên nhật ký thí nghiệm",
+      "currentSampleStage": "Giai đoạn hiện tại",
+      "sampleNote": "Ghi chú",
+      "stageRequirementTitle": "Quy cách của giai đoạn sinh trưởng hiện tại",
+      "requirementName": "Quy cách",
+      "min": "Tối thiểu",
+      "max": "Tối đa",
+      "expected": "Kỳ vọng",
+      "measuredValue": "Giá trị đo đạc"
+    }
   },
   "experimentLog": {
     "experimentLogManagement": "Quản lý nhật ký thí nghiệm",

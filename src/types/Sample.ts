@@ -65,6 +65,14 @@ export interface SampleStageDetail {
   id: string;
   startAt: string;
   currentSampleStage: string;
+  sampleStageDefinition?: {
+    id: number;
+    name: string;
+    order: number;
+    description: string;
+    minDurationDays: number;
+    maxDurationDays: number;
+  };
   logDetailDtos: SampleLogDetail[];
 }
 

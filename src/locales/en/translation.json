@@ -521,7 +521,23 @@
     "noReports": "No reports found",
     "statusCreated": "Created",
     "statusWaitingForApproval": "Waiting for Approval",
-    "statusApproved": "Approved"
+    "statusApproved": "Approved",
+    "createForm": {
+      "selectSampleTitle": "Select Sample In Development",
+      "onlyInProgressSamples": "Only samples with status",
+      "inProgressStatus": "In Progress",
+      "sampleName": "Sample Name",
+      "selectSamplePlaceholder": "Select sample",
+      "experimentLogName": "Experiment Log Name",
+      "currentSampleStage": "Current Stage",
+      "sampleNote": "Notes",
+      "stageRequirementTitle": "Requirements of Current Growth Stage",
+      "requirementName": "Specification",
+      "min": "Minimum",
+      "max": "Maximum",
+      "expected": "Expected",
+      "measuredValue": "Measured Value"
+    }
   },
   "experimentLog": {
     "experimentLogManagement": "Experiment Log Management",
