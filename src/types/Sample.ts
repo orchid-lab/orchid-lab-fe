@@ -65,6 +65,7 @@ export interface SampleStageDetail {
   id: string;
   startAt: string;
   currentSampleStage: string;
+  status?: SampleStatus;
   sampleStageDefinition?: {
     id: number;
     name: string;
@@ -74,6 +75,7 @@ export interface SampleStageDetail {
     maxDurationDays: number;
   };
   logDetailDtos: SampleLogDetail[];
+  latestImageUrl?: string | null;
 }
 
 export interface SampleDetail {
@@ -88,7 +90,7 @@ export interface SampleDetail {
   createdDate?: string | null;
   updatedBy?: string | null;
   updatedDate?: string | null;
-  sampleStageDto: SampleStageDetail | null;
+  sampleStageDto: SampleStageDetail | SampleStageDetail[] | null;
 }
 
 // Disease analysis types

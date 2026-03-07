@@ -165,12 +165,12 @@ export default function ListTask() {
       if (endpoint) {
         const response = await axiosInstance.get(endpoint);
         const data = response.data?.value ?? response.data;
-        return data?.name || "Không xác định";
+        return data?.name || t("common.none");
       }
     } catch (error) {
       console.error("Error fetching target:", error);
     }
-    return "Không xác định";
+    return t("common.none");
   };
 
   useEffect(() => {
@@ -301,8 +301,8 @@ export default function ListTask() {
               setTotalCount(filteredData.length);
             }
           } catch {
-            setError("Unable to load task list");
-            enqueueSnackbar("Error loading data", { variant: "error" });
+            setError(t("technicianTask.unableToLoadTaskList"));
+            enqueueSnackbar(t("common.errorLoading"), { variant: "error" });
           } finally {
             setLoading(false);
           }
@@ -398,10 +398,10 @@ export default function ListTask() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Orchid Lab Task Management
+            {t("technicianTask.pageTitle")}
           </h1>
           <p className="text-gray-600 text-lg">
-            Monitor and manage cultivation tasks efficiently.
+            {t("technicianTask.pageSubtitle")}
           </p>
         </div>
 
@@ -410,7 +410,7 @@ export default function ListTask() {
           {/* Chart spanning full width */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Overall Task Distribution
+              {t("technicianTask.overallTaskDistribution")}
             </h3>
             <div className="flex items-center justify-between gap-6">
               {/* Chart Container */}
@@ -422,7 +422,7 @@ export default function ListTask() {
                       <div className="text-4xl font-bold text-gray-900">
                         {totalTasks}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">Tasks</div>
+                      <div className="text-sm text-gray-500 mt-1">{t("task.taskList")}</div>
                     </div>
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function ListTask() {
                 onChange={(e) => setStatusFilter(e.target.value as TaskStatusType | "All")}
                 className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               >
-                <option value="All">Status</option>
+                <option value="All">{t("common.status")}</option>
                 {STATUS_FILTER_ORDER.map((key) => (
                   <option key={key} value={key}>
                       {getStatusLabel(key)}
@@ -544,18 +544,18 @@ export default function ListTask() {
             </div>
 
             <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-              <option>Date Range</option>
+              <option>{t("technicianTask.dateRange")}</option>
             </select>
 
             <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
-              <option>Task Type</option>
+              <option>{t("technicianTask.taskType")}</option>
             </select>
 
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search tasks..."
+                placeholder={t("task.searchTasks")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -571,7 +571,7 @@ export default function ListTask() {
               }}
               className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
             >
-              Clear Filters
+              {t("common.clearFilters")}
             </button>
           </div>
         </div>
@@ -579,7 +579,7 @@ export default function ListTask() {
         {/* Tasks Table */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">Loading tasks...</div>
+            <div className="text-gray-500">{t("technicianTask.loadingTasks")}</div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
@@ -589,22 +589,22 @@ export default function ListTask() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Task Name
+                    {t("task.taskName")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Target Type
+                    {t("task.targetType")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Target Name
+                    {t("technicianTask.targetName")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Deadline
+                    {t("task.deadline")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Ngày tạo
+                    {t("common.createdAt")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Status
+                    {t("common.status")}
                   </th>
                 </tr>
               </thead>
@@ -612,7 +612,7 @@ export default function ListTask() {
                 {tasks.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-12 text-center text-gray-500">
-                      No tasks found
+                      {t("task.noTasks")}
                     </td>
                   </tr>
                 ) : (
@@ -665,7 +665,7 @@ export default function ListTask() {
             {totalPages > 1 && (
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                 <span className="text-sm text-gray-600">
-                  Showing {tasks.length} of {totalCount} tasks
+                  {t("common.showing")} {tasks.length} {t("common.of")} {totalCount} {t("common.tasks")}
                 </span>
                 <div className="flex gap-2">
                   {currentPage > 1 && (

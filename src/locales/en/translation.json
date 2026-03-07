@@ -378,7 +378,33 @@
     "oxidation": "Oxidation",
     "virus": "Virus",
     "percentage": "Percentage",
-    "selectImage": "Select Image"
+    "selectImage": "Select Image",
+    "latestImageTitle": "Latest Sample Image",
+    "noLatestImage": "No latest image available",
+    "currentStageReportTitle": "Current Stage Report",
+    "stageTemplates": {
+      "stage1Name": "Sprout Stage",
+      "stage1Description": "Initial stage where the sample begins sprouting and forms primary tissue",
+      "stage2Name": "Shoot Stage",
+      "stage2Description": "Shoot development stage with proliferation and rapid multiplication",
+      "stage3Name": "Mature Plant Stage",
+      "stage3Description": "Stage where a complete young plant is formed and ready for acclimatization"
+    },
+    "stageProgress": {
+      "title": "Cultivation Stage Progress",
+      "future": "Future Stage",
+      "hasData": "Has Data",
+      "passed": "Passed",
+      "current": "Current Stage",
+      "standardDuration": "Standard Duration",
+      "actualStartDate": "Actual Start Date",
+      "report": "Report",
+      "stageImage": "Stage Image",
+      "noImage": "No image for this stage",
+      "systemStatus": "System Status",
+      "available": "Available",
+      "notAvailable": "Not Available"
+    }
   },
   "method": {
     "methodManagement": "Method Management",
@@ -558,6 +584,7 @@
     "allMethods": "All",
     "stage": "Stage",
     "allStages": "All",
+    "stageNumber": "Stage {{number}}",
     "experimentName": "EXPERIMENT NAME",
     "tissueCultureBatch": "TISSUE CULTURE BATCH",
     "dateCreated": "DATE CREATED",
@@ -624,7 +651,11 @@
     "changingStage": "Changing stage...",
     "changeStage": "Change Stage",
     "changeStageSuccess": "Change Stage Request Successful",
-    "waitingForApprovalDescription": "Your stage change request has been successfully submitted. Please wait for approval from the administrator."
+    "waitingForApprovalDescription": "Your stage change request has been successfully submitted. Please wait for approval from the administrator.",
+    "experiments": "Experiments",
+    "waiting": "Waiting",
+    "loadingExperiments": "Loading experiments...",
+    "currentSampleCount": "Current Sample Count"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
@@ -768,6 +799,14 @@
     "materials": "materials"
   },
   "technicianTask": {
+    "pageTitle": "Orchid Lab Task Management",
+    "pageSubtitle": "Monitor and manage cultivation tasks efficiently.",
+    "overallTaskDistribution": "Overall Task Distribution",
+    "loadingTasks": "Loading tasks...",
+    "dateRange": "Date Range",
+    "taskType": "Task Type",
+    "targetName": "Target Name",
+    "unableToLoadTaskList": "Unable to load task list",
     "pendingProcess": "Waiting for Processing",
     "inProgress": "In Progress",
     "completed": "Completed",

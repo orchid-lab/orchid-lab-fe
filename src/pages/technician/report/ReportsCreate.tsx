@@ -9,6 +9,7 @@ import type {
   Sample,
   SampleApiResponse,
   SampleDetail,
+  SampleStageDetail,
   StageRequirementDefinition,
 } from "../../../types/Sample";
 
@@ -36,6 +37,18 @@ const isInProgressSample = (status?: string): boolean => {
   if (!status) return false;
   const normalized = status.toLowerCase();
   return normalized === "inprogress" || normalized === "inprogressed";
+};
+
+const getCurrentSampleStage = (
+  sampleStageDto: SampleDetail["sampleStageDto"]
+): SampleStageDetail | null => {
+  if (!sampleStageDto) return null;
+  if (!Array.isArray(sampleStageDto)) return sampleStageDto;
+  if (sampleStageDto.length === 0) return null;
+
+  return [...sampleStageDto].sort(
+    (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
+  )[0];
 };
 
 export default function ReportsCreate() {
@@ -119,7 +132,7 @@ export default function ReportsCreate() {
         setSampleDetail(detail);
 
         const sampleStageDefinitionId =
-          detail.sampleStageDto?.sampleStageDefinition?.id;
+          getCurrentSampleStage(detail.sampleStageDto)?.sampleStageDefinition?.id;
         if (!sampleStageDefinitionId) {
           setRequirements([]);
           setLoadingRequirements(false);
@@ -223,7 +236,8 @@ export default function ReportsCreate() {
     if (!name.trim()) return "Vui lòng nhập tên báo cáo";
     if (!selectedSampleId) return "Vui lòng chọn sample";
 
-    const sampleStageId = sampleDetail?.sampleStageDto?.id;
+    const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
+    const sampleStageId = currentSampleStage?.id;
     if (!sampleStageId) return "Sample hiện tại chưa có sample stage";
 
     if (!analysisResult?.analyticResult?.id || analysisResult?.disease?.id == null) {
@@ -254,14 +268,16 @@ export default function ReportsCreate() {
       return;
     }
 
-    if (!sampleDetail?.sampleStageDto?.id || !analysisResult) {
+    const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
+
+    if (!currentSampleStage?.id || !analysisResult) {
       enqueueSnackbar("Thiếu dữ liệu để tạo monitoring log", { variant: "error" });
       return;
     }
 
     const payload: MonitoringLogCreatePayload = {
       name: name.trim(),
-      sampleStageId: sampleDetail.sampleStageDto.id,
+      sampleStageId: currentSampleStage.id,
       analyticResultId: analysisResult.analyticResult.id,
       diseaseId: analysisResult.disease.id,
       notes: notes.trim(),
@@ -395,7 +411,7 @@ export default function ReportsCreate() {
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
                   <div className="text-sm text-gray-500">{t("monitoringLog.createForm.currentSampleStage")}</div>
                   <div className="font-medium text-gray-900">
-                    {sampleDetail.sampleStageDto?.currentSampleStage ?? "-"}
+                    {getCurrentSampleStage(sampleDetail.sampleStageDto)?.currentSampleStage ?? "-"}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">

@@ -7,11 +7,21 @@ import type {
   ExperimentLogApiResponse,
   SampleDetail,
   SampleLogDetail,
+  SampleStageDetail,
   SampleStatus,
   AnalysisResponse,
 } from "../../../types/Sample";
 import { SampleStatus as SampleStatusValue } from "../../../types/Sample";
 import type { UserApiResponse } from "../../../types/Auth";
+
+type PredefinedStage = {
+  order: number;
+  nameKey: string;
+  minDurationDays: number;
+  maxDurationDays: number;
+  descriptionKey: string;
+  keywords: string[];
+};
 
 const STATUS_COLOR_MAP: Record<SampleStatus, string> = {
   [SampleStatusValue.Created]: "bg-blue-100 text-blue-800",
@@ -21,9 +31,79 @@ const STATUS_COLOR_MAP: Record<SampleStatus, string> = {
   [SampleStatusValue.ConvertedToSeedling]: "bg-purple-100 text-purple-800",
 };
 
+const PREDEFINED_STAGES: PredefinedStage[] = [
+  {
+    order: 1,
+    nameKey: "sample.stageTemplates.stage1Name",
+    minDurationDays: 14,
+    maxDurationDays: 30,
+    descriptionKey: "sample.stageTemplates.stage1Description",
+    keywords: ["giai doan mam", "mam", "tissue"],
+  },
+  {
+    order: 2,
+    nameKey: "sample.stageTemplates.stage2Name",
+    minDurationDays: 21,
+    maxDurationDays: 45,
+    descriptionKey: "sample.stageTemplates.stage2Description",
+    keywords: ["giai doan choi", "choi", "coppice"],
+  },
+  {
+    order: 3,
+    nameKey: "sample.stageTemplates.stage3Name",
+    minDurationDays: 21,
+    maxDurationDays: 35,
+    descriptionKey: "sample.stageTemplates.stage3Description",
+    keywords: ["giai doan cay hoan chinh", "cay hoan chinh", "tree"],
+  },
+];
+
 const formatDate = (value?: string | null): string => {
   if (!value) return "";
   return new Date(value).toLocaleDateString("vi-VN");
+};
+
+const normalizeStageList = (
+  sampleStageDto: SampleDetail["sampleStageDto"]
+): SampleStageDetail[] => {
+  if (!sampleStageDto) return [];
+  if (Array.isArray(sampleStageDto)) return sampleStageDto;
+  return [sampleStageDto];
+};
+
+const resolveImageUrl = (imageUrl?: string | null): string => {
+  if (!imageUrl) return "";
+  if (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith("data:")) {
+    return imageUrl;
+  }
+
+  const baseUrl = axiosInstance.defaults.baseURL ?? "";
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  const normalizedImageUrl = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${normalizedBaseUrl}${normalizedImageUrl}`;
+};
+
+const normalizeText = (value?: string | null): string => {
+  if (!value) return "";
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+};
+
+const isStageMatched = (stage: SampleStageDetail, predefinedStage: PredefinedStage): boolean => {
+  if (stage.sampleStageDefinition?.order === predefinedStage.order) {
+    return true;
+  }
+
+  const stageDefinitionName = normalizeText(stage.sampleStageDefinition?.name);
+  const currentSampleStage = normalizeText(stage.currentSampleStage);
+
+  return predefinedStage.keywords.some(
+    (keyword) =>
+      stageDefinitionName.includes(keyword) || currentSampleStage.includes(keyword)
+  );
 };
 
 export default function TechDetailSample() {
@@ -242,7 +322,63 @@ export default function TechDetailSample() {
     ].filter((item) => item.value);
   }, [sample, userMap, t]);
 
-  const reportRows: SampleLogDetail[] = sample?.sampleStageDto?.logDetailDtos ?? [];
+  const sampleStages = useMemo(
+    () => normalizeStageList(sample?.sampleStageDto ?? null),
+    [sample?.sampleStageDto]
+  );
+
+  const latestStage = useMemo(() => {
+    if (sampleStages.length === 0) return null;
+
+    return [...sampleStages].sort(
+      (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
+    )[0];
+  }, [sampleStages]);
+
+  const currentStageLabel = latestStage?.currentSampleStage || "-";
+  const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
+  const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
+
+  const stageProgressRows = useMemo(() => {
+    const currentStageOrder = latestStage?.sampleStageDefinition?.order ?? null;
+
+    return PREDEFINED_STAGES.map((predefinedStage) => {
+      const matchedStage = sampleStages.find((stage) =>
+        isStageMatched(stage, predefinedStage)
+      );
+      const hasReport = (matchedStage?.logDetailDtos?.length ?? 0) > 0;
+      const stageImageUrl = resolveImageUrl(matchedStage?.latestImageUrl);
+      const hasImage = Boolean(stageImageUrl);
+
+      let progressLabel = t("sample.stageProgress.future");
+      let progressClass = "bg-blue-100 text-blue-800";
+
+      if (matchedStage) {
+        progressLabel = t("sample.stageProgress.hasData");
+        progressClass = "bg-green-100 text-green-800";
+      }
+
+      if (currentStageOrder != null) {
+        if (predefinedStage.order < currentStageOrder) {
+          progressLabel = t("sample.stageProgress.passed");
+          progressClass = "bg-emerald-100 text-emerald-800";
+        } else if (predefinedStage.order === currentStageOrder) {
+          progressLabel = t("sample.stageProgress.current");
+          progressClass = "bg-yellow-100 text-yellow-800";
+        }
+      }
+
+      return {
+        predefinedStage,
+        matchedStage,
+        hasReport,
+        hasImage,
+        stageImageUrl,
+        progressLabel,
+        progressClass,
+      };
+    });
+  }, [sampleStages, latestStage, t]);
 
   if (loading) {
     return (
@@ -336,7 +472,7 @@ export default function TechDetailSample() {
             <div className="flex flex-col">
               <label className="font-medium mb-1.5">Giai đoạn phát triển hiện tại</label>
               <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {sample.sampleStageDto?.currentSampleStage || "-"}
+                {currentStageLabel}
               </div>
             </div>
             <div className="flex flex-col">
@@ -349,7 +485,108 @@ export default function TechDetailSample() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">Báo cáo theo giai đoạn</h3>
+          <h3 className="text-lg font-semibold mb-4">{t("sample.stageProgress.title")}</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {stageProgressRows.map((row) => {
+              const {
+                predefinedStage,
+                matchedStage,
+                hasReport,
+                hasImage,
+                stageImageUrl,
+                progressLabel,
+                progressClass,
+              } = row;
+              return (
+                <article key={predefinedStage.order} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
+                  <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
+                    <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
+                      {predefinedStage.order}. {t(predefinedStage.nameKey)}
+                    </h4>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium text-center leading-4 min-w-[112px] ${progressClass}`}
+                    >
+                      {progressLabel}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">{t(predefinedStage.descriptionKey)}</p>
+
+                  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+                    {hasImage ? (
+                      <img
+                        src={stageImageUrl}
+                        alt={`${t(predefinedStage.nameKey)} image`}
+                        className="w-full h-32 object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-32 flex items-center justify-center text-sm text-gray-500">
+                        {t("sample.stageProgress.noImage")}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t("sample.stageProgress.standardDuration")}</span>
+                      <span className="text-gray-800 font-medium">
+                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays} {t("common.days")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t("sample.stageProgress.actualStartDate")}</span>
+                      <span className="text-gray-800 font-medium">
+                        {formatDate(matchedStage?.startAt) || "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t("sample.stageProgress.report")}</span>
+                      <span className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}>
+                        {hasReport ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t("sample.stageProgress.stageImage")}</span>
+                      <span className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}>
+                        {hasImage ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t("sample.stageProgress.systemStatus")}</span>
+                      <span className="text-gray-800 font-medium">
+                        {matchedStage?.status ? getStatusLabel(matchedStage.status) : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mb-6 border border-gray-200 rounded-lg p-5">
+          <h3 className="text-lg font-semibold mb-4">{t("sample.latestImageTitle")}</h3>
+          {!latestImageUrl ? (
+            <p className="text-sm text-gray-500">{t("sample.noLatestImage")}</p>
+          ) : (
+            <div className="w-full max-w-xl rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+              <img
+                src={latestImageUrl}
+                alt={`Latest sample stage of ${sample.name}`}
+                className="w-full h-auto object-cover"
+                loading="lazy"
+                onError={(event) => {
+                  const target = event.currentTarget;
+                  target.style.display = "none";
+                }}
+              />
+            </div>
+          )}
+        </section>
+
+        <section className="mb-6 border border-gray-200 rounded-lg p-5">
+          <h3 className="text-lg font-semibold mb-4">{t("sample.currentStageReportTitle")}</h3>
           {reportRows.length === 0 ? (
             <p className="text-sm text-gray-500">Không có dữ liệu báo cáo</p>
           ) : (

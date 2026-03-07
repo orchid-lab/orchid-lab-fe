@@ -378,7 +378,33 @@
     "oxidation": "Oxy hoá",
     "virus": "Virus",
     "percentage": "Tỷ lệ",
-    "selectImage": "Chọn hình ảnh"
+    "selectImage": "Chọn hình ảnh",
+    "latestImageTitle": "Ảnh mới nhất của mẫu",
+    "noLatestImage": "Chưa có ảnh mới nhất",
+    "currentStageReportTitle": "Báo cáo của giai đoạn hiện tại",
+    "stageTemplates": {
+      "stage1Name": "Giai đoạn mầm",
+      "stage1Description": "Giai đoạn khởi đầu, mẫu bắt đầu nảy mầm và hình thành mô sơ cấp",
+      "stage2Name": "Giai đoạn chồi",
+      "stage2Description": "Giai đoạn phát triển chồi, tăng sinh và nhân nhanh",
+      "stage3Name": "Giai đoạn cây hoàn chỉnh",
+      "stage3Description": "Giai đoạn hình thành cây con hoàn chỉnh, sẵn sàng thuần hóa"
+    },
+    "stageProgress": {
+      "title": "Tiến trình giai đoạn nuôi cấy",
+      "future": "Giai đoạn tương lai",
+      "hasData": "Đang có dữ liệu",
+      "passed": "Đã đi qua",
+      "current": "Giai đoạn hiện tại",
+      "standardDuration": "Thời gian chuẩn",
+      "actualStartDate": "Ngày bắt đầu thực tế",
+      "report": "Báo cáo",
+      "stageImage": "Ảnh theo giai đoạn",
+      "noImage": "Chưa có ảnh cho giai đoạn này",
+      "systemStatus": "Trạng thái từ hệ thống",
+      "available": "Đã có",
+      "notAvailable": "Chưa có"
+    }
   },
   "method": {
     "methodManagement": "Quản lý phương pháp",
@@ -558,6 +584,7 @@
     "allMethods": "Tất cả",
     "stage": "Giai đoạn",
     "allStages": "Tất cả",
+    "stageNumber": "Giai đoạn {{number}}",
     "experimentName": "TÊN THÍ NGHIỆM",
     "tissueCultureBatch": "LÔ THÍ NGHIỆM",
     "dateCreated": "NGÀY TẠO",
@@ -625,6 +652,10 @@
     "changeStage": "Chuyển giai đoạn",
     "changeStageSuccess": "Yêu cầu chuyển giai đoạn thành công",
     "waitingForApprovalDescription": "Yêu cầu chuyển giai đoạn của bạn đã được gửi thành công. Vui lòng chờ duyệt từ quản trị viên."
+    ,"experiments": "Thí nghiệm",
+    "waiting": "Chờ xử lý",
+    "loadingExperiments": "Đang tải thí nghiệm...",
+    "currentSampleCount": "Số lượng mẫu hiện tại"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",
@@ -768,6 +799,14 @@
     "materials": "vật liệu"
   },
   "technicianTask": {
+    "pageTitle": "Quản lý công việc Orchid Lab",
+    "pageSubtitle": "Theo dõi và quản lý công việc nuôi cấy hiệu quả.",
+    "overallTaskDistribution": "Phân bố tổng quan công việc",
+    "loadingTasks": "Đang tải công việc...",
+    "dateRange": "Khoảng thời gian",
+    "taskType": "Loại công việc",
+    "targetName": "Tên đối tượng",
+    "unableToLoadTaskList": "Không thể tải danh sách công việc",
     "pendingProcess": "Chờ xử lý",
     "inProgress": "Đang thực hiện",
     "completed": "Hoàn thành",
@@ -818,7 +857,7 @@
     "close": "×"
   },
   "technicianExperiment": {
-    "manageExperiments": "Monitor and manage cultivation experiments efficiently.",
+    "manageExperiments": "Theo dõi và quản lý thí nghiệm nuôi cấy hiệu quả.",
     "errorTitle": "Không thể tải danh sách thí nghiệm",
     "errorMessage": "Lỗi khi tải dữ liệu"
   },
