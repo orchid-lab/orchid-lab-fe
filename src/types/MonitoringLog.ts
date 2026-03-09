@@ -1,7 +1,9 @@
 export const MonitoringLogStatus = {
   Created: "Created",
   WaitingForApproval: "WaitingForApproval",
-  Approved: "Approved"
+  Approved: "Approved",
+  Rejected: "Rejected",
+  Revised: "Revised",
 } as const;
 
 export type MonitoringLogStatus = typeof MonitoringLogStatus[keyof typeof MonitoringLogStatus];
@@ -17,9 +19,12 @@ export interface MonitoringLog {
 }
 
 export interface MonitoringLogApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: MonitoringLog[];
+  totalCount?: number;
+  pageCount?: number;
+  pageSize?: number;
+  pageNumber?: number;
+  totalPages?: number;
+  pageNo?: number;
+  data?: MonitoringLog[];
+  items?: MonitoringLog[];
 }

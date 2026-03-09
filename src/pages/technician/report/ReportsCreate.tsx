@@ -59,6 +59,7 @@ export default function ReportsCreate() {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedSampleId, setSelectedSampleId] = useState("");
+  const [submitMode, setSubmitMode] = useState<"immediate" | "draft">("immediate");
   const [samples, setSamples] = useState<Sample[]>([]);
   const [sampleDetail, setSampleDetail] = useState<SampleDetail | null>(null);
   const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>({});
@@ -210,6 +211,12 @@ export default function ReportsCreate() {
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
+      
+      // Add sampleStageId if available
+      const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
+      if (currentSampleStage?.id) {
+        formData.append("sampleStageId", currentSampleStage.id);
+      }
 
       const response = await axiosInstance.post<AnalysisResponse>(
         "/api/monitoring-log/analysis",
@@ -289,8 +296,17 @@ export default function ReportsCreate() {
 
     setSubmitting(true);
     try {
-      await axiosInstance.post("/api/monitoring-log", payload);
-      enqueueSnackbar("Tạo báo cáo giám sát thành công", { variant: "success" });
+      const submitImmediately = submitMode === "immediate";
+      await axiosInstance.post(
+        `/api/monitoring-log?submitImmediately=${submitImmediately ? "true" : "false"}`,
+        payload
+      );
+      enqueueSnackbar(
+        submitImmediately
+          ? t("monitoringLog.createSuccessSubmitted")
+          : t("monitoringLog.createSuccessDraft"),
+        { variant: "success" }
+      );
       void navigate("/technician/reports");
     } catch (error) {
       console.error("Failed to create monitoring log", error);
@@ -557,6 +573,30 @@ export default function ReportsCreate() {
           </section>
 
           <div className="flex justify-end pt-2">
+            <div className="mr-auto grid gap-2 sm:grid-cols-2">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="submitMode"
+                  value="immediate"
+                  checked={submitMode === "immediate"}
+                  onChange={() => setSubmitMode("immediate")}
+                  className="accent-blue-600"
+                />
+                {t("monitoringLog.submitImmediately")}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="submitMode"
+                  value="draft"
+                  checked={submitMode === "draft"}
+                  onChange={() => setSubmitMode("draft")}
+                  className="accent-blue-600"
+                />
+                {t("monitoringLog.saveAsDraft")}
+              </label>
+            </div>
             <button
               type="submit"
               disabled={submitting}
@@ -566,7 +606,11 @@ export default function ReportsCreate() {
                   : "bg-blue-600 text-white hover:bg-blue-700"
               }`}
             >
-              {submitting ? "Đang lưu..." : "Lưu báo cáo"}
+              {submitting
+                ? t("monitoringLog.submitting")
+                : submitMode === "immediate"
+                ? t("monitoringLog.createAndSubmit")
+                : t("monitoringLog.saveDraft")}
             </button>
           </div>
         </form>

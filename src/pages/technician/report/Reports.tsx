@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { MonitoringLog, MonitoringLogApiResponse, MonitoringLogStatus } from "../../../types/MonitoringLog";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import type { ChartOptions, TooltipItem } from "chart.js";
@@ -15,36 +16,38 @@ Chart.register(ArcElement, Tooltip, Legend);
 export default function ReportsTechnician() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [data, setData] = useState<MonitoringLog[]>([]);
+
+  const fetchData = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        pageNo: "1",
+        pageSize: "10000",
+        technicianId: user.id,
+      });
+      const res = await axiosInstance.get(`/api/monitoring-log?${params.toString()}`);
+      const json = res.data as MonitoringLogApiResponse;
+      const items = json.data ?? json.items ?? [];
+      setData(items);
+      setTotal(json.totalCount ?? items.length);
+    } catch {
+      setData([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch monitoring logs
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.id) return;
-      
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          pageNo: "1",
-          pageSize: "10000",
-          TechnicianId: user.id,
-        });
-        const res = await axiosInstance.get(
-          `/api/monitoring-log?${params.toString()}`
-        );
-        const json = res.data as MonitoringLogApiResponse;
-        setData(json.data || []);
-        setTotal(json.totalCount || 0);
-      } catch {
-        setData([]);
-        setTotal(0);
-      } finally {
-        setLoading(false);
-      }
-    };
     void fetchData();
   }, [user?.id]);
 
@@ -65,34 +68,59 @@ export default function ReportsTechnician() {
   const statusSummary = useMemo(() => {
     return data.reduce(
       (acc, log) => {
+        if (log.status === "Created") {
+          acc.created += 1;
+        }
         if (log.status === "WaitingForApproval") {
           acc.waitingForApproval += 1;
+        }
+        if (log.status === "Rejected") {
+          acc.rejected += 1;
+        }
+        if (log.status === "Revised") {
+          acc.revised += 1;
         }
         if (log.status === "Approved") {
           acc.approved += 1;
         }
         return acc;
       },
-      { waitingForApproval: 0, approved: 0 }
+      { created: 0, waitingForApproval: 0, rejected: 0, revised: 0, approved: 0 }
     );
   }, [data]);
 
   const chartData = useMemo(
     () => ({
       labels: [
+        t("monitoringLog.statusCreated"),
         t("monitoringLog.statusWaitingForApproval"),
+        t("monitoringLog.statusRejected"),
+        t("monitoringLog.statusRevised"),
         t("monitoringLog.statusApproved"),
       ],
       datasets: [
         {
-          data: [statusSummary.waitingForApproval, statusSummary.approved],
-          backgroundColor: ["#f59e0b", "#22c55e"],
+          data: [
+            statusSummary.created,
+            statusSummary.waitingForApproval,
+            statusSummary.rejected,
+            statusSummary.revised,
+            statusSummary.approved,
+          ],
+          backgroundColor: ["#3b82f6", "#f59e0b", "#ef4444", "#6366f1", "#22c55e"],
           borderWidth: 0,
           spacing: 2,
         },
       ],
     }),
-    [statusSummary.waitingForApproval, statusSummary.approved, t]
+    [
+      statusSummary.created,
+      statusSummary.waitingForApproval,
+      statusSummary.rejected,
+      statusSummary.revised,
+      statusSummary.approved,
+      t,
+    ]
   );
 
   const chartOptions: ChartOptions<"doughnut"> = {
@@ -131,6 +159,10 @@ export default function ReportsTechnician() {
         return t("monitoringLog.statusWaitingForApproval");
       case "Approved":
         return t("monitoringLog.statusApproved");
+      case "Rejected":
+        return t("monitoringLog.statusRejected");
+      case "Revised":
+        return t("monitoringLog.statusRevised");
       default:
         return status;
     }
@@ -145,8 +177,40 @@ export default function ReportsTechnician() {
         return "bg-orange-50 border border-orange-200 text-orange-700";
       case "Approved":
         return "bg-green-50 border border-green-200 text-green-700";
+      case "Rejected":
+        return "bg-red-50 border border-red-200 text-red-700";
+      case "Revised":
+        return "bg-indigo-50 border border-indigo-200 text-indigo-700";
       default:
         return "bg-gray-50 border border-gray-200 text-gray-700";
+    }
+  };
+
+  const canSubmit = (status: MonitoringLogStatus): boolean =>
+    status === "Created" || status === "Rejected";
+
+  const handleSubmitForApproval = async (log: MonitoringLog) => {
+    setSubmittingId(log.id);
+    try {
+      await axiosInstance.patch(`/api/monitoring-log/${log.id}/submit`);
+      enqueueSnackbar(
+        log.status === "Created"
+          ? t("monitoringLog.submitDraftSuccess")
+          : t("monitoringLog.resubmitSuccess"),
+        { variant: "success" }
+      );
+      await fetchData();
+    } catch (error) {
+      const apiError = error as {
+        response?: { data?: string };
+        message?: string;
+      };
+      enqueueSnackbar(
+        apiError.response?.data ?? apiError.message ?? t("monitoringLog.submitDraftFailed"),
+        { variant: "error" }
+      );
+    } finally {
+      setSubmittingId(null);
     }
   };
 
@@ -166,7 +230,7 @@ export default function ReportsTechnician() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-start">
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm min-h-[240px] lg:col-span-2 lg:row-span-2">
           <div className="font-semibold text-gray-700 mb-4">
             {t("monitoringLog.totalReports")}
@@ -180,6 +244,14 @@ export default function ReportsTechnician() {
               <Doughnut data={chartData} options={chartOptions} />
             </div>
           </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm min-h-[112px]">
+          <div className="flex items-center gap-2 mb-2 text-blue-700">
+            <span className="inline-block h-3 w-3 rounded-full bg-blue-500" aria-hidden="true"></span>
+            <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusCreated")}</span>
+          </div>
+          <div className="text-2xl font-bold text-blue-800">{statusSummary.created}</div>
         </div>
 
         <div className="bg-white rounded-xl p-4 border border-orange-200 shadow-sm min-h-[112px]">
@@ -198,6 +270,22 @@ export default function ReportsTechnician() {
             <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusApproved")}</span>
           </div>
           <div className="text-2xl font-bold text-green-800">{statusSummary.approved}</div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm min-h-[112px]">
+          <div className="flex items-center gap-2 mb-2 text-red-700">
+            <span className="inline-block h-3 w-3 rounded-full bg-red-500" aria-hidden="true"></span>
+            <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusRejected")}</span>
+          </div>
+          <div className="text-2xl font-bold text-red-800">{statusSummary.rejected}</div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 border border-indigo-200 shadow-sm min-h-[112px]">
+          <div className="flex items-center gap-2 mb-2 text-indigo-700">
+            <span className="inline-block h-3 w-3 rounded-full bg-indigo-500" aria-hidden="true"></span>
+            <span className="text-sm font-medium leading-tight">{t("monitoringLog.statusRevised")}</span>
+          </div>
+          <div className="text-2xl font-bold text-indigo-800">{statusSummary.revised}</div>
         </div>
       </div>
 
@@ -268,13 +356,31 @@ export default function ReportsTechnician() {
                     )}
                   </td>
                   <td className="px-4">
-                    <button
-                      type="button"
-                      className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
-                      onClick={() => void navigate(`/reports/${log.id}`)}
-                    >
-                      {t("common.details")}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {canSubmit(log.status) && (
+                        <button
+                          type="button"
+                          disabled={submittingId === log.id}
+                          className="border cursor-pointer border-blue-700 text-blue-700 rounded-full px-3 py-1 hover:bg-blue-700 hover:text-white transition disabled:bg-gray-200 disabled:border-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+                          onClick={() => {
+                            void handleSubmitForApproval(log);
+                          }}
+                        >
+                          {submittingId === log.id
+                            ? t("monitoringLog.submitting")
+                            : log.status === "Created"
+                            ? t("monitoringLog.submitDraft")
+                            : t("monitoringLog.resubmit")}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
+                        onClick={() => void navigate(`/monitoring-logs/${log.id}`)}
+                      >
+                        {t("common.details")}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

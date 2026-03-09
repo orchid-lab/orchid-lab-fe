@@ -44,6 +44,7 @@ import { SnackbarProvider } from "notistack";
 import ReportsCreate from "./pages/technician/report/ReportsCreate";
 import ReportList from "./pages/researcher/report/Reports";
 import ReportsTechnician from "./pages/technician/report/Reports";
+import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
 import SidebarTechnician from "./components/SidebarTechnician";
 import ListTask from "./pages/technician/task/listTask";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -277,6 +278,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
                   <ReportsDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/monitoring-logs/:id"
+              element={
+                <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
+                  <MonitoringLogDetail />
                 </ProtectedRoute>
               }
             />
