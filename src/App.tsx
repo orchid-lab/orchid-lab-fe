@@ -16,6 +16,7 @@ import Seedlings from "./pages/researcher/seeding/Seedlings";
 import SeedlingDetail from "./pages/researcher/seeding/SeedlingDetail";
 import SeedlingCreate from "./pages/researcher/seeding/create/CreateSeedling";
 import UpdateSeedling from "./pages/researcher/seeding/create/UpdateSeedling";
+import ResearcherSampleDetail from "./pages/researcher/sample/SampleDetail";
 import ReportsDetails from "./pages/researcher/report/ReportsDetails";
 import ReportsFollowUpDetails from "./pages/researcher/report/ReportsFollowUpDetails";
 import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContainer";
@@ -222,6 +223,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <SeedlingDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/samples/:id"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ResearcherSampleDetail />
                 </ProtectedRoute>
               }
             />

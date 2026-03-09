@@ -76,7 +76,8 @@
     "days": "ngày",
     "loggingOut": "Đang đăng xuất...",
     "selected": "Đã chọn",
-    "errorOccurred": "Đã xảy ra lỗi"
+    "errorOccurred": "Đã xảy ra lỗi",
+    "duration": "Thời lượng"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -423,7 +424,8 @@
     "clonalMethods": "Phương pháp vô tính",
     "sexualMethods": "Phương pháp hữu tính",
     "methodsOutOf": "phương pháp trên tổng số",
-    "methods": "phương pháp"
+    "methods": "phương pháp",
+    "fetchFailed": "Không thể tải danh sách phương pháp"
   },
   "seedling": {
     "seedlingManagement": "Quản lý cây giống",

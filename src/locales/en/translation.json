@@ -76,7 +76,8 @@
     "days": "days",
     "loggingOut": "Logging out...",
     "selected": "Selected",
-    "errorOccurred": "An error occurred"
+    "errorOccurred": "An error occurred",
+    "duration": "Duration"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -423,7 +424,8 @@
     "clonalMethods": "Clonal Methods",
     "sexualMethods": "Sexual Methods",
     "methodsOutOf": "methods out of",
-    "methods": "methods"
+    "methods": "methods",
+    "fetchFailed": "Failed to load methods list"
   },
   "seedling": {
     "seedlingManagement": "Seedling Management",
