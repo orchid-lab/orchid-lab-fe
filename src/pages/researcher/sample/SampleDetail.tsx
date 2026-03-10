@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../context/AuthContext";
+import { getApiErrorMessage } from "../../../utils/apiError";
 import type {
   ExperimentLogApiResponse,
   SampleDetail,
@@ -112,6 +114,7 @@ export default function SampleDetail() {
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   // Get navigation source from location state
   const navigationSource = location.state as { from?: 'researcherExperimentLogDetail'; experimentLogId?: string } | null;
@@ -132,6 +135,7 @@ export default function SampleDetail() {
   const [showDestroyForm, setShowDestroyForm] = useState(false);
   const [destroyReason, setDestroyReason] = useState("");
   const [isDestroying, setIsDestroying] = useState(false);
+  const [isChangingStage, setIsChangingStage] = useState(false);
 
   const stageNameMap: Record<string, string> = {
     "coppice": "Chồi",
@@ -139,51 +143,51 @@ export default function SampleDetail() {
     "tree": "Cây hoàn chỉnh"
   };
 
-  useEffect(() => {
-    const load = async () => {
-      if (!id) return;
-      setLoading(true);
-      setError(null);
+  const loadSampleDetail = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
 
-      try {
-        const [sampleResponse, experimentLogsResponse, usersResponse] = await Promise.all([
-          axiosInstance.get(`/api/samples/${id}`),
-          axiosInstance.get<ExperimentLogApiResponse>(
-            "/api/experiment-logs?PageNo=1&PageSize=1000"
-          ),
-          axiosInstance.get<UserApiResponse>(
-            "/api/user?PageNumber=1&PageSize=1000"
-          ),
-        ]);
+    try {
+      const [sampleResponse, experimentLogsResponse, usersResponse] = await Promise.all([
+        axiosInstance.get(`/api/samples/${id}`),
+        axiosInstance.get<ExperimentLogApiResponse>(
+          "/api/experiment-logs?PageNo=1&PageSize=1000"
+        ),
+        axiosInstance.get<UserApiResponse>(
+          "/api/user?PageNumber=1&PageSize=1000"
+        ),
+      ]);
 
-        const sampleData = (sampleResponse?.data?.value ??
-          sampleResponse?.data) as SampleDetail;
+      const sampleData = (sampleResponse?.data?.value ??
+        sampleResponse?.data) as SampleDetail;
 
-        const logs = experimentLogsResponse.data.data ?? [];
-        const mapping: Record<string, string> = {};
-        logs.forEach((log) => {
-          mapping[log.id] = log.name;
-        });
+      const logs = experimentLogsResponse.data.data ?? [];
+      const mapping: Record<string, string> = {};
+      logs.forEach((log) => {
+        mapping[log.id] = log.name;
+      });
 
-        const users = usersResponse.data.data ?? [];
-        const userMapping: Record<string, string> = {};
-        users.forEach((user) => {
-          userMapping[user.id] = user.name;
-        });
+      const users = usersResponse.data.data ?? [];
+      const userMapping: Record<string, string> = {};
+      users.forEach((user) => {
+        userMapping[user.id] = user.name;
+      });
 
-        setExperimentLogMap(mapping);
-        setUserMap(userMapping);
-        setSample(sampleData);
-      } catch {
-        setError("Không thể tải chi tiết mẫu thí nghiệm");
-        enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
+      setExperimentLogMap(mapping);
+      setUserMap(userMapping);
+      setSample(sampleData);
+    } catch {
+      setError("Không thể tải chi tiết mẫu thí nghiệm");
+      enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
   }, [id, enqueueSnackbar]);
+
+  useEffect(() => {
+    void loadSampleDetail();
+  }, [loadSampleDetail]);
 
   const handleBack = () => {
     // Navigate back to researcher experiment log detail
@@ -336,6 +340,26 @@ export default function SampleDetail() {
   const currentStageLabel = latestStage?.currentSampleStage || "-";
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
+  const hasApprovedLogForCurrentStage = reportRows.length > 0;
+  const canChangeStage = user?.roleId === 2 && hasApprovedLogForCurrentStage;
+
+  const handleChangeStage = async () => {
+    if (!id || !canChangeStage || isChangingStage) return;
+
+    setIsChangingStage(true);
+    try {
+      await axiosInstance.put(`/api/samples/${id}/stage`);
+      enqueueSnackbar("Chuyển giai đoạn mẫu thành công", { variant: "success" });
+      await loadSampleDetail();
+    } catch (error) {
+      enqueueSnackbar(
+        getApiErrorMessage(error, "Không thể chuyển giai đoạn mẫu"),
+        { variant: "error" }
+      );
+    } finally {
+      setIsChangingStage(false);
+    }
+  };
 
   const stageProgressRows = useMemo(() => {
     const currentStageOrder = latestStage?.sampleStageDefinition?.order ?? null;
@@ -411,6 +435,18 @@ export default function SampleDetail() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
           <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => void handleChangeStage()}
+              disabled={!canChangeStage || isChangingStage}
+              className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
+                canChangeStage && !isChangingStage
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {isChangingStage ? "Đang chuyển..." : "Chuyển giai đoạn"}
+            </button>
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
               <button
                 onClick={handleAnalyzeDisease}
