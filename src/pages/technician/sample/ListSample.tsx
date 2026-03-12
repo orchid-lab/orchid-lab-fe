@@ -244,7 +244,7 @@ export default function ListSample() {
                             key={sample.id}
                             className="border-b hover:bg-green-50 cursor-pointer transition"
                             onClick={() => {
-                              navigate(`/technician/samples/${sample.id}`);
+                              navigate(`/technician/samples/${sample.id}`, { state: { from: 'sampleList' } });
                             }}
                           >
                             <td className="p-4 text-gray-900 font-medium">

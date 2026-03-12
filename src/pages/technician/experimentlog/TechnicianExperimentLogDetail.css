@@ -942,16 +942,21 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .sample-card {
+  display: block;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   padding: 1rem;
   transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 #technician-experimentlog-detail .sample-card:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .sample-card {

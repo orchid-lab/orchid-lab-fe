@@ -23,6 +23,10 @@ export interface Sample {
   updatedDate: string | null;
   updatedBy: string | null;
   status: SampleStatus;
+  // Legacy fields for backward compatibility
+  description?: string;
+  dob?: string;
+  statusEnum?: string;
 }
 
 // API Response wrapper
@@ -61,7 +65,17 @@ export interface SampleStageDetail {
   id: string;
   startAt: string;
   currentSampleStage: string;
+  status?: SampleStatus;
+  sampleStageDefinition?: {
+    id: number;
+    name: string;
+    order: number;
+    description: string;
+    minDurationDays: number;
+    maxDurationDays: number;
+  };
   logDetailDtos: SampleLogDetail[];
+  latestImageUrl?: string | null;
 }
 
 export interface SampleDetail {
@@ -76,7 +90,7 @@ export interface SampleDetail {
   createdDate?: string | null;
   updatedBy?: string | null;
   updatedDate?: string | null;
-  sampleStageDto: SampleStageDetail | null;
+  sampleStageDto: SampleStageDetail | SampleStageDetail[] | null;
 }
 
 // Disease analysis types

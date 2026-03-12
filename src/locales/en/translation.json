@@ -76,7 +76,8 @@
     "days": "days",
     "loggingOut": "Logging out...",
     "selected": "Selected",
-    "errorOccurred": "An error occurred"
+    "errorOccurred": "An error occurred",
+    "duration": "Duration"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -90,7 +91,8 @@
     "witheredYellowRoot": "Withered Yellow Root",
     "healthy": "Healthy",
     "oxidation": "Oxidation",
-    "virus": "Virus"
+    "virus": "Virus",
+    "title": "Diseases"
   },
   "stages": {
     "coppice": "Shoot Stage",
@@ -378,7 +380,33 @@
     "oxidation": "Oxidation",
     "virus": "Virus",
     "percentage": "Percentage",
-    "selectImage": "Select Image"
+    "selectImage": "Select Image",
+    "latestImageTitle": "Latest Sample Image",
+    "noLatestImage": "No latest image available",
+    "currentStageReportTitle": "Current Stage Report",
+    "stageTemplates": {
+      "stage1Name": "Sprout Stage",
+      "stage1Description": "Initial stage where the sample begins sprouting and forms primary tissue",
+      "stage2Name": "Shoot Stage",
+      "stage2Description": "Shoot development stage with proliferation and rapid multiplication",
+      "stage3Name": "Mature Plant Stage",
+      "stage3Description": "Stage where a complete young plant is formed and ready for acclimatization"
+    },
+    "stageProgress": {
+      "title": "Cultivation Stage Progress",
+      "future": "Future Stage",
+      "hasData": "Has Data",
+      "passed": "Passed",
+      "current": "Current Stage",
+      "standardDuration": "Standard Duration",
+      "actualStartDate": "Actual Start Date",
+      "report": "Report",
+      "stageImage": "Stage Image",
+      "noImage": "No image for this stage",
+      "systemStatus": "System Status",
+      "available": "Available",
+      "notAvailable": "Not Available"
+    }
   },
   "method": {
     "methodManagement": "Method Management",
@@ -396,7 +424,8 @@
     "clonalMethods": "Clonal Methods",
     "sexualMethods": "Sexual Methods",
     "methodsOutOf": "methods out of",
-    "methods": "methods"
+    "methods": "methods",
+    "fetchFailed": "Failed to load methods list"
   },
   "seedling": {
     "seedlingManagement": "Seedling Management",
@@ -510,6 +539,74 @@
     "actual": "Actual",
     "backToList": "Back"
   },
+  "monitoringLog": {
+    "title": "Monitoring Reports",
+    "createNew": "Create New Report",
+    "reportName": "Report Name",
+    "createdDate": "Created Date",
+    "sampleName": "Sample Name",
+    "newest": "Newest",
+    "totalReports": "Total Reports",
+    "noReports": "No reports found",
+    "statusCreated": "Created",
+    "statusWaitingForApproval": "Waiting for Approval",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "statusRevised": "Revised",
+    "submitDraft": "Submit",
+    "resubmit": "Resubmit",
+    "submitting": "Submitting...",
+    "submitDraftSuccess": "Report submitted for researcher approval",
+    "resubmitSuccess": "Report resubmitted for researcher approval",
+    "submitDraftFailed": "Unable to submit report",
+    "submitImmediately": "Create and submit now",
+    "saveAsDraft": "Save as draft",
+    "createAndSubmit": "Create and Submit",
+    "saveDraft": "Save Draft",
+    "createSuccessSubmitted": "Monitoring report created and submitted successfully",
+    "createSuccessDraft": "Monitoring report draft saved successfully",
+    "updateDetailsSuccess": "Measurement values updated successfully",
+    "updateDetailsFailed": "Unable to update measurement values",
+    "approveSuccess": "Monitoring report approved successfully",
+    "approveFailed": "Unable to approve report",
+    "rejectSuccess": "Monitoring report rejected successfully",
+    "rejectFailed": "Unable to reject report",
+    "rejectionReasonRequired": "Please provide a rejection reason",
+    "rejectedBy": "Rejected by",
+    "sampleStage": "Sample Stage",
+    "diseaseDetected": "Disease Detected",
+    "lastUpdated": "Last Updated",
+    "aiDiseaseAnalysisResult": "AI Disease Analysis Result",
+    "rejectionReasonLabel": "Rejection Reason:",
+    "rejectedOn": "Rejected on",
+    "monitoringSpecifications": "Monitoring Specifications",
+    "noSpecificationData": "No specification data",
+    "expectedValue": "Expected Value",
+    "match": "Match",
+    "images": "Images",
+    "approve": "Approve",
+    "approving": "Approving...",
+    "reject": "Reject",
+    "rejectReport": "Reject Report",
+    "enterRejectionReason": "Enter rejection reason...",
+    "minimumCharacters": "Minimum 10 characters",
+    "createForm": {
+      "selectSampleTitle": "Select Sample In Development",
+      "onlyInProgressSamples": "Only samples with status",
+      "inProgressStatus": "In Progress",
+      "sampleName": "Sample Name",
+      "selectSamplePlaceholder": "Select sample",
+      "experimentLogName": "Experiment Log Name",
+      "currentSampleStage": "Current Stage",
+      "sampleNote": "Notes",
+      "stageRequirementTitle": "Requirements of Current Growth Stage",
+      "requirementName": "Specification",
+      "min": "Minimum",
+      "max": "Maximum",
+      "expected": "Expected",
+      "measuredValue": "Measured Value"
+    }
+  },
   "experimentLog": {
     "experimentLogManagement": "Experiment Log Management",
     "experimentLogDetails": "Experiment Log Details",
@@ -529,6 +626,7 @@
     "allMethods": "All",
     "stage": "Stage",
     "allStages": "All",
+    "stageNumber": "Stage {{number}}",
     "experimentName": "EXPERIMENT NAME",
     "tissueCultureBatch": "TISSUE CULTURE BATCH",
     "dateCreated": "DATE CREATED",
@@ -595,7 +693,11 @@
     "changingStage": "Changing stage...",
     "changeStage": "Change Stage",
     "changeStageSuccess": "Change Stage Request Successful",
-    "waitingForApprovalDescription": "Your stage change request has been successfully submitted. Please wait for approval from the administrator."
+    "waitingForApprovalDescription": "Your stage change request has been successfully submitted. Please wait for approval from the administrator.",
+    "experiments": "Experiments",
+    "waiting": "Waiting",
+    "loadingExperiments": "Loading experiments...",
+    "currentSampleCount": "Current Sample Count"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
@@ -718,7 +820,7 @@
     "outOf": "out of",
     "chemicals": "chemicals"
   },
-    "material": {
+  "material": {
     "management": "Material Management",
     "add": "Add Material",
     "edit": "Edit Material",
@@ -737,5 +839,78 @@
     "fillAllFields": "Please fill all fields",
     "outOf": "out of",
     "materials": "materials"
+  },
+  "technicianTask": {
+    "pageTitle": "Orchid Lab Task Management",
+    "pageSubtitle": "Monitor and manage cultivation tasks efficiently.",
+    "overallTaskDistribution": "Overall Task Distribution",
+    "loadingTasks": "Loading tasks...",
+    "dateRange": "Date Range",
+    "taskType": "Task Type",
+    "targetName": "Target Name",
+    "unableToLoadTaskList": "Unable to load task list",
+    "pendingProcess": "Waiting for Processing",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "failed": "Failed",
+    "sample": "Sample",
+    "experimentLog": "Experiment Log",
+    "assigned": "Assigned",
+    "waitingForApproval": "Waiting for Approval",
+    "completedOnTime": "Completed on Time",
+    "completedLate": "Completed Late",
+    "cancelled": "Cancelled",
+    "declined": "Declined",
+    "reworkRequired": "Rework Required",
+    "unknown": "Unknown",
+    "invalidStatus": "Invalid Status",
+    "updateStatusSuccess": "Update status success:",
+    "cannotTakeLateTask": "Cannot take a task that is overdue",
+    "cannotLoadTaskDetails": "Unable to load task details",
+    "errorLoadingData": "Error loading data"
+  },
+  "technicianSample": {
+    "sampleDetails": "Sample Details:",
+    "errorLoadingDetails": "Failed to load sample details",
+    "loadingError": "Error loading data",
+    "loading": "Loading data...",
+    "noData": "No data found",
+    "basicInfo": "Basic Information",
+    "sampleName": "Sample Name",
+    "experiment": "Experiment",
+    "currentStage": "Current Development Stage",
+    "notes": "Notes",
+    "createdBy": "Created By",
+    "noCreatorInfo": "No information available",
+    "reportByStage": "Reports by Stage",
+    "noReportsData": "No report data",
+    "attributeTableHeaders": {
+      "order": "Order",
+      "index": "Index",
+      "measuredValue": "Measured Value",
+      "expected": "Expected",
+      "standard": "Standard Range",
+      "unit": "Unit",
+      "result": "Result"
+    },
+    "pass": "Pass",
+    "notPass": "Not Pass",
+    "back": "Back",
+    "close": "×"
+  },
+  "technicianExperiment": {
+    "manageExperiments": "Monitor and manage cultivation experiments efficiently.",
+    "errorTitle": "Unable to load experiment list",
+    "errorMessage": "Error loading data"
+  },
+  "technicianReport": {
+    "createNewReport": "Create New Report",
+    "newReportForm": "Create New Report",
+    "collectAttributes": "Collected Attributes of Sample",
+    "addAttribute": "+ Add Attribute",
+    "saveReport": "Save Report",
+    "loading": "Loading...",
+    "errorLoading": "Failed to load data",
+    "errorSaving": "Error saving report"
   }
 }

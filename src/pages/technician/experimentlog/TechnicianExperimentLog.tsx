@@ -25,70 +25,32 @@ import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import type {
+  ExperimentStatus,
+  ExperimentLogEntryList,
+  ExperimentLogListApiResponse,
+  MethodOption,
+  SampleListApiResponse,
+} from "../../../types/ExperimentLog";
 
 Chart.register(ArcElement, Tooltip, Legend);
-gsap.registerPlugin(useGSAP); 
-
-type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel" | "WaitingForChangeStage";
-
-interface Stage {
-  id: string;
-  name: string;
-  description?: string;
-  dateOfProcessing?: number;
-  step: number;
-  status: boolean;
-  elementDTO?: unknown[];
-}
-
-interface Sample {
-  id: string;
-  name: string;
-  description?: string;
-  dob?: string;
-  status?: boolean;
-}
-
-interface ExperimentLogEntry {
-  id: string;
-  name: string;
-  description?: string;
-  tissueCultureBatchName?: string;
-  batchName?: string;
-  createdDate?: string;
-  status?: number | string;
-  samples?: Sample[];
-  stages?: Stage[];
-  currentStageName?: string;
-  currentStageOrder?: number;
-  expectedSampleCount?: number;
-  methodName: string;
-}
-
-interface ExperimentLogApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: ExperimentLogEntry[];
-}
-
-interface MethodOption {
-  id: string;
-  name: string;
-}
-
-interface SampleApiResponse {
-  totalCount: number;
-  pageCount: number;
-  pageSize: number;
-  pageNumber: number;
-  data: unknown[];
-}
+gsap.registerPlugin(useGSAP);
 
 const TechnicianExperimentLog = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const formatVietnameseDate = (value?: string): string => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
   
   // --- GSAP REF ---
   const containerRef = useRef<HTMLElement>(null);
@@ -97,9 +59,9 @@ const TechnicianExperimentLog = () => {
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
   const [methodFilter, setMethodFilter] = useState<string>("");
   const [stageFilter, setStageFilter] = useState<
-    "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
+    "all" | "1" | "2" | "3" | "4"
   >("all");
-  const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
+  const [logs, setLogs] = useState<ExperimentLogEntryList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -247,23 +209,23 @@ const TechnicianExperimentLog = () => {
 
   const parseApiResponse = (
     data: unknown
-  ): { logs: ExperimentLogEntry[]; totalCount: number } => {
+  ): { logs: ExperimentLogEntryList[]; totalCount: number } => {
     if (
       typeof data === "object" &&
       data !== null &&
       "data" in data &&
       "totalCount" in data
     ) {
-      const res = data as ExperimentLogApiResponse;
+      const res = data as ExperimentLogListApiResponse;
       if (Array.isArray(res.data)) {
         return {
-          logs: res.data as ExperimentLogEntry[],
+          logs: res.data as ExperimentLogEntryList[],
           totalCount: res.totalCount ?? res.data.length,
         };
       }
     }
     if (Array.isArray(data)) {
-      return { logs: data as ExperimentLogEntry[], totalCount: data.length };
+      return { logs: data as ExperimentLogEntryList[], totalCount: data.length };
     }
     return { logs: [], totalCount: 0 };
   };
@@ -276,10 +238,10 @@ const TechnicianExperimentLog = () => {
       const data = response.data;
 
       if (typeof data === "object" && data !== null && "totalCount" in data) {
-        return (data as SampleApiResponse).totalCount ?? 0;
+        return (data as SampleListApiResponse).totalCount ?? 0;
       }
       if (typeof data === "object" && data !== null && "data" in data) {
-        const inner = (data as SampleApiResponse).data;
+        const inner = (data as SampleListApiResponse).data;
         return Array.isArray(inner) ? inner.length : 0;
       }
       return Array.isArray(data) ? data.length : 0;
@@ -289,7 +251,7 @@ const TechnicianExperimentLog = () => {
   };
 
   const fetchAllSampleCounts = useCallback(
-    async (experimentLogs: ExperimentLogEntry[]) => {
+    async (experimentLogs: ExperimentLogEntryList[]) => {
       const counts: Record<string, number> = {};
       const promises = experimentLogs.map(async (log) => {
         const count = await fetchSampleCount(log.id);
@@ -462,7 +424,7 @@ const TechnicianExperimentLog = () => {
 
     let matchesStage = true;
     if (stageFilter !== "all") {
-      const stageNumber = parseInt(stageFilter.split(" ")[2]);
+      const stageNumber = Number(stageFilter);
       if (log.currentStageOrder !== undefined) {
         matchesStage = log.currentStageOrder === stageNumber - 1;
       } else if (log.stages && log.stages.length > 0 && log.currentStageName) {
@@ -496,7 +458,7 @@ const TechnicianExperimentLog = () => {
             </h1>
           </div>
           <p className="text-gray-600 text-lg ml-13">
-            Monitor and manage cultivation experiments efficiently.
+            {t("technicianExperiment.manageExperiments")}
           </p>
         </div>
 
@@ -515,7 +477,7 @@ const TechnicianExperimentLog = () => {
                   <div className="text-4xl font-bold text-gray-900">
                     {stats.total}
                   </div>
-                  <div className="text-sm text-gray-500">Experiments</div>
+                  <div className="text-sm text-gray-500">{t("experimentLog.experiments")}</div>
                 </div>
               </div>
             </div>
@@ -524,7 +486,7 @@ const TechnicianExperimentLog = () => {
           {/* Status Cards - Code sạch, không logic phức tạp */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 gsap-header">
-              Experiment Statistics
+              {t("experimentLog.statistics")}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               
@@ -610,19 +572,19 @@ const TechnicianExperimentLog = () => {
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {stats.Done}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.completed")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {stats.InProcess}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">In Progress</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.inProgress")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                   {stats.WaitingForChangeStage}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Waiting</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.waiting")}</div>
               </div>
             </div>
           </div>
@@ -676,18 +638,18 @@ const TechnicianExperimentLog = () => {
                 setStageFilter(
                   e.target.value as
                     | "all"
-                    | "Giai đoạn 1"
-                    | "Giai đoạn 2"
-                    | "Giai đoạn 3"
-                    | "Giai đoạn 4"
+                      | "1"
+                      | "2"
+                      | "3"
+                      | "4"
                 )
               }
             >
               <option value="all">{t("experimentLog.allStages")}</option>
-              <option value="Giai đoạn 1">Giai đoạn 1</option>
-              <option value="Giai đoạn 2">Giai đoạn 2</option>
-              <option value="Giai đoạn 3">Giai đoạn 3</option>
-              <option value="Giai đoạn 4">Giai đoạn 4</option>
+              <option value="1">{t("experimentLog.stageNumber", { number: 1 })}</option>
+              <option value="2">{t("experimentLog.stageNumber", { number: 2 })}</option>
+              <option value="3">{t("experimentLog.stageNumber", { number: 3 })}</option>
+              <option value="4">{t("experimentLog.stageNumber", { number: 4 })}</option>
             </select>
 
             <div className="flex-1 min-w-[300px] relative">
@@ -711,7 +673,7 @@ const TechnicianExperimentLog = () => {
               }}
               className="px-4 py-2.5 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors font-medium"
             >
-              Clear Filters
+              {t("common.clearFilters")}
             </button>
           </div>
         </div>
@@ -719,7 +681,7 @@ const TechnicianExperimentLog = () => {
         {/* Experiments Table */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">Loading experiments...</div>
+            <div className="text-gray-500">{t("experimentLog.loadingExperiments")}</div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
@@ -747,7 +709,7 @@ const TechnicianExperimentLog = () => {
                     {t("experimentLog.expectedSampleCount")}
                   </th>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
-                    Số lượng mẫu hiện tại
+                    {t("experimentLog.currentSampleCount")}
                   </th>
                 </tr>
               </thead>
@@ -782,16 +744,7 @@ const TechnicianExperimentLog = () => {
                       <td className="px-6 py-4 text-gray-600">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
-                          {log.createdDate
-                            ? new Date(log.createdDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : ""}
+                          {formatVietnameseDate(log.createdDate)}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -812,7 +765,7 @@ const TechnicianExperimentLog = () => {
                               {log.expectedSampleCount ?? 0}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">samples</span>
+                          <span className="text-xs text-gray-500">{t("experimentLog.samples")}</span>
                         </div>
                       </td>
                       {/* Current Sample Count */}
@@ -823,7 +776,7 @@ const TechnicianExperimentLog = () => {
                               {sampleCounts[log.id] ?? 0}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">samples</span>
+                          <span className="text-xs text-gray-500">{t("experimentLog.samples")}</span>
                         </div>
                       </td>
                     </tr>

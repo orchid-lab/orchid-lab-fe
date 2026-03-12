@@ -16,6 +16,7 @@ import Seedlings from "./pages/researcher/seeding/Seedlings";
 import SeedlingDetail from "./pages/researcher/seeding/SeedlingDetail";
 import SeedlingCreate from "./pages/researcher/seeding/create/CreateSeedling";
 import UpdateSeedling from "./pages/researcher/seeding/create/UpdateSeedling";
+import ResearcherSampleDetail from "./pages/researcher/sample/SampleDetail";
 import ReportsDetails from "./pages/researcher/report/ReportsDetails";
 import ReportsFollowUpDetails from "./pages/researcher/report/ReportsFollowUpDetails";
 import CreateTaskContainer from "./pages/researcher/task/create/CreateTaskContainer";
@@ -44,6 +45,7 @@ import { SnackbarProvider } from "notistack";
 import ReportsCreate from "./pages/technician/report/ReportsCreate";
 import ReportList from "./pages/researcher/report/Reports";
 import ReportsTechnician from "./pages/technician/report/Reports";
+import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
 import SidebarTechnician from "./components/SidebarTechnician";
 import ListTask from "./pages/technician/task/listTask";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -225,6 +227,14 @@ function AppLayout() {
               }
             />
             <Route
+              path="/samples/:id"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ResearcherSampleDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/reports"
               element={
                 <ProtectedRoute requiredRole="Researcher">
@@ -277,6 +287,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
                   <ReportsDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/monitoring-logs/:id"
+              element={
+                <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
+                  <MonitoringLogDetail />
                 </ProtectedRoute>
               }
             />

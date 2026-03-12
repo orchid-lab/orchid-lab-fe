@@ -919,12 +919,18 @@ const ExperimentLogDetail = () => {
         ) : (
           <div className="samples-grid">
             {samples.map((sample) => (
-              <div key={sample.id} className="sample-card">
+              <div 
+                key={sample.id} 
+                className="sample-card"
+                onClick={() => navigate(`/samples/${sample.id}`, {
+                  state: { from: 'researcherExperimentLogDetail', experimentLogId: id }
+                })}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="sample-name">{sample.name}</div>
                 {sample.description && (
                   <div className="sample-description">{sample.description}</div>
                 )}
-                <div className="sample-id">ID: {sample.id}</div>
                 {sample.dob && (
                   <div className="sample-date">
                     {t("experimentLog.dateCreated") || "Ngày tạo"}:{" "}
