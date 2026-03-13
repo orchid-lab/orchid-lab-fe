@@ -69,6 +69,7 @@ import AdminElement from "./pages/admin/element/AdminElement";
 import AdminTissueCultureBatchList from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchList";
 import AdminTissueCultureBatchCreate from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchCreate";
 import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/AdminTissueCultureBatchDetail";
+import AdminConfig from "./pages/admin/config/AdminConfig";
 import TechnicianExperimentLogDetail from "./pages/technician/experimentlog/TechnicianExperimentLogDetail";
 import TechnicianExperimentLog from "./pages/technician/experimentlog/TechnicianExperimentLog";
 
@@ -488,6 +489,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Admin">
                   <AdminElement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/config"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminConfig />
                 </ProtectedRoute>
               }
             />

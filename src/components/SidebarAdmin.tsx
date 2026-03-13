@@ -10,6 +10,7 @@ import {
   FaUser,
   FaSignOutAlt,
   FaSearch,
+  FaCog,
 } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
@@ -68,6 +69,7 @@ export default function SidebarAdmin() {
     { path: "/admin/method", icon: PiBlueprintFill, labelKey: "navigation.method" },
     { path: "/admin/seedling", icon: FaSeedling, labelKey: "navigation.seedling" },
     { path: "/admin/element", icon: FaFlask, labelKey: "navigation.element" },
+    { path: "/admin/config", icon: FaCog, labelKey: "navigation.config" },
   ];
 
   const filteredItems = menuItems.filter((item) =>
