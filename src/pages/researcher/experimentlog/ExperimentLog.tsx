@@ -621,7 +621,6 @@ const ExperimentLog = () => {
             <select
               className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
               value={stageFilter}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onChange={(e) => setStageFilter(e.target.value as any)}
             >
               <option value="all">Tất cả</option>

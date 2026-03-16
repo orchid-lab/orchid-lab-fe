@@ -184,7 +184,7 @@ export default function Login() {
       
       login({ accessToken, refreshToken, user });
       
-      const roleBasedPath = user.roleId === 1 ? "/admin/user" : user.roleId === 2 ? "/researcher" : "/technician";
+      const roleBasedPath = user.roleId === 1 ? "/admin/user" : user.roleId === 2 ? "/researcher" : "/technician/tasks";
       void navigate(roleBasedPath, { replace: true });
       
     } catch (error: unknown) {
