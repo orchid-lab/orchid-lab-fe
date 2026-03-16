@@ -129,7 +129,7 @@ const ExperimentLog = () => {
   // Fetch sample count
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
-      const resp = await axiosInstance.get("/api/sample", {
+      const resp = await axiosInstance.get("/api/samples", {
         params: { pageNo: 1, pageSize: 1000, experimentLogId },
       });
       const data: unknown = resp.data;
