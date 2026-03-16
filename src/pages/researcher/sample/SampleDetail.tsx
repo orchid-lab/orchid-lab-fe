@@ -142,6 +142,15 @@ export default function SampleDetail() {
   const [isDestroying, setIsDestroying] = useState(false);
   const [isChangingStage, setIsChangingStage] = useState(false);
 
+  // Thêm state cho tính năng chuyển đổi thành cây giống
+  const [showConvertForm, setShowConvertForm] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [convertFormData, setConvertFormData] = useState({
+    localName: "",
+    scientificName: "",
+    description: "",
+  });
+
   const stageNameMap: Record<string, string> = {
     "coppice": "Chồi",
     "tissue": "Mầm",
@@ -304,6 +313,41 @@ export default function SampleDetail() {
     }
   };
 
+  // Hàm xử lý chuyển đổi thành cây giống
+  const handleConvertToSeedling = async () => {
+    if (!id || isConverting) return;
+
+    if (!convertFormData.localName.trim() || !convertFormData.scientificName.trim()) {
+      enqueueSnackbar("Vui lòng nhập đầy đủ Tên địa phương và Tên khoa học", { variant: "warning" });
+      return;
+    }
+
+    setIsConverting(true);
+    try {
+      await axiosInstance.put(`/api/samples/${id}/convert-to-seedling`, {
+        localName: convertFormData.localName.trim(),
+        scientificName: convertFormData.scientificName.trim(),
+        description: convertFormData.description.trim() || undefined,
+      });
+
+      enqueueSnackbar("Chuyển mẫu vật thành cây giống thành công", { variant: "success" });
+      setShowConvertForm(false);
+      
+      // Reset form
+      setConvertFormData({ localName: "", scientificName: "", description: "" });
+      
+      // Reload để cập nhật trạng thái mới
+      await loadSampleDetail();
+    } catch (error) {
+      enqueueSnackbar(
+        getApiErrorMessage(error, "Không thể chuyển đổi thành cây giống"),
+        { variant: "error" }
+      );
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   const getStatusLabel = (status: SampleStatus): string => {
     const statusMap: Record<SampleStatus, string> = {
       [SampleStatusValue.Created]: t("sample.statusCreated"),
@@ -347,6 +391,14 @@ export default function SampleDetail() {
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
   const hasApprovedLogForCurrentStage = reportRows.length > 0;
   const canChangeStage = user?.roleId === 2 && hasApprovedLogForCurrentStage;
+
+  // Logic kiểm tra điều kiện hiện nút "Chuyển thành cây giống"
+  const isLastStage = latestStage?.sampleStageDefinition?.order === Math.max(...PREDEFINED_STAGES.map((s) => s.order));
+  const canConvertToSeedling = 
+    user?.roleId === 2 && 
+    isLastStage && 
+    sample?.status !== SampleStatusValue.ConvertedToSeedling && 
+    sample?.status !== SampleStatusValue.ExecutedBecauseOfDisease;
 
   const handleChangeStage = async () => {
     if (!id || !canChangeStage || isChangingStage) return;
@@ -440,6 +492,17 @@ export default function SampleDetail() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
           <div className="flex gap-3">
+            {canConvertToSeedling && (
+              <button
+                type="button"
+                onClick={() => setShowConvertForm(true)}
+                disabled={isConverting}
+                className="px-4 py-2 rounded-lg transition-colors font-medium text-white bg-purple-600 hover:bg-purple-700"
+              >
+                Chuyển thành cây giống
+              </button>
+            )}
+            
             <button
               type="button"
               onClick={() => void handleChangeStage()}
@@ -466,7 +529,7 @@ export default function SampleDetail() {
               </button>
             )}
             <span
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
+              className={`px-3 py-2 rounded-md text-sm font-medium flex items-center ${
                 STATUS_COLOR_MAP[sample.status] ?? "bg-gray-100 text-gray-800"
               }`}
             >
@@ -688,6 +751,85 @@ export default function SampleDetail() {
         </div>
       </div>
 
+      {/* MODAL: Form chuyển đổi thành cây giống */}
+      {showConvertForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="border-b p-6 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Chuyển thành cây giống</h3>
+              <button
+                onClick={() => setShowConvertForm(false)}
+                disabled={isConverting}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Tên địa phương <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={convertFormData.localName}
+                  onChange={(e) => setConvertFormData({ ...convertFormData, localName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="VD: Lan hồ điệp trắng F1"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Tên khoa học <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={convertFormData.scientificName}
+                  onChange={(e) => setConvertFormData({ ...convertFormData, scientificName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="VD: Phalaenopsis amabilis var. F1"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Mô tả</label>
+                <textarea
+                  value={convertFormData.description}
+                  onChange={(e) => setConvertFormData({ ...convertFormData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Mô tả cây giống..."
+                />
+              </div>
+            </div>
+
+            <div className="border-t p-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConvertForm(false)}
+                disabled={isConverting}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConvertToSeedling}
+                disabled={isConverting || !convertFormData.localName.trim() || !convertFormData.scientificName.trim()}
+                className={`px-4 py-2 text-sm rounded-lg text-white font-medium transition-colors ${
+                  !convertFormData.localName.trim() || !convertFormData.scientificName.trim() || isConverting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-purple-600 hover:bg-purple-700"
+                }`}
+              >
+                {isConverting ? "Đang chuyển..." : "Xác nhận"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Phân tích bệnh */}
       {showImageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
@@ -781,6 +923,7 @@ export default function SampleDetail() {
         </div>
       )}
 
+      {/* MODAL: Kết quả phân tích */}
       {showAnalysisModal && analysisResult && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
