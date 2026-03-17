@@ -485,7 +485,7 @@ const ExperimentLogDetail = () => {
       })
       .catch(() => setError(t("common.errorLoading")))
       .finally(() => setLoading(false));
-  }, [id, t]);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -537,7 +537,7 @@ const ExperimentLogDetail = () => {
           setLabName(t("experimentLog.notAvailable"));
         });
     }
-  }, [log, t]);
+  }, [log]);
 
   useEffect(() => {
     const creatorId = log?.createdBy ?? log?.create_by;
@@ -552,7 +552,7 @@ const ExperimentLogDetail = () => {
         })
         .catch(() => setCreator(t("experimentLog.notAvailable")));
     }
-  }, [log, t]);
+  }, [log]);
 
   useLayoutEffect(() => {
     if (!log || loading) return;
