@@ -295,7 +295,7 @@ function AppLayout() {
               path="/monitoring-logs/:id"
               element={
                 <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
-                  <MonitoringLogDetail />
+                  <ReportsFollowUpDetails />
                 </ProtectedRoute>
               }
             />
