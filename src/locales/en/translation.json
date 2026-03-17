@@ -698,7 +698,9 @@
     "experiments": "Experiments",
     "waiting": "Waiting",
     "loadingExperiments": "Loading experiments...",
-    "currentSampleCount": "Current Sample Count"
+    "currentSampleCount": "Current Sample Count",
+    "tabDetail": "Detail",
+    "tabSummary": "Overview"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",

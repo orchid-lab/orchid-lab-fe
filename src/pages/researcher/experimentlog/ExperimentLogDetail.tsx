@@ -886,7 +886,7 @@ const ExperimentLogDetail = () => {
             setActiveTab("detail");
           }}
         >
-          Chi tiết
+          {t("experimentLog.tabDetail")}
         </button>
         <button
           type="button"
@@ -895,7 +895,7 @@ const ExperimentLogDetail = () => {
             setActiveTab("summary");
           }}
         >
-          Tổng quan
+          {t("experimentLog.tabSummary")}
         </button>
       </div>
 
@@ -906,19 +906,19 @@ const ExperimentLogDetail = () => {
               <div className="info-column">
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.method")}:
+                    {t("experimentLog.method")}:{" "}
                   </span>
                   <span className="info-value">{methodName}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.tissueCultureBatch")}:
+                    {t("experimentLog.tissueCultureBatch")}:{" "}
                   </span>
                   <span className="info-value">{batchName}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.labRoom")}:
+                    {t("experimentLog.labRoom")}:{" "}
                   </span>
                   <span className="info-value">{labRoomName}</span>
                 </div>
@@ -930,20 +930,20 @@ const ExperimentLogDetail = () => {
                     gap: "0.5rem",
                   }}
                 >
-                  <span className="info-label">{t("common.status")}:</span>
+                  <span className="info-label">{t("common.status")}: </span>
                   <span className={getStatusColor(log.status)}>
                     {getStatusDisplay(log.status)}
                   </span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.expectedSampleCount")}:
+                    {t("experimentLog.expectedSampleCount")}:{" "}
                   </span>
                   <span className="info-value">{log.expectedSampleCount}</span>
                 </div>
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.dateCreated")}:
+                    {t("experimentLog.dateCreated")}:{" "}
                   </span>
                   <span className="info-value">
                     {formatDate(log.createdDate)}
@@ -951,7 +951,7 @@ const ExperimentLogDetail = () => {
                 </div>
                 <div className="info-item">
                   <span className="info-label">
-                    {t("experimentLog.creator")}:
+                    {t("experimentLog.creator")}:{" "}
                   </span>
                   <span className="info-value">{creator}</span>
                 </div>
@@ -992,7 +992,7 @@ const ExperimentLogDetail = () => {
                 {log.notes && (
                   <div className="info-item">
                     <span className="info-label">
-                      {t("common.description")}:
+                      {t("common.description")}:{" "}
                     </span>
                     <span className="info-value">{log.notes}</span>
                   </div>

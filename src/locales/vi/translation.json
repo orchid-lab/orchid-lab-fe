@@ -698,7 +698,9 @@
     ,"experiments": "Thí nghiệm",
     "waiting": "Chờ xử lý",
     "loadingExperiments": "Đang tải thí nghiệm...",
-    "currentSampleCount": "Số lượng mẫu hiện tại"
+    "currentSampleCount": "Số lượng mẫu hiện tại",
+    "tabDetail": "Chi tiết",
+    "tabSummary": "Tổng quan"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",
