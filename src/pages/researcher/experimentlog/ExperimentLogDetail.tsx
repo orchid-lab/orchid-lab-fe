@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
@@ -14,6 +13,12 @@ import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  getDiseaseIncidents,
+  reviewDiseaseIncident,
+} from "../../../api/diseaseIncidentApi";
+import type { DiseaseIncident } from "../../../types/DiseaseIncident";
+import { DiseaseIncidentStatus } from "../../../types/DiseaseIncident";
 
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
@@ -188,6 +193,21 @@ const ExperimentLogDetail = () => {
   const [selectedBatchId, setSelectedBatchId] = useState<number | "">("");
   const [changeReason, setChangeReason] = useState("");
 
+  // --- Disease Incidents state ---
+  const [incidents, setIncidents] = useState<DiseaseIncident[]>([]);
+  const [incidentsLoading, setIncidentsLoading] = useState(false);
+  const [incidentsError, setIncidentsError] = useState<string | null>(null);
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState<
+    DiseaseIncidentStatus | undefined
+  >(undefined);
+  // Review modal state
+  const [reviewingIncident, setReviewingIncident] =
+    useState<DiseaseIncident | null>(null);
+  const [reviewIsConfirmed, setReviewIsConfirmed] = useState(true);
+  const [reviewNote, setReviewNote] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
   const parseBatchId = (value: unknown): number | undefined => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string") {
@@ -197,11 +217,90 @@ const ExperimentLogDetail = () => {
     return undefined;
   };
 
+  const fetchIncidents = async () => {
+    if (!id) return;
+    setIncidentsLoading(true);
+    setIncidentsError(null);
+    try {
+      const data = await getDiseaseIncidents({
+        experimentLogId: id,
+        status: incidentStatusFilter,
+      });
+      setIncidents(data.items ?? []);
+    } catch {
+      setIncidentsError(t("diseaseIncident.loadError"));
+    } finally {
+      setIncidentsLoading(false);
+    }
+  };
+
+  const openReviewModal = (incident: DiseaseIncident) => {
+    setReviewingIncident(incident);
+    setReviewIsConfirmed(true);
+    setReviewNote("");
+    setReviewError(null);
+  };
+
+  const closeReviewModal = () => {
+    if (reviewSubmitting) return;
+    setReviewingIncident(null);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewingIncident) return;
+    setReviewSubmitting(true);
+    setReviewError(null);
+    try {
+      await reviewDiseaseIncident(reviewingIncident.id, {
+        isConfirmed: reviewIsConfirmed,
+        note: reviewNote.trim() || undefined,
+      });
+      setReviewingIncident(null);
+      void fetchIncidents();
+    } catch {
+      setReviewError(t("common.error"));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const getIncidentStatusLabel = (status: DiseaseIncidentStatus): string => {
+    switch (status) {
+      case DiseaseIncidentStatus.AIDetected:
+        return t("diseaseIncident.statusAIDetected");
+      case DiseaseIncidentStatus.UnderReview:
+        return t("diseaseIncident.statusUnderReview");
+      case DiseaseIncidentStatus.Confirmed:
+        return t("diseaseIncident.statusConfirmed");
+      case DiseaseIncidentStatus.Dismissed:
+        return t("diseaseIncident.statusDismissed");
+      default:
+        return String(status);
+    }
+  };
+
+  const getIncidentStatusClass = (status: DiseaseIncidentStatus): string => {
+    switch (status) {
+      case DiseaseIncidentStatus.AIDetected:
+        return "incident-status ai-detected";
+      case DiseaseIncidentStatus.UnderReview:
+        return "incident-status under-review";
+      case DiseaseIncidentStatus.Confirmed:
+        return "incident-status confirmed";
+      case DiseaseIncidentStatus.Dismissed:
+        return "incident-status dismissed";
+      default:
+        return "incident-status";
+    }
+  };
+
   const fetchReadyBatches = async (preferredBatchId?: number) => {
     setBatchesLoading(true);
     setBatchesError(null);
     try {
-      const res = await axiosInstance.get("/api/batches?pageNo=1&pageSize=1000");
+      const res = await axiosInstance.get(
+        "/api/batches?pageNo=1&pageSize=1000",
+      );
       const raw = res.data as ApiListResponse<Batch> | Batch[];
 
       let batches: Batch[] = [];
@@ -221,7 +320,9 @@ const ExperimentLogDetail = () => {
         preferredBatchId !== undefined &&
         !readyOnly.some((batch) => batch.id === preferredBatchId)
       ) {
-        const currentBatch = batches.find((batch) => batch.id === preferredBatchId);
+        const currentBatch = batches.find(
+          (batch) => batch.id === preferredBatchId,
+        );
         if (currentBatch) {
           setReadyBatches([currentBatch, ...readyOnly]);
         } else {
@@ -282,7 +383,7 @@ const ExperimentLogDetail = () => {
       const axiosError = e as AxiosError<ApiErrorResponse>;
       const apiDetail = axiosError.response?.data?.detail?.trim();
       const apiTitle = axiosError.response?.data?.title?.trim();
-      setChangeStageError(apiDetail || apiTitle || t("common.errorLoading"));
+      setChangeStageError(apiDetail ?? apiTitle ?? t("common.errorLoading"));
     } finally {
       setChangingStage(false);
     }
@@ -309,6 +410,11 @@ const ExperimentLogDetail = () => {
       .catch(() => setError(t("common.errorLoading")))
       .finally(() => setLoading(false));
   }, [id, t]);
+
+  useEffect(() => {
+    if (!id) return;
+    void fetchIncidents();
+  }, [id, incidentStatusFilter]);
 
   useEffect(() => {
     if (!log) return;
@@ -338,7 +444,9 @@ const ExperimentLogDetail = () => {
             (raw?.value?.labName as string) ?? (raw?.labName as string);
           setLabName(name ?? t("experimentLog.notAvailable"));
 
-          const fetchedBatchId = parseBatchId(raw?.value?.id ?? raw?.id ?? tcbId);
+          const fetchedBatchId = parseBatchId(
+            raw?.value?.id ?? raw?.id ?? tcbId,
+          );
           if (fetchedBatchId !== undefined) {
             setCurrentBatchId(fetchedBatchId);
             setSelectedBatchId(fetchedBatchId);
@@ -919,13 +1027,18 @@ const ExperimentLogDetail = () => {
         ) : (
           <div className="samples-grid">
             {samples.map((sample) => (
-              <div 
-                key={sample.id} 
+              <div
+                key={sample.id}
                 className="sample-card"
-                onClick={() => navigate(`/samples/${sample.id}`, {
-                  state: { from: 'researcherExperimentLogDetail', experimentLogId: id }
-                })}
-                style={{ cursor: 'pointer' }}
+                onClick={() =>
+                  navigate(`/samples/${sample.id}`, {
+                    state: {
+                      from: "researcherExperimentLogDetail",
+                      experimentLogId: id,
+                    },
+                  })
+                }
+                style={{ cursor: "pointer" }}
               >
                 <div className="sample-name">{sample.name}</div>
                 {sample.description && (
@@ -948,6 +1061,183 @@ const ExperimentLogDetail = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Disease Incidents Section */}
+      <section className="samples-card" style={{ marginTop: "1.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            marginBottom: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <h2 className="samples-title" style={{ margin: 0 }}>
+            {t("diseaseIncident.title")}
+          </h2>
+          {incidents.some(
+            (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
+          ) && (
+            <span
+              style={{
+                background: "#ef4444",
+                color: "#fff",
+                borderRadius: "999px",
+                padding: "2px 10px",
+                fontSize: "0.78rem",
+                fontWeight: 600,
+              }}
+            >
+              ● {t("diseaseIncident.badge")}
+            </span>
+          )}
+          <div style={{ marginLeft: "auto", display: "flex", gap: "0.5rem" }}>
+            <select
+              value={incidentStatusFilter ?? ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                setIncidentStatusFilter(
+                  val === ""
+                    ? undefined
+                    : (Number(val) as DiseaseIncidentStatus),
+                );
+              }}
+              style={{
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                padding: "4px 10px",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">{t("diseaseIncident.filterAll")}</option>
+              <option value={DiseaseIncidentStatus.AIDetected}>
+                {t("diseaseIncident.statusAIDetected")}
+              </option>
+              <option value={DiseaseIncidentStatus.UnderReview}>
+                {t("diseaseIncident.statusUnderReview")}
+              </option>
+              <option value={DiseaseIncidentStatus.Confirmed}>
+                {t("diseaseIncident.statusConfirmed")}
+              </option>
+              <option value={DiseaseIncidentStatus.Dismissed}>
+                {t("diseaseIncident.statusDismissed")}
+              </option>
+            </select>
+            <button
+              type="button"
+              className="btn-start"
+              style={{ minWidth: 80 }}
+              onClick={() => void fetchIncidents()}
+              disabled={incidentsLoading}
+            >
+              {incidentsLoading ? t("common.loading") : t("common.filter")}
+            </button>
+          </div>
+        </div>
+
+        {incidentsError && (
+          <p
+            style={{
+              color: "#ef4444",
+              fontSize: "0.875rem",
+              marginBottom: "0.5rem",
+            }}
+          >
+            {incidentsError}
+          </p>
+        )}
+
+        {incidentsLoading ? (
+          <div className="loading-state" style={{ padding: "1.5rem 0" }}>
+            {t("common.loadingData")}
+          </div>
+        ) : incidents.length === 0 ? (
+          <div className="samples-empty">
+            {t("diseaseIncident.noIncidents")}
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "0.9rem",
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    background: "#f9fafb",
+                    borderBottom: "2px solid #e5e7eb",
+                  }}
+                >
+                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                    {t("diseaseIncident.sampleName")}
+                  </th>
+                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                    {t("diseaseIncident.diseaseName")}
+                  </th>
+                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                    {t("diseaseIncident.aiConfidence")}
+                  </th>
+                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                    {t("diseaseIncident.status")}
+                  </th>
+                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                    {t("diseaseIncident.action")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {incidents.map((inc) => (
+                  <tr
+                    key={inc.id}
+                    style={{ borderBottom: "1px solid #f3f4f6" }}
+                  >
+                    <td style={{ padding: "10px 12px" }}>{inc.sampleName}</td>
+                    <td style={{ padding: "10px 12px" }}>{inc.diseaseName}</td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color:
+                            inc.aiConfidence >= 0.8
+                              ? "#ef4444"
+                              : inc.aiConfidence >= 0.5
+                                ? "#f59e0b"
+                                : "#6b7280",
+                        }}
+                      >
+                        {(inc.aiConfidence * 100).toFixed(1)}%
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      <span className={getIncidentStatusClass(inc.status)}>
+                        {getIncidentStatusLabel(inc.status)}
+                      </span>
+                    </td>
+                    <td style={{ padding: "10px 12px" }}>
+                      {(inc.status === DiseaseIncidentStatus.AIDetected ||
+                        inc.status === DiseaseIncidentStatus.UnderReview) && (
+                        <button
+                          type="button"
+                          className="btn-start"
+                          style={{ minWidth: 90, fontSize: "0.82rem" }}
+                          onClick={() => openReviewModal(inc)}
+                        >
+                          {t("diseaseIncident.review")}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
@@ -999,9 +1289,13 @@ const ExperimentLogDetail = () => {
                     ))}
                   </select>
                   {batchesLoading && (
-                    <p className="modal-helper-text">Đang tải danh sách lồng...</p>
+                    <p className="modal-helper-text">
+                      Đang tải danh sách lồng...
+                    </p>
                   )}
-                  {batchesError && <p className="modal-error">{batchesError}</p>}
+                  {batchesError && (
+                    <p className="modal-error">{batchesError}</p>
+                  )}
                 </div>
 
                 <div>
@@ -1046,6 +1340,149 @@ const ExperimentLogDetail = () => {
                   {changingStage
                     ? t("experimentLog.changingStage") || "Đang chuyển..."
                     : "Xác nhận chuyển"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Review Disease Incident Modal */}
+      {reviewingIncident && (
+        <div className="modal-backdrop" onClick={closeReviewModal}>
+          <div
+            className="modal-container"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 520 }}
+          >
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">
+                  {t("diseaseIncident.reviewModalTitle")}
+                </h3>
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={closeReviewModal}
+                  disabled={reviewSubmitting}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div
+                  style={{
+                    background: "#f9fafb",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    marginBottom: "1rem",
+                    fontSize: "0.9rem",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  <div>
+                    <strong>{t("diseaseIncident.sampleName")}:</strong>{" "}
+                    {reviewingIncident.sampleName}
+                  </div>
+                  <div>
+                    <strong>{t("diseaseIncident.diseaseName")}:</strong>{" "}
+                    {reviewingIncident.diseaseName}
+                  </div>
+                  <div>
+                    <strong>{t("diseaseIncident.aiConfidence")}:</strong>{" "}
+                    {(reviewingIncident.aiConfidence * 100).toFixed(1)}%
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "1rem" }}>
+                  <label className="modal-label">
+                    {t("diseaseIncident.reviewDecision")}
+                  </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem",
+                      marginTop: "0.4rem",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="review-decision"
+                        checked={reviewIsConfirmed}
+                        onChange={() => setReviewIsConfirmed(true)}
+                        disabled={reviewSubmitting}
+                      />
+                      <span>{t("diseaseIncident.reviewConfirm")}</span>
+                    </label>
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="review-decision"
+                        checked={!reviewIsConfirmed}
+                        onChange={() => setReviewIsConfirmed(false)}
+                        disabled={reviewSubmitting}
+                      />
+                      <span>{t("diseaseIncident.reviewDismiss")}</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="review-note" className="modal-label">
+                    {t("diseaseIncident.reviewNote")}
+                  </label>
+                  <textarea
+                    id="review-note"
+                    className="modal-textarea"
+                    value={reviewNote}
+                    onChange={(e) => setReviewNote(e.target.value)}
+                    rows={3}
+                    placeholder={t("diseaseIncident.reviewNotePlaceholder")}
+                    disabled={reviewSubmitting}
+                  />
+                </div>
+
+                {reviewError && (
+                  <p className="modal-error" style={{ marginBottom: 0 }}>
+                    {reviewError}
+                  </p>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={closeReviewModal}
+                  disabled={reviewSubmitting}
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-start"
+                  onClick={() => void handleSubmitReview()}
+                  disabled={reviewSubmitting}
+                >
+                  {reviewSubmitting
+                    ? t("diseaseIncident.submitting")
+                    : t("diseaseIncident.submitReview")}
                 </button>
               </div>
             </div>
