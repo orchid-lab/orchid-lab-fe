@@ -6,6 +6,7 @@ import { useEffect, useState, useLayoutEffect, useRef } from "react";
 import "./ExperimentLogDetail.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 import type { AxiosError } from "axios";
 import type { User } from "../../../types/Auth";
 import { FaSeedling } from "react-icons/fa";
@@ -161,6 +162,27 @@ interface ApiErrorResponse {
   status?: number;
 }
 
+interface StageDistribution {
+  stageName: string;
+  sampleCount: number;
+  percentage: number;
+}
+
+interface ExperimentLogSummary {
+  experimentLogId: string;
+  experimentLogName: string;
+  totalSamples: number;
+  expectedSamples: number;
+  aliveSamples: number;
+  infectedSamples: number;
+  survivalRate: number;
+  progressRate: number;
+  stageDistribution: StageDistribution[];
+  totalMonitoringLogs: number;
+  pendingApprovalLogs: number;
+  rejectedLogs: number;
+}
+
 const ExperimentLogDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -208,6 +230,12 @@ const ExperimentLogDetail = () => {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
+  // --- Summary tab state ---
+  const [activeTab, setActiveTab] = useState<"detail" | "summary">("detail");
+  const [summary, setSummary] = useState<ExperimentLogSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
   const parseBatchId = (value: unknown): number | undefined => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string") {
@@ -215,6 +243,20 @@ const ExperimentLogDetail = () => {
       if (!Number.isNaN(parsed)) return parsed;
     }
     return undefined;
+  };
+
+  const fetchSummary = async () => {
+    if (!id) return;
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const res = await axiosInstance.get(`/api/experiment-logs/${id}/summary`);
+      setSummary((res.data?.value ?? res.data) as ExperimentLogSummary);
+    } catch {
+      setSummaryError(t("common.errorLoading"));
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   const fetchIncidents = async () => {
@@ -415,6 +457,11 @@ const ExperimentLogDetail = () => {
     if (!id) return;
     void fetchIncidents();
   }, [id, incidentStatusFilter]);
+
+  useEffect(() => {
+    if (!id || activeTab !== "summary") return;
+    void fetchSummary();
+  }, [id, activeTab]);
 
   useEffect(() => {
     if (!log) return;
@@ -773,474 +820,697 @@ const ExperimentLogDetail = () => {
         </div>
       </div>
 
-      <section className="info-card" ref={infoCardRef}>
-        <div className="info-grid">
-          <div className="info-column">
-            <div className="info-item">
-              <span className="info-label">{t("experimentLog.method")}:</span>
-              <span className="info-value">{methodName}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">
-                {t("experimentLog.tissueCultureBatch")}:
-              </span>
-              <span className="info-value">{batchName}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">{t("experimentLog.labRoom")}:</span>
-              <span className="info-value">{labRoomName}</span>
-            </div>
-            <div
-              className="info-item"
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <span className="info-label">{t("common.status")}:</span>
-              <span className={getStatusColor(log.status)}>
-                {getStatusDisplay(log.status)}
-              </span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">
-                {t("experimentLog.expectedSampleCount")}:
-              </span>
-              <span className="info-value">{log.expectedSampleCount}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">
-                {t("experimentLog.dateCreated")}:
-              </span>
-              <span className="info-value">{formatDate(log.createdDate)}</span>
-            </div>
-            <div className="info-item">
-              <span className="info-label">{t("experimentLog.creator")}:</span>
-              <span className="info-value">{creator}</span>
-            </div>
-            <div
-              className="info-item"
-              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
-            >
-              <span className="info-label">
-                {t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:
-              </span>
-              <span className="current-stage">{currentStage}</span>
-              <button
-                type="button"
-                className="btn-start"
-                style={{ minWidth: 120, marginLeft: 8 }}
-                onClick={openChangeStageModal}
-                disabled={
-                  changingStage || normalizeStatus(log.status) === "InProgress"
-                }
-              >
-                {t("experimentLog.changeStage") || "Chuyển giai đoạn"}
-              </button>
-              {changeStageError && (
-                <div style={{ color: "red", marginLeft: 8, fontSize: "0.9em" }}>
-                  {changeStageError}
+      {/* Tab bar */}
+      <div className="tab-bar">
+        <button
+          type="button"
+          className={`tab-btn${activeTab === "detail" ? " active" : ""}`}
+          onClick={() => {
+            setActiveTab("detail");
+          }}
+        >
+          Chi tiết
+        </button>
+        <button
+          type="button"
+          className={`tab-btn${activeTab === "summary" ? " active" : ""}`}
+          onClick={() => {
+            setActiveTab("summary");
+          }}
+        >
+          Tổng quan
+        </button>
+      </div>
+
+      {activeTab === "detail" && (
+        <>
+          <section className="info-card" ref={infoCardRef}>
+            <div className="info-grid">
+              <div className="info-column">
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.method")}:
+                  </span>
+                  <span className="info-value">{methodName}</span>
                 </div>
-              )}
-            </div>
-          </div>
-          <div className="info-column">
-            {log.notes && (
-              <div className="info-item">
-                <span className="info-label">{t("common.description")}:</span>
-                <span className="info-value">{log.notes}</span>
-              </div>
-            )}
-            <div className="seedling-box">
-              <h3 className="seedling-title">
-                {t("experimentLog.selectedSeedlings")}
-              </h3>
-              {renderSelectedSeedlings()}
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className="materials-card" ref={materialsCardRef}>
-        <h2 className="materials-title">
-          {t("experimentLog.chemicalsAndMaterials") ||
-            "Hóa chất và dụng cụ của giai đoạn hiện tại"}
-          <span className="stage-indicator">
-            ({currentMethodStage?.stageDefinition?.name ?? currentStage})
-          </span>
-        </h2>
-        <div className="materials-grid">
-          <div>
-            <h3 className="material-section-title">
-              <span className="material-icon chemical-icon">🧪</span>
-              {t("experimentLog.chemicalsUsed") || "Hóa chất sử dụng"}
-              <span className="material-count">({stageChemicals.length})</span>
-            </h3>
-            {stageChemicals.length === 0 ? (
-              <p className="no-materials">
-                {t("experimentLog.noChemicals") || "Không có hóa chất"}
-              </p>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                {Object.entries(chemicalsByCategory).map(
-                  ([category, chemicals]) => (
-                    <div key={category} className="material-category">
-                      <p className="category-name">{category}</p>
-                      <ul className="material-list">
-                        {chemicals.map((chem) => (
-                          <li key={chem.id} className="material-item">
-                            <span className="material-bullet chemical">•</span>
-                            <div>
-                              <span className="material-name">{chem.name}</span>
-                              {chem.concentrationUnit && (
-                                <span className="material-unit">
-                                  ({chem.concentrationUnit})
-                                </span>
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ),
-                )}
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 className="material-section-title">
-              <span className="material-icon equipment-icon">🔧</span>
-              {t("experimentLog.materialsUsed") || "Dụng cụ sử dụng"}
-              <span className="material-count">({stageMaterials.length})</span>
-            </h3>
-            {stageMaterials.length === 0 ? (
-              <p className="no-materials">
-                {t("experimentLog.noMaterials") || "Không có dụng cụ"}
-              </p>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                {Object.entries(materialsByCategory).map(
-                  ([category, materials]) => (
-                    <div key={category} className="material-category">
-                      <p className="category-name">{category}</p>
-                      <ul className="material-list">
-                        {materials.map((mat) => (
-                          <li key={mat.id} className="material-item">
-                            <span className="material-bullet equipment">•</span>
-                            <div>
-                              <span className="material-name">{mat.name}</span>
-                              {mat.unit && (
-                                <span className="material-unit">
-                                  ({mat.unit})
-                                </span>
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ),
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-      {/* Stages Section - from method.methodStages */}
-      {log.method?.methodStages && log.method.methodStages.length > 0 && (
-        <section ref={stagesCardRef} className="stages-card">
-          <h2 className="stages-title">
-            {t("experimentLog.stages") || "Các giai đoạn"}
-          </h2>
-          <div className="stages-grid">
-            {log.method.methodStages
-              .sort((a, b) => a.order - b.order)
-              .map((stage) => {
-                const isCurrentStage = stage.order === log.currentStageOrder;
-                return (
-                  <div
-                    key={stage.id}
-                    className={`stage-card ${isCurrentStage ? "current" : "normal"}`}
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.tissueCultureBatch")}:
+                  </span>
+                  <span className="info-value">{batchName}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.labRoom")}:
+                  </span>
+                  <span className="info-value">{labRoomName}</span>
+                </div>
+                <div
+                  className="info-item"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span className="info-label">{t("common.status")}:</span>
+                  <span className={getStatusColor(log.status)}>
+                    {getStatusDisplay(log.status)}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.expectedSampleCount")}:
+                  </span>
+                  <span className="info-value">{log.expectedSampleCount}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.dateCreated")}:
+                  </span>
+                  <span className="info-value">
+                    {formatDate(log.createdDate)}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">
+                    {t("experimentLog.creator")}:
+                  </span>
+                  <span className="info-value">{creator}</span>
+                </div>
+                <div
+                  className="info-item"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <span className="info-label">
+                    {t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:
+                  </span>
+                  <span className="current-stage">{currentStage}</span>
+                  <button
+                    type="button"
+                    className="btn-start"
+                    style={{ minWidth: 120, marginLeft: 8 }}
+                    onClick={openChangeStageModal}
+                    disabled={
+                      changingStage ||
+                      normalizeStatus(log.status) === "InProgress"
+                    }
                   >
-                    <div className="stage-header">
-                      <span
-                        className={`stage-number ${isCurrentStage ? "current" : "normal"}`}
-                      >
-                        {stage.order}
-                      </span>
-                      <span className="stage-name">
-                        {stage.stageDefinition?.name ||
-                          t("experimentLog.notAvailable")}
-                      </span>
-                      {isCurrentStage && (
-                        <span className="current-badge">
-                          {t("experimentLog.currentStage") || "Hiện tại"}
-                        </span>
-                      )}
+                    {t("experimentLog.changeStage") || "Chuyển giai đoạn"}
+                  </button>
+                  {changeStageError && (
+                    <div
+                      style={{ color: "red", marginLeft: 8, fontSize: "0.9em" }}
+                    >
+                      {changeStageError}
                     </div>
-                    {stage.stageDefinition?.description && (
-                      <p className="stage-description">
-                        {stage.stageDefinition.description}
-                      </p>
+                  )}
+                </div>
+              </div>
+              <div className="info-column">
+                {log.notes && (
+                  <div className="info-item">
+                    <span className="info-label">
+                      {t("common.description")}:
+                    </span>
+                    <span className="info-value">{log.notes}</span>
+                  </div>
+                )}
+                <div className="seedling-box">
+                  <h3 className="seedling-title">
+                    {t("experimentLog.selectedSeedlings")}
+                  </h3>
+                  {renderSelectedSeedlings()}
+                </div>
+              </div>
+            </div>
+          </section>
+          <section className="materials-card" ref={materialsCardRef}>
+            <h2 className="materials-title">
+              {t("experimentLog.chemicalsAndMaterials") ||
+                "Hóa chất và dụng cụ của giai đoạn hiện tại"}
+              <span className="stage-indicator">
+                ({currentMethodStage?.stageDefinition?.name ?? currentStage})
+              </span>
+            </h2>
+            <div className="materials-grid">
+              <div>
+                <h3 className="material-section-title">
+                  <span className="material-icon chemical-icon">🧪</span>
+                  {t("experimentLog.chemicalsUsed") || "Hóa chất sử dụng"}
+                  <span className="material-count">
+                    ({stageChemicals.length})
+                  </span>
+                </h3>
+                {stageChemicals.length === 0 ? (
+                  <p className="no-materials">
+                    {t("experimentLog.noChemicals") || "Không có hóa chất"}
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    {Object.entries(chemicalsByCategory).map(
+                      ([category, chemicals]) => (
+                        <div key={category} className="material-category">
+                          <p className="category-name">{category}</p>
+                          <ul className="material-list">
+                            {chemicals.map((chem) => (
+                              <li key={chem.id} className="material-item">
+                                <span className="material-bullet chemical">
+                                  •
+                                </span>
+                                <div>
+                                  <span className="material-name">
+                                    {chem.name}
+                                  </span>
+                                  {chem.concentrationUnit && (
+                                    <span className="material-unit">
+                                      ({chem.concentrationUnit})
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ),
                     )}
-                    <div className="stage-tags">
-                      {stage.durationsDays && (
-                        <span className="stage-tag">
-                          {t("experimentLog.duration") || "Thời gian"}:{" "}
-                          {stage.durationsDays} {t("common.days") || "ngày"}
-                        </span>
-                      )}
-                      {/* isSampleGenerated indicator */}
-                      <span
-                        className={`stage-tag sample-generation ${stage.isSampleGenerated ? "enabled" : "disabled"}`}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="material-section-title">
+                  <span className="material-icon equipment-icon">🔧</span>
+                  {t("experimentLog.materialsUsed") || "Dụng cụ sử dụng"}
+                  <span className="material-count">
+                    ({stageMaterials.length})
+                  </span>
+                </h3>
+                {stageMaterials.length === 0 ? (
+                  <p className="no-materials">
+                    {t("experimentLog.noMaterials") || "Không có dụng cụ"}
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    {Object.entries(materialsByCategory).map(
+                      ([category, materials]) => (
+                        <div key={category} className="material-category">
+                          <p className="category-name">{category}</p>
+                          <ul className="material-list">
+                            {materials.map((mat) => (
+                              <li key={mat.id} className="material-item">
+                                <span className="material-bullet equipment">
+                                  •
+                                </span>
+                                <div>
+                                  <span className="material-name">
+                                    {mat.name}
+                                  </span>
+                                  {mat.unit && (
+                                    <span className="material-unit">
+                                      ({mat.unit})
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+          {/* Stages Section - from method.methodStages */}
+          {log.method?.methodStages && log.method.methodStages.length > 0 && (
+            <section ref={stagesCardRef} className="stages-card">
+              <h2 className="stages-title">
+                {t("experimentLog.stages") || "Các giai đoạn"}
+              </h2>
+              <div className="stages-grid">
+                {log.method.methodStages
+                  .sort((a, b) => a.order - b.order)
+                  .map((stage) => {
+                    const isCurrentStage =
+                      stage.order === log.currentStageOrder;
+                    return (
+                      <div
+                        key={stage.id}
+                        className={`stage-card ${isCurrentStage ? "current" : "normal"}`}
                       >
-                        <FaSeedling style={{ fontSize: "10px" }} />
-                        {stage.isSampleGenerated
-                          ? t("experimentLog.canGenerateSample") || "Sinh chồi"
-                          : t("experimentLog.noSampleGeneration") ||
-                            "Không sinh chồi"}
+                        <div className="stage-header">
+                          <span
+                            className={`stage-number ${isCurrentStage ? "current" : "normal"}`}
+                          >
+                            {stage.order}
+                          </span>
+                          <span className="stage-name">
+                            {stage.stageDefinition?.name ||
+                              t("experimentLog.notAvailable")}
+                          </span>
+                          {isCurrentStage && (
+                            <span className="current-badge">
+                              {t("experimentLog.currentStage") || "Hiện tại"}
+                            </span>
+                          )}
+                        </div>
+                        {stage.stageDefinition?.description && (
+                          <p className="stage-description">
+                            {stage.stageDefinition.description}
+                          </p>
+                        )}
+                        <div className="stage-tags">
+                          {stage.durationsDays && (
+                            <span className="stage-tag">
+                              {t("experimentLog.duration") || "Thời gian"}:{" "}
+                              {stage.durationsDays} {t("common.days") || "ngày"}
+                            </span>
+                          )}
+                          {/* isSampleGenerated indicator */}
+                          <span
+                            className={`stage-tag sample-generation ${stage.isSampleGenerated ? "enabled" : "disabled"}`}
+                          >
+                            <FaSeedling style={{ fontSize: "10px" }} />
+                            {stage.isSampleGenerated
+                              ? t("experimentLog.canGenerateSample") ||
+                                "Sinh chồi"
+                              : t("experimentLog.noSampleGeneration") ||
+                                "Không sinh chồi"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </section>
+          )}
+
+          <section ref={samplesCardRef} className="samples-card">
+            <h2 className="samples-title">
+              {t("experimentLog.sampleList") || "Danh sách mẫu vật"}
+            </h2>
+            {samples.length === 0 ? (
+              <div className="samples-empty">
+                {t("experimentLog.noSamples") || "Chưa có mẫu vật nào"}
+              </div>
+            ) : (
+              <div className="samples-grid">
+                {samples.map((sample) => (
+                  <div
+                    key={sample.id}
+                    className="sample-card"
+                    onClick={() =>
+                      navigate(`/samples/${sample.id}`, {
+                        state: {
+                          from: "researcherExperimentLogDetail",
+                          experimentLogId: id,
+                        },
+                      })
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="sample-name">{sample.name}</div>
+                    {sample.description && (
+                      <div className="sample-description">
+                        {sample.description}
+                      </div>
+                    )}
+                    {sample.dob && (
+                      <div className="sample-date">
+                        {t("experimentLog.dateCreated") || "Ngày tạo"}:{" "}
+                        {formatDate(sample.dob)}
+                      </div>
+                    )}
+                    <div className="sample-status">
+                      <span
+                        className={getStatusColor(
+                          sample.status ?? sample.statusEnum,
+                        )}
+                      >
+                        {getStatusDisplay(sample.status ?? sample.statusEnum)}
                       </span>
                     </div>
                   </div>
-                );
-              })}
-          </div>
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Disease Incidents Section */}
+          <section className="samples-card" style={{ marginTop: "1.5rem" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                marginBottom: "1rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <h2 className="samples-title" style={{ margin: 0 }}>
+                {t("diseaseIncident.title")}
+              </h2>
+              {incidents.some(
+                (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
+              ) && (
+                <span
+                  style={{
+                    background: "#ef4444",
+                    color: "#fff",
+                    borderRadius: "999px",
+                    padding: "2px 10px",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  ● {t("diseaseIncident.badge")}
+                </span>
+              )}
+              <div
+                style={{ marginLeft: "auto", display: "flex", gap: "0.5rem" }}
+              >
+                <select
+                  value={incidentStatusFilter ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setIncidentStatusFilter(
+                      val === ""
+                        ? undefined
+                        : (Number(val) as DiseaseIncidentStatus),
+                    );
+                  }}
+                  style={{
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    padding: "4px 10px",
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <option value="">{t("diseaseIncident.filterAll")}</option>
+                  <option value={DiseaseIncidentStatus.AIDetected}>
+                    {t("diseaseIncident.statusAIDetected")}
+                  </option>
+                  <option value={DiseaseIncidentStatus.UnderReview}>
+                    {t("diseaseIncident.statusUnderReview")}
+                  </option>
+                  <option value={DiseaseIncidentStatus.Confirmed}>
+                    {t("diseaseIncident.statusConfirmed")}
+                  </option>
+                  <option value={DiseaseIncidentStatus.Dismissed}>
+                    {t("diseaseIncident.statusDismissed")}
+                  </option>
+                </select>
+                <button
+                  type="button"
+                  className="btn-start"
+                  style={{ minWidth: 80 }}
+                  onClick={() => void fetchIncidents()}
+                  disabled={incidentsLoading}
+                >
+                  {incidentsLoading ? t("common.loading") : t("common.filter")}
+                </button>
+              </div>
+            </div>
+
+            {incidentsError && (
+              <p
+                style={{
+                  color: "#ef4444",
+                  fontSize: "0.875rem",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {incidentsError}
+              </p>
+            )}
+
+            {incidentsLoading ? (
+              <div className="loading-state" style={{ padding: "1.5rem 0" }}>
+                {t("common.loadingData")}
+              </div>
+            ) : incidents.length === 0 ? (
+              <div className="samples-empty">
+                {t("diseaseIncident.noIncidents")}
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: "#f9fafb",
+                        borderBottom: "2px solid #e5e7eb",
+                      }}
+                    >
+                      <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                        {t("diseaseIncident.sampleName")}
+                      </th>
+                      <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                        {t("diseaseIncident.diseaseName")}
+                      </th>
+                      <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                        {t("diseaseIncident.aiConfidence")}
+                      </th>
+                      <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                        {t("diseaseIncident.status")}
+                      </th>
+                      <th style={{ padding: "10px 12px", textAlign: "left" }}>
+                        {t("diseaseIncident.action")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {incidents.map((inc) => (
+                      <tr
+                        key={inc.id}
+                        style={{ borderBottom: "1px solid #f3f4f6" }}
+                      >
+                        <td style={{ padding: "10px 12px" }}>
+                          {inc.sampleName}
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          {inc.diseaseName}
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color:
+                                inc.aiConfidence >= 0.8
+                                  ? "#ef4444"
+                                  : inc.aiConfidence >= 0.5
+                                    ? "#f59e0b"
+                                    : "#6b7280",
+                            }}
+                          >
+                            {(inc.aiConfidence * 100).toFixed(1)}%
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <span className={getIncidentStatusClass(inc.status)}>
+                            {getIncidentStatusLabel(inc.status)}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px" }}>
+                          {(inc.status === DiseaseIncidentStatus.AIDetected ||
+                            inc.status ===
+                              DiseaseIncidentStatus.UnderReview) && (
+                            <button
+                              type="button"
+                              className="btn-start"
+                              style={{ minWidth: 90, fontSize: "0.82rem" }}
+                              onClick={() => openReviewModal(inc)}
+                            >
+                              {t("diseaseIncident.review")}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
       )}
 
-      <section ref={samplesCardRef} className="samples-card">
-        <h2 className="samples-title">
-          {t("experimentLog.sampleList") || "Danh sách mẫu vật"}
-        </h2>
-        {samples.length === 0 ? (
-          <div className="samples-empty">
-            {t("experimentLog.noSamples") || "Chưa có mẫu vật nào"}
-          </div>
-        ) : (
-          <div className="samples-grid">
-            {samples.map((sample) => (
-              <div
-                key={sample.id}
-                className="sample-card"
-                onClick={() =>
-                  navigate(`/samples/${sample.id}`, {
-                    state: {
-                      from: "researcherExperimentLogDetail",
-                      experimentLogId: id,
-                    },
-                  })
-                }
-                style={{ cursor: "pointer" }}
-              >
-                <div className="sample-name">{sample.name}</div>
-                {sample.description && (
-                  <div className="sample-description">{sample.description}</div>
-                )}
-                {sample.dob && (
-                  <div className="sample-date">
-                    {t("experimentLog.dateCreated") || "Ngày tạo"}:{" "}
-                    {formatDate(sample.dob)}
-                  </div>
-                )}
-                <div className="sample-status">
-                  <span
-                    className={getStatusColor(
-                      sample.status ?? sample.statusEnum,
-                    )}
-                  >
-                    {getStatusDisplay(sample.status ?? sample.statusEnum)}
+      {activeTab === "summary" && (
+        <section className="summary-section">
+          {summaryLoading && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                color: "#6b7280",
+              }}
+            >
+              Đang tải tổng quan...
+            </div>
+          )}
+          {summaryError && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px 0",
+                color: "#dc2626",
+              }}
+            >
+              {summaryError}
+            </div>
+          )}
+          {!summaryLoading && !summaryError && summary && (
+            <>
+              {/* Stat cards */}
+              <div className="summary-stat-cards">
+                <div className="summary-stat-card">
+                  <span className="summary-stat-label">Tổng số mẫu</span>
+                  <span className="summary-stat-value">
+                    {summary.totalSamples}
+                  </span>
+                </div>
+                <div className="summary-stat-card green">
+                  <span className="summary-stat-label">Còn sống</span>
+                  <span className="summary-stat-value">
+                    {summary.aliveSamples}
+                  </span>
+                </div>
+                <div className="summary-stat-card red">
+                  <span className="summary-stat-label">Nhiễm bệnh</span>
+                  <span className="summary-stat-value">
+                    {summary.infectedSamples}
+                  </span>
+                </div>
+                <div className="summary-stat-card blue">
+                  <span className="summary-stat-label">Tỉ lệ sống</span>
+                  <span className="summary-stat-value">
+                    {summary.survivalRate.toFixed(1)}%
                   </span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
 
-      {/* Disease Incidents Section */}
-      <section className="samples-card" style={{ marginTop: "1.5rem" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            marginBottom: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <h2 className="samples-title" style={{ margin: 0 }}>
-            {t("diseaseIncident.title")}
-          </h2>
-          {incidents.some(
-            (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
-          ) && (
-            <span
-              style={{
-                background: "#ef4444",
-                color: "#fff",
-                borderRadius: "999px",
-                padding: "2px 10px",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-              }}
-            >
-              ● {t("diseaseIncident.badge")}
-            </span>
-          )}
-          <div style={{ marginLeft: "auto", display: "flex", gap: "0.5rem" }}>
-            <select
-              value={incidentStatusFilter ?? ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                setIncidentStatusFilter(
-                  val === ""
-                    ? undefined
-                    : (Number(val) as DiseaseIncidentStatus),
-                );
-              }}
-              style={{
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                padding: "4px 10px",
-                fontSize: "0.875rem",
-                cursor: "pointer",
-              }}
-            >
-              <option value="">{t("diseaseIncident.filterAll")}</option>
-              <option value={DiseaseIncidentStatus.AIDetected}>
-                {t("diseaseIncident.statusAIDetected")}
-              </option>
-              <option value={DiseaseIncidentStatus.UnderReview}>
-                {t("diseaseIncident.statusUnderReview")}
-              </option>
-              <option value={DiseaseIncidentStatus.Confirmed}>
-                {t("diseaseIncident.statusConfirmed")}
-              </option>
-              <option value={DiseaseIncidentStatus.Dismissed}>
-                {t("diseaseIncident.statusDismissed")}
-              </option>
-            </select>
-            <button
-              type="button"
-              className="btn-start"
-              style={{ minWidth: 80 }}
-              onClick={() => void fetchIncidents()}
-              disabled={incidentsLoading}
-            >
-              {incidentsLoading ? t("common.loading") : t("common.filter")}
-            </button>
-          </div>
-        </div>
+              {/* Progress bar */}
+              <div className="summary-progress-section">
+                <div className="summary-progress-label">
+                  Tiến độ: {summary.progressRate.toFixed(1)}% so với mục tiêu (
+                  {summary.expectedSamples} mẫu)
+                </div>
+                <div className="summary-progress-bar-bg">
+                  <div
+                    className="summary-progress-bar-fill"
+                    style={{ width: `${Math.min(summary.progressRate, 100)}%` }}
+                  />
+                </div>
+              </div>
 
-        {incidentsError && (
-          <p
-            style={{
-              color: "#ef4444",
-              fontSize: "0.875rem",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {incidentsError}
-          </p>
-        )}
-
-        {incidentsLoading ? (
-          <div className="loading-state" style={{ padding: "1.5rem 0" }}>
-            {t("common.loadingData")}
-          </div>
-        ) : incidents.length === 0 ? (
-          <div className="samples-empty">
-            {t("diseaseIncident.noIncidents")}
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "0.9rem",
-              }}
-            >
-              <thead>
-                <tr
-                  style={{
-                    background: "#f9fafb",
-                    borderBottom: "2px solid #e5e7eb",
-                  }}
-                >
-                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
-                    {t("diseaseIncident.sampleName")}
-                  </th>
-                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
-                    {t("diseaseIncident.diseaseName")}
-                  </th>
-                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
-                    {t("diseaseIncident.aiConfidence")}
-                  </th>
-                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
-                    {t("diseaseIncident.status")}
-                  </th>
-                  <th style={{ padding: "10px 12px", textAlign: "left" }}>
-                    {t("diseaseIncident.action")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {incidents.map((inc) => (
-                  <tr
-                    key={inc.id}
-                    style={{ borderBottom: "1px solid #f3f4f6" }}
-                  >
-                    <td style={{ padding: "10px 12px" }}>{inc.sampleName}</td>
-                    <td style={{ padding: "10px 12px" }}>{inc.diseaseName}</td>
-                    <td style={{ padding: "10px 12px" }}>
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          color:
-                            inc.aiConfidence >= 0.8
-                              ? "#ef4444"
-                              : inc.aiConfidence >= 0.5
-                                ? "#f59e0b"
-                                : "#6b7280",
+              {/* Bottom row: stage chart + monitoring log stats */}
+              <div className="summary-bottom-row">
+                <div className="summary-chart-section">
+                  <span className="summary-section-title">
+                    Phân bố giai đoạn
+                  </span>
+                  {summary.stageDistribution.length > 0 ? (
+                    <div style={{ width: 260, height: 260 }}>
+                      <Doughnut
+                        data={{
+                          labels: summary.stageDistribution.map(
+                            (s) => s.stageName,
+                          ),
+                          datasets: [
+                            {
+                              data: summary.stageDistribution.map(
+                                (s) => s.sampleCount,
+                              ),
+                              backgroundColor: [
+                                "#16a34a",
+                                "#2563eb",
+                                "#f59e0b",
+                                "#ef4444",
+                                "#8b5cf6",
+                                "#06b6d4",
+                                "#f97316",
+                              ],
+                              borderWidth: 2,
+                            },
+                          ],
                         }}
+                        options={{
+                          responsive: true,
+                          plugins: { legend: { position: "bottom" } },
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <p style={{ color: "#6b7280", fontSize: "0.9rem" }}>
+                      Không có dữ liệu
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="summary-section-title">Phiếu theo dõi</h4>
+                  <div className="summary-monitoring-cards">
+                    <div className="summary-monitoring-card">
+                      <span className="summary-monitoring-card-label">
+                        Tổng phiếu
+                      </span>
+                      <span className="summary-monitoring-card-value">
+                        {summary.totalMonitoringLogs}
+                      </span>
+                    </div>
+                    <div className="summary-monitoring-card">
+                      <span className="summary-monitoring-card-label">
+                        Chờ duyệt
+                      </span>
+                      <span
+                        className="summary-monitoring-card-value"
+                        style={{ color: "#f59e0b" }}
                       >
-                        {(inc.aiConfidence * 100).toFixed(1)}%
+                        {summary.pendingApprovalLogs}
                       </span>
-                    </td>
-                    <td style={{ padding: "10px 12px" }}>
-                      <span className={getIncidentStatusClass(inc.status)}>
-                        {getIncidentStatusLabel(inc.status)}
+                    </div>
+                    <div className="summary-monitoring-card">
+                      <span className="summary-monitoring-card-label">
+                        Bị từ chối
                       </span>
-                    </td>
-                    <td style={{ padding: "10px 12px" }}>
-                      {(inc.status === DiseaseIncidentStatus.AIDetected ||
-                        inc.status === DiseaseIncidentStatus.UnderReview) && (
-                        <button
-                          type="button"
-                          className="btn-start"
-                          style={{ minWidth: 90, fontSize: "0.82rem" }}
-                          onClick={() => openReviewModal(inc)}
-                        >
-                          {t("diseaseIncident.review")}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+                      <span
+                        className="summary-monitoring-card-value"
+                        style={{ color: "#dc2626" }}
+                      >
+                        {summary.rejectedLogs}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       {isChangeStageModalOpen && (
         <div className="modal-backdrop" onClick={closeChangeStageModal}>

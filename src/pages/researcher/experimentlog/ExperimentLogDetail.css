@@ -1042,3 +1042,229 @@ body[data-sidebar-collapsed="true"] #experimentlog-detail {
   background: #374151;
   color: #9ca3af;
 }
+
+/* ── Summary Dashboard Tab ─────────────────────────────── */
+
+#experimentlog-detail .tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+#experimentlog-detail .tab-btn {
+  padding: 10px 28px;
+  font-size: 0.97rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+#experimentlog-detail .tab-btn:hover {
+  color: #374151;
+}
+
+#experimentlog-detail .tab-btn.active {
+  color: #16a34a;
+  border-bottom-color: #16a34a;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .tab-bar {
+  border-bottom-color: #374151;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .tab-btn {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .tab-btn:hover {
+  color: #e5e7eb;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .tab-btn.active {
+  color: #4ade80;
+  border-bottom-color: #4ade80;
+}
+
+/* Stat cards row */
+#experimentlog-detail .summary-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+#experimentlog-detail .summary-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#experimentlog-detail .summary-stat-label {
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+#experimentlog-detail .summary-stat-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+#experimentlog-detail .summary-stat-card.green .summary-stat-value {
+  color: #16a34a;
+}
+
+#experimentlog-detail .summary-stat-card.red .summary-stat-value {
+  color: #dc2626;
+}
+
+#experimentlog-detail .summary-stat-card.blue .summary-stat-value {
+  color: #2563eb;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-stat-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-stat-label {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-stat-value {
+  color: #f9fafb;
+}
+
+/* Progress bar */
+#experimentlog-detail .summary-progress-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-progress-section {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+#experimentlog-detail .summary-progress-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-progress-label {
+  color: #e5e7eb;
+}
+
+#experimentlog-detail .summary-progress-bar-bg {
+  height: 14px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-progress-bar-bg {
+  background: #374151;
+}
+
+#experimentlog-detail .summary-progress-bar-fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 99px;
+  transition: width 0.5s ease;
+}
+
+/* Bottom row: chart + monitoring logs */
+#experimentlog-detail .summary-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+#experimentlog-detail .summary-chart-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-chart-section {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+#experimentlog-detail .summary-section-title {
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  align-self: flex-start;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-section-title {
+  color: #e5e7eb;
+}
+
+#experimentlog-detail .summary-monitoring-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#experimentlog-detail .summary-monitoring-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-monitoring-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+#experimentlog-detail .summary-monitoring-card-label {
+  font-size: 0.88rem;
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-monitoring-card-label {
+  color: #9ca3af;
+}
+
+#experimentlog-detail .summary-monitoring-card-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+:root[data-theme='dark'] #experimentlog-detail .summary-monitoring-card-value {
+  color: #f9fafb;
+}
