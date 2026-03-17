@@ -13,6 +13,12 @@ import type {
 } from "../../../types/Sample";
 import { SampleStatus as SampleStatusValue } from "../../../types/Sample";
 import type { UserApiResponse } from "../../../types/Auth";
+import {
+  getDiseaseIncidents,
+  reviewDiseaseIncident,
+} from "../../../api/diseaseIncidentApi";
+import type { DiseaseIncident } from "../../../types/DiseaseIncident";
+import { DiseaseIncidentStatus } from "../../../types/DiseaseIncident";
 
 type PredefinedStage = {
   order: number;
@@ -64,7 +70,7 @@ const formatDate = (value?: string | null): string => {
 };
 
 const normalizeStageList = (
-  sampleStageDto: SampleDetail["sampleStageDto"]
+  sampleStageDto: SampleDetail["sampleStageDto"],
 ): SampleStageDetail[] => {
   if (!sampleStageDto) return [];
   if (Array.isArray(sampleStageDto)) return sampleStageDto;
@@ -78,8 +84,12 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   }
 
   const baseUrl = axiosInstance.defaults.baseURL ?? "";
-  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-  const normalizedImageUrl = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  const normalizedBaseUrl = baseUrl.endsWith("/")
+    ? baseUrl.slice(0, -1)
+    : baseUrl;
+  const normalizedImageUrl = imageUrl.startsWith("/")
+    ? imageUrl
+    : `/${imageUrl}`;
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
@@ -92,7 +102,10 @@ const normalizeText = (value?: string | null): string => {
     .trim();
 };
 
-const isStageMatched = (stage: SampleStageDetail, predefinedStage: PredefinedStage): boolean => {
+const isStageMatched = (
+  stage: SampleStageDetail,
+  predefinedStage: PredefinedStage,
+): boolean => {
   if (stage.sampleStageDefinition?.order === predefinedStage.order) {
     return true;
   }
@@ -102,7 +115,8 @@ const isStageMatched = (stage: SampleStageDetail, predefinedStage: PredefinedSta
 
   return predefinedStage.keywords.some(
     (keyword) =>
-      stageDefinitionName.includes(keyword) || currentSampleStage.includes(keyword)
+      stageDefinitionName.includes(keyword) ||
+      currentSampleStage.includes(keyword),
   );
 };
 
@@ -114,17 +128,22 @@ export default function TechDetailSample() {
   const { t } = useTranslation();
 
   // Get navigation source from location state
-  const navigationSource = location.state as { from?: 'experimentLogDetail' | 'sampleList'; experimentLogId?: string } | null;
+  const navigationSource = location.state as {
+    from?: "experimentLogDetail" | "sampleList";
+    experimentLogId?: string;
+  } | null;
 
   const [sample, setSample] = useState<SampleDetail | null>(null);
-  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>(
-    {}
-  );
+  const [experimentLogMap, setExperimentLogMap] = useState<
+    Record<string, string>
+  >({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(
+    null,
+  );
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -133,10 +152,24 @@ export default function TechDetailSample() {
   const [destroyReason, setDestroyReason] = useState("");
   const [isDestroying, setIsDestroying] = useState(false);
 
+  // --- Disease Incidents state ---
+  const [incidents, setIncidents] = useState<DiseaseIncident[]>([]);
+  const [incidentsLoading, setIncidentsLoading] = useState(false);
+  const [incidentsError, setIncidentsError] = useState<string | null>(null);
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState<
+    DiseaseIncidentStatus | undefined
+  >(undefined);
+  const [reviewingIncident, setReviewingIncident] =
+    useState<DiseaseIncident | null>(null);
+  const [reviewIsConfirmed, setReviewIsConfirmed] = useState(true);
+  const [reviewNote, setReviewNote] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
   const stageNameMap: Record<string, string> = {
-    "coppice": "Chồi",
-    "tissue": "Mầm",
-    "tree": "Cây hoàn chỉnh"
+    coppice: "Chồi",
+    tissue: "Mầm",
+    tree: "Cây hoàn chỉnh",
   };
 
   useEffect(() => {
@@ -146,15 +179,16 @@ export default function TechDetailSample() {
       setError(null);
 
       try {
-        const [sampleResponse, experimentLogsResponse, usersResponse] = await Promise.all([
-          axiosInstance.get(`/api/samples/${id}`),
-          axiosInstance.get<ExperimentLogApiResponse>(
-            "/api/experiment-logs?PageNo=1&PageSize=1000"
-          ),
-          axiosInstance.get<UserApiResponse>(
-            "/api/user?PageNumber=1&PageSize=1000"
-          ),
-        ]);
+        const [sampleResponse, experimentLogsResponse, usersResponse] =
+          await Promise.all([
+            axiosInstance.get(`/api/samples/${id}`),
+            axiosInstance.get<ExperimentLogApiResponse>(
+              "/api/experiment-logs?PageNo=1&PageSize=1000",
+            ),
+            axiosInstance.get<UserApiResponse>(
+              "/api/user?PageNumber=1&PageSize=1000",
+            ),
+          ]);
 
         const sampleData = (sampleResponse?.data?.value ??
           sampleResponse?.data) as SampleDetail;
@@ -185,11 +219,100 @@ export default function TechDetailSample() {
     void load();
   }, [id, enqueueSnackbar]);
 
+  // Fetch incidents whenever the sample's experimentLogId or filter changes
+  useEffect(() => {
+    const expLogId = sample?.experimentLogId;
+    if (!expLogId) return;
+
+    setIncidentsLoading(true);
+    setIncidentsError(null);
+    getDiseaseIncidents({
+      experimentLogId: expLogId,
+      status: incidentStatusFilter,
+    })
+      .then((data) => setIncidents(data.items ?? []))
+      .catch(() => setIncidentsError(t("diseaseIncident.loadError")))
+      .finally(() => setIncidentsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sample?.experimentLogId, incidentStatusFilter]);
+
+  const openReviewModal = (incident: DiseaseIncident) => {
+    setReviewingIncident(incident);
+    setReviewIsConfirmed(true);
+    setReviewNote("");
+    setReviewError(null);
+  };
+
+  const closeReviewModal = () => {
+    if (reviewSubmitting) return;
+    setReviewingIncident(null);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewingIncident) return;
+    setReviewSubmitting(true);
+    setReviewError(null);
+    try {
+      await reviewDiseaseIncident(reviewingIncident.id, {
+        isConfirmed: reviewIsConfirmed,
+        note: reviewNote.trim() || undefined,
+      });
+      setReviewingIncident(null);
+      const expLogId = sample?.experimentLogId;
+      if (expLogId) {
+        const data = await getDiseaseIncidents({
+          experimentLogId: expLogId,
+          status: incidentStatusFilter,
+        });
+        setIncidents(data.items ?? []);
+      }
+    } catch {
+      setReviewError(t("common.error"));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const getIncidentStatusLabel = (status: DiseaseIncidentStatus): string => {
+    switch (status) {
+      case DiseaseIncidentStatus.AIDetected:
+        return t("diseaseIncident.statusAIDetected");
+      case DiseaseIncidentStatus.UnderReview:
+        return t("diseaseIncident.statusUnderReview");
+      case DiseaseIncidentStatus.Confirmed:
+        return t("diseaseIncident.statusConfirmed");
+      case DiseaseIncidentStatus.Dismissed:
+        return t("diseaseIncident.statusDismissed");
+      default:
+        return String(status);
+    }
+  };
+
+  const getIncidentStatusClass = (status: DiseaseIncidentStatus): string => {
+    switch (status) {
+      case DiseaseIncidentStatus.AIDetected:
+        return "px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700";
+      case DiseaseIncidentStatus.UnderReview:
+        return "px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800";
+      case DiseaseIncidentStatus.Confirmed:
+        return "px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700";
+      case DiseaseIncidentStatus.Dismissed:
+        return "px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600";
+      default:
+        return "px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600";
+    }
+  };
+
   const handleBack = () => {
     // Navigate back to the source page based on location state
-    if (navigationSource?.from === 'experimentLogDetail' && navigationSource.experimentLogId) {
-      navigate(`/technician/experiment-log/${navigationSource.experimentLogId}`);
-    } else if (navigationSource?.from === 'sampleList') {
+    if (
+      navigationSource?.from === "experimentLogDetail" &&
+      navigationSource.experimentLogId
+    ) {
+      navigate(
+        `/technician/experiment-log/${navigationSource.experimentLogId}`,
+      );
+    } else if (navigationSource?.from === "sampleList") {
       navigate("/technician/samples");
     } else {
       // Default fallback to sample list
@@ -230,7 +353,7 @@ export default function TechDetailSample() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       const analysisEnd = performance.now();
       const analysisTime = Math.round(analysisEnd - analysisStart);
@@ -262,7 +385,11 @@ export default function TechDetailSample() {
     const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
     const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
 
-    if (diseaseCode.includes("healthy") || diseaseName.includes("healthy") || diseaseName.includes("khỏe")) {
+    if (
+      diseaseCode.includes("healthy") ||
+      diseaseName.includes("healthy") ||
+      diseaseName.includes("khỏe")
+    ) {
       return true;
     }
 
@@ -277,7 +404,8 @@ export default function TechDetailSample() {
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
 
-    const finalReason = destroyReason.trim() || `Mẫu vật nhiễm ${analysisResult.disease.name}`;
+    const finalReason =
+      destroyReason.trim() || `Mẫu vật nhiễm ${analysisResult.disease.name}`;
     setIsDestroying(true);
 
     try {
@@ -303,9 +431,11 @@ export default function TechDetailSample() {
       [SampleStatusValue.InProgressed]: t("sample.statusInProgressed"),
       [SampleStatusValue.Completed]: t("sample.statusCompleted"),
       [SampleStatusValue.ExecutedBecauseOfDisease]: t(
-        "sample.statusExecutedBecauseOfDisease"
+        "sample.statusExecutedBecauseOfDisease",
       ),
-      [SampleStatusValue.ConvertedToSeedling]: t("sample.statusConvertedToSeedling"),
+      [SampleStatusValue.ConvertedToSeedling]: t(
+        "sample.statusConvertedToSeedling",
+      ),
     };
     return statusMap[status] || status;
   };
@@ -314,24 +444,35 @@ export default function TechDetailSample() {
     if (!sample) return [];
 
     return [
-      { label: t("sample.createdBy"), value: userMap[sample.createdBy ?? ""] || sample.createdBy || "" },
+      {
+        label: t("sample.createdBy"),
+        value: userMap[sample.createdBy ?? ""] || sample.createdBy || "",
+      },
       { label: t("sample.createdDate"), value: formatDate(sample.createdDate) },
-      { label: t("sample.updatedBy"), value: userMap[sample.updatedBy ?? ""] || sample.updatedBy || "" },
+      {
+        label: t("sample.updatedBy"),
+        value: userMap[sample.updatedBy ?? ""] || sample.updatedBy || "",
+      },
       { label: t("sample.updatedDate"), value: formatDate(sample.updatedDate) },
-      { label: t("sample.executionDate"), value: formatDate(sample.executionDate) },
+      {
+        label: t("sample.executionDate"),
+        value: formatDate(sample.executionDate),
+      },
     ].filter((item) => item.value);
   }, [sample, userMap, t]);
 
   const sampleStages = useMemo(
     () => normalizeStageList(sample?.sampleStageDto ?? null),
-    [sample?.sampleStageDto]
+    [sample?.sampleStageDto],
   );
 
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
 
     return [...sampleStages].sort(
-      (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
+      (a, b) =>
+        new Date(b.startAt ?? "").getTime() -
+        new Date(a.startAt ?? "").getTime(),
     )[0];
   }, [sampleStages]);
 
@@ -344,7 +485,7 @@ export default function TechDetailSample() {
 
     return PREDEFINED_STAGES.map((predefinedStage) => {
       const matchedStage = sampleStages.find((stage) =>
-        isStageMatched(stage, predefinedStage)
+        isStageMatched(stage, predefinedStage),
       );
       const hasReport = (matchedStage?.logDetailDtos?.length ?? 0) > 0;
       const stageImageUrl = resolveImageUrl(matchedStage?.latestImageUrl);
@@ -395,7 +536,9 @@ export default function TechDetailSample() {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || "Không tìm thấy dữ liệu"}</p>
+          <p className="text-red-600 mb-4">
+            {error || "Không tìm thấy dữ liệu"}
+          </p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
@@ -411,7 +554,9 @@ export default function TechDetailSample() {
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
       <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
+          <h2 className="text-2xl font-semibold">
+            Chi tiết mẫu thí nghiệm: {sample.name}
+          </h2>
           <div className="flex gap-3">
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
               <button
@@ -466,11 +611,14 @@ export default function TechDetailSample() {
             <div className="flex flex-col">
               <label className="font-medium mb-1.5">Thí nghiệm</label>
               <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {experimentLogMap[sample.experimentLogId] || sample.experimentLogId}
+                {experimentLogMap[sample.experimentLogId] ||
+                  sample.experimentLogId}
               </div>
             </div>
             <div className="flex flex-col">
-              <label className="font-medium mb-1.5">Giai đoạn phát triển hiện tại</label>
+              <label className="font-medium mb-1.5">
+                Giai đoạn phát triển hiện tại
+              </label>
               <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
                 {currentStageLabel}
               </div>
@@ -485,7 +633,9 @@ export default function TechDetailSample() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.stageProgress.title")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.stageProgress.title")}
+          </h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {stageProgressRows.map((row) => {
               const {
@@ -498,7 +648,10 @@ export default function TechDetailSample() {
                 progressClass,
               } = row;
               return (
-                <article key={predefinedStage.order} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
+                <article
+                  key={predefinedStage.order}
+                  className="border border-gray-200 rounded-lg p-4 bg-white h-full"
+                >
                   <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
                     <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
                       {predefinedStage.order}. {t(predefinedStage.nameKey)}
@@ -510,7 +663,9 @@ export default function TechDetailSample() {
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">{t(predefinedStage.descriptionKey)}</p>
+                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">
+                    {t(predefinedStage.descriptionKey)}
+                  </p>
 
                   <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
                     {hasImage ? (
@@ -529,33 +684,54 @@ export default function TechDetailSample() {
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.standardDuration")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.standardDuration")}
+                      </span>
                       <span className="text-gray-800 font-medium">
-                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays} {t("common.days")}
+                        {predefinedStage.minDurationDays} -{" "}
+                        {predefinedStage.maxDurationDays} {t("common.days")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.actualStartDate")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.actualStartDate")}
+                      </span>
                       <span className="text-gray-800 font-medium">
                         {formatDate(matchedStage?.startAt) || "-"}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.report")}</span>
-                      <span className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}>
-                        {hasReport ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.report")}
+                      </span>
+                      <span
+                        className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}
+                      >
+                        {hasReport
+                          ? t("sample.stageProgress.available")
+                          : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.stageImage")}</span>
-                      <span className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}>
-                        {hasImage ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.stageImage")}
+                      </span>
+                      <span
+                        className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}
+                      >
+                        {hasImage
+                          ? t("sample.stageProgress.available")
+                          : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.systemStatus")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.systemStatus")}
+                      </span>
                       <span className="text-gray-800 font-medium">
-                        {matchedStage?.status ? getStatusLabel(matchedStage.status) : "-"}
+                        {matchedStage?.status
+                          ? getStatusLabel(matchedStage.status)
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -566,7 +742,9 @@ export default function TechDetailSample() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.latestImageTitle")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.latestImageTitle")}
+          </h3>
           {!latestImageUrl ? (
             <p className="text-sm text-gray-500">{t("sample.noLatestImage")}</p>
           ) : (
@@ -586,7 +764,9 @@ export default function TechDetailSample() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.currentStageReportTitle")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.currentStageReportTitle")}
+          </h3>
           {reportRows.length === 0 ? (
             <p className="text-sm text-gray-500">Không có dữ liệu báo cáo</p>
           ) : (
@@ -594,13 +774,27 @@ export default function TechDetailSample() {
               <table className="w-full min-w-[760px]">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">STT</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Chỉ số</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Giá trị đo</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Kỳ vọng</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Khoảng chuẩn</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Đơn vị</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Kết quả</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      STT
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Chỉ số
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Giá trị đo
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Kỳ vọng
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Khoảng chuẩn
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Đơn vị
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Kết quả
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -610,14 +804,24 @@ export default function TechDetailSample() {
 
                     return (
                       <tr key={row.id} className="border-b">
-                        <td className="p-3 text-sm text-gray-800">{index + 1}</td>
-                        <td className="p-3 text-sm text-gray-800">{sampleReq.name}</td>
-                        <td className="p-3 text-sm text-gray-800">{row.measuredValue}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.expectedValue}</td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {index + 1}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {sampleReq.name}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {row.measuredValue}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.expectedValue}
+                        </td>
                         <td className="p-3 text-sm text-gray-800">
                           {req.minValue} - {req.maxValue}
                         </td>
-                        <td className="p-3 text-sm text-gray-800">{sampleReq.unit || "-"}</td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {sampleReq.unit || "-"}
+                        </td>
                         <td className="p-3 text-sm">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -649,11 +853,139 @@ export default function TechDetailSample() {
         </div>
       </div>
 
+      {/* Disease Incidents panel — outside the white card, full-width */}
+      {sample?.experimentLogId && (
+        <div className="w-full max-w-[1200px] mx-auto mt-6 bg-white rounded-xl px-8 py-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <h3 className="text-lg font-semibold m-0">
+              {t("diseaseIncident.title")}
+            </h3>
+            {incidents.some(
+              (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
+            ) && (
+              <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">
+                ● {t("diseaseIncident.badge")}
+              </span>
+            )}
+            <div className="ml-auto flex gap-2">
+              <select
+                value={incidentStatusFilter ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setIncidentStatusFilter(
+                    val === ""
+                      ? undefined
+                      : (Number(val) as DiseaseIncidentStatus),
+                  );
+                }}
+                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+              >
+                <option value="">{t("diseaseIncident.filterAll")}</option>
+                <option value={DiseaseIncidentStatus.AIDetected}>
+                  {t("diseaseIncident.statusAIDetected")}
+                </option>
+                <option value={DiseaseIncidentStatus.UnderReview}>
+                  {t("diseaseIncident.statusUnderReview")}
+                </option>
+                <option value={DiseaseIncidentStatus.Confirmed}>
+                  {t("diseaseIncident.statusConfirmed")}
+                </option>
+                <option value={DiseaseIncidentStatus.Dismissed}>
+                  {t("diseaseIncident.statusDismissed")}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          {incidentsError && (
+            <p className="text-sm text-red-500 mb-3">{incidentsError}</p>
+          )}
+
+          {incidentsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : incidents.length === 0 ? (
+            <p className="text-sm text-gray-500 py-4">
+              {t("diseaseIncident.noIncidents")}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px]">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      {t("diseaseIncident.sampleName")}
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      {t("diseaseIncident.diseaseName")}
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      {t("diseaseIncident.aiConfidence")}
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      {t("diseaseIncident.status")}
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      {t("diseaseIncident.action")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {incidents.map((inc) => (
+                    <tr key={inc.id} className="border-b">
+                      <td className="p-3 text-sm text-gray-800">
+                        {inc.sampleName}
+                      </td>
+                      <td className="p-3 text-sm text-gray-800">
+                        {inc.diseaseName}
+                      </td>
+                      <td className="p-3 text-sm font-semibold">
+                        <span
+                          className={
+                            inc.aiConfidence >= 0.8
+                              ? "text-red-600"
+                              : inc.aiConfidence >= 0.5
+                                ? "text-yellow-600"
+                                : "text-gray-500"
+                          }
+                        >
+                          {(inc.aiConfidence * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">
+                        <span className={getIncidentStatusClass(inc.status)}>
+                          {getIncidentStatusLabel(inc.status)}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm">
+                        {(inc.status === DiseaseIncidentStatus.AIDetected ||
+                          inc.status === DiseaseIncidentStatus.UnderReview) && (
+                          <button
+                            type="button"
+                            onClick={() => openReviewModal(inc)}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
+                          >
+                            {t("diseaseIncident.review")}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {showImageModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
             <div className="border-b p-6 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">{t("sample.selectImage")}</h3>
+              <h3 className="text-lg font-semibold">
+                {t("sample.selectImage")}
+              </h3>
               <button
                 onClick={handleCancelImageModal}
                 disabled={analyzing}
@@ -703,7 +1035,9 @@ export default function TechDetailSample() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <span className="text-sm text-gray-600">{t("common.uploadImage")}</span>
+                    <span className="text-sm text-gray-600">
+                      {t("common.uploadImage")}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -746,7 +1080,9 @@ export default function TechDetailSample() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">{t("sample.analysisResults")}</h3>
+              <h3 className="text-xl font-semibold">
+                {t("sample.analysisResults")}
+              </h3>
               <button
                 onClick={() => {
                   setShowAnalysisModal(false);
@@ -762,22 +1098,37 @@ export default function TechDetailSample() {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-medium text-sm text-gray-600">Giai đoạn</label>
-                  <p className="mt-1 text-gray-900">{stageNameMap[analysisResult.stageName] || analysisResult.stageName}</p>
+                  <label className="font-medium text-sm text-gray-600">
+                    Giai đoạn
+                  </label>
+                  <p className="mt-1 text-gray-900">
+                    {stageNameMap[analysisResult.stageName] ||
+                      analysisResult.stageName}
+                  </p>
                 </div>
                 <div>
-                  <label className="font-medium text-sm text-gray-600">Tên bệnh</label>
-                  <p className="mt-1 text-gray-900">{analysisResult.disease.name}</p>
+                  <label className="font-medium text-sm text-gray-600">
+                    Tên bệnh
+                  </label>
+                  <p className="mt-1 text-gray-900">
+                    {analysisResult.disease.name}
+                  </p>
                 </div>
               </div>
 
               <div>
-                <label className="font-medium text-sm text-gray-600">Mô tả bệnh</label>
-                <p className="mt-1 text-gray-900">{analysisResult.disease.description}</p>
+                <label className="font-medium text-sm text-gray-600">
+                  Mô tả bệnh
+                </label>
+                <p className="mt-1 text-gray-900">
+                  {analysisResult.disease.description}
+                </p>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-3">Kết quả phân tích chi tiết</h4>
+                <h4 className="font-semibold mb-3">
+                  Kết quả phân tích chi tiết
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
                     { key: "healthy", label: t("sample.healthy") },
@@ -789,14 +1140,27 @@ export default function TechDetailSample() {
                     { key: "moldFungus", label: t("sample.moldFungus") },
                     { key: "softRot", label: t("sample.softRot") },
                     { key: "stemRot", label: t("sample.stemRot") },
-                    { key: "witheredYellowRoot", label: t("sample.witheredYellowRoot") },
+                    {
+                      key: "witheredYellowRoot",
+                      label: t("sample.witheredYellowRoot"),
+                    },
                     { key: "oxidation", label: t("sample.oxidation") },
                     { key: "virus", label: t("sample.virus") },
                   ].map((item) => (
-                    <div key={item.key} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-800">{item.label}</span>
+                    <div
+                      key={item.key}
+                      className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                    >
+                      <span className="text-sm text-gray-800">
+                        {item.label}
+                      </span>
                       <span className="font-semibold text-blue-600">
-                        {((analysisResult.analyticResult[item.key as keyof typeof analysisResult.analyticResult] as number) * 100).toFixed(1)}%
+                        {(
+                          (analysisResult.analyticResult[
+                            item.key as keyof typeof analysisResult.analyticResult
+                          ] as number) * 100
+                        ).toFixed(1)}
+                        %
                       </span>
                     </div>
                   ))}
@@ -823,7 +1187,9 @@ export default function TechDetailSample() {
                   {showDestroyForm && (
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">Lý do tiêu hủy (có thể để trống)</label>
+                        <label className="text-sm font-medium text-gray-700">
+                          Lý do tiêu hủy (có thể để trống)
+                        </label>
                         <textarea
                           value={destroyReason}
                           onChange={(e) => setDestroyReason(e.target.value)}
@@ -870,6 +1236,128 @@ export default function TechDetailSample() {
                 className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
               >
                 {t("common.close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Disease Incident Modal */}
+      {reviewingIncident && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeReviewModal}
+        >
+          <div
+            className="bg-white rounded-lg shadow-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="border-b p-6 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {t("diseaseIncident.reviewModalTitle")}
+              </h3>
+              <button
+                onClick={closeReviewModal}
+                disabled={reviewSubmitting}
+                className="text-gray-500 hover:text-gray-700 text-2xl disabled:cursor-not-allowed"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
+                <div>
+                  <span className="font-medium">
+                    {t("diseaseIncident.sampleName")}:
+                  </span>{" "}
+                  {reviewingIncident.sampleName}
+                </div>
+                <div>
+                  <span className="font-medium">
+                    {t("diseaseIncident.diseaseName")}:
+                  </span>{" "}
+                  {reviewingIncident.diseaseName}
+                </div>
+                <div>
+                  <span className="font-medium">
+                    {t("diseaseIncident.aiConfidence")}:
+                  </span>{" "}
+                  {(reviewingIncident.aiConfidence * 100).toFixed(1)}%
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-medium text-sm text-gray-700 mb-2">
+                  {t("diseaseIncident.reviewDecision")}
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tech-review-decision"
+                      checked={reviewIsConfirmed}
+                      onChange={() => setReviewIsConfirmed(true)}
+                      disabled={reviewSubmitting}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      {t("diseaseIncident.reviewConfirm")}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tech-review-decision"
+                      checked={!reviewIsConfirmed}
+                      onChange={() => setReviewIsConfirmed(false)}
+                      disabled={reviewSubmitting}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm">
+                      {t("diseaseIncident.reviewDismiss")}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-medium text-sm text-gray-700 mb-1.5">
+                  {t("diseaseIncident.reviewNote")}
+                </label>
+                <textarea
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  rows={3}
+                  disabled={reviewSubmitting}
+                  placeholder={t("diseaseIncident.reviewNotePlaceholder")}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-50"
+                />
+              </div>
+
+              {reviewError && (
+                <p className="text-sm text-red-600">{reviewError}</p>
+              )}
+            </div>
+
+            <div className="border-t p-6 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeReviewModal}
+                disabled={reviewSubmitting}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSubmitReview()}
+                disabled={reviewSubmitting}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 font-medium"
+              >
+                {reviewSubmitting
+                  ? t("diseaseIncident.submitting")
+                  : t("diseaseIncident.submitReview")}
               </button>
             </div>
           </div>
