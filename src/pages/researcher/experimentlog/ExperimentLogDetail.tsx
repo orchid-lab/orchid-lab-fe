@@ -236,6 +236,40 @@ const ExperimentLogDetail = () => {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
+  // --- PDF export state ---
+  const [exportingProcess, setExportingProcess] = useState(false);
+  const [exportingSummary, setExportingSummary] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const downloadPdf = async (type: "process" | "summary") => {
+    if (!id) return;
+    const setExporting =
+      type === "process" ? setExportingProcess : setExportingSummary;
+    setExporting(true);
+    setExportError(null);
+    try {
+      const res = await axiosInstance.get(
+        `/api/experiment-logs/${id}/report?type=${type}`,
+        { responseType: "blob" },
+      );
+      const blob = new Blob([res.data as BlobPart], {
+        type: "application/pdf",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `experiment-log-${id}-${type}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Không thể xuất PDF. Vui lòng thử lại.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const parseBatchId = (value: unknown): number | undefined => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string") {
@@ -796,16 +830,39 @@ const ExperimentLogDetail = () => {
             <span className="experiment-name">- {log.name}</span>
           </h1>
           <div className="action-buttons">
-            <button
-              type="button"
-              className="btn-start"
-              style={{ minWidth: 120 }}
-              onClick={() => {
-                /* Export PDF logic here */
-              }}
-            >
-              Export PDF
-            </button>
+            {exportError && (
+              <span
+                style={{
+                  color: "#dc2626",
+                  fontSize: "0.85rem",
+                  alignSelf: "center",
+                }}
+              >
+                {exportError}
+              </span>
+            )}
+            {normalizeStatus(log.status) === "Completed" && (
+              <>
+                <button
+                  type="button"
+                  className="btn-start"
+                  style={{ minWidth: 160 }}
+                  disabled={exportingProcess}
+                  onClick={() => void downloadPdf("process")}
+                >
+                  {exportingProcess ? "Đang xuất..." : "Xuất nhật ký quy trình"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-start"
+                  style={{ minWidth: 160 }}
+                  disabled={exportingSummary}
+                  onClick={() => void downloadPdf("summary")}
+                >
+                  {exportingSummary ? "Đang xuất..." : "Xuất báo cáo tổng kết"}
+                </button>
+              </>
+            )}
             <button
               type="button"
               className="btn-start"
