@@ -954,5 +954,31 @@
     "stat1": "Tổng config",
     "stat2": "Trang hiện tại",
     "stat3": "Kết quả trang này"
+  },
+  "diseaseIncident": {
+    "title": "Cảnh báo bệnh",
+    "badge": "Phát hiện bệnh mới",
+    "sampleName": "Tên mẫu",
+    "diseaseName": "Bệnh",
+    "aiConfidence": "Độ tin cậy AI",
+    "status": "Trạng thái",
+    "action": "Thao tác",
+    "review": "Xem xét",
+    "statusAIDetected": "AI phát hiện",
+    "statusUnderReview": "Đang xem xét",
+    "statusConfirmed": "Đã xác nhận",
+    "statusDismissed": "Đã bác bỏ",
+    "reviewModalTitle": "Xem xét cảnh báo bệnh",
+    "reviewDecision": "Quyết định",
+    "reviewConfirm": "Xác nhận đúng (thông báo kỹ thuật viên tiêu hủy mẫu)",
+    "reviewDismiss": "Bác bỏ (AI phán đoán sai)",
+    "reviewNote": "Ghi chú (tùy chọn)",
+    "reviewNotePlaceholder": "Nhập ghi chú xem xét...",
+    "submitReview": "Gửi đánh giá",
+    "submitting": "Đang gửi...",
+    "noIncidents": "Không có cảnh báo bệnh",
+    "loadError": "Không thể tải cảnh báo bệnh",
+    "filterAll": "Tất cả",
+    "filterPending": "Chờ xem xét"
   }
 }

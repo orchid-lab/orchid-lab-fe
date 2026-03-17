@@ -954,5 +954,31 @@
     "stat1": "Total Configurations",
     "stat2": "Current Page",
     "stat3": "Results on Page"
+  },
+  "diseaseIncident": {
+    "title": "Disease Alerts",
+    "badge": "New disease detected",
+    "sampleName": "Sample Name",
+    "diseaseName": "Disease",
+    "aiConfidence": "AI Confidence",
+    "status": "Status",
+    "action": "Action",
+    "review": "Review",
+    "statusAIDetected": "AI Detected",
+    "statusUnderReview": "Under Review",
+    "statusConfirmed": "Confirmed",
+    "statusDismissed": "Dismissed",
+    "reviewModalTitle": "Review Disease Incident",
+    "reviewDecision": "Decision",
+    "reviewConfirm": "Confirm (notify technician to destroy sample)",
+    "reviewDismiss": "Dismiss (AI detected incorrectly)",
+    "reviewNote": "Note (optional)",
+    "reviewNotePlaceholder": "Enter your review note...",
+    "submitReview": "Submit Review",
+    "submitting": "Submitting...",
+    "noIncidents": "No disease incidents found",
+    "loadError": "Failed to load disease alerts",
+    "filterAll": "All",
+    "filterPending": "Pending Review"
   }
 }
