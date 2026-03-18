@@ -29,6 +29,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import { FaTimes, FaSeedling } from "react-icons/fa";
+import { Check } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { User } from "../../../types/Auth";
 import type {
@@ -885,6 +886,18 @@ const TechnicianExperimentLogDetail = () => {
             return acc;
           }, {} as Record<string, Chemical[]>);
 
+          const chemicalGroups = Object.entries(chemicalsByCategory);
+
+          // Group materials by category
+          const materialsByCategory = stageMaterials.reduce((acc, sm) => {
+            const category = sm.material?.category ?? (t("common.other") ?? "Khác");
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(sm.material);
+            return acc;
+          }, {} as Record<string, Material[]>);
+
+          const materialGroups = Object.entries(materialsByCategory);
+
           // LUÔN LUÔN hiển thị section này, kể cả khi trống
           return (
             <section ref={materialsCardRef} className="materials-card">
@@ -905,29 +918,39 @@ const TechnicianExperimentLogDetail = () => {
                   {stageChemicals.length === 0 ? (
                     <p className="no-materials">{t("experimentLog.noChemicals") || "Không có hóa chất"}</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {Object.entries(chemicalsByCategory).map(([category, chemicals]) => (
-                        <div key={category} className="material-category">
+                    <div className="space-y-4">
+                      {chemicalGroups.map(([category, chemicals], idx) => (
+                        <div
+                          key={category}
+                          className={
+                            "pb-4 " +
+                            (idx < chemicalGroups.length - 1
+                              ? "border-b border-gray-100" 
+                              : "")
+                          }
+                        >
                           <p className="category-name">{category}</p>
-                          <ul className="material-list">
+                          <div className="space-y-2">
                             {chemicals.map((chem) => (
-                              <li key={chem.id} className="material-item">
-                                <span className="material-bullet chemical">•</span>
+                              <div key={chem.id} className="flex items-start gap-2">
+                                <span className="mt-1 text-[#2D5A27]">
+                                  <Check className="w-4 h-4" />
+                                </span>
                                 <div>
-                                  <span className="material-name">{chem.name}</span>
+                                  <div className="text-sm font-semibold text-gray-900">{chem.name}</div>
                                   {chem.concentrationUnit && (
-                                    <span className="material-unit">({chem.concentrationUnit})</span>
+                                    <div className="text-xs text-gray-500">{chem.concentrationUnit}</div>
                                   )}
                                 </div>
-                              </li>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                
+
                 {/* Materials/Equipment section */}
                 <div>
                   <h3 className="material-section-title">
@@ -938,23 +961,33 @@ const TechnicianExperimentLogDetail = () => {
                   {stageMaterials.length === 0 ? (
                     <p className="no-materials">{t("experimentLog.noMaterials") || "Không có dụng cụ"}</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {Object.entries(materialsByCategory).map(([category, materials]) => (
-                        <div key={category} className="material-category">
+                    <div className="space-y-4">
+                      {materialGroups.map(([category, materials], idx) => (
+                        <div
+                          key={category}
+                          className={
+                            "pb-4 " +
+                            (idx < materialGroups.length - 1
+                              ? "border-b border-gray-100" 
+                              : "")
+                          }
+                        >
                           <p className="category-name">{category}</p>
-                          <ul className="material-list">
+                          <div className="space-y-2">
                             {materials.map((mat) => (
-                              <li key={mat.id} className="material-item">
-                                <span className="material-bullet equipment">•</span>
+                              <div key={mat.id} className="flex items-start gap-2">
+                                <span className="mt-1 text-[#2D5A27]">
+                                  <Check className="w-4 h-4" />
+                                </span>
                                 <div>
-                                  <span className="material-name">{mat.name}</span>
+                                  <div className="text-sm font-semibold text-gray-900">{mat.name}</div>
                                   {mat.unit && (
-                                    <span className="material-unit">({mat.unit})</span>
+                                    <div className="text-xs text-gray-500">{mat.unit}</div>
                                   )}
                                 </div>
-                              </li>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       ))}
                     </div>

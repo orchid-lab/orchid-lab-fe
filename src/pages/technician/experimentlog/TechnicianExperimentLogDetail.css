@@ -93,19 +93,19 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .btn-start {
   padding: 0.5rem 1rem;
-  background-color: #2563eb;
+  background-color: #2D5A27;
   color: white;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   min-width: 120px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 #technician-experimentlog-detail .btn-start:hover:not(:disabled) {
-  background-color: #1d4ed8;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  background-color: #224a20;
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -128,14 +128,14 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .btn-protocorm.enabled {
-  background-color: #059669;
+  background-color: #2D5A27;
   color: white;
   cursor: pointer;
 }
 
 #technician-experimentlog-detail .btn-protocorm.enabled:hover {
-  background-color: #047857;
-  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);
+  background-color: #224a20;
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -180,21 +180,20 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .btn-change-stage {
   padding: 0.5rem 1rem;
-  background-color: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-  border-radius: 0.5rem;
+  background-color: rgba(45, 90, 39, 0.1);
+  color: #2D5A27;
+  border: 1px solid #2D5A27;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   min-width: 140px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 #technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
-  background-color: #bfdbfe;
-  border-color: #60a5fa;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  background-color: rgba(45, 90, 39, 0.15);
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -204,15 +203,15 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage {
-  background-color: rgba(37, 99, 235, 0.2);
-  color: #93c5fd;
-  border-color: #3b82f6;
+  background-color: rgba(45, 90, 39, 0.2);
+  color: #a7f3d0;
+  border-color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
-  background-color: rgba(37, 99, 235, 0.3);
-  border-color: #60a5fa;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
+  background-color: rgba(45, 90, 39, 0.3);
+  border-color: #2D5A27;
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.4);
   transform: translateY(-2px);
 }
 
@@ -536,9 +535,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .materials-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .materials-card {
@@ -550,7 +550,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .materials-title {
@@ -559,8 +559,8 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .stage-indicator {
   font-size: 0.875rem;
-  font-weight: normal;
-  color: #0284c7;
+  font-weight: 500;
+  color: #2D5A27;
   margin-left: 0.5rem;
 }
 
@@ -708,9 +708,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .stages-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stages-card {
@@ -722,7 +723,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stages-title {
@@ -885,9 +886,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .samples-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .samples-card {
@@ -899,7 +901,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .samples-title {
