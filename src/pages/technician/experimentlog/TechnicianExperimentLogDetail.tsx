@@ -870,14 +870,6 @@ const TechnicianExperimentLogDetail = () => {
           console.log('Stage Chemicals:', stageChemicals);
           console.log('Stage Materials:', stageMaterials);
           
-          // Group materials by category
-          const materialsByCategory = stageMaterials.reduce((acc, sm) => {
-            const category = sm.material?.category ?? (t("common.other") ?? "Khác");
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(sm.material);
-            return acc;
-          }, {} as Record<string, Material[]>);
-
           // Group chemicals by category
           const chemicalsByCategory = stageChemicals.reduce((acc, sc) => {
             const category = sc.chemical?.category ?? (t("common.other") ?? "Khác");
