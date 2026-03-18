@@ -462,9 +462,9 @@ const TechnicianExperimentLog = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E4F0E8] p-6 gsap-chart h-full flex flex-col">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 gsap-chart h-full flex flex-col">
             <h3 className="text-lg font-semibold text-[#2D5A27] mb-4">
               {t("experimentLog.latestStatusChart")}
             </h3>
@@ -489,7 +489,7 @@ const TechnicianExperimentLog = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4 h-full">
 
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <Clock className="w-5 h-5 text-[#2D5A27]" />
@@ -499,7 +499,7 @@ const TechnicianExperimentLog = () => {
                       {statusToVietnamese("InProcess")}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {t("experimentLog.inProgressHelp", { defaultValue: "Experiments in progress" })}
+                      {t("experimentLog.inProgressHelp", { defaultValue: "Các thí nghiệm đang tiến hành" })}
                     </div>
                   </div>
                 </div>
@@ -509,7 +509,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 3: Waiting for Stage Change */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-yellow-500 shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-yellow-500 shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
                     <AlertCircle className="w-5 h-5 text-[#D97706]" />
@@ -519,7 +519,7 @@ const TechnicianExperimentLog = () => {
                       {statusToVietnamese("WaitingForChangeStage")}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {t("experimentLog.waitingHelp", { defaultValue: "Awaiting stage changes" })}
+                      {t("experimentLog.waitingHelp", { defaultValue: "Chờ chuyển giai đoạn" })}
                     </div>
                   </div>
                 </div>
@@ -529,7 +529,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 4: Done */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-[#2D5A27]" />
@@ -539,7 +539,7 @@ const TechnicianExperimentLog = () => {
                       {statusToVietnamese("Done")}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {t("experimentLog.completedHelp", { defaultValue: "Completed experiments" })}
+                      {t("experimentLog.completedHelp", { defaultValue: "Các thí nghiệm đã hoàn thành" })}
                     </div>
                   </div>
                 </div>
@@ -549,7 +549,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 5: Cancel */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-red-500 shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-red-500 shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
                     <XCircle className="w-5 h-5 text-[#B91C1C]" />
@@ -559,7 +559,7 @@ const TechnicianExperimentLog = () => {
                       {statusToVietnamese("Cancel")}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {t("experimentLog.cancelledHelp", { defaultValue: "Canceled experiments" })}
+                      {t("experimentLog.cancelledHelp", { defaultValue: "Các thí nghiệm đã hủy" })}
                     </div>
                   </div>
                 </div>
@@ -573,7 +573,7 @@ const TechnicianExperimentLog = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-filter">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 gsap-filter">
           <div className="flex items-center gap-3 mb-4">
             <BarChart3 className="w-6 h-6 text-gray-600" />
             <h2 className="text-xl font-semibold text-gray-900">
@@ -668,7 +668,7 @@ const TechnicianExperimentLog = () => {
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden gsap-table-container">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden gsap-table-container">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
