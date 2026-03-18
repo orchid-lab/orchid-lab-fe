@@ -377,17 +377,17 @@ const TechnicianExperimentLog = () => {
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
       case "Created":
-        return "bg-pink-100 text-pink-700 border-pink-200";
+        return "bg-red-50 text-red-700";
       case "InProcess":
-        return "bg-blue-100 text-blue-700 border-blue-200";
+        return "bg-green-50 text-green-700";
       case "WaitingForChangeStage":
-        return "bg-orange-100 text-orange-700 border-orange-200";
+        return "bg-yellow-50 text-yellow-700";
       case "Done":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-green-50 text-green-700";
       case "Cancel":
-        return "bg-red-100 text-red-700 border-red-200";
+        return "bg-red-50 text-red-700";
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+        return "bg-gray-50 text-gray-700";
     }
   };
 
@@ -395,15 +395,15 @@ const TechnicianExperimentLog = () => {
     const iconClass = "w-4 h-4";
     switch (normalizeStatus(status)) {
       case "Created":
-        return <Beaker className={`${iconClass} text-pink-600`} />;
+        return <Beaker className={`${iconClass} text-[#2D5A27]`} />;
       case "InProcess":
-        return <Clock className={`${iconClass} text-blue-600`} />;
+        return <Clock className={`${iconClass} text-[#2D5A27]`} />;
       case "WaitingForChangeStage":
-        return <AlertCircle className={`${iconClass} text-orange-600`} />;
+        return <AlertCircle className={`${iconClass} text-[#D97706]`} />;
       case "Done":
-        return <CheckCircle2 className={`${iconClass} text-green-600`} />;
+        return <CheckCircle2 className={`${iconClass} text-[#2D5A27]`} />;
       case "Cancel":
-        return <XCircle className={`${iconClass} text-red-600`} />;
+        return <XCircle className={`${iconClass} text-[#B91C1C]`} />;
       default:
         return null;
     }
