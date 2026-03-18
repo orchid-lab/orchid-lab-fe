@@ -4,8 +4,6 @@ import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../../../context/AuthContext";
-import { Doughnut } from "react-chartjs-2";
-import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import type { TaskStatusType, TaskItem, TaskListApiResponse } from "../../../types/TechnicianTask";
 import {
   Clock,
@@ -18,8 +16,6 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-
-Chart.register(ArcElement, Tooltip, Legend);
 
 function isTaskListApiResponse(obj: unknown): obj is TaskListApiResponse {
   return (
@@ -54,27 +50,27 @@ const STATUS_TRANSLATION_KEYS: Record<TaskStatusType, string> = {
 };
 
 const STATUS_COLORS: Record<TaskStatusType, string> = {
-  Assigned: "bg-purple-100 text-purple-700 border-purple-200",
-  InProgress: "bg-blue-100 text-blue-700 border-blue-200",
-  WaitingForApproval: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  CompletedInTime: "bg-green-100 text-green-700 border-green-200",
-  CompletedOutTime: "bg-orange-100 text-orange-700 border-orange-200",
-  Deleted: "bg-gray-100 text-gray-700 border-gray-200",
-  DeclinedByTechnician: "bg-red-100 text-red-700 border-red-200",
-  ReworkRequired: "bg-amber-100 text-amber-700 border-amber-200",
-  Unknown: "bg-gray-100 text-gray-700 border-gray-200",
+  Assigned: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  InProgress: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  WaitingForApproval: "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
+  CompletedInTime: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  CompletedOutTime: "bg-[#FFF4E6] text-[#F97316] border-[#FCD5B8]",
+  Deleted: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
+  DeclinedByTechnician: "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
+  ReworkRequired: "bg-[#FFF4E6] text-[#F97316] border-[#FCD5B8]",
+  Unknown: "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]",
 };
 
 const STATUS_ICON_COLORS: Record<TaskStatusType, string> = {
-  Assigned: "text-purple-500",
-  InProgress: "text-blue-500",
-  WaitingForApproval: "text-indigo-500",
-  CompletedInTime: "text-green-500",
-  CompletedOutTime: "text-orange-500",
-  Deleted: "text-gray-500",
-  DeclinedByTechnician: "text-red-500",
-  ReworkRequired: "text-amber-500",
-  Unknown: "text-gray-500",
+  Assigned: "text-[#2D5A27]",
+  InProgress: "text-[#2D5A27]",
+  WaitingForApproval: "text-[#DA70D6]",
+  CompletedInTime: "text-[#2D5A27]",
+  CompletedOutTime: "text-[#F97316]",
+  Deleted: "text-[#6B7280]",
+  DeclinedByTechnician: "text-[#B91C1C]",
+  ReworkRequired: "text-[#F97316]",
+  Unknown: "text-[#6B7280]",
 };
 
 const STATUS_FILTER_ORDER: TaskStatusType[] = [
@@ -322,51 +318,14 @@ export default function ListTask() {
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
 
-  // Status colors for chart
-  const CHART_COLORS: Record<TaskStatusType, string> = {
-    Assigned: "#8b5cf6", // purple
-    InProgress: "#3b82f6", // blue
-    WaitingForApproval: "#6366f1", // indigo
-    CompletedInTime: "#10b981", // green
-    CompletedOutTime: "#f59e0b", // orange
-    Deleted: "#6b7280", // gray
-    DeclinedByTechnician: "#ef4444", // red
-    ReworkRequired: "#f97316", // orange-red
-    Unknown: "#9ca3af", // gray
-  };
+  const urgentCount =
+    statusCounts.Assigned + statusCounts.InProgress + statusCounts.ReworkRequired;
+  const inProgressCount = statusCounts.InProgress;
+  const waitingApprovalCount = statusCounts.WaitingForApproval;
+  const completedCount = statusCounts.CompletedInTime + statusCounts.CompletedOutTime;
 
-  const activeStatuses = STATUS_FILTER_ORDER; // Hiển thị tất cả statuses, kể cả 0
-
-  const chartData = {
-    labels: activeStatuses.map((status) => getStatusLabel(status)),
-    datasets: [
-      {
-        data: activeStatuses.map((status) => statusCounts[status]),
-        backgroundColor: activeStatuses.map((status) => CHART_COLORS[status]),
-        borderWidth: 0,
-        spacing: 2,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    maintainAspectRatio: true,
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false, // Tắt legend mặc định, sẽ tự tạo bên ngoài
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context: import("chart.js").TooltipItem<"doughnut">) {
-            const value = context.parsed;
-            return `${context.label} (${value})`;
-          },
-        },
-      },
-    },
-    cutout: "70%",
-  };
+  const totalTrackedTasks = Math.max(totalTasks, 1);
+  const completedPercent = Math.round((completedCount / totalTrackedTasks) * 100);
 
   const getStatusIcon = (status: TaskStatusType) => {
     const iconClass = `w-5 h-5 ${STATUS_ICON_COLORS[status]}`;
@@ -393,146 +352,130 @@ export default function ListTask() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
             {t("technicianTask.pageTitle")}
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-[#4B6C54] text-lg">
             {t("technicianTask.pageSubtitle")}
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6">
-          {/* Chart spanning full width */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t("technicianTask.overallTaskDistribution")}
-            </h3>
-            <div className="flex items-center justify-between gap-6">
-              {/* Chart Container */}
-              <div className="flex items-center justify-center w-[240px] h-[240px] flex-shrink-0">
-                <div className="relative w-full h-full">
-                  <Doughnut data={chartData} options={chartOptions} />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="flex flex-col items-center">
-                      <div className="text-4xl font-bold text-gray-900">
-                        {totalTasks}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">{t("task.taskList")}</div>
-                    </div>
-                  </div>
+        {/* Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
+                  {t("technicianTask.overallTaskDistribution")}
+                </h3>
+                <p className="text-sm text-[#4B6C54]">
+                  {t("technicianTask.overallTaskSummary", { defaultValue: "Overview of your tasks" })}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-[#2D5A27]">{totalTasks}</div>
+                <div className="text-xs text-[#4B6C54] mt-1">{t("task.taskList")}</div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
+                <span>{t("technicianTask.completedRate", { defaultValue: "Completed" })}</span>
+                <span className="font-semibold text-[#2D5A27]">{completedPercent}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#E4F0E8] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#2D5A27] transition-all duration-500"
+                  style={{ width: `${completedPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-[#DA70D6]/30 to-[#F97316]/30 text-[#DA70D6]">
+                    <AlertCircle className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("technicianTask.urgentTasks", { defaultValue: "Cần làm ngay / Trễ hạn" })}
+                  </span>
                 </div>
+                <span className="text-2xl font-semibold text-[#DA70D6]">{urgentCount}</span>
               </div>
-              
-              {/* Custom Legend - Grid Layout */}
-              <div className="flex-1 grid grid-cols-3 gap-3">
-                {activeStatuses.map((status) => (
-                  <div key={status} className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: CHART_COLORS[status] }}
-                    ></div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm text-gray-700 font-medium truncate">
-                        {getStatusLabel(status)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {statusCounts[status]}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <p className="text-xs text-[#4B6C54]">
+                {t("technicianTask.urgentTasksHelp", { defaultValue: "Tasks past due or require immediate attention." })}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#DDEEE0] text-[#2D5A27]">
+                    <Loader className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("technicianTask.inProgress", { defaultValue: "Đang thực hiện" })}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-[#2D5A27]">{inProgressCount}</span>
               </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("technicianTask.inProgressHelp", { defaultValue: "Tasks currently in progress." })}
+              </p>
             </div>
-          </div>
-        </div>
 
-        {/* Status Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-          <div className="bg-white rounded-xl p-5 border border-purple-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <UserPlus className="w-5 h-5 text-purple-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("Assigned")}:</span>
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#FFF0F9] text-[#DA70D6]">
+                    <Clock className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("technicianTask.waitingApproval", { defaultValue: "Chờ phê duyệt" })}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-[#DA70D6]">{waitingApprovalCount}</span>
+              </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("technicianTask.waitingApprovalHelp", { defaultValue: "Tasks waiting for approval." })}
+              </p>
             </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.Assigned}
-            </div>
-          </div>
 
-          <div className="bg-white rounded-xl p-5 border border-blue-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Loader className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("InProgress")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.InProgress}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-indigo-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-indigo-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("WaitingForApproval")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.WaitingForApproval}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-green-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCheck className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("CompletedInTime")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.CompletedInTime}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-orange-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("CompletedOutTime")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.CompletedOutTime}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <XCircle className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("Deleted")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.Deleted}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-5 border border-red-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Inbox className="w-5 h-5 text-red-500" />
-              <span className="text-sm text-gray-600 font-medium">{getStatusLabel("DeclinedByTechnician")}:</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900">
-              {statusCounts.DeclinedByTechnician}
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#E5E7EB] text-[#4B5563]">
+                    <CheckCheck className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("technicianTask.completed", { defaultValue: "Hoàn thành" })}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-[#4B5563]">{completedCount}</span>
+              </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("technicianTask.completedHelp", { defaultValue: "Tasks completed on time or late." })}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-500" />
+              <Filter className="w-5 h-5 text-[#2D5A27]" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as TaskStatusType | "All")}
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
               >
                 <option value="All">{t("common.status")}</option>
                 {STATUS_FILTER_ORDER.map((key) => (
@@ -543,11 +486,11 @@ export default function ListTask() {
               </select>
             </div>
 
-            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white">
               <option>{t("technicianTask.dateRange")}</option>
             </select>
 
-            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+            <select className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white">
               <option>{t("technicianTask.taskType")}</option>
             </select>
 
@@ -558,7 +501,7 @@ export default function ListTask() {
                 placeholder={t("task.searchTasks")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
               />
             </div>
 
@@ -569,7 +512,7 @@ export default function ListTask() {
                 setSearchTerm("");
                 setTodayFilter(false);
               }}
-              className="px-4 py-2.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+              className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1e3e1c] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
             >
               {t("common.clearFilters")}
             </button>
@@ -584,26 +527,26 @@ export default function ListTask() {
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                 <tr>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("task.taskName")}
                   </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("task.targetType")}
                   </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("technicianTask.targetName")}
                   </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("task.deadline")}
                   </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("common.createdAt")}
                   </th>
-                  <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
+                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                     {t("common.status")}
                   </th>
                 </tr>
@@ -619,7 +562,7 @@ export default function ListTask() {
                   tasks.map((task) => (
                     <tr
                       key={task.id}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="hover:bg-[#EBF7EE] cursor-pointer transition-colors"
                       onClick={() => {
                         void navigate(`/technician/tasks/${task.id}`);
                       }}
@@ -633,14 +576,8 @@ export default function ListTask() {
                       <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
                         {task.targetName ?? "-"}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {task.expectedEndDate
-                          ? new Date(task.expectedEndDate).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })
-                          : ""}
+                      <td className="px-6 py-4 text-[#4B6C54]">
+                        {formatDateVi(task.expectedEndDate)}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {formatDateVi(task.createdDate)}
@@ -663,7 +600,7 @@ export default function ListTask() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+              <div className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center">
                 <span className="text-sm text-gray-600">
                   {t("common.showing")} {tasks.length} {t("common.of")} {totalCount} {t("common.tasks")}
                 </span>
@@ -672,7 +609,7 @@ export default function ListTask() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage - 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                      className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
                     >
                       ←
                     </button>
@@ -697,8 +634,8 @@ export default function ListTask() {
                         onClick={() => setCurrentPage(pageNum)}
                         className={`px-3 py-1.5 rounded-lg text-sm ${
                           currentPage === pageNum
-                            ? "bg-blue-600 text-white"
-                            : "bg-white border border-gray-300 hover:bg-gray-50"
+                            ? "bg-[#2D5A27] text-white"
+                            : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
                         }`}
                       >
                         {pageNum}
@@ -710,7 +647,7 @@ export default function ListTask() {
                     <button
                       type="button"
                       onClick={() => setCurrentPage(currentPage + 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 text-sm"
+                      className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
                     >
                       →
                     </button>
