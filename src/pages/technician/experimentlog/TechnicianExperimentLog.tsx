@@ -594,47 +594,6 @@ const TechnicianExperimentLog = () => {
           </div>
         </div>
 
-        {/* Summary Card */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-2xl p-6 border border-purple-100 dark:border-purple-700/50 gsap-summary">
-          <div className="flex items-center gap-4">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm dark:shadow-none">
-              <TrendingUp className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            
-            {/* Text chính */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {stats.total}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                {t("experimentLog.totalExperiments")}
-              </p>
-            </div>
-
-            {/* Stats nhỏ bên phải */}
-            <div className="ml-auto flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {stats.Done}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.completed")}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {stats.InProcess}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.inProgress")}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {stats.WaitingForChangeStage}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{t("experimentLog.waiting")}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-filter">
           <div className="flex items-center gap-3 mb-4">
