@@ -450,21 +450,23 @@ const TechnicianExperimentLog = () => {
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8 gsap-header">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-3">
             <Microscope className="w-10 h-10 text-[#2D5A27]" />
-            <h1 className="text-4xl font-bold text-gray-900">
-              {t("experimentLog.experimentLogTitle")}
-            </h1>
+            <div>
+              <h1 className="text-4xl font-bold text-[#2D5A27]">
+                {t("experimentLog.experimentLogTitle")}
+              </h1>
+              <p className="text-[#4B6C54] text-lg mt-1">
+                {t("technicianExperiment.manageExperiments")}
+              </p>
+            </div>
           </div>
-          <p className="text-gray-600 text-lg ml-13">
-            {t("technicianExperiment.manageExperiments")}
-          </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 gsap-chart h-full flex flex-col">
+          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6 gsap-chart h-full flex flex-col">
             <h3 className="text-lg font-semibold text-[#2D5A27] mb-4">
               {t("experimentLog.latestStatusChart")}
             </h3>
@@ -483,13 +485,13 @@ const TechnicianExperimentLog = () => {
           </div>
 
           {/* Status Cards */}
-          <div className="space-y-4 h-full">
+          <div className="flex flex-col h-full">
             <h3 className="text-lg font-semibold text-[#2D5A27] gsap-header">
               {t("experimentLog.statistics")}
             </h3>
-            <div className="grid grid-cols-2 gap-4 h-full">
+            <div className="grid grid-cols-2 gap-4 flex-1">
 
-              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-[#2D5A27] gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <Clock className="w-5 h-5 text-[#2D5A27]" />
@@ -509,7 +511,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 3: Waiting for Stage Change */}
-              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-yellow-500 shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-yellow-500 gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
                     <AlertCircle className="w-5 h-5 text-[#D97706]" />
@@ -529,7 +531,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 4: Done */}
-              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-[#2D5A27] gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-[#2D5A27]" />
@@ -549,7 +551,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 5: Cancel */}
-              <div className="bg-white rounded-xl p-5 border border-gray-100 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-red-500 shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-red-500 gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
                     <XCircle className="w-5 h-5 text-[#B91C1C]" />
@@ -573,7 +575,7 @@ const TechnicianExperimentLog = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 gsap-filter">
+        <div className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 gsap-filter">
           <div className="flex items-center gap-3 mb-4">
             <BarChart3 className="w-6 h-6 text-gray-600" />
             <h2 className="text-xl font-semibold text-gray-900">
@@ -668,9 +670,9 @@ const TechnicianExperimentLog = () => {
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200 overflow-hidden gsap-table-container">
+          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden gsap-table-container">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                 <tr>
                   <th className="text-left px-6 py-4 font-semibold text-gray-900 text-sm">
                     {t("experimentLog.experimentName")}
