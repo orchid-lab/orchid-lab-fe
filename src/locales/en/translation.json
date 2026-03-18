@@ -848,7 +848,7 @@
     "materials": "materials"
   },
   "technicianTask": {
-    "pageTitle": "Orchid Lab Task Management",
+    "pageTitle": "Task Management",
     "pageSubtitle": "Monitor and manage cultivation tasks efficiently.",
     "overallTaskDistribution": "Overall Task Distribution",
     "overallTaskSummary": "Quick overview of your task progress",
