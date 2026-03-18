@@ -15,7 +15,6 @@ import {
   Clock,
   Calendar,
   BarChart3,
-  Microscope,
   AlertCircle,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
@@ -411,7 +410,6 @@ const TechnicianExperimentLog = () => {
         {/* Header */}
         <div className="mb-8 gsap-header">
           <div className="flex items-center gap-3 mb-3">
-            <Microscope className="w-10 h-10 text-[#2D5A27]" />
             <div>
               <h1 className="text-4xl font-bold text-[#2D5A27]">
                 {t("experimentLog.experimentLogTitle")}
