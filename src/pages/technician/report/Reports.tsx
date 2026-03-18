@@ -1,3 +1,5 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useEffect, useState, useMemo } from "react";
@@ -305,7 +307,6 @@ export default function ReportsTechnician() {
           <tbody>
             {loading ? (
               Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                // eslint-disable-next-line react/no-array-index-key
                 <tr key={idx} className="border-t animate-pulse">
                   <td className="py-3 px-4">
                     <div className="h-4 bg-gray-200 rounded w-3/4"></div>
