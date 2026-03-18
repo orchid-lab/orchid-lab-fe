@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -20,13 +21,79 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import {
+  motion,
+  AnimatePresence,
+  type Variants,
+} from "framer-motion";
+
+// ─── Animation Variants ───────────────────────────────────────────────────────
+
+// Typed cubic-bezier tuple to satisfy Framer Motion's BezierDefinition
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+
+const fadeInDown: Variants = {
+  hidden: { opacity: 0, y: -16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: EASE_OUT_EXPO },
+  },
+};
+
+const staggerContainer: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const cardVariant: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.4, ease: EASE_OUT_EXPO },
+  },
+};
+
+const tableRowVariant: Variants = {
+  hidden: { opacity: 0, x: -12 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.35, delay: i * 0.04, ease: "easeOut" as const },
+  }),
+  exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
+};
+
+const progressBarVariant: Variants = {
+  hidden: { width: "0%" },
+  visible: (pct: number) => ({
+    width: `${pct}%`,
+    transition: { duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.3 },
+  }),
+};
+
+const filterPanelVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.96, y: -8 },
+  visible: {
+    opacity: 1,
+    scaleY: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: EASE_OUT_EXPO },
+  },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isTaskListApiResponse(obj: unknown): obj is TaskListApiResponse {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "data" in obj
-  );
+  return typeof obj === "object" && obj !== null && "data" in obj;
 }
 
 const STATUS_LABELS: Record<TaskStatusType, string> = {
@@ -89,10 +156,7 @@ const STATUS_FILTER_ORDER: TaskStatusType[] = [
 ];
 
 const normalizeTaskStatus = (status: string): TaskStatusType => {
-  if (status in STATUS_LABELS) {
-    return status as TaskStatusType;
-  }
-
+  if (status in STATUS_LABELS) return status as TaskStatusType;
   return "Unknown";
 };
 
@@ -112,13 +176,54 @@ const formatDateVi = (value?: string): string => {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-
   return date.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 };
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  help: string;
+  value: number;
+  valueColor: string;
+}
+
+function StatCard({ icon, iconBg, label, help, value, valueColor }: StatCardProps) {
+  return (
+    <motion.div
+      variants={cardVariant}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(45,90,39,0.16)" }}
+      className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5 cursor-default"
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full ${iconBg}`}>
+            {icon}
+          </span>
+          <span className="text-sm font-medium text-[#2D5A27]">{label}</span>
+        </div>
+        <motion.span
+          key={value}
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className={`text-2xl font-semibold ${valueColor}`}
+        >
+          {value}
+        </motion.span>
+      </div>
+      <p className="text-xs text-[#4B6C54]">{help}</p>
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ListTask() {
   const navigate = useNavigate();
@@ -142,25 +247,19 @@ export default function ListTask() {
   const [statusCounts, setStatusCounts] = useState<Record<TaskStatusType, number>>(
     createEmptyStatusCounts()
   );
-
   const [totalTasks, setTotalTasks] = useState(0);
 
   const tasksPerPage = 20;
 
-  // Helper function to fetch target name
   const fetchTargetName = async (
     targetType: string | undefined,
     targetId: string | undefined
   ): Promise<string> => {
     if (!targetId || !targetType) return "-";
-
     try {
       let endpoint = "";
-      if (targetType === "ExperimentLog") {
-        endpoint = `/api/experiment-logs/${targetId}`;
-      } else if (targetType === "Sample") {
-        endpoint = `/api/sample/${targetId}`;
-      }
+      if (targetType === "ExperimentLog") endpoint = `/api/experiment-logs/${targetId}`;
+      else if (targetType === "Sample") endpoint = `/api/sample/${targetId}`;
 
       if (endpoint) {
         const response = await axiosInstance.get(endpoint);
@@ -179,30 +278,19 @@ export default function ListTask() {
         const params = new URLSearchParams();
         params.append("PageNumber", "1");
         params.append("PageSize", "1000");
-
         const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
-
         if (isTaskListApiResponse(response.data)) {
           const allTasks = Array.isArray(response.data.data)
             ? response.data.data
                 .filter((task) => String(task.status ?? "") !== "Template")
                 .map((task) => ({
-                ...task,
-                status: normalizeTaskStatus(String(task.status ?? "")),
-              }))
+                  ...task,
+                  status: normalizeTaskStatus(String(task.status ?? "")),
+                }))
             : [];
-
           const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
-
           const counts: Record<TaskStatusType, number> = createEmptyStatusCounts();
-
-          myTasks.forEach((task) => {
-            counts[task.status] = (counts[task.status] || 0) + 1;
-          });
-
-          console.log("All my tasks:", myTasks.length);
-          console.log("Tasks by status:", counts);
-
+          myTasks.forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; });
           setStatusCounts(counts);
           setTotalTasks(myTasks.length);
         }
@@ -210,7 +298,6 @@ export default function ListTask() {
         console.error("Error loading summary data:", err);
       }
     };
-
     void loadSummaryData();
   }, [user?.id]);
 
@@ -218,12 +305,8 @@ export default function ListTask() {
     const params = new URLSearchParams();
     params.append("PageNumber", "1");
     params.append("PageSize", "1000");
-    params.append("TechnicianId", user?.id ?? "");  
-
-    if (searchTerm.trim()) {
-      params.append("SearchTerm", searchTerm.trim());
-    }
-
+    params.append("TechnicianId", user?.id ?? "");
+    if (searchTerm.trim()) params.append("SearchTerm", searchTerm.trim());
     return params.toString();
   }, [searchTerm]);
 
@@ -233,10 +316,8 @@ export default function ListTask() {
         const fetchTasks = async () => {
           setLoading(true);
           setError(null);
-
           try {
             const res = await axiosInstance.get(`/api/tasks?${buildApiQuery}`);
-            
             if (isTaskListApiResponse(res.data)) {
               const data = Array.isArray(res.data.data)
                 ? res.data.data
@@ -246,27 +327,18 @@ export default function ListTask() {
                       status: normalizeTaskStatus(String(task.status ?? "")),
                     }))
                 : [];
-              
-              console.log("Raw data from API:", data);
 
               let filteredData = data.filter((task) => task.technicianId === user?.id);
-              
-              console.log("Filtered data (my tasks):", filteredData);
+              filteredData = [...filteredData].sort((a, b) =>
+                new Date(a.expectedEndDate).getTime() - new Date(b.expectedEndDate).getTime()
+              );
 
-              filteredData = [...filteredData].sort((a, b) => {
-                const dateA = new Date(a.expectedEndDate);
-                const dateB = new Date(b.expectedEndDate);
-                return dateA.getTime() - dateB.getTime();
-              });
-
-              if (statusFilter !== "All") {
+              if (statusFilter !== "All")
                 filteredData = filteredData.filter((task) => task.status === statusFilter);
-              }
 
               if (todayFilter) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-
                 filteredData = filteredData.filter((task) => {
                   const taskEndDate = new Date(task.expectedEndDate);
                   taskEndDate.setHours(0, 0, 0, 0);
@@ -283,16 +355,10 @@ export default function ListTask() {
               }
 
               const startIndex = (currentPage - 1) * tasksPerPage;
-              const endIndex = startIndex + tasksPerPage;
-              const paginatedData = filteredData.slice(startIndex, endIndex);
-
-              // Fetch target names for each task
+              const paginatedData = filteredData.slice(startIndex, startIndex + tasksPerPage);
               const tasksWithTargetNames = await Promise.all(
                 paginatedData.map(async (task) => {
-                  const targetName = await fetchTargetName(
-                    task.taskTargetType,
-                    task.targetId
-                  );
+                  const targetName = await fetchTargetName(task.taskTargetType, task.targetId);
                   return { ...task, targetName };
                 })
               );
@@ -307,70 +373,67 @@ export default function ListTask() {
             setLoading(false);
           }
         };
-
         void fetchTasks();
       },
       searchTerm ? 300 : 0
     );
-
     return () => clearTimeout(timeoutId);
   }, [buildApiQuery, statusFilter, searchTerm, todayFilter, currentPage, user?.id, enqueueSnackbar]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [statusFilter, searchTerm, todayFilter]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, searchTerm, todayFilter]);
 
   const totalPages = Math.ceil(totalCount / tasksPerPage);
-
-  const urgentCount =
-    statusCounts.Assigned + statusCounts.InProgress + statusCounts.ReworkRequired;
+  const urgentCount = statusCounts.Assigned + statusCounts.InProgress + statusCounts.ReworkRequired;
   const inProgressCount = statusCounts.InProgress;
   const waitingApprovalCount = statusCounts.WaitingForApproval;
   const completedCount = statusCounts.CompletedInTime + statusCounts.CompletedOutTime;
-
   const totalTrackedTasks = Math.max(totalTasks, 1);
   const completedPercent = Math.round((completedCount / totalTrackedTasks) * 100);
 
   const getStatusIcon = (status: TaskStatusType) => {
     const iconClass = `w-5 h-5 ${STATUS_ICON_COLORS[status]}`;
     switch (status) {
-      case "Assigned":
-        return <UserPlus className={iconClass} />;
-      case "InProgress":
-        return <Loader className={iconClass} />;
-      case "WaitingForApproval":
-        return <Clock className={iconClass} />;
-      case "CompletedInTime":
-        return <CheckCheck className={iconClass} />;
-      case "CompletedOutTime":
-        return <AlertCircle className={iconClass} />;
-      case "Deleted":
-        return <XCircle className={iconClass} />;
-      case "DeclinedByTechnician":
-        return <Inbox className={iconClass} />;
-      case "ReworkRequired":
-        return <AlertCircle className={iconClass} />;
-      case "Unknown":
-        return <XCircle className={iconClass} />;
+      case "Assigned":         return <UserPlus className={iconClass} />;
+      case "InProgress":       return <Loader className={iconClass} />;
+      case "WaitingForApproval": return <Clock className={iconClass} />;
+      case "CompletedInTime":  return <CheckCheck className={iconClass} />;
+      case "CompletedOutTime": return <AlertCircle className={iconClass} />;
+      case "Deleted":          return <XCircle className={iconClass} />;
+      case "DeclinedByTechnician": return <Inbox className={iconClass} />;
+      case "ReworkRequired":   return <AlertCircle className={iconClass} />;
+      case "Unknown":          return <XCircle className={iconClass} />;
     }
   };
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
-        {/* Header */}
-        <div className="mb-8">
+
+        {/* ── Header ── */}
+        <motion.div
+          className="mb-8"
+          variants={fadeInDown}
+          initial="hidden"
+          animate="visible"
+        >
           <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
             {t("technicianTask.pageTitle")}
           </h1>
           <p className="text-[#4B6C54] text-lg">
             {t("technicianTask.pageSubtitle")}
           </p>
-        </div>
+        </motion.div>
 
-        {/* Overview */}
+        {/* ── Overview grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6">
+          {/* Progress card */}
+          <motion.div
+            variants={cardVariant}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(45,90,39,0.18)" }}
+            className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6"
+          >
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
@@ -381,7 +444,15 @@ export default function ListTask() {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-[#2D5A27]">{totalTasks}</div>
+                <motion.div
+                  key={totalTasks}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="text-3xl font-bold text-[#2D5A27]"
+                >
+                  {totalTasks}
+                </motion.div>
                 <div className="text-xs text-[#4B6C54] mt-1">{t("task.taskList")}</div>
               </div>
             </div>
@@ -389,103 +460,87 @@ export default function ListTask() {
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
                 <span>{t("technicianTask.completedRate", { defaultValue: "Completed" })}</span>
-                <span className="font-semibold text-[#2D5A27]">{completedPercent}%</span>
+                <motion.span
+                  key={completedPercent}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="font-semibold text-[#2D5A27]"
+                >
+                  {completedPercent}%
+                </motion.span>
               </div>
               <div className="h-2 w-full rounded-full bg-[#E4F0E8] overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#2D5A27] transition-all duration-500"
-                  style={{ width: `${completedPercent}%` }}
+                <motion.div
+                  className="h-full rounded-full bg-[#2D5A27]"
+                  variants={progressBarVariant}
+                  initial="hidden"
+                  animate="visible"
+                  custom={completedPercent}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-[#DA70D6]/30 to-[#F97316]/30 text-[#DA70D6]">
-                    <AlertCircle className="w-5 h-5" />
-                  </span>
-                  <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("technicianTask.urgentTasks", { defaultValue: "Cần làm ngay / Trễ hạn" })}
-                  </span>
-                </div>
-                <span className="text-2xl font-semibold text-[#DA70D6]">{urgentCount}</span>
-              </div>
-              <p className="text-xs text-[#4B6C54]">
-                {t("technicianTask.urgentTasksHelp", { defaultValue: "Tasks past due or require immediate attention." })}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#DDEEE0] text-[#2D5A27]">
-                    <Loader className="w-5 h-5" />
-                  </span>
-                  <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("technicianTask.inProgress", { defaultValue: "Đang thực hiện" })}
-                  </span>
-                </div>
-                <span className="text-2xl font-semibold text-[#2D5A27]">{inProgressCount}</span>
-              </div>
-              <p className="text-xs text-[#4B6C54]">
-                {t("technicianTask.inProgressHelp", { defaultValue: "Tasks currently in progress." })}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#FFF0F9] text-[#DA70D6]">
-                    <Clock className="w-5 h-5" />
-                  </span>
-                  <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("technicianTask.waitingApproval", { defaultValue: "Chờ phê duyệt" })}
-                  </span>
-                </div>
-                <span className="text-2xl font-semibold text-[#DA70D6]">{waitingApprovalCount}</span>
-              </div>
-              <p className="text-xs text-[#4B6C54]">
-                {t("technicianTask.waitingApprovalHelp", { defaultValue: "Tasks waiting for approval." })}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#E5E7EB] text-[#4B5563]">
-                    <CheckCheck className="w-5 h-5" />
-                  </span>
-                  <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("technicianTask.completed", { defaultValue: "Hoàn thành" })}
-                  </span>
-                </div>
-                <span className="text-2xl font-semibold text-[#4B5563]">{completedCount}</span>
-              </div>
-              <p className="text-xs text-[#4B6C54]">
-                {t("technicianTask.completedHelp", { defaultValue: "Tasks completed on time or late." })}
-              </p>
-            </div>
-          </div>
+          {/* Stat cards */}
+          <motion.div
+            className="grid grid-cols-2 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <StatCard
+              icon={<AlertCircle className="w-5 h-5" />}
+              iconBg="bg-gradient-to-br from-[#DA70D6]/30 to-[#F97316]/30 text-[#DA70D6]"
+              label={t("technicianTask.urgentTasks", { defaultValue: "Cần làm ngay / Trễ hạn" })}
+              help={t("technicianTask.urgentTasksHelp", { defaultValue: "Tasks past due or require immediate attention." })}
+              value={urgentCount}
+              valueColor="text-[#DA70D6]"
+            />
+            <StatCard
+              icon={<Loader className="w-5 h-5" />}
+              iconBg="bg-[#DDEEE0] text-[#2D5A27]"
+              label={t("technicianTask.inProgress", { defaultValue: "Đang thực hiện" })}
+              help={t("technicianTask.inProgressHelp", { defaultValue: "Tasks currently in progress." })}
+              value={inProgressCount}
+              valueColor="text-[#2D5A27]"
+            />
+            <StatCard
+              icon={<Clock className="w-5 h-5" />}
+              iconBg="bg-[#FFF0F9] text-[#DA70D6]"
+              label={t("technicianTask.waitingApproval", { defaultValue: "Chờ phê duyệt" })}
+              help={t("technicianTask.waitingApprovalHelp", { defaultValue: "Tasks waiting for approval." })}
+              value={waitingApprovalCount}
+              valueColor="text-[#DA70D6]"
+            />
+            <StatCard
+              icon={<CheckCheck className="w-5 h-5" />}
+              iconBg="bg-[#E5E7EB] text-[#4B5563]"
+              label={t("technicianTask.completed", { defaultValue: "Hoàn thành" })}
+              help={t("technicianTask.completedHelp", { defaultValue: "Tasks completed on time or late." })}
+              value={completedCount}
+              valueColor="text-[#4B5563]"
+            />
+          </motion.div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6">
+        {/* ── Filter panel ── */}
+        <motion.div
+          variants={filterPanelVariant}
+          initial="hidden"
+          animate="visible"
+          className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
+        >
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-[#2D5A27]" />
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as TaskStatusType | "All")}
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
+                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white transition-shadow"
               >
                 <option value="All">{t("common.status")}</option>
                 {STATUS_FILTER_ORDER.map((key) => (
-                  <option key={key} value={key}>
-                      {getStatusLabel(key)}
-                  </option>
+                  <option key={key} value={key}>{getStatusLabel(key)}</option>
                 ))}
               </select>
             </div>
@@ -505,162 +560,201 @@ export default function ListTask() {
                 placeholder={t("task.searchTasks")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
               />
             </div>
 
-            <button
+            <motion.button
               type="button"
-              onClick={() => {
-                setStatusFilter("All");
-                setSearchTerm("");
-                setTodayFilter(false);
-              }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { setStatusFilter("All"); setSearchTerm(""); setTodayFilter(false); }}
               className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1e3e1c] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
             >
               {t("common.clearFilters")}
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Tasks Table */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">{t("technicianTask.loadingTasks")}</div>
-          </div>
-        ) : error ? (
-          <div className="text-red-500 text-center py-12">{error}</div>
-        ) : (
-          <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
-                <tr>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("task.taskName")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("task.targetType")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("technicianTask.targetName")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("task.deadline")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("common.createdAt")}
-                  </th>
-                  <th className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
-                    {t("common.status")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {tasks.length === 0 ? (
+        {/* ── Table ── */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-16 gap-3"
+            >
+              {/* Spinner */}
+              <motion.div
+                className="w-10 h-10 border-4 border-[#DDEEE0] border-t-[#2D5A27] rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+              />
+              <span className="text-gray-500 text-sm">{t("technicianTask.loadingTasks")}</span>
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-red-500 text-center py-12"
+            >
+              {error}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="table"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden"
+            >
+              <table className="w-full">
+                <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                   <tr>
-                    <td colSpan={6} className="p-12 text-center text-gray-500">
-                      {t("task.noTasks")}
-                    </td>
+                    {[
+                      t("task.taskName"),
+                      t("task.targetType"),
+                      t("technicianTask.targetName"),
+                      t("task.deadline"),
+                      t("common.createdAt"),
+                      t("common.status"),
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm"
+                      >
+                        {header}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  tasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-[#EBF7EE] cursor-pointer transition-colors"
-                      onClick={() => {
-                        void navigate(`/technician/tasks/${task.id}`);
-                      }}
-                    >
-                      <td className="px-6 py-4 font-medium text-gray-900">
-                        {task.name}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {task.taskTargetType ?? "-"}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                        {task.targetName ?? "-"}
-                      </td>
-                      <td className="px-6 py-4 text-[#4B6C54]">
-                        {formatDateVi(task.expectedEndDate)}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {formatDateVi(task.createdDate)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
-                            STATUS_COLORS[task.status]
+                </thead>
+
+                <tbody className="divide-y divide-gray-200">
+                  <AnimatePresence>
+                    {tasks.length === 0 ? (
+                      <motion.tr
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <td colSpan={6} className="p-12 text-center text-gray-500">
+                          {t("task.noTasks")}
+                        </td>
+                      </motion.tr>
+                    ) : (
+                      tasks.map((task, i) => (
+                        <motion.tr
+                          key={task.id}
+                          custom={i}
+                          variants={tableRowVariant}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          layout
+                          whileHover={{ backgroundColor: "#EBF7EE" }}
+                          className="cursor-pointer transition-colors"
+                          onClick={() => { void navigate(`/technician/tasks/${task.id}`); }}
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-900">{task.name}</td>
+                          <td className="px-6 py-4 text-gray-600">{task.taskTargetType ?? "-"}</td>
+                          <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
+                            {task.targetName ?? "-"}
+                          </td>
+                          <td className="px-6 py-4 text-[#4B6C54]">
+                            {formatDateVi(task.expectedEndDate)}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {formatDateVi(task.createdDate)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${STATUS_COLORS[task.status]}`}
+                            >
+                              {getStatusIcon(task.status)}
+                              {getStatusLabel(task.status)}
+                            </motion.span>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
+                >
+                  <span className="text-sm text-gray-600">
+                    {t("common.showing")} {tasks.length} {t("common.of")} {totalCount} {t("common.tasks")}
+                  </span>
+                  <div className="flex gap-2">
+                    {currentPage > 1 && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
+                      >
+                        ←
+                      </motion.button>
+                    )}
+
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      return (
+                        <motion.button
+                          key={pageNum}
+                          type="button"
+                          whileHover={{ scale: 1.08 }}
+                          whileTap={{ scale: 0.93 }}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 rounded-lg text-sm ${
+                            currentPage === pageNum
+                              ? "bg-[#2D5A27] text-white"
+                              : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
                           }`}
                         >
-                          {getStatusIcon(task.status)}
-                          {getStatusLabel(task.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                          {pageNum}
+                        </motion.button>
+                      );
+                    })}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center">
-                <span className="text-sm text-gray-600">
-                  {t("common.showing")} {tasks.length} {t("common.of")} {totalCount} {t("common.tasks")}
-                </span>
-                <div className="flex gap-2">
-                  {currentPage > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                    >
-                      ←
-                    </button>
-                  )}
-
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
+                    {currentPage < totalPages && (
+                      <motion.button
                         type="button"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1.5 rounded-lg text-sm ${
-                          currentPage === pageNum
-                            ? "bg-[#2D5A27] text-white"
-                            : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
-                        }`}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
                       >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  {currentPage < totalPages && (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                    >
-                      →
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                        →
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
