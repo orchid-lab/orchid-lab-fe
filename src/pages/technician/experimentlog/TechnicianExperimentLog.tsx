@@ -19,8 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
-import { Doughnut } from "react-chartjs-2";
-import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -32,7 +31,6 @@ import type {
   SampleListApiResponse,
 } from "../../../types/ExperimentLog";
 
-Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(useGSAP);
 
 const TechnicianExperimentLog = () => {
@@ -166,45 +164,6 @@ const TechnicianExperimentLog = () => {
     }
   };
 
-  const chartData = {
-    labels: [
-      statusToVietnamese("Created"),
-      statusToVietnamese("InProcess"),
-      statusToVietnamese("WaitingForChangeStage"),
-      statusToVietnamese("Done"),
-      statusToVietnamese("Cancel"),
-    ],
-    datasets: [
-      {
-        data: [stats.Created, stats.InProcess, stats.WaitingForChangeStage, stats.Done, stats.Cancel],
-        backgroundColor: ["#ec4899", "#22c55e", "#f97316", "#93c5fd", "#ef4444"],
-        borderWidth: 0,
-        spacing: 2,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: 0,
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context: import("chart.js").TooltipItem<"doughnut">) {
-            const value = context.parsed;
-            return `${context.label} (${value})`;
-          },
-        },
-      },
-    },
-    cutout: "70%",
-  };
 
   const parseApiResponse = (
     data: unknown
@@ -440,6 +399,7 @@ const TechnicianExperimentLog = () => {
   });
 
   const totalPages = Math.ceil(totalCount / logsPerPage);
+  const completedPercent = stats.total > 0 ? Math.round((stats.Done / stats.total) * 100) : 0;
 
   return (
     <main 
@@ -463,113 +423,107 @@ const TechnicianExperimentLog = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Overview + Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* Doughnut Chart */}
+          {/* Overview */}
           <div className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6 gsap-chart h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-[#2D5A27] mb-4">
-              {t("experimentLog.latestStatusChart")}
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
+                  {t("technicianTask.overallTaskDistribution", { defaultValue: "Tổng quan tiến độ" })}
+                </h3>
+                <p className="text-sm text-[#4B6C54]">
+                  {t("technicianTask.overallTaskSummary", { defaultValue: "Xem nhanh tiến độ các thí nghiệm" })}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-[#2D5A27]">{stats.total}</div>
+                <div className="text-xs text-[#4B6C54] mt-1">{t("experimentLog.experiments")}</div>
+              </div>
+            </div>
 
-            <div className="flex items-center justify-center flex-1">
-              <div className="relative w-[240px] h-[240px]">
-                <Doughnut data={chartData} options={chartOptions} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="text-4xl font-bold text-[#2D5A27]">
-                    {stats.total}
-                  </div>
-                  <div className="text-sm text-[#4B6C54]">{t("experimentLog.experiments")}</div>
-                </div>
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
+                <span>{t("technicianTask.completedRate", { defaultValue: "Hoàn thành" })}</span>
+                <span className="font-semibold text-[#2D5A27]">{completedPercent}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#E4F0E8] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-[#2D5A27] transition-all duration-500"
+                  style={{ width: `${completedPercent}%` }}
+                />
               </div>
             </div>
           </div>
 
-          {/* Status Cards */}
-          <div className="flex flex-col h-full">
-            <h3 className="text-lg font-semibold text-[#2D5A27] gsap-header">
-              {t("experimentLog.statistics")}
-            </h3>
-            <div className="grid grid-cols-2 gap-4 flex-1">
-
-              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-[#2D5A27] gsap-stat-card transition-colors flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-[#2D5A27]" />
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#DDEEE0] text-[#2D5A27]">
+                    <Clock className="w-5 h-5" />
                   </span>
-                  <div>
-                    <div className="text-sm font-medium text-[#2D5A27]">
-                      {statusToVietnamese("InProcess")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t("experimentLog.inProgressHelp", { defaultValue: "Các thí nghiệm đang tiến hành" })}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
-                  {stats.InProcess}
-                </div>
-              </div>
-
-              {/* Card 3: Waiting for Stage Change */}
-              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-yellow-500 gsap-stat-card transition-colors flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
-                    <AlertCircle className="w-5 h-5 text-[#D97706]" />
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("experimentLog.inProgress", { defaultValue: "Đang thực hiện" })}
                   </span>
-                  <div>
-                    <div className="text-sm font-medium text-[#2D5A27]">
-                      {statusToVietnamese("WaitingForChangeStage")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t("experimentLog.waitingHelp", { defaultValue: "Chờ chuyển giai đoạn" })}
-                    </div>
-                  </div>
                 </div>
-                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
-                  {stats.WaitingForChangeStage}
-                </div>
+                <span className="text-2xl font-semibold text-[#2D5A27]">{stats.InProcess}</span>
               </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("experimentLog.inProgressHelp", { defaultValue: "Các thí nghiệm đang tiến hành" })}
+              </p>
+            </div>
 
-              {/* Card 4: Done */}
-              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-[#2D5A27] gsap-stat-card transition-colors flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-[#2D5A27]" />
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#FEF3C7] text-[#D97706]">
+                    <AlertCircle className="w-5 h-5" />
                   </span>
-                  <div>
-                    <div className="text-sm font-medium text-[#2D5A27]">
-                      {statusToVietnamese("Done")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t("experimentLog.completedHelp", { defaultValue: "Các thí nghiệm đã hoàn thành" })}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
-                  {stats.Done}
-                </div>
-              </div>
-
-              {/* Card 5: Cancel */}
-              <div className="bg-white rounded-2xl p-5 border border-[#DDEEE0] shadow-[0_14px_32px_rgba(45,90,39,0.10)] border-l-4 border-l-red-500 gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
-                    <XCircle className="w-5 h-5 text-[#B91C1C]" />
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("experimentLog.waitingForStageChange", { defaultValue: "Chờ chuyển giai đoạn" })}
                   </span>
-                  <div>
-                    <div className="text-sm font-medium text-[#2D5A27]">
-                      {statusToVietnamese("Cancel")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t("experimentLog.cancelledHelp", { defaultValue: "Các thí nghiệm đã hủy" })}
-                    </div>
-                  </div>
                 </div>
-                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
-                  {stats.Cancel}
-                </div>
+                <span className="text-2xl font-semibold text-[#D97706]">{stats.WaitingForChangeStage}</span>
               </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("experimentLog.waitingHelp", { defaultValue: "Chờ chuyển giai đoạn" })}
+              </p>
+            </div>
 
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#D1FAE5] text-[#2D5A27]">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("experimentLog.completed", { defaultValue: "Hoàn thành" })}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-[#2D5A27]">{stats.Done}</span>
+              </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("experimentLog.completedHelp", { defaultValue: "Các thí nghiệm đã hoàn thành" })}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border border-[#DDEEE0] p-5">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#FEE2E2] text-[#B91C1C]">
+                    <XCircle className="w-5 h-5" />
+                  </span>
+                  <span className="text-sm font-medium text-[#2D5A27]">
+                    {t("experimentLog.cancelled", { defaultValue: "Đã hủy" })}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold text-[#B91C1C]">{stats.Cancel}</span>
+              </div>
+              <p className="text-xs text-[#4B6C54]">
+                {t("experimentLog.cancelledHelp", { defaultValue: "Các thí nghiệm đã hủy" })}
+              </p>
             </div>
           </div>
         </div>
