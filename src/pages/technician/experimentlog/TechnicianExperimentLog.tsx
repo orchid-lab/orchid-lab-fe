@@ -446,13 +446,13 @@ const TechnicianExperimentLog = () => {
     <main 
       id="technician-experimentlog-page"
       ref={containerRef} 
-      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8"
+      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8"
     >
       <div className="max-w-[1400px] mx-auto space-y-6">
         {/* Header */}
         <div className="mb-8 gsap-header">
           <div className="flex items-center gap-3 mb-2">
-            <Microscope className="w-10 h-10 text-purple-600" />
+            <Microscope className="w-10 h-10 text-[#2D5A27]" />
             <h1 className="text-4xl font-bold text-gray-900">
               {t("experimentLog.experimentLogTitle")}
             </h1>
@@ -465,82 +465,127 @@ const TechnicianExperimentLog = () => {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Doughnut Chart */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 gsap-chart">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E4F0E8] p-6 gsap-chart h-full flex flex-col">
+            <h3 className="text-lg font-semibold text-[#2D5A27] mb-4">
               {t("experimentLog.latestStatusChart")}
             </h3>
 
-            <div className="flex items-center justify-center h-[280px]">
-              <div className="relative w-[280px] h-[280px]">
+            <div className="flex items-center justify-center flex-1">
+              <div className="relative w-[240px] h-[240px]">
                 <Doughnut data={chartData} options={chartOptions} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <div className="text-4xl font-bold text-gray-900">
+                  <div className="text-4xl font-bold text-[#2D5A27]">
                     {stats.total}
                   </div>
-                  <div className="text-sm text-gray-500">{t("experimentLog.experiments")}</div>
+                  <div className="text-sm text-[#4B6C54]">{t("experimentLog.experiments")}</div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Status Cards - Code sạch, không logic phức tạp */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 gsap-header">
+          {/* Status Cards */}
+          <div className="space-y-4 h-full">
+            <h3 className="text-lg font-semibold text-[#2D5A27] gsap-header">
               {t("experimentLog.statistics")}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              
+            <div className="grid grid-cols-2 gap-4 h-full">
+
               {/* Card 1: Created */}
-              <div className="bg-pink-100 rounded-xl p-5 border border-pink-200 gsap-stat-card transition-colors">
-                <Beaker className="w-8 h-8 text-pink-600 mb-3" />
-                <div className="text-sm text-pink-700 font-medium mb-1">
-                  {statusToVietnamese("Created")}
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+                    <Beaker className="w-5 h-5 text-[#B91C1C]" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-[#2D5A27]">
+                      {statusToVietnamese("Created")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("experimentLog.createdHelp", { defaultValue: "New experiments" })}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-pink-900">
+                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
                   {stats.Created}
                 </div>
               </div>
 
               {/* Card 2: InProcess */}
-              <div className="bg-blue-100 rounded-xl p-5 border border-blue-200 gsap-stat-card transition-colors">
-                <Clock className="w-8 h-8 text-blue-600 mb-3" />
-                <div className="text-sm text-blue-700 font-medium mb-1">
-                  {statusToVietnamese("InProcess")}
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-[#2D5A27]" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-[#2D5A27]">
+                      {statusToVietnamese("InProcess")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("experimentLog.inProgressHelp", { defaultValue: "Experiments in progress" })}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-900">
+                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
                   {stats.InProcess}
                 </div>
               </div>
 
               {/* Card 3: Waiting for Stage Change */}
-              <div className="bg-orange-100 rounded-xl p-5 border border-orange-200 gsap-stat-card transition-colors">
-                <AlertCircle className="w-8 h-8 text-orange-600 mb-3" />
-                <div className="text-sm text-orange-700 font-medium mb-1">
-                  {statusToVietnamese("WaitingForChangeStage")}
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
+                    <AlertCircle className="w-5 h-5 text-[#D97706]" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-[#2D5A27]">
+                      {statusToVietnamese("WaitingForChangeStage")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("experimentLog.waitingHelp", { defaultValue: "Awaiting stage changes" })}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-orange-900">
+                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
                   {stats.WaitingForChangeStage}
                 </div>
               </div>
 
               {/* Card 4: Done */}
-              <div className="bg-green-100 rounded-xl p-5 border border-green-200 gsap-stat-card transition-colors">
-                <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
-                <div className="text-sm text-green-700 font-medium mb-1">
-                  {statusToVietnamese("Done")}
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-[#2D5A27]" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-[#2D5A27]">
+                      {statusToVietnamese("Done")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("experimentLog.completedHelp", { defaultValue: "Completed experiments" })}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-green-900">
+                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
                   {stats.Done}
                 </div>
               </div>
 
               {/* Card 5: Cancel */}
-              <div className="bg-red-100 rounded-xl p-5 border border-red-200 gsap-stat-card transition-colors col-span-2 sm:col-span-1">
-                <XCircle className="w-8 h-8 text-red-600 mb-3" />
-                <div className="text-sm text-red-700 font-medium mb-1">
-                  {statusToVietnamese("Cancel")}
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
+                    <XCircle className="w-5 h-5 text-[#B91C1C]" />
+                  </span>
+                  <div>
+                    <div className="text-sm font-medium text-[#2D5A27]">
+                      {statusToVietnamese("Cancel")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t("experimentLog.cancelledHelp", { defaultValue: "Canceled experiments" })}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-red-900">
+                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
                   {stats.Cancel}
                 </div>
               </div>
