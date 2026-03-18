@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
@@ -264,7 +262,7 @@ const TechnicianExperimentLogDetail = () => {
       [SampleStatus.ExecutedBecauseOfDisease]: t('sample.statusExecutedBecauseOfDisease'),
       [SampleStatus.ConvertedToSeedling]: t('sample.statusConvertedToSeedling'),
     };
-    return statusMap[status ?? ''] || status || t('common.none');
+    return statusMap[status ?? ''] ?? status ?? t('common.none');
   };
 
   useEffect(() => {
@@ -805,45 +803,46 @@ const TechnicianExperimentLogDetail = () => {
         {/* Info Card */}
         <section ref={infoCardRef} className="info-card">
           <div className="info-grid">
-            <div className="info-column">
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.method")}:</span>{" "}
-                <span className="info-value">{methodName}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.tissueCultureBatch")}:</span>{" "}
-                {batchName}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.labRoom")}:</span> {labRoomName}
-              </div>
-              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="info-label">{t("common.status")}:</span>{" "}
-                <span className={getStatusColor(log.status)}>
-                  {getStatusDisplay(log.status)}
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.expectedSampleCount")}:</span> {log.expectedSampleCount}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.dateCreated")}:</span>{" "}
-                {formatDate(log.createdDate)}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.creator")}:</span> {creator}
-              </div>
-              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="info-label">{t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:</span>{" "}
-                <span className="current-stage">
-                  {currentStage}
-                </span>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.method")}</div>
+              <div className="info-value">{methodName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.tissueCultureBatch")}</div>
+              <div className="info-value">{batchName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.labRoom")}</div>
+              <div className="info-value">{labRoomName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("common.status")}</div>
+              <div className={getStatusColor(log.status)}>
+                {getStatusDisplay(log.status)}
               </div>
             </div>
-            <div className="info-column">
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.expectedSampleCount")}</div>
+              <div className="info-value">{log.expectedSampleCount}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.dateCreated")}</div>
+              <div className="info-value">{formatDate(log.createdDate)}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.creator")}</div>
+              <div className="info-value">{creator}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.currentStage") || "Giai đoạn hiện tại"}</div>
+              <div className="info-value">{currentStage}</div>
+            </div>
+
+            <div className="info-item md:col-span-2">
               {log.notes && (
-                <div className="info-item">
-                  <span className="info-label">{t("common.description")}:</span> {log.notes}
+                <div>
+                  <div className="info-label">{t("common.description")}</div>
+                  <div className="info-value">{log.notes}</div>
                 </div>
               )}
               <div className="seedling-box">
@@ -976,22 +975,28 @@ const TechnicianExperimentLogDetail = () => {
               {log.method.methodStages
                 .sort((a, b) => a.order - b.order)
                 .map((stage) => {
-                  const isCurrentStage = stage.order === log.currentStageOrder;
+                  const stageState =
+                    stage.order < (log.currentStageOrder ?? 0)
+                      ? 'completed'
+                      : stage.order === log.currentStageOrder
+                      ? 'current'
+                      : 'future';
+
                   return (
                     <div
                       key={stage.id}
-                      className={`stage-card ${isCurrentStage ? 'current' : 'normal'}`}
+                      className={`stage-card ${stageState}`}
                     >
                       <div className="stage-header">
-                        <span className={`stage-number ${isCurrentStage ? 'current' : 'normal'}`}>
-                          {stage.order}
+                        <span className={`stage-number ${stageState}`}>
+                          {stageState === 'completed' ? '✓' : stage.order}
                         </span>
                         <span className="stage-name">
                           {stage.stageDefinition?.name || t("experimentLog.notAvailable")}
                         </span>
-                        {isCurrentStage && (
+                        {stageState === 'current' && (
                           <span className="current-badge">
-                            {t("experimentLog.currentStage") || "Hiện tại"}
+                            {t("experimentLog.currentStage") || "Giai đoạn hiện tại"}
                           </span>
                         )}
                       </div>

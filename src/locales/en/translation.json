@@ -634,7 +634,7 @@
     "stageNumber": "Stage {{number}}",
     "experimentName": "EXPERIMENT NAME",
     "tissueCultureBatch": "TISSUE CULTURE BATCH",
-    "dateCreated": "DATE CREATED",
+    "dateCreated": "Date created",
     "status": "STATUS",
     "sampleCount": "SAMPLE COUNT",
     "loadingData": "Loading data...",
