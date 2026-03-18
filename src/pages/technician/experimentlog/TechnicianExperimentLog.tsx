@@ -14,7 +14,6 @@ import {
   XCircle,
   Clock,
   Calendar,
-  TrendingUp,
   BarChart3,
   Microscope,
   AlertCircle,
@@ -490,28 +489,7 @@ const TechnicianExperimentLog = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4 h-full">
 
-              {/* Card 1: Created */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
-                    <Beaker className="w-5 h-5 text-[#B91C1C]" />
-                  </span>
-                  <div>
-                    <div className="text-sm font-medium text-[#2D5A27]">
-                      {statusToVietnamese("Created")}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t("experimentLog.createdHelp", { defaultValue: "New experiments" })}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 text-3xl font-bold text-[#2D5A27]">
-                  {stats.Created}
-                </div>
-              </div>
-
-              {/* Card 2: InProcess */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <Clock className="w-5 h-5 text-[#2D5A27]" />
@@ -531,7 +509,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 3: Waiting for Stage Change */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-yellow-500 shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center">
                     <AlertCircle className="w-5 h-5 text-[#D97706]" />
@@ -551,7 +529,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 4: Done */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-[#2D5A27] shadow-sm gsap-stat-card transition-colors flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#D1FAE5] flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-[#2D5A27]" />
@@ -571,7 +549,7 @@ const TechnicianExperimentLog = () => {
               </div>
 
               {/* Card 5: Cancel */}
-              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
+              <div className="bg-white rounded-xl p-5 border border-[#E4F0E8] border-l-4 border-l-red-500 shadow-sm gsap-stat-card transition-colors col-span-2 sm:col-span-1 flex flex-col justify-between">
                 <div className="flex items-start gap-3">
                   <span className="w-10 h-10 rounded-full bg-[#FEE2E2] flex items-center justify-center">
                     <XCircle className="w-5 h-5 text-[#B91C1C]" />
@@ -611,7 +589,7 @@ const TechnicianExperimentLog = () => {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as ExperimentStatus | "all")
                 }
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
               >
                 <option value="all">{t("experimentLog.allStatuses")}</option>
                 <option value="Created">{t("status.created")}</option>
@@ -623,7 +601,7 @@ const TechnicianExperimentLog = () => {
             </div>
 
             <select
-              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
               value={methodFilter}
               onChange={(e) => setMethodFilter(e.target.value)}
             >
@@ -636,7 +614,7 @@ const TechnicianExperimentLog = () => {
             </select>
 
             <select
-              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+              className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
               value={stageFilter}
               onChange={(e) =>
                 setStageFilter(
@@ -663,7 +641,7 @@ const TechnicianExperimentLog = () => {
                 placeholder={t("common.search") + "..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
               />
             </div>
 
@@ -675,7 +653,7 @@ const TechnicianExperimentLog = () => {
                 setStageFilter("all");
                 setSearchTerm("");
               }}
-              className="px-4 py-2.5 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors font-medium"
+              className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1f3f24] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
             >
               {t("common.clearFilters")}
             </button>
@@ -728,7 +706,7 @@ const TechnicianExperimentLog = () => {
                   filteredLogs.map((log) => (
                     <tr
                       key={log.id}
-                      className="hover:bg-purple-50 cursor-pointer transition-colors gsap-table-row"
+                      className="hover:bg-[#EBF7EE] cursor-pointer transition-colors gsap-table-row"
                       onClick={() =>
                         void navigate(`/technician/experiment-log/${log.id}`)
                       }
@@ -738,7 +716,7 @@ const TechnicianExperimentLog = () => {
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         <div className="flex items-center gap-2">
-                          <FlaskConical className="w-4 h-4 text-purple-500" />
+                          <FlaskConical className="w-4 h-4 text-[#2D5A27]" />
                           {log.methodName}
                         </div>
                       </td>
@@ -753,7 +731,7 @@ const TechnicianExperimentLog = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${getStatusColor(
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(
                             log.status
                           )}`}
                         >
@@ -764,8 +742,8 @@ const TechnicianExperimentLog = () => {
                       {/* Expected Sample Count */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="bg-orange-100 px-3 py-1 rounded-full">
-                            <span className="font-semibold text-orange-700">
+                          <div className="bg-[#E4F0E8] px-3 py-1 rounded-full">
+                            <span className="font-semibold text-[#2D5A27]">
                               {log.expectedSampleCount ?? 0}
                             </span>
                           </div>
@@ -775,8 +753,8 @@ const TechnicianExperimentLog = () => {
                       {/* Current Sample Count */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <div className="bg-purple-100 px-3 py-1 rounded-full">
-                            <span className="font-semibold text-purple-700">
+                          <div className="bg-[#E4F0E8] px-3 py-1 rounded-full">
+                            <span className="font-semibold text-[#2D5A27]">
                               {sampleCounts[log.id] ?? 0}
                             </span>
                           </div>
@@ -815,8 +793,8 @@ const TechnicianExperimentLog = () => {
                         onClick={() => setCurrentPage(number)}
                         className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                           currentPage === number
-                            ? "bg-purple-600 text-white"
-                            : "bg-white border border-gray-300 hover:bg-gray-50"
+                            ? "bg-[#2D5A27] text-white"
+                            : "bg-white border border-[#E4F0E8] hover:bg-[#E4F0E8]"
                         }`}
                       >
                         {number}
