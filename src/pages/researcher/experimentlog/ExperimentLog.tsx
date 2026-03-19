@@ -248,11 +248,31 @@ const ExperimentLog = () => {
             PageSize: 100,
           },
         });
-        const raw = res.data as {
-          value?: { data?: { id: string; name: string }[] };
-        };
-        const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
-        setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
+        const raw: any = res.data;
+        let arr: { id: any; name: string }[] = [];
+
+        // Shape 1: { value: { data: [...] } }
+        if (Array.isArray(raw?.value?.data)) {
+          arr = raw.value.data;
+        }
+        // Shape 2: { value: [...] }
+        else if (Array.isArray(raw?.value)) {
+          arr = raw.value;
+        }
+        // Shape 3: { data: [...] }
+        else if (Array.isArray(raw?.data)) {
+          arr = raw.data;
+        }
+        // Shape 4: plain array
+        else if (Array.isArray(raw)) {
+          arr = raw;
+        }
+
+        setMethods(
+          arr
+            .filter((m) => m?.id != null && m?.name)
+            .map((m) => ({ id: String(m.id), name: String(m.name) })),
+        );
       } catch {
         setMethods([]);
       }
