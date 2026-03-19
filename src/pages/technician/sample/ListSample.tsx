@@ -89,29 +89,29 @@ const formatVietnameseDate = (dateString: string | null): string => {
 };
 
 const STATUS_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.InProgressed]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.Completed]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.ExecutedBecauseOfDisease]: "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
-  [SampleStatus.ConvertedToSeedling]: "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
+  [SampleStatus.Created]:                   "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.InProgressed]:              "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.Completed]:                 "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.ExecutedBecauseOfDisease]:  "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
+  [SampleStatus.ConvertedToSeedling]:       "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
 };
 
 const STATUS_ICON_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]: "text-[#2D5A27]",
-  [SampleStatus.InProgressed]: "text-[#2D5A27]",
-  [SampleStatus.Completed]: "text-[#2D5A27]",
-  [SampleStatus.ExecutedBecauseOfDisease]: "text-[#B91C1C]",
-  [SampleStatus.ConvertedToSeedling]: "text-[#DA70D6]",
+  [SampleStatus.Created]:                   "text-[#2D5A27]",
+  [SampleStatus.InProgressed]:              "text-[#2D5A27]",
+  [SampleStatus.Completed]:                 "text-[#2D5A27]",
+  [SampleStatus.ExecutedBecauseOfDisease]:  "text-[#B91C1C]",
+  [SampleStatus.ConvertedToSeedling]:       "text-[#DA70D6]",
 };
 
 const getStatusIcon = (status: SampleStatus) => {
   const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
   switch (status) {
-    case SampleStatus.Created:             return <PlusCircle className={cls} />;
-    case SampleStatus.InProgressed:        return <FlaskConical className={cls} />;
-    case SampleStatus.Completed:           return <CheckCircle2 className={cls} />;
-    case SampleStatus.ExecutedBecauseOfDisease: return <AlertTriangle className={cls} />;
-    case SampleStatus.ConvertedToSeedling: return <Sprout className={cls} />;
+    case SampleStatus.Created:                   return <PlusCircle className={cls} />;
+    case SampleStatus.InProgressed:              return <FlaskConical className={cls} />;
+    case SampleStatus.Completed:                 return <CheckCircle2 className={cls} />;
+    case SampleStatus.ExecutedBecauseOfDisease:  return <AlertTriangle className={cls} />;
+    case SampleStatus.ConvertedToSeedling:       return <Sprout className={cls} />;
   }
 };
 
@@ -173,7 +173,6 @@ export default function ListSample() {
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 20;
 
-  // Fetch experiment logs for name mapping
   useEffect(() => {
     const fetchExperimentLogs = async () => {
       try {
@@ -191,7 +190,6 @@ export default function ListSample() {
     fetchExperimentLogs();
   }, []);
 
-  // Fetch all samples for summary counts
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -205,7 +203,6 @@ export default function ListSample() {
     fetchAll();
   }, []);
 
-  // Fetch filtered & paginated samples
   useEffect(() => {
     const fetchSamples = async () => {
       setLoading(true);
@@ -213,21 +210,12 @@ export default function ListSample() {
       try {
         const params = new URLSearchParams({ pageNo: "1", pageSize: "1000" });
         const response = await axiosInstance.get<SampleApiResponse>(`/api/samples?${params.toString()}`);
-
         let filtered = response.data.data || [];
-
         if (searchTerm.trim())
-          filtered = filtered.filter((s) =>
-            s.name.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-
+          filtered = filtered.filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
         if (statusFilter)
           filtered = filtered.filter((s) => s.status === statusFilter);
-
-        filtered.sort(
-          (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-        );
-
+        filtered.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
         setTotalCount(filtered.length);
         const start = (currentPage - 1) * itemsPerPage;
         setSamples(filtered.slice(start, start + itemsPerPage));
@@ -239,7 +227,6 @@ export default function ListSample() {
         setLoading(false);
       }
     };
-
     const timeout = setTimeout(fetchSamples, searchTerm ? 300 : 0);
     return () => clearTimeout(timeout);
   }, [searchTerm, statusFilter, currentPage, enqueueSnackbar, t]);
@@ -250,21 +237,20 @@ export default function ListSample() {
 
   const getStatusLabel = (status: SampleStatus): string => {
     const statusMap: Record<SampleStatus, string> = {
-      [SampleStatus.Created]: t("sample.statusCreated"),
-      [SampleStatus.InProgressed]: t("sample.statusInProgressed"),
-      [SampleStatus.Completed]: t("sample.statusCompleted"),
+      [SampleStatus.Created]:                  t("sample.statusCreated"),
+      [SampleStatus.InProgressed]:             t("sample.statusInProgressed"),
+      [SampleStatus.Completed]:                t("sample.statusCompleted"),
       [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
-      [SampleStatus.ConvertedToSeedling]: t("sample.statusConvertedToSeedling"),
+      [SampleStatus.ConvertedToSeedling]:      t("sample.statusConvertedToSeedling"),
     };
     return statusMap[status] || status;
   };
 
-  // Summary counts
-  const totalSamples = allSamples.length;
-  const inProgressCount  = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
-  const completedCount   = allSamples.filter((s) => s.status === SampleStatus.Completed).length;
-  const diseaseCount     = allSamples.filter((s) => s.status === SampleStatus.ExecutedBecauseOfDisease).length;
-  const seedlingCount    = allSamples.filter((s) => s.status === SampleStatus.ConvertedToSeedling).length;
+  const totalSamples    = allSamples.length;
+  const inProgressCount = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
+  const completedCount  = allSamples.filter((s) => s.status === SampleStatus.Completed).length;
+  const diseaseCount    = allSamples.filter((s) => s.status === SampleStatus.ExecutedBecauseOfDisease).length;
+  const seedlingCount   = allSamples.filter((s) => s.status === SampleStatus.ConvertedToSeedling).length;
   const completedPercent = Math.round((completedCount / Math.max(totalSamples, 1)) * 100);
 
   return (
@@ -272,18 +258,9 @@ export default function ListSample() {
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}
-        <motion.div
-          className="mb-8"
-          variants={fadeInDown}
-          initial="hidden"
-          animate="visible"
-        >
-          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
-            {t("sample.sampleList")}
-          </h1>
-          <p className="text-[#4B6C54] text-lg">
-            {t("sample.sampleManagement")}
-          </p>
+        <motion.div className="mb-8" variants={fadeInDown} initial="hidden" animate="visible">
+          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">{t("sample.sampleList")}</h1>
+          <p className="text-[#4B6C54] text-lg">{t("sample.sampleManagement")}</p>
         </motion.div>
 
         {/* ── Overview ── */}
@@ -320,14 +297,10 @@ export default function ListSample() {
                 </div>
               </div>
             </div>
-
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
                 <span>{t("sample.completedRate", { defaultValue: "Tỉ lệ hoàn thành" })}</span>
-                <motion.span
-                  key={completedPercent}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <motion.span key={completedPercent} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   className="font-semibold text-[#2D5A27]"
                 >
                   {completedPercent}%
@@ -346,44 +319,23 @@ export default function ListSample() {
           </motion.div>
 
           {/* Stat cards */}
-          <motion.div
-            className="grid grid-cols-2 gap-4"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <StatCard
-              icon={<FlaskConical className="w-5 h-5" />}
-              iconBg="bg-[#DDEEE0] text-[#2D5A27]"
+          <motion.div className="grid grid-cols-2 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
+            <StatCard icon={<FlaskConical className="w-5 h-5" />} iconBg="bg-[#DDEEE0] text-[#2D5A27]"
               label={t("sample.statusInProgressed", { defaultValue: "Đang thực hiện" })}
-              value={inProgressCount}
-              valueColor="text-[#2D5A27]"
-              help={t("sample.inProgressHelp", { defaultValue: "Mẫu đang trong quá trình thí nghiệm." })}
-            />
-            <StatCard
-              icon={<CheckCircle2 className="w-5 h-5" />}
-              iconBg="bg-[#E5E7EB] text-[#4B5563]"
+              value={inProgressCount} valueColor="text-[#2D5A27]"
+              help={t("sample.inProgressHelp", { defaultValue: "Mẫu đang trong quá trình thí nghiệm." })} />
+            <StatCard icon={<CheckCircle2 className="w-5 h-5" />} iconBg="bg-[#E5E7EB] text-[#4B5563]"
               label={t("sample.statusCompleted", { defaultValue: "Hoàn thành" })}
-              value={completedCount}
-              valueColor="text-[#4B5563]"
-              help={t("sample.completedHelp", { defaultValue: "Mẫu đã hoàn thành thí nghiệm." })}
-            />
-            <StatCard
-              icon={<AlertTriangle className="w-5 h-5" />}
-              iconBg="bg-[#FEE2E2] text-[#B91C1C]"
+              value={completedCount} valueColor="text-[#4B5563]"
+              help={t("sample.completedHelp", { defaultValue: "Mẫu đã hoàn thành thí nghiệm." })} />
+            <StatCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-[#FEE2E2] text-[#B91C1C]"
               label={t("sample.statusExecutedBecauseOfDisease", { defaultValue: "Xử lý bệnh" })}
-              value={diseaseCount}
-              valueColor="text-[#B91C1C]"
-              help={t("sample.diseaseHelp", { defaultValue: "Mẫu bị xử lý do bệnh." })}
-            />
-            <StatCard
-              icon={<Sprout className="w-5 h-5" />}
-              iconBg="bg-[#FFF0F9] text-[#DA70D6]"
+              value={diseaseCount} valueColor="text-[#B91C1C]"
+              help={t("sample.diseaseHelp", { defaultValue: "Mẫu bị xử lý do bệnh." })} />
+            <StatCard icon={<Sprout className="w-5 h-5" />} iconBg="bg-[#FFF0F9] text-[#DA70D6]"
               label={t("sample.statusConvertedToSeedling", { defaultValue: "Chuyển cây giống" })}
-              value={seedlingCount}
-              valueColor="text-[#DA70D6]"
-              help={t("sample.seedlingHelp", { defaultValue: "Mẫu đã được chuyển thành cây giống." })}
-            />
+              value={seedlingCount} valueColor="text-[#DA70D6]"
+              help={t("sample.seedlingHelp", { defaultValue: "Mẫu đã được chuyển thành cây giống." })} />
           </motion.div>
         </div>
 
@@ -410,7 +362,6 @@ export default function ListSample() {
                 <option value={SampleStatus.ConvertedToSeedling}>{t("sample.statusConvertedToSeedling")}</option>
               </select>
             </div>
-
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -421,7 +372,6 @@ export default function ListSample() {
                 className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
               />
             </div>
-
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
@@ -437,11 +387,7 @@ export default function ListSample() {
         {/* ── Table ── */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-16 gap-3"
             >
               <motion.div
@@ -452,11 +398,7 @@ export default function ListSample() {
               <span className="text-gray-500 text-sm">{t("common.loadingData")}</span>
             </motion.div>
           ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+            <motion.div key="error" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="text-red-500 text-center py-12"
             >
               {error}
@@ -474,36 +416,21 @@ export default function ListSample() {
                 <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                   <tr>
                     {[
-                      t("sample.number"),
-                      t("common.name"),
-                      t("sample.experimentLog"),
-                      t("sample.currentStage"),
-                      t("sample.notes"),
-                      t("common.status"),
-                      t("sample.executionDate"),
+                      t("sample.number"), t("common.name"), t("sample.experimentLog"),
+                      t("sample.currentStage"), t("sample.notes"),
+                      t("common.status"), t("sample.executionDate"),
                     ].map((header) => (
-                      <th
-                        key={header}
-                        className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm"
-                      >
+                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-gray-200">
                   <AnimatePresence>
                     {samples.length === 0 ? (
-                      <motion.tr
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        <td colSpan={7} className="p-12 text-center text-gray-500">
-                          {t("common.noData")}
-                        </td>
+                      <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <td colSpan={7} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
                       </motion.tr>
                     ) : (
                       samples.map((sample, i) => {
@@ -519,11 +446,7 @@ export default function ListSample() {
                             layout
                             whileHover={{ backgroundColor: "#EBF7EE" }}
                             className="cursor-pointer transition-colors"
-                            onClick={() =>
-                              navigate(`/technician/samples/${sample.id}`, {
-                                state: { from: "sampleList" },
-                              })
-                            }
+                            onClick={() => navigate(`/technician/samples/${sample.id}`, { state: { from: "sampleList" } })}
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">{rowNumber}</td>
                             <td className="px-6 py-4 font-medium text-gray-900">{sample.name}</td>
@@ -531,22 +454,13 @@ export default function ListSample() {
                               {experimentLogMap[sample.experimentLogId] ||
                                 sample.experimentLogId.substring(0, 8) + "..."}
                             </td>
-                            <td className="px-6 py-4 text-gray-600">
-                              {sample.currentSampleStage ?? "-"}
-                            </td>
-                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                              {sample.notes ?? "-"}
-                            </td>
+                            <td className="px-6 py-4 text-gray-600">{sample.currentSampleStage ?? "-"}</td>
+                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{sample.notes ?? "-"}</td>
                             <td className="px-6 py-4">
                               <motion.span
                                 initial={{ opacity: 0, scale: 0.85 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{
-                                  delay: i * 0.03 + 0.1,
-                                  type: "spring",
-                                  stiffness: 280,
-                                  damping: 22,
-                                }}
+                                transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
                                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
                                   STATUS_COLORS[sample.status] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"
                                 }`}
@@ -555,9 +469,7 @@ export default function ListSample() {
                                 {getStatusLabel(sample.status)}
                               </motion.span>
                             </td>
-                            <td className="px-6 py-4 text-[#4B6C54]">
-                              {formatVietnameseDate(sample.executionDate)}
-                            </td>
+                            <td className="px-6 py-4 text-[#4B6C54]">{formatVietnameseDate(sample.executionDate)}</td>
                           </motion.tr>
                         );
                       })
@@ -575,56 +487,37 @@ export default function ListSample() {
                   className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
                 >
                   <span className="text-sm text-gray-600">
-                    {t("sample.showing")} {samples.length} {t("sample.outOf")} {totalCount}{" "}
-                    {t("sample.samples")}
+                    {t("sample.showing")} {samples.length} {t("sample.outOf")} {totalCount} {t("sample.samples")}
                   </span>
                   <div className="flex gap-2">
                     {currentPage > 1 && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.93 }}
+                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage - 1)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >
-                        ←
-                      </motion.button>
+                      >←</motion.button>
                     )}
-
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                       let pageNum: number;
-                      if (totalPages <= 5)            pageNum = i + 1;
-                      else if (currentPage <= 3)      pageNum = i + 1;
+                      if (totalPages <= 5)                    pageNum = i + 1;
+                      else if (currentPage <= 3)              pageNum = i + 1;
                       else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                      else                            pageNum = currentPage - 2 + i;
+                      else                                    pageNum = currentPage - 2 + i;
                       return (
-                        <motion.button
-                          key={pageNum}
-                          type="button"
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.93 }}
+                        <motion.button key={pageNum} type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1.5 rounded-lg text-sm ${
                             currentPage === pageNum
                               ? "bg-[#2D5A27] text-white"
                               : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
                           }`}
-                        >
-                          {pageNum}
-                        </motion.button>
+                        >{pageNum}</motion.button>
                       );
                     })}
-
                     {currentPage < totalPages && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.93 }}
+                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage + 1)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >
-                        →
-                      </motion.button>
+                      >→</motion.button>
                     )}
                   </div>
                 </motion.div>
