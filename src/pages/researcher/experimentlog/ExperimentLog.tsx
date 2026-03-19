@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -384,12 +386,8 @@ const ExperimentLog = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      const params = new URLSearchParams();
-      params.append("pageNo", String(currentPage));
-      params.append("pageSize", String(logsPerPage));
-      if (methodFilter) {
-        params.append("filter", methodFilter);
-      }
+      const selectedMethod = methods.find((m) => m.id === methodFilter);
+      const methodName = selectedMethod ? selectedMethod.name : methodFilter;
 
       try {
         // Use axiosInstance to fetch paged experiment logs
@@ -397,7 +395,11 @@ const ExperimentLog = () => {
           pageNo: currentPage,
           pageSize: logsPerPage,
         };
-        if (methodFilter) paramsObj.filter = methodFilter;
+        if (methodName) {
+          // backend may accept different casing
+          paramsObj.methodNameSearchTerm = methodName;
+          paramsObj.MethodNameSearchTerm = methodName;
+        }
 
         let data: unknown;
         try {
@@ -829,6 +831,16 @@ const ExperimentLog = () => {
                 <label className="block text-xs font-semibold text-slate-500 mb-2">
                   Phương pháp
                 </label>
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Tìm phương pháp..."
+                    value={methodSearchTerm}
+                    onChange={(e) => setMethodSearchTerm(e.target.value)}
+                    className="w-full border border-slate-200 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
+                  />
+                </div>
                 <select
                   className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
                   value={methodFilter}
