@@ -271,7 +271,7 @@ export default function Tasks() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -290,28 +290,29 @@ export default function Tasks() {
         .animate-slide-in-left { animation: slideInLeft 0.5s ease-out forwards; }
         .hover-lift { transition: all 0.28s cubic-bezier(0.4,0,0.2,1); }
         .hover-lift:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 24px -6px rgba(0,0,0,0.15); }
-        .row-hover { transition: all 0.2s ease; }
-        .row-hover:hover { transform: scale(1.01); box-shadow: 0 4px 12px rgba(34,197,94,0.12); }
       `}</style>
       <div className="space-y-6">
         {/* Header + nút tạo task */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-semibold text-[#005792]">
               {t("task.researchTaskManagement")}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-blue-900/70 mt-1">
               {t("task.researchTaskSubtitle")}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 items-center">
             <button
               type="button"
               onClick={() => {
                 void navigate("/researcher/task-templates");
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-4 py-2 text-sm font-medium text-[#005792] shadow-sm transition-all duration-200 hover:bg-white"
             >
+              <span className="text-xl leading-none" aria-hidden>
+                🧭
+              </span>
               {t("task.taskTemplates")}
             </button>
             <button
@@ -319,8 +320,18 @@ export default function Tasks() {
               onClick={() => {
                 void navigate("/create-task/step-1");
               }}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73]"
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                className="h-5 w-5"
+              >
+                <path d="M10 4v12m-6-6h12" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               {t("task.createResearchTask")}
             </button>
           </div>
@@ -366,10 +377,10 @@ export default function Tasks() {
         </div>
 
         {/* {t('common.filter')} */}
-        <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="bg-white/70 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm">
           <div className="flex flex-wrap items-center gap-4 mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-blue-900/70 font-medium">
                 {t("common.status")}:
               </span>
               <select
@@ -377,7 +388,7 @@ export default function Tasks() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusType | "Tất cả")
                 }
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="Tất cả">{t("common.all")}</option>
                 {Object.entries({
@@ -395,13 +406,13 @@ export default function Tasks() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-blue-900/70 font-medium">
                 {t("task.researcher")}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="Tất cả">{t("common.all")}</option>
                 {allResearchers.map((r) => (
@@ -412,13 +423,30 @@ export default function Tasks() {
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
-              <input
-                type="text"
-                placeholder="Tìm kiếm nhiệm vụ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#005792"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder={t("common.searchPlaceholder") ?? "Tìm kiếm nhiệm vụ..."}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full border border-blue-100 bg-white/90 rounded-xl px-10 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
+                />
+              </div>
             </div>
             <button
               type="button"
@@ -427,8 +455,11 @@ export default function Tasks() {
                 setResearcherFilter("Tất cả");
                 setSearchTerm("");
               }}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-4 py-2 text-sm font-medium text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
             >
+              <span className="text-lg leading-none" aria-hidden>
+                ✕
+              </span>
               {t("common.clear")} {t("common.filter").toLowerCase()}
             </button>
           </div>
@@ -442,17 +473,17 @@ export default function Tasks() {
                 {t("common.filter")} {t("common.selected").toLowerCase()}:
               </span>
               {statusFilter !== "Tất cả" && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-50 text-cyan-700">
                   {t("common.status")}: {getStatusLabel(statusFilter, t)}
                 </span>
               )}
               {researcherFilter !== "Tất cả" && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-800">
                   {t("task.researcher")}: {researcherFilter}
                 </span>
               )}
               {searchTerm.trim() && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-800">
                   {t("common.search")}: "{searchTerm}"
                 </span>
               )}
