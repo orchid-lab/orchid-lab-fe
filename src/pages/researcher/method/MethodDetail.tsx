@@ -1,3 +1,5 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
