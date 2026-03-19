@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -17,6 +18,7 @@ import {
   AlertTriangle,
   Sprout,
   PlusCircle,
+  ChevronDown,
 } from "lucide-react";
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -26,8 +28,7 @@ const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const fadeInDown: Variants = {
   hidden: { opacity: 0, y: -16 },
   visible: {
-    opacity: 1,
-    y: 0,
+    opacity: 1, y: 0,
     transition: { duration: 0.4, ease: EASE_OUT_EXPO },
   },
 };
@@ -42,9 +43,7 @@ const staggerContainer: Variants = {
 const cardVariant: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
   visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
+    opacity: 1, y: 0, scale: 1,
     transition: { duration: 0.4, ease: EASE_OUT_EXPO },
   },
 };
@@ -52,9 +51,7 @@ const cardVariant: Variants = {
 const filterPanelVariant: Variants = {
   hidden: { opacity: 0, scaleY: 0.96, y: -8 },
   visible: {
-    opacity: 1,
-    scaleY: 1,
-    y: 0,
+    opacity: 1, scaleY: 1, y: 0,
     transition: { duration: 0.35, ease: EASE_OUT_EXPO },
   },
 };
@@ -62,8 +59,7 @@ const filterPanelVariant: Variants = {
 const tableRowVariant: Variants = {
   hidden: { opacity: 0, x: -12 },
   visible: (i: number = 0) => ({
-    opacity: 1,
-    x: 0,
+    opacity: 1, x: 0,
     transition: { duration: 0.35, delay: i * 0.04, ease: "easeOut" as const },
   }),
   exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
@@ -74,6 +70,26 @@ const progressBarVariant: Variants = {
   visible: (pct: number) => ({
     width: `${pct}%`,
     transition: { duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.3 },
+  }),
+};
+
+const dropdownVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.88, y: -6 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    opacity: 0, scaleY: 0.9, y: -4,
+    transition: { duration: 0.15, ease: "easeIn" as const },
+  },
+};
+
+const dropdownItemVariant: Variants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.18, delay: i * 0.03, ease: "easeOut" as const },
   }),
 };
 
@@ -104,6 +120,14 @@ const STATUS_ICON_COLORS: Record<SampleStatus, string> = {
   [SampleStatus.ConvertedToSeedling]:       "text-[#DA70D6]",
 };
 
+const STATUS_FILTER_ORDER: SampleStatus[] = [
+  SampleStatus.Created,
+  SampleStatus.InProgressed,
+  SampleStatus.Completed,
+  SampleStatus.ExecutedBecauseOfDisease,
+  SampleStatus.ConvertedToSeedling,
+];
+
 const getStatusIcon = (status: SampleStatus) => {
   const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
   switch (status) {
@@ -114,6 +138,116 @@ const getStatusIcon = (status: SampleStatus) => {
     case SampleStatus.ConvertedToSeedling:       return <Sprout className={cls} />;
   }
 };
+
+// ─── AnimatedSelect ───────────────────────────────────────────────────────────
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface AnimatedSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function AnimatedSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder = "Select...",
+  disabled = false,
+}: AnimatedSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative select-none">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`
+          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
+          transition-all duration-150 whitespace-nowrap
+          ${open
+            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
+            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        `}
+      >
+        <span>{selectedLabel}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+          className="flex items-center"
+        >
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            key="dropdown"
+            variants={dropdownVariant}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{ transformOrigin: "top center" }}
+            className="
+              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
+              bg-white border border-[#DDEEE0] rounded-xl
+              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
+              overflow-hidden py-1
+            "
+          >
+            {options.map((opt, i) => (
+              <motion.li
+                key={opt.value}
+                custom={i}
+                variants={dropdownItemVariant}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`
+                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
+                  transition-colors duration-75
+                  ${opt.value === value
+                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
+                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
+                  }
+                `}
+              >
+                {opt.label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -168,10 +302,30 @@ export default function ListSample() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<SampleStatus | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 20;
+
+  const getStatusLabel = (status: SampleStatus): string => {
+    const statusMap: Record<SampleStatus, string> = {
+      [SampleStatus.Created]:                  t("sample.statusCreated"),
+      [SampleStatus.InProgressed]:             t("sample.statusInProgressed"),
+      [SampleStatus.Completed]:                t("sample.statusCompleted"),
+      [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
+      [SampleStatus.ConvertedToSeedling]:      t("sample.statusConvertedToSeedling"),
+    };
+    return statusMap[status] || status;
+  };
+
+  // Build status options for AnimatedSelect
+  const statusOptions: SelectOption<SampleStatus | "">[] = [
+    { value: "", label: t("sample.allStatus") },
+    ...STATUS_FILTER_ORDER.map((s) => ({
+      value: s as SampleStatus | "",
+      label: getStatusLabel(s),
+    })),
+  ];
 
   useEffect(() => {
     const fetchExperimentLogs = async () => {
@@ -234,17 +388,6 @@ export default function ListSample() {
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
-
-  const getStatusLabel = (status: SampleStatus): string => {
-    const statusMap: Record<SampleStatus, string> = {
-      [SampleStatus.Created]:                  t("sample.statusCreated"),
-      [SampleStatus.InProgressed]:             t("sample.statusInProgressed"),
-      [SampleStatus.Completed]:                t("sample.statusCompleted"),
-      [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
-      [SampleStatus.ConvertedToSeedling]:      t("sample.statusConvertedToSeedling"),
-    };
-    return statusMap[status] || status;
-  };
 
   const totalSamples    = allSamples.length;
   const inProgressCount = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
@@ -347,21 +490,18 @@ export default function ListSample() {
           className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
         >
           <div className="flex flex-wrap items-center gap-4">
+            {/* Status filter — AnimatedSelect */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-[#2D5A27]" />
-              <select
+              <AnimatedSelect
                 value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
-              >
-                <option value="">{t("sample.allStatus")}</option>
-                <option value={SampleStatus.Created}>{t("sample.statusCreated")}</option>
-                <option value={SampleStatus.InProgressed}>{t("sample.statusInProgressed")}</option>
-                <option value={SampleStatus.Completed}>{t("sample.statusCompleted")}</option>
-                <option value={SampleStatus.ExecutedBecauseOfDisease}>{t("sample.statusExecutedBecauseOfDisease")}</option>
-                <option value={SampleStatus.ConvertedToSeedling}>{t("sample.statusConvertedToSeedling")}</option>
-              </select>
+                onChange={(v) => { setStatusFilter(v as SampleStatus | ""); setCurrentPage(1); }}
+                options={statusOptions}
+                placeholder={t("sample.allStatus")}
+              />
             </div>
+
+            {/* Search */}
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -369,9 +509,11 @@ export default function ListSample() {
                 placeholder={t("sample.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
               />
             </div>
+
+            {/* Clear filters */}
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
@@ -416,9 +558,13 @@ export default function ListSample() {
                 <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                   <tr>
                     {[
-                      t("sample.number"), t("common.name"), t("sample.experimentLog"),
-                      t("sample.currentStage"), t("sample.notes"),
-                      t("common.status"), t("sample.executionDate"),
+                      t("sample.number"),
+                      t("common.name"),
+                      t("sample.experimentLog"),
+                      t("sample.currentStage"),
+                      t("sample.notes"),
+                      t("common.status"),
+                      t("sample.executionDate"),
                     ].map((header) => (
                       <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                         {header}
