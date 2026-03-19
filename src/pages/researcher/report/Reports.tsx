@@ -303,7 +303,7 @@ export default function ReportsTechnician() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ pageNo: "1", pageSize: "10000", technicianId: user.id });
+      const params = new URLSearchParams({ pageNo: "1", pageSize: "10000"});
       const res = await axiosInstance.get(`/api/monitoring-log?${params.toString()}`);
       const json = res.data as MonitoringLogApiResponse;
       const items = json.data ?? json.items ?? [];

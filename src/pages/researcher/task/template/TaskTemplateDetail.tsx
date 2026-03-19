@@ -89,7 +89,7 @@ const TaskTemplateDetail: React.FC = () => {
             type="button"
             className="mt-4 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
             onClick={() => {
-              void navigate("/task-templates");
+              void navigate("/researcher/task-templates");
             }}
           >
             Quay lại danh sách
@@ -215,7 +215,7 @@ const TaskTemplateDetail: React.FC = () => {
             type="button"
             className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
             onClick={() => {
-              void navigate("/task-templates");
+              void navigate("/researcher/task-templates");
             }}
           >
             Quay lại

@@ -114,7 +114,7 @@ export default function SeedlingDetail() {
           <button
             type="button"
             className="back-button inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-            onClick={() => navigate(`/seedlings?page=${page}`)}
+            onClick={() => navigate(`/researcher/seedlings?page=${page}`)}
           >
             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -159,7 +159,7 @@ export default function SeedlingDetail() {
         <button
           type="button"
           className="back-button inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-          onClick={() => navigate(`/seedlings?page=${page}`)}
+          onClick={() => navigate(`/researcher/seedlings?page=${page}`)}
         >
           <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

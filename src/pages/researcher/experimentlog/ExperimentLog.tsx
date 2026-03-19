@@ -526,7 +526,7 @@ const ExperimentLog = () => {
               Nhật ký thí nghiệm
             </h1>
             <Link
-              to="/experiment-log/create"
+              to="/researcher/experiment-log/create"
               className="ml-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold shadow hover:scale-105 transition-transform"
             >
               Tạo nhật ký thí nghiệm
@@ -696,7 +696,7 @@ const ExperimentLog = () => {
                         key={log.id}
                         className="border-b hover:bg-gradient-to-r hover:from-green-50 hover:to-blue-50 cursor-pointer row-hover"
                         onClick={() =>
-                          void navigate(`/experiment-log/${log.id}`)
+                          void navigate(`/researcher/experiment-log/${log.id}`)
                         }
                         style={{ animationDelay: `${idx * 0.03}s` }}
                       >

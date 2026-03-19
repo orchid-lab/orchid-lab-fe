@@ -116,7 +116,7 @@ const CreateExperimentStep3 = () => {
         variant: "success",
       });
       resetForm();
-      void navigate("/experiment-log");
+      void navigate("/researcher/experiment-log");
     } catch (error) {
       const apiError = error as {
         response?: {
@@ -315,7 +315,7 @@ const CreateExperimentStep3 = () => {
           {/* Footer buttons */}
           <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
             <Link
-              to="/experiment-log/create/step-2"
+              to="/researcher/experiment-log/create/step-2"
               className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2 rounded-lg"
             >
               <ArrowLeft className="w-4 h-4" /> Quay lại

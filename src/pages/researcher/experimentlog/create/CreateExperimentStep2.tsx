@@ -218,7 +218,7 @@ const CreateExperimentStep2 = () => {
 
   const handleNext = () => {
     if (isNextDisabled) return;
-    void navigate("/experiment-log/create/step-3");
+    void navigate("/researcher/experiment-log/create/step-3");
   };
 
   if (!mType) return null;
@@ -359,7 +359,7 @@ const CreateExperimentStep2 = () => {
           {/* Footer buttons */}
           <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
             <Link
-              to="/experiment-log/create/step-1"
+              to="/researcher/experiment-log/create/step-1"
               className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2 rounded-lg"
             >
               <ArrowLeft className="w-4 h-4" /> Quay lại

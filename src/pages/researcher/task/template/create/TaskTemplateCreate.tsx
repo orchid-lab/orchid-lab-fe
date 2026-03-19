@@ -243,7 +243,7 @@ const TaskTemplateCreate: React.FC = () => {
       await axiosInstance.post("/api/tasktemplate", templateData);
 
       enqueueSnackbar("Tạo mẫu nhiệm vụ thành công!", { variant: "success" });
-      void navigate("/task-templates");
+      void navigate("/researcher/task-templates");
     } catch (error) {
       console.error("Error creating task template:", error);
       const apiError = error as {

@@ -206,10 +206,10 @@ export default function SampleDetail() {
   const handleBack = () => {
     // Navigate back to researcher experiment log detail
     if (navigationSource?.from === 'researcherExperimentLogDetail' && navigationSource.experimentLogId) {
-      navigate(`/experiment-log/${navigationSource.experimentLogId}`);
+      navigate(`/researcher/experiment-log/${navigationSource.experimentLogId}`);
     } else {
       // Default fallback to experiment logs list
-      navigate("/experiment-log");
+      navigate("/researcher/experiment-log");
     }
   };
 

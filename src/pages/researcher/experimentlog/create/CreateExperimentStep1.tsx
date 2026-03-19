@@ -410,7 +410,7 @@ const CreateExperimentStep1 = () => {
 
   const handleNext = () => {
     if (!isStep1Valid) return;
-    void navigate("/experiment-log/create/step-2");
+    void navigate("/researcher/experiment-log/create/step-2");
   };
 
   return (
@@ -626,7 +626,7 @@ const CreateExperimentStep1 = () => {
             {/* Footer buttons */}
             <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
               <Link
-                to="/experiment-log"
+                to="/researcher/experiment-log"
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
                 Hủy
