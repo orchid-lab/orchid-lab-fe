@@ -308,7 +308,7 @@ export default function Tasks() {
             <button
               type="button"
               onClick={() => {
-                void navigate("/task-templates");
+                void navigate("/researcher/task-templates");
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
@@ -507,7 +507,7 @@ export default function Tasks() {
                       key={task.id}
                       className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
                       onClick={() => {
-                        void navigate(`/tasks/${task.id}`);
+                        void navigate(`/researcher/tasks/${task.id}`);
                       }}
                     >
                       <td className="p-4 font-medium text-gray-900">

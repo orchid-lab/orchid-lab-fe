@@ -131,7 +131,7 @@ export default function MethodDetail() {
           <button
             type="button"
             className="mt-4 bg-green-800 text-white px-6 py-2 rounded-full hover:bg-green-900 transition"
-            onClick={() => navigate("/method")}
+            onClick={() => navigate("/researcher/method")}
           >
             {t("common.back")}
           </button>
@@ -147,7 +147,7 @@ export default function MethodDetail() {
         <button
           type="button"
           className="text-green-800 hover:text-green-900 font-medium mb-3 flex items-center gap-1"
-          onClick={() => navigate("/method")}
+          onClick={() => navigate("/researcher/method")}
         >
           ← {t("common.back")}
         </button>
