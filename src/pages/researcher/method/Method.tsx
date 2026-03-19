@@ -102,7 +102,7 @@ export default function MethodList() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">
-                Danh sách thành viên
+                {t("method.methodsManagement")}
               </h1>
               <p className="mt-1 text-sm text-blue-900/70">
                 {t("method.methodSubtitle")}
@@ -125,7 +125,7 @@ export default function MethodList() {
               >
                 <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              + Tạo mới
+              {t("method.createMethod")}
             </button>
           </div>
         </div>
