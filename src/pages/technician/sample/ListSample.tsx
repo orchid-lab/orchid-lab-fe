@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -17,6 +18,7 @@ import {
   AlertTriangle,
   Sprout,
   PlusCircle,
+  ChevronDown,
 } from "lucide-react";
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -26,8 +28,7 @@ const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const fadeInDown: Variants = {
   hidden: { opacity: 0, y: -16 },
   visible: {
-    opacity: 1,
-    y: 0,
+    opacity: 1, y: 0,
     transition: { duration: 0.4, ease: EASE_OUT_EXPO },
   },
 };
@@ -42,9 +43,7 @@ const staggerContainer: Variants = {
 const cardVariant: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
   visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
+    opacity: 1, y: 0, scale: 1,
     transition: { duration: 0.4, ease: EASE_OUT_EXPO },
   },
 };
@@ -52,9 +51,7 @@ const cardVariant: Variants = {
 const filterPanelVariant: Variants = {
   hidden: { opacity: 0, scaleY: 0.96, y: -8 },
   visible: {
-    opacity: 1,
-    scaleY: 1,
-    y: 0,
+    opacity: 1, scaleY: 1, y: 0,
     transition: { duration: 0.35, ease: EASE_OUT_EXPO },
   },
 };
@@ -62,8 +59,7 @@ const filterPanelVariant: Variants = {
 const tableRowVariant: Variants = {
   hidden: { opacity: 0, x: -12 },
   visible: (i: number = 0) => ({
-    opacity: 1,
-    x: 0,
+    opacity: 1, x: 0,
     transition: { duration: 0.35, delay: i * 0.04, ease: "easeOut" as const },
   }),
   exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
@@ -74,6 +70,26 @@ const progressBarVariant: Variants = {
   visible: (pct: number) => ({
     width: `${pct}%`,
     transition: { duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.3 },
+  }),
+};
+
+const dropdownVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.88, y: -6 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    opacity: 0, scaleY: 0.9, y: -4,
+    transition: { duration: 0.15, ease: "easeIn" as const },
+  },
+};
+
+const dropdownItemVariant: Variants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.18, delay: i * 0.03, ease: "easeOut" as const },
   }),
 };
 
@@ -89,31 +105,149 @@ const formatVietnameseDate = (dateString: string | null): string => {
 };
 
 const STATUS_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.InProgressed]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.Completed]: "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.ExecutedBecauseOfDisease]: "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
-  [SampleStatus.ConvertedToSeedling]: "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
+  [SampleStatus.Created]:                   "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.InProgressed]:              "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.Completed]:                 "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  [SampleStatus.ExecutedBecauseOfDisease]:  "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
+  [SampleStatus.ConvertedToSeedling]:       "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
 };
 
 const STATUS_ICON_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]: "text-[#2D5A27]",
-  [SampleStatus.InProgressed]: "text-[#2D5A27]",
-  [SampleStatus.Completed]: "text-[#2D5A27]",
-  [SampleStatus.ExecutedBecauseOfDisease]: "text-[#B91C1C]",
-  [SampleStatus.ConvertedToSeedling]: "text-[#DA70D6]",
+  [SampleStatus.Created]:                   "text-[#2D5A27]",
+  [SampleStatus.InProgressed]:              "text-[#2D5A27]",
+  [SampleStatus.Completed]:                 "text-[#2D5A27]",
+  [SampleStatus.ExecutedBecauseOfDisease]:  "text-[#B91C1C]",
+  [SampleStatus.ConvertedToSeedling]:       "text-[#DA70D6]",
 };
+
+const STATUS_FILTER_ORDER: SampleStatus[] = [
+  SampleStatus.Created,
+  SampleStatus.InProgressed,
+  SampleStatus.Completed,
+  SampleStatus.ExecutedBecauseOfDisease,
+  SampleStatus.ConvertedToSeedling,
+];
 
 const getStatusIcon = (status: SampleStatus) => {
   const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
   switch (status) {
-    case SampleStatus.Created:             return <PlusCircle className={cls} />;
-    case SampleStatus.InProgressed:        return <FlaskConical className={cls} />;
-    case SampleStatus.Completed:           return <CheckCircle2 className={cls} />;
-    case SampleStatus.ExecutedBecauseOfDisease: return <AlertTriangle className={cls} />;
-    case SampleStatus.ConvertedToSeedling: return <Sprout className={cls} />;
+    case SampleStatus.Created:                   return <PlusCircle className={cls} />;
+    case SampleStatus.InProgressed:              return <FlaskConical className={cls} />;
+    case SampleStatus.Completed:                 return <CheckCircle2 className={cls} />;
+    case SampleStatus.ExecutedBecauseOfDisease:  return <AlertTriangle className={cls} />;
+    case SampleStatus.ConvertedToSeedling:       return <Sprout className={cls} />;
   }
 };
+
+// ─── AnimatedSelect ───────────────────────────────────────────────────────────
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface AnimatedSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function AnimatedSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder = "Select...",
+  disabled = false,
+}: AnimatedSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative select-none">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`
+          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
+          transition-all duration-150 whitespace-nowrap
+          ${open
+            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
+            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        `}
+      >
+        <span>{selectedLabel}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+          className="flex items-center"
+        >
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            key="dropdown"
+            variants={dropdownVariant}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{ transformOrigin: "top center" }}
+            className="
+              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
+              bg-white border border-[#DDEEE0] rounded-xl
+              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
+              overflow-hidden py-1
+            "
+          >
+            {options.map((opt, i) => (
+              <motion.li
+                key={opt.value}
+                custom={i}
+                variants={dropdownItemVariant}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`
+                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
+                  transition-colors duration-75
+                  ${opt.value === value
+                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
+                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
+                  }
+                `}
+              >
+                {opt.label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -168,12 +302,31 @@ export default function ListSample() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<SampleStatus | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 20;
 
-  // Fetch experiment logs for name mapping
+  const getStatusLabel = (status: SampleStatus): string => {
+    const statusMap: Record<SampleStatus, string> = {
+      [SampleStatus.Created]:                  t("sample.statusCreated"),
+      [SampleStatus.InProgressed]:             t("sample.statusInProgressed"),
+      [SampleStatus.Completed]:                t("sample.statusCompleted"),
+      [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
+      [SampleStatus.ConvertedToSeedling]:      t("sample.statusConvertedToSeedling"),
+    };
+    return statusMap[status] || status;
+  };
+
+  // Build status options for AnimatedSelect
+  const statusOptions: SelectOption<SampleStatus | "">[] = [
+    { value: "", label: t("sample.allStatus") },
+    ...STATUS_FILTER_ORDER.map((s) => ({
+      value: s as SampleStatus | "",
+      label: getStatusLabel(s),
+    })),
+  ];
+
   useEffect(() => {
     const fetchExperimentLogs = async () => {
       try {
@@ -191,7 +344,6 @@ export default function ListSample() {
     fetchExperimentLogs();
   }, []);
 
-  // Fetch all samples for summary counts
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -205,7 +357,6 @@ export default function ListSample() {
     fetchAll();
   }, []);
 
-  // Fetch filtered & paginated samples
   useEffect(() => {
     const fetchSamples = async () => {
       setLoading(true);
@@ -213,21 +364,12 @@ export default function ListSample() {
       try {
         const params = new URLSearchParams({ pageNo: "1", pageSize: "1000" });
         const response = await axiosInstance.get<SampleApiResponse>(`/api/samples?${params.toString()}`);
-
         let filtered = response.data.data || [];
-
         if (searchTerm.trim())
-          filtered = filtered.filter((s) =>
-            s.name.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-
+          filtered = filtered.filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
         if (statusFilter)
           filtered = filtered.filter((s) => s.status === statusFilter);
-
-        filtered.sort(
-          (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-        );
-
+        filtered.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
         setTotalCount(filtered.length);
         const start = (currentPage - 1) * itemsPerPage;
         setSamples(filtered.slice(start, start + itemsPerPage));
@@ -239,7 +381,6 @@ export default function ListSample() {
         setLoading(false);
       }
     };
-
     const timeout = setTimeout(fetchSamples, searchTerm ? 300 : 0);
     return () => clearTimeout(timeout);
   }, [searchTerm, statusFilter, currentPage, enqueueSnackbar, t]);
@@ -248,23 +389,11 @@ export default function ListSample() {
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  const getStatusLabel = (status: SampleStatus): string => {
-    const statusMap: Record<SampleStatus, string> = {
-      [SampleStatus.Created]: t("sample.statusCreated"),
-      [SampleStatus.InProgressed]: t("sample.statusInProgressed"),
-      [SampleStatus.Completed]: t("sample.statusCompleted"),
-      [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
-      [SampleStatus.ConvertedToSeedling]: t("sample.statusConvertedToSeedling"),
-    };
-    return statusMap[status] || status;
-  };
-
-  // Summary counts
-  const totalSamples = allSamples.length;
-  const inProgressCount  = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
-  const completedCount   = allSamples.filter((s) => s.status === SampleStatus.Completed).length;
-  const diseaseCount     = allSamples.filter((s) => s.status === SampleStatus.ExecutedBecauseOfDisease).length;
-  const seedlingCount    = allSamples.filter((s) => s.status === SampleStatus.ConvertedToSeedling).length;
+  const totalSamples    = allSamples.length;
+  const inProgressCount = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
+  const completedCount  = allSamples.filter((s) => s.status === SampleStatus.Completed).length;
+  const diseaseCount    = allSamples.filter((s) => s.status === SampleStatus.ExecutedBecauseOfDisease).length;
+  const seedlingCount   = allSamples.filter((s) => s.status === SampleStatus.ConvertedToSeedling).length;
   const completedPercent = Math.round((completedCount / Math.max(totalSamples, 1)) * 100);
 
   return (
@@ -272,18 +401,9 @@ export default function ListSample() {
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}
-        <motion.div
-          className="mb-8"
-          variants={fadeInDown}
-          initial="hidden"
-          animate="visible"
-        >
-          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
-            {t("sample.sampleList")}
-          </h1>
-          <p className="text-[#4B6C54] text-lg">
-            {t("sample.sampleManagement")}
-          </p>
+        <motion.div className="mb-8" variants={fadeInDown} initial="hidden" animate="visible">
+          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">{t("sample.sampleList")}</h1>
+          <p className="text-[#4B6C54] text-lg">{t("sample.sampleManagement")}</p>
         </motion.div>
 
         {/* ── Overview ── */}
@@ -320,14 +440,10 @@ export default function ListSample() {
                 </div>
               </div>
             </div>
-
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
                 <span>{t("sample.completedRate", { defaultValue: "Tỉ lệ hoàn thành" })}</span>
-                <motion.span
-                  key={completedPercent}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <motion.span key={completedPercent} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   className="font-semibold text-[#2D5A27]"
                 >
                   {completedPercent}%
@@ -346,44 +462,23 @@ export default function ListSample() {
           </motion.div>
 
           {/* Stat cards */}
-          <motion.div
-            className="grid grid-cols-2 gap-4"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <StatCard
-              icon={<FlaskConical className="w-5 h-5" />}
-              iconBg="bg-[#DDEEE0] text-[#2D5A27]"
+          <motion.div className="grid grid-cols-2 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
+            <StatCard icon={<FlaskConical className="w-5 h-5" />} iconBg="bg-[#DDEEE0] text-[#2D5A27]"
               label={t("sample.statusInProgressed", { defaultValue: "Đang thực hiện" })}
-              value={inProgressCount}
-              valueColor="text-[#2D5A27]"
-              help={t("sample.inProgressHelp", { defaultValue: "Mẫu đang trong quá trình thí nghiệm." })}
-            />
-            <StatCard
-              icon={<CheckCircle2 className="w-5 h-5" />}
-              iconBg="bg-[#E5E7EB] text-[#4B5563]"
+              value={inProgressCount} valueColor="text-[#2D5A27]"
+              help={t("sample.inProgressHelp", { defaultValue: "Mẫu đang trong quá trình thí nghiệm." })} />
+            <StatCard icon={<CheckCircle2 className="w-5 h-5" />} iconBg="bg-[#E5E7EB] text-[#4B5563]"
               label={t("sample.statusCompleted", { defaultValue: "Hoàn thành" })}
-              value={completedCount}
-              valueColor="text-[#4B5563]"
-              help={t("sample.completedHelp", { defaultValue: "Mẫu đã hoàn thành thí nghiệm." })}
-            />
-            <StatCard
-              icon={<AlertTriangle className="w-5 h-5" />}
-              iconBg="bg-[#FEE2E2] text-[#B91C1C]"
+              value={completedCount} valueColor="text-[#4B5563]"
+              help={t("sample.completedHelp", { defaultValue: "Mẫu đã hoàn thành thí nghiệm." })} />
+            <StatCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-[#FEE2E2] text-[#B91C1C]"
               label={t("sample.statusExecutedBecauseOfDisease", { defaultValue: "Xử lý bệnh" })}
-              value={diseaseCount}
-              valueColor="text-[#B91C1C]"
-              help={t("sample.diseaseHelp", { defaultValue: "Mẫu bị xử lý do bệnh." })}
-            />
-            <StatCard
-              icon={<Sprout className="w-5 h-5" />}
-              iconBg="bg-[#FFF0F9] text-[#DA70D6]"
+              value={diseaseCount} valueColor="text-[#B91C1C]"
+              help={t("sample.diseaseHelp", { defaultValue: "Mẫu bị xử lý do bệnh." })} />
+            <StatCard icon={<Sprout className="w-5 h-5" />} iconBg="bg-[#FFF0F9] text-[#DA70D6]"
               label={t("sample.statusConvertedToSeedling", { defaultValue: "Chuyển cây giống" })}
-              value={seedlingCount}
-              valueColor="text-[#DA70D6]"
-              help={t("sample.seedlingHelp", { defaultValue: "Mẫu đã được chuyển thành cây giống." })}
-            />
+              value={seedlingCount} valueColor="text-[#DA70D6]"
+              help={t("sample.seedlingHelp", { defaultValue: "Mẫu đã được chuyển thành cây giống." })} />
           </motion.div>
         </div>
 
@@ -395,22 +490,18 @@ export default function ListSample() {
           className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
         >
           <div className="flex flex-wrap items-center gap-4">
+            {/* Status filter — AnimatedSelect */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-[#2D5A27]" />
-              <select
+              <AnimatedSelect
                 value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
-              >
-                <option value="">{t("sample.allStatus")}</option>
-                <option value={SampleStatus.Created}>{t("sample.statusCreated")}</option>
-                <option value={SampleStatus.InProgressed}>{t("sample.statusInProgressed")}</option>
-                <option value={SampleStatus.Completed}>{t("sample.statusCompleted")}</option>
-                <option value={SampleStatus.ExecutedBecauseOfDisease}>{t("sample.statusExecutedBecauseOfDisease")}</option>
-                <option value={SampleStatus.ConvertedToSeedling}>{t("sample.statusConvertedToSeedling")}</option>
-              </select>
+                onChange={(v) => { setStatusFilter(v as SampleStatus | ""); setCurrentPage(1); }}
+                options={statusOptions}
+                placeholder={t("sample.allStatus")}
+              />
             </div>
 
+            {/* Search */}
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -418,10 +509,11 @@ export default function ListSample() {
                 placeholder={t("sample.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
               />
             </div>
 
+            {/* Clear filters */}
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
@@ -437,11 +529,7 @@ export default function ListSample() {
         {/* ── Table ── */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="flex flex-col items-center justify-center py-16 gap-3"
             >
               <motion.div
@@ -452,11 +540,7 @@ export default function ListSample() {
               <span className="text-gray-500 text-sm">{t("common.loadingData")}</span>
             </motion.div>
           ) : error ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+            <motion.div key="error" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="text-red-500 text-center py-12"
             >
               {error}
@@ -482,28 +566,17 @@ export default function ListSample() {
                       t("common.status"),
                       t("sample.executionDate"),
                     ].map((header) => (
-                      <th
-                        key={header}
-                        className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm"
-                      >
+                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-gray-200">
                   <AnimatePresence>
                     {samples.length === 0 ? (
-                      <motion.tr
-                        key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                      >
-                        <td colSpan={7} className="p-12 text-center text-gray-500">
-                          {t("common.noData")}
-                        </td>
+                      <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <td colSpan={7} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
                       </motion.tr>
                     ) : (
                       samples.map((sample, i) => {
@@ -519,11 +592,7 @@ export default function ListSample() {
                             layout
                             whileHover={{ backgroundColor: "#EBF7EE" }}
                             className="cursor-pointer transition-colors"
-                            onClick={() =>
-                              navigate(`/technician/samples/${sample.id}`, {
-                                state: { from: "sampleList" },
-                              })
-                            }
+                            onClick={() => navigate(`/technician/samples/${sample.id}`, { state: { from: "sampleList" } })}
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">{rowNumber}</td>
                             <td className="px-6 py-4 font-medium text-gray-900">{sample.name}</td>
@@ -531,22 +600,13 @@ export default function ListSample() {
                               {experimentLogMap[sample.experimentLogId] ||
                                 sample.experimentLogId.substring(0, 8) + "..."}
                             </td>
-                            <td className="px-6 py-4 text-gray-600">
-                              {sample.currentSampleStage ?? "-"}
-                            </td>
-                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
-                              {sample.notes ?? "-"}
-                            </td>
+                            <td className="px-6 py-4 text-gray-600">{sample.currentSampleStage ?? "-"}</td>
+                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{sample.notes ?? "-"}</td>
                             <td className="px-6 py-4">
                               <motion.span
                                 initial={{ opacity: 0, scale: 0.85 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{
-                                  delay: i * 0.03 + 0.1,
-                                  type: "spring",
-                                  stiffness: 280,
-                                  damping: 22,
-                                }}
+                                transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
                                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
                                   STATUS_COLORS[sample.status] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"
                                 }`}
@@ -555,9 +615,7 @@ export default function ListSample() {
                                 {getStatusLabel(sample.status)}
                               </motion.span>
                             </td>
-                            <td className="px-6 py-4 text-[#4B6C54]">
-                              {formatVietnameseDate(sample.executionDate)}
-                            </td>
+                            <td className="px-6 py-4 text-[#4B6C54]">{formatVietnameseDate(sample.executionDate)}</td>
                           </motion.tr>
                         );
                       })
@@ -575,56 +633,37 @@ export default function ListSample() {
                   className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
                 >
                   <span className="text-sm text-gray-600">
-                    {t("sample.showing")} {samples.length} {t("sample.outOf")} {totalCount}{" "}
-                    {t("sample.samples")}
+                    {t("sample.showing")} {samples.length} {t("sample.outOf")} {totalCount} {t("sample.samples")}
                   </span>
                   <div className="flex gap-2">
                     {currentPage > 1 && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.93 }}
+                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage - 1)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >
-                        ←
-                      </motion.button>
+                      >←</motion.button>
                     )}
-
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                       let pageNum: number;
-                      if (totalPages <= 5)            pageNum = i + 1;
-                      else if (currentPage <= 3)      pageNum = i + 1;
+                      if (totalPages <= 5)                    pageNum = i + 1;
+                      else if (currentPage <= 3)              pageNum = i + 1;
                       else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                      else                            pageNum = currentPage - 2 + i;
+                      else                                    pageNum = currentPage - 2 + i;
                       return (
-                        <motion.button
-                          key={pageNum}
-                          type="button"
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.93 }}
+                        <motion.button key={pageNum} type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`px-3 py-1.5 rounded-lg text-sm ${
                             currentPage === pageNum
                               ? "bg-[#2D5A27] text-white"
                               : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
                           }`}
-                        >
-                          {pageNum}
-                        </motion.button>
+                        >{pageNum}</motion.button>
                       );
                     })}
-
                     {currentPage < totalPages && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.93 }}
+                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage + 1)}
                         className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >
-                        →
-                      </motion.button>
+                      >→</motion.button>
                     )}
                   </div>
                 </motion.div>

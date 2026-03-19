@@ -40,18 +40,18 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid #166534;
-  color: #166534;
-  border-radius: 0.5rem;
+  border: 1px solid #2D5A27;
+  color: #2D5A27;
+  border-radius: 0.75rem;
   padding: 0.5rem 1rem;
-  background: transparent;
+  background: rgba(45, 90, 39, 0.06);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 #technician-experimentlog-detail .back-button:hover {
-  background-color: #166534;
+  background-color: #2D5A27;
   color: white;
   transform: translateX(-2px);
 }
@@ -69,7 +69,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .detail-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .detail-title {
@@ -93,19 +93,19 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .btn-start {
   padding: 0.5rem 1rem;
-  background-color: #2563eb;
+  background-color: #2D5A27;
   color: white;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   min-width: 120px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 #technician-experimentlog-detail .btn-start:hover:not(:disabled) {
-  background-color: #1d4ed8;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  background-color: #224a20;
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -128,14 +128,14 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .btn-protocorm.enabled {
-  background-color: #059669;
+  background-color: #2D5A27;
   color: white;
   cursor: pointer;
 }
 
 #technician-experimentlog-detail .btn-protocorm.enabled:hover {
-  background-color: #047857;
-  box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);
+  background-color: #224a20;
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -180,21 +180,20 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .btn-change-stage {
   padding: 0.5rem 1rem;
-  background-color: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-  border-radius: 0.5rem;
+  background-color: rgba(45, 90, 39, 0.1);
+  color: #2D5A27;
+  border: 1px solid #2D5A27;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   min-width: 140px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 #technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
-  background-color: #bfdbfe;
-  border-color: #60a5fa;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+  background-color: rgba(45, 90, 39, 0.15);
+  box-shadow: 0 8px 16px rgba(45, 90, 39, 0.16);
   transform: translateY(-2px);
 }
 
@@ -204,15 +203,15 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage {
-  background-color: rgba(37, 99, 235, 0.2);
-  color: #93c5fd;
-  border-color: #3b82f6;
+  background-color: rgba(45, 90, 39, 0.2);
+  color: #a7f3d0;
+  border-color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .btn-change-stage:hover:not(:disabled) {
-  background-color: rgba(37, 99, 235, 0.3);
-  border-color: #60a5fa;
-  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
+  background-color: rgba(45, 90, 39, 0.3);
+  border-color: #2D5A27;
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.4);
   transform: translateY(-2px);
 }
 
@@ -328,8 +327,8 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .protocorm-input:focus {
   outline: none;
-  border-color: #059669;
-  box-shadow: 0 0 0 1px #059669;
+  border-color: #2D5A27;
+  box-shadow: 0 0 0 1px #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .protocorm-input {
@@ -347,7 +346,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   padding: 0.375rem 0.75rem;
   font-size: 0.875rem;
   color: white;
-  background-color: #059669;
+  background-color: #2D5A27;
   border: none;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -358,7 +357,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .protocorm-submit:hover:not(:disabled) {
-  background-color: #047857;
+  background-color: #1f3f24;
 }
 
 #technician-experimentlog-detail .protocorm-submit:disabled {
@@ -391,45 +390,46 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .info-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 @media (min-width: 768px) {
   #technician-experimentlog-detail .info-grid {
-    flex-direction: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-#technician-experimentlog-detail .info-column {
-  flex: 1;
+#technician-experimentlog-detail .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-#technician-experimentlog-detail .info-item {
-  font-size: 1rem;
-  color: #111827;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .info-item {
-  color: #f9fafb;
+  gap: 0.25rem;
 }
 
 #technician-experimentlog-detail .info-label {
-  font-weight: bold;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
 #technician-experimentlog-detail .info-value {
-  color: #166534;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .info-value {
-  color: #86efac;
+  color: #f9fafb;
 }
+
+:root[data-theme='dark'] #technician-experimentlog-detail .info-label {
+  color: #9ca3af;
+}
+
 
 #technician-experimentlog-detail .status-badge {
   display: inline-block;
@@ -440,18 +440,18 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .status-badge.created {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 #technician-experimentlog-detail .status-badge.in-progress {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: #ffedd5;
+  color: #b45309;
 }
 
 #technician-experimentlog-detail .status-badge.waiting {
-  background-color: #e0e7ff;
-  color: #3730a3;
+  background-color: #fef3c7;
+  color: #b45309;
 }
 
 #technician-experimentlog-detail .status-badge.completed {
@@ -465,37 +465,37 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .status-badge.created {
-  background-color: rgba(59, 130, 246, 0.3);
-  color: #93c5fd;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.in-progress {
-  background-color: rgba(234, 179, 8, 0.3);
-  color: #fde047;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.waiting {
-  background-color: rgba(99, 102, 241, 0.3);
-  color: #c7d2fe;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.completed {
-  background-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.25);
   color: #6ee7b7;
 }
 
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.in-progress {
+  background-color: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.waiting {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+:root[data-theme='dark'] #technician-experimentlog-detail .status-badge.completed {
+  background-color: rgba(16, 185, 129, 0.25);
+  color: #5eead4;
+}
+
 :root[data-theme='dark'] #technician-experimentlog-detail .status-badge.destroyed {
-  background-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.25);
   color: #fca5a5;
 }
 
 #technician-experimentlog-detail .current-stage {
-  color: #0284c7;
+  color: #2D5A27;
   font-weight: 600;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .current-stage {
-  color: #38bdf8;
+  color: #a7f3d0;
 }
 
 #technician-experimentlog-detail .seedling-box {
@@ -512,7 +512,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .seedling-title {
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .seedling-title {
@@ -532,9 +532,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .materials-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .materials-card {
@@ -546,7 +547,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .materials-title {
@@ -555,13 +556,13 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 
 #technician-experimentlog-detail .stage-indicator {
   font-size: 0.875rem;
-  font-weight: normal;
-  color: #0284c7;
+  font-weight: 500;
+  color: #2D5A27;
   margin-left: 0.5rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stage-indicator {
-  color: #38bdf8;
+  color: #a7f3d0;
 }
 
 #technician-experimentlog-detail .materials-grid {
@@ -704,9 +705,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .stages-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stages-card {
@@ -718,7 +720,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stages-title {
@@ -744,73 +746,79 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 }
 
 #technician-experimentlog-detail .stage-card {
-  border: 1px solid;
-  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
   padding: 1rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+}
+
+#technician-experimentlog-detail .stage-card.completed {
+  border-color: #d1fae5;
 }
 
 #technician-experimentlog-detail .stage-card.current {
-  background: linear-gradient(to bottom right, #eff6ff, #dbeafe);
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 2px #60a5fa;
+  border: 2px solid #2D5A27;
+  background: #ecfdf5;
+  box-shadow: 0 4px 15px rgba(45, 90, 39, 0.12);
 }
 
-#technician-experimentlog-detail .stage-card.normal {
-  background: linear-gradient(to bottom right, #f0fdf4, #dcfce7);
-  border-color: #bbf7d0;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .stage-card.current {
-  background: linear-gradient(to bottom right, rgba(30, 64, 175, 0.2), rgba(37, 99, 235, 0.15));
-  border-color: #3b82f6;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .stage-card.normal {
-  background: linear-gradient(to bottom right, rgba(6, 95, 70, 0.2), rgba(5, 150, 105, 0.15));
-  border-color: #22c55e;
+#technician-experimentlog-detail .stage-card.future {
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
 }
 
 #technician-experimentlog-detail .stage-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
 
 #technician-experimentlog-detail .stage-number {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.875rem;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+#technician-experimentlog-detail .stage-number.completed {
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 #technician-experimentlog-detail .stage-number.current {
-  background-color: #2563eb;
+  background-color: #2D5A27;
   color: white;
 }
 
-#technician-experimentlog-detail .stage-number.normal {
-  background-color: #16a34a;
-  color: white;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .stage-number.current {
-  background-color: #3b82f6;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .stage-number.normal {
-  background-color: #22c55e;
+#technician-experimentlog-detail .stage-number.future {
+  background-color: #f3f4f6;
+  color: #9ca3af;
 }
 
 #technician-experimentlog-detail .stage-name {
-  font-weight: 500;
+  font-weight: 600;
   color: #111827;
+  flex: 1;
+}
+
+#technician-experimentlog-detail .stage-card.completed .stage-name,
+#technician-experimentlog-detail .stage-card.completed .stage-description,
+#technician-experimentlog-detail .stage-card.completed .stage-tag {
+  color: #6b7280;
+}
+
+#technician-experimentlog-detail .stage-card.future .stage-name,
+#technician-experimentlog-detail .stage-card.future .stage-description,
+#technician-experimentlog-detail .stage-card.future .stage-tag {
+  color: #9ca3af;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .stage-name {
@@ -821,15 +829,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   margin-left: auto;
   padding: 0.125rem 0.5rem;
   font-size: 0.75rem;
-  font-weight: 500;
-  background-color: #dbeafe;
-  color: #1e40af;
+  font-weight: 600;
+  background-color: #d1fae5;
+  color: #065f46;
   border-radius: 9999px;
-}
-
-:root[data-theme='dark'] #technician-experimentlog-detail .current-badge {
-  background-color: rgba(37, 99, 235, 0.3);
-  color: #93c5fd;
 }
 
 #technician-experimentlog-detail .stage-description {
@@ -892,9 +895,10 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
 #technician-experimentlog-detail .samples-card {
   width: 100%;
   background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  padding: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 1.75rem;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .samples-card {
@@ -906,7 +910,7 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #166534;
+  color: #2D5A27;
 }
 
 :root[data-theme='dark'] #technician-experimentlog-detail .samples-title {

@@ -1,200 +1,427 @@
-import { useEffect, useState, useMemo } from "react";
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
+import { useEffect, useState, useMemo, useRef } from "react";
+import axiosInstance from "../../../api/axiosInstance";
+import type { MonitoringLog, MonitoringLogApiResponse, MonitoringLogStatus } from "../../../types/MonitoringLog";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import axiosInstance from "../../../api/axiosInstance";
-import type { MonitoringLog, MonitoringLogStatus } from "../../../types/MonitoringLog";
+import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import type { ChartOptions, TooltipItem } from "chart.js";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  Plus,
+  FileText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Eye,
+  Send,
+  Search,
+  Filter,
+  ChevronDown,
+} from "lucide-react";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+Chart.register(ArcElement, Tooltip, Legend);
 
-interface MonitoringLogApiResponse {
-  data?: MonitoringLog[];
-  items?: MonitoringLog[];
-  totalCount?: number;
+const ITEMS_PER_PAGE = 10;
+
+// ─── Animation Variants ───────────────────────────────────────────────────────
+
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+const fadeInDown: Variants = {
+  hidden: { opacity: 0, y: -16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
+};
+
+const staggerContainer: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const cardVariant: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
+};
+
+const filterPanelVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.96, y: -8 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.35, ease: EASE_OUT_EXPO },
+  },
+};
+
+const tableRowVariant: Variants = {
+  hidden: { opacity: 0, x: -12 },
+  visible: (i: number = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.35, delay: i * 0.04, ease: "easeOut" as const },
+  }),
+  exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
+};
+
+const dropdownVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.88, y: -6 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    opacity: 0, scaleY: 0.9, y: -4,
+    transition: { duration: 0.15, ease: "easeIn" as const },
+  },
+};
+
+const dropdownItemVariant: Variants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.18, delay: i * 0.03, ease: "easeOut" as const },
+  }),
+};
+
+// ─── Status config ────────────────────────────────────────────────────────────
+
+const STATUS_COLORS: Record<MonitoringLogStatus, string> = {
+  Created:            "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  WaitingForApproval: "bg-[#FFF4E6] text-[#F97316] border-[#FCD5B8]",
+  Approved:           "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  Rejected:           "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
+  Revised:            "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
+};
+
+const STATUS_ICON_COLORS: Record<MonitoringLogStatus, string> = {
+  Created:            "text-[#2D5A27]",
+  WaitingForApproval: "text-[#F97316]",
+  Approved:           "text-[#2D5A27]",
+  Rejected:           "text-[#B91C1C]",
+  Revised:            "text-[#DA70D6]",
+};
+
+const STATUS_FILTER_ORDER: MonitoringLogStatus[] = [
+  "Created", "WaitingForApproval", "Approved", "Rejected", "Revised",
+];
+
+const getStatusIcon = (status: MonitoringLogStatus) => {
+  const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
+  switch (status) {
+    case "Created":            return <FileText className={cls} />;
+    case "WaitingForApproval": return <Clock className={cls} />;
+    case "Approved":           return <CheckCircle2 className={cls} />;
+    case "Rejected":           return <XCircle className={cls} />;
+    case "Revised":            return <RefreshCw className={cls} />;
+  }
+};
+
+// ─── AnimatedSelect ───────────────────────────────────────────────────────────
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
 }
 
-const PAGE_SIZE = 10;
+interface AnimatedSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+  disabled?: boolean;
+}
 
-export default function Reports() {
-  const navigate = useNavigate();
+function AnimatedSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder = "Select...",
+  disabled = false,
+}: AnimatedSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative select-none">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`
+          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
+          transition-all duration-150 whitespace-nowrap
+          ${open
+            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
+            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        `}
+      >
+        <span>{selectedLabel}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+          className="flex items-center"
+        >
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            key="dropdown"
+            variants={dropdownVariant}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{ transformOrigin: "top center" }}
+            className="
+              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
+              bg-white border border-[#DDEEE0] rounded-xl
+              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
+              overflow-hidden py-1
+            "
+          >
+            {options.map((opt, i) => (
+              <motion.li
+                key={opt.value}
+                custom={i}
+                variants={dropdownItemVariant}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`
+                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
+                  transition-colors duration-75
+                  ${opt.value === value
+                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
+                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
+                  }
+                `}
+              >
+                {opt.label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  dotColor: string;
+  label: string;
+  value: number;
+  valueColor: string;
+  borderColor: string;
+}
+
+function StatCard({ dotColor, label, value, valueColor, borderColor }: StatCardProps) {
+  return (
+    <motion.div
+      variants={cardVariant}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(45,90,39,0.14)" }}
+      className={`bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border ${borderColor} p-5 cursor-default`}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`inline-block h-3 w-3 rounded-full ${dotColor}`} />
+        <span className="text-sm font-medium text-[#2D5A27] leading-tight">{label}</span>
+      </div>
+      <motion.div
+        key={value}
+        initial={{ opacity: 0, scale: 0.7 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`text-3xl font-bold ${valueColor}`}
+      >
+        {value}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function ReportsTechnician() {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
-  const [data, setData] = useState<MonitoringLog[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<MonitoringLogStatus | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [data, setData] = useState<MonitoringLog[]>([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<MonitoringLogStatus | "All">("All");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const getStatusLabel = (status: MonitoringLogStatus) => {
+    const map: Record<MonitoringLogStatus, string> = {
+      Created:            t("monitoringLog.statusCreated"),
+      WaitingForApproval: t("monitoringLog.statusWaitingForApproval"),
+      Approved:           t("monitoringLog.statusApproved"),
+      Rejected:           t("monitoringLog.statusRejected"),
+      Revised:            t("monitoringLog.statusRevised"),
+    };
+    return map[status] ?? status;
+  };
+
+  // Build status options for AnimatedSelect
+  const statusOptions: SelectOption<MonitoringLogStatus | "All">[] = [
+    { value: "All", label: t("common.status") },
+    ...STATUS_FILTER_ORDER.map((s) => ({
+      value: s as MonitoringLogStatus | "All",
+      label: getStatusLabel(s),
+    })),
+  ];
 
   const fetchData = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        pageNo: "1",
-        pageSize: "10000",
-      });
-      if (statusFilter) {
-        params.append("status", statusFilter);
-      }
-      if (searchTerm) {
-        params.append("nameSearchTerm", searchTerm);
-      }
+      const params = new URLSearchParams({ pageNo: "1", pageSize: "10000", technicianId: user.id });
       const res = await axiosInstance.get(`/api/monitoring-log?${params.toString()}`);
       const json = res.data as MonitoringLogApiResponse;
       const items = json.data ?? json.items ?? [];
       setData(items);
-      setTotal(json.totalCount ?? items.length);
     } catch {
       setData([]);
-      setTotal(0);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, searchTerm]);
+  useEffect(() => { void fetchData(); }, [user?.id]);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  // Memoized status summary
-  const statusSummary = useMemo(() => {
-    return {
-      created: data.filter((d) => d.status === "Created").length,
-      waitingForApproval: data.filter((d) => d.status === "WaitingForApproval").length,
-      approved: data.filter((d) => d.status === "Approved").length,
-      rejected: data.filter((d) => d.status === "Rejected").length,
-      revised: data.filter((d) => d.status === "Revised").length,
-    };
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      if (a.isNewest && !b.isNewest) return -1;
+      if (!a.isNewest && b.isNewest) return 1;
+      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+    });
   }, [data]);
 
-  // Memoized chart data
-  const chartData = useMemo(() => {
-    return {
-      labels: [
-        t("monitoringLog.statusCreated"),
-        t("monitoringLog.statusWaitingForApproval"),
-        t("monitoringLog.statusApproved"),
-        t("monitoringLog.statusRejected"),
-        t("monitoringLog.statusRevised"),
-      ],
-      datasets: [
-        {
-          label: t("monitoringLog.title"),
-          data: [
-            statusSummary.created,
-            statusSummary.waitingForApproval,
-            statusSummary.approved,
-            statusSummary.rejected,
-            statusSummary.revised,
-          ],
-          backgroundColor: [
-            "rgb(59, 130, 246)", // blue
-            "rgb(249, 115, 22)", // orange
-            "rgb(34, 197, 94)", // green
-            "rgb(239, 68, 68)", // red
-            "rgb(99, 102, 241)", // indigo
-          ],
-          borderColor: [
-            "rgb(59, 130, 246)",
-            "rgb(249, 115, 22)",
-            "rgb(34, 197, 94)",
-            "rgb(239, 68, 68)",
-            "rgb(99, 102, 241)",
-          ],
-          borderWidth: 2,
-        },
-      ],
-    };
-  }, [statusSummary, t]);
+  const filteredData = useMemo(() => {
+    let result = sortedData;
+    if (statusFilter !== "All")
+      result = result.filter((log) => log.status === statusFilter);
+    if (searchTerm.trim())
+      result = result.filter(
+        (log) =>
+          log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (log.sampleName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+      );
+    return result;
+  }, [sortedData, statusFilter, searchTerm]);
 
-  const chartOptions = {
-    maintainAspectRatio: false,
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredData.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const total = data.length;
+
+  const statusSummary = useMemo(() => {
+    return data.reduce(
+      (acc, log) => {
+        if (log.status === "Created")            acc.created += 1;
+        if (log.status === "WaitingForApproval") acc.waitingForApproval += 1;
+        if (log.status === "Rejected")           acc.rejected += 1;
+        if (log.status === "Revised")            acc.revised += 1;
+        if (log.status === "Approved")           acc.approved += 1;
+        return acc;
+      },
+      { created: 0, waitingForApproval: 0, rejected: 0, revised: 0, approved: 0 }
+    );
+  }, [data]);
+
+  const chartData = useMemo(() => ({
+    labels: [
+      t("monitoringLog.statusCreated"),
+      t("monitoringLog.statusWaitingForApproval"),
+      t("monitoringLog.statusRejected"),
+      t("monitoringLog.statusRevised"),
+      t("monitoringLog.statusApproved"),
+    ],
+    datasets: [{
+      data: [
+        statusSummary.created,
+        statusSummary.waitingForApproval,
+        statusSummary.rejected,
+        statusSummary.revised,
+        statusSummary.approved,
+      ],
+      backgroundColor: ["#2D5A27", "#F97316", "#B91C1C", "#DA70D6", "#4B5563"],
+      borderWidth: 0,
+      spacing: 2,
+    }],
+  }), [statusSummary, t]);
+
+  const chartOptions: ChartOptions<"doughnut"> = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: {
-        position: "bottom" as const,
-        labels: {
-          font: {
-            size: 12,
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label(context: TooltipItem<"doughnut">) {
+            return `${context.label}: ${context.parsed}`;
           },
         },
       },
     },
+    cutout: "68%",
   };
 
-  // Memoized and sorted data
-  const sortedData = useMemo(() => {
-    const sorted = [...data].sort((a, b) => {
-      // Sort by isNewest first
-      if (a.isNewest !== b.isNewest) {
-        return a.isNewest ? -1 : 1;
-      }
-      // Then by creation date (newest first)
-      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
-    });
-    return sorted;
-  }, [data]);
-
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
   };
 
-  // Get status label
-  const getStatusLabel = (status: MonitoringLogStatus) => {
-    switch (status) {
-      case "Created":
-        return t("monitoringLog.statusCreated");
-      case "WaitingForApproval":
-        return t("monitoringLog.statusWaitingForApproval");
-      case "Approved":
-        return t("monitoringLog.statusApproved");
-      case "Rejected":
-        return t("monitoringLog.statusRejected");
-      case "Revised":
-        return t("monitoringLog.statusRevised");
-      default:
-        return status;
-    }
-  };
+  const canSubmit = (status: MonitoringLogStatus): boolean =>
+    status === "Created" || status === "Rejected";
 
-  // Get status color
-  const getStatusColor = (status: MonitoringLogStatus) => {
-    switch (status) {
-      case "Created":
-        return "bg-blue-50 border border-blue-200 text-blue-700";
-      case "WaitingForApproval":
-        return "bg-orange-50 border border-orange-200 text-orange-700";
-      case "Approved":
-        return "bg-green-50 border border-green-200 text-green-700";
-      case "Rejected":
-        return "bg-red-50 border border-red-200 text-red-700";
-      case "Revised":
-        return "bg-indigo-50 border border-indigo-200 text-indigo-700";
-      default:
-        return "bg-gray-50 border border-gray-200 text-gray-700";
-    }
-  };
-
-  const handleSubmitApprovalRequest = async (log: MonitoringLog) => {
+  const handleSubmitForApproval = async (log: MonitoringLog) => {
     setSubmittingId(log.id);
     try {
-      await axiosInstance.patch(`/api/monitoring-log/${log.id}/approve`);
-      enqueueSnackbar(t("monitoringLog.approveSuccess"), { variant: "success" });
+      await axiosInstance.patch(`/api/monitoring-log/${log.id}/submit`);
+      enqueueSnackbar(
+        log.status === "Created"
+          ? t("monitoringLog.submitDraftSuccess")
+          : t("monitoringLog.resubmitSuccess"),
+        { variant: "success" }
+      );
       await fetchData();
     } catch (error) {
-      const apiError = error as {
-        response?: { data?: string };
-        message?: string;
-      };
+      const apiError = error as { response?: { data?: string }; message?: string };
       enqueueSnackbar(
-        apiError.response?.data ?? apiError.message ?? t("monitoringLog.approveFailed"),
+        apiError.response?.data ?? apiError.message ?? t("monitoringLog.submitDraftFailed"),
         { variant: "error" }
       );
     } finally {
@@ -202,256 +429,359 @@ export default function Reports() {
     }
   };
 
-  const canApprove = (status: MonitoringLogStatus): boolean =>
-    status === "WaitingForApproval";
-
-
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold text-black">
-          {t("monitoringLog.title")} - {t("roles.researcher")}
-        </h1>
-      </div>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-start">
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm min-h-[240px] lg:col-span-2 lg:row-span-2">
-          <div className="font-semibold text-gray-700 mb-4">
-            {t("monitoringLog.totalReports")}
+        {/* ── Header ── */}
+        <motion.div
+          variants={fadeInDown}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+        >
+          <div>
+            <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
+              {t("monitoringLog.title")}
+            </h1>
+            <p className="text-[#4B6C54] text-lg">
+              {t("monitoringLog.subtitle", { defaultValue: "Quản lý và theo dõi nhật ký giám sát" })}
+            </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-center sm:text-left">
-              <div className="text-4xl font-bold text-gray-900">{total}</div>
-              <div className="text-sm text-gray-500 mt-1">{t("monitoringLog.totalReports")}</div>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 24px rgba(45,90,39,0.25)" }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => void navigate("/reports/new")}
+            className="inline-flex items-center gap-2 bg-[#2D5A27] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#1e3e1c] transition-colors shadow-[0_4px_14px_rgba(45,90,39,0.3)]"
+          >
+            <Plus className="w-5 h-5" />
+            {t("monitoringLog.createNew")}
+          </motion.button>
+        </motion.div>
+
+        {/* ── Summary ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Donut card */}
+          <motion.div
+            variants={cardVariant}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(45,90,39,0.18)" }}
+            className="lg:col-span-1 bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6"
+          >
+            <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
+              {t("monitoringLog.totalReports")}
+            </h3>
+            <p className="text-sm text-[#4B6C54] mb-6">
+              {t("monitoringLog.reportDistribution", { defaultValue: "Phân bổ theo trạng thái" })}
+            </p>
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex-1 min-w-0">
+                <motion.div
+                  key={total}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="text-5xl font-bold text-[#2D5A27]"
+                >
+                  {total}
+                </motion.div>
+                <div className="text-sm text-[#4B6C54] mt-1">{t("monitoringLog.totalReports")}</div>
+                <div className="mt-4 space-y-1.5">
+                  {[
+                    { label: t("monitoringLog.statusCreated"),            color: "bg-[#2D5A27]", value: statusSummary.created },
+                    { label: t("monitoringLog.statusWaitingForApproval"), color: "bg-[#F97316]", value: statusSummary.waitingForApproval },
+                    { label: t("monitoringLog.statusApproved"),           color: "bg-[#4B5563]", value: statusSummary.approved },
+                    { label: t("monitoringLog.statusRejected"),           color: "bg-[#B91C1C]", value: statusSummary.rejected },
+                    { label: t("monitoringLog.statusRevised"),            color: "bg-[#DA70D6]", value: statusSummary.revised },
+                  ].map(({ label, color, value }) => (
+                    <div key={label} className="flex items-center gap-2 text-xs text-[#4B6C54]">
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${color}`} />
+                      <span className="truncate">{label}</span>
+                      <span className="ml-auto font-semibold text-[#2D5A27]">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="h-36 w-36 flex-shrink-0">
+                <Doughnut data={chartData} options={chartOptions} />
+              </div>
             </div>
-            <div className="h-36 w-36 sm:h-44 sm:w-44">
-              <Doughnut data={chartData} options={chartOptions} />
+          </motion.div>
+
+          {/* Stat cards */}
+          <motion.div
+            className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <StatCard dotColor="bg-[#2D5A27]" label={t("monitoringLog.statusCreated")}
+              value={statusSummary.created} valueColor="text-[#2D5A27]" borderColor="border-[#DDEEE0]" />
+            <StatCard dotColor="bg-[#F97316]" label={t("monitoringLog.statusWaitingForApproval")}
+              value={statusSummary.waitingForApproval} valueColor="text-[#F97316]" borderColor="border-[#FCD5B8]" />
+            <StatCard dotColor="bg-[#4B5563]" label={t("monitoringLog.statusApproved")}
+              value={statusSummary.approved} valueColor="text-[#4B5563]" borderColor="border-[#E5E7EB]" />
+            <StatCard dotColor="bg-[#B91C1C]" label={t("monitoringLog.statusRejected")}
+              value={statusSummary.rejected} valueColor="text-[#B91C1C]" borderColor="border-[#FECACA]" />
+            <StatCard dotColor="bg-[#DA70D6]" label={t("monitoringLog.statusRevised")}
+              value={statusSummary.revised} valueColor="text-[#DA70D6]" borderColor="border-[#F3D4EB]" />
+          </motion.div>
+        </div>
+
+        {/* ── Filter panel ── */}
+        <motion.div
+          variants={filterPanelVariant}
+          initial="hidden"
+          animate="visible"
+          className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
+        >
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Status filter — AnimatedSelect */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-[#2D5A27]" />
+              <AnimatedSelect
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as MonitoringLogStatus | "All")}
+                options={statusOptions}
+                placeholder={t("common.status")}
+              />
             </div>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm min-h-[112px]">
-          <div className="flex items-center gap-2 mb-2 text-blue-700">
-            <span
-              className="inline-block h-3 w-3 rounded-full bg-blue-500"
-              aria-hidden="true"
-            ></span>
-            <span className="text-sm font-medium leading-tight">
-              {t("monitoringLog.statusCreated")}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-blue-800">{statusSummary.created}</div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-orange-200 shadow-sm min-h-[112px]">
-          <div className="flex items-center gap-2 mb-2 text-orange-700">
-            <span
-              className="inline-block h-3 w-3 rounded-full bg-orange-500"
-              aria-hidden="true"
-            ></span>
-            <span className="text-sm font-medium leading-tight">
-              {t("monitoringLog.statusWaitingForApproval")}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-orange-800">
-            {statusSummary.waitingForApproval}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm min-h-[112px]">
-          <div className="flex items-center gap-2 mb-2 text-green-700">
-            <span
-              className="inline-block h-3 w-3 rounded-full bg-green-500"
-              aria-hidden="true"
-            ></span>
-            <span className="text-sm font-medium leading-tight">
-              {t("monitoringLog.statusApproved")}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-green-800">{statusSummary.approved}</div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm min-h-[112px]">
-          <div className="flex items-center gap-2 mb-2 text-red-700">
-            <span
-              className="inline-block h-3 w-3 rounded-full bg-red-500"
-              aria-hidden="true"
-            ></span>
-            <span className="text-sm font-medium leading-tight">
-              {t("monitoringLog.statusRejected")}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-red-800">{statusSummary.rejected}</div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-indigo-200 shadow-sm min-h-[112px]">
-          <div className="flex items-center gap-2 mb-2 text-indigo-700">
-            <span
-              className="inline-block h-3 w-3 rounded-full bg-indigo-500"
-              aria-hidden="true"
-            ></span>
-            <span className="text-sm font-medium leading-tight">
-              {t("monitoringLog.statusRevised")}
-            </span>
-          </div>
-          <div className="text-2xl font-bold text-indigo-800">{statusSummary.revised}</div>
-        </div>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
+            {/* Search */}
+            <div className="flex-1 min-w-[300px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-green-600"
-                placeholder={t("common.search")}
+                placeholder={t("monitoringLog.searchPlaceholder", { defaultValue: "Tìm theo tên báo cáo, tên mẫu..." })}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
               />
-              <span className="absolute left-3 top-2.5 text-gray-400">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                  <path
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
-                  />
-                </svg>
-              </span>
             </div>
-          </div>
 
-          {/* Status Filter */}
-          <div className="w-full md:w-64">
-            <select
-              className="w-full border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
-              value={statusFilter ?? ""}
-              onChange={(e) => setStatusFilter((e.target.value || null) as MonitoringLogStatus | null)}
+            {/* Clear filters */}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { setSearchTerm(""); setStatusFilter("All"); setCurrentPage(1); }}
+              className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1e3e1c] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
             >
-              <option value="">{t("common.all")}</option>
-              <option value="Created">{t("monitoringLog.statusCreated")}</option>
-              <option value="WaitingForApproval">
-                {t("monitoringLog.statusWaitingForApproval")}
-              </option>
-              <option value="Approved">{t("monitoringLog.statusApproved")}</option>
-              <option value="Rejected">{t("monitoringLog.statusRejected")}</option>
-              <option value="Revised">{t("monitoringLog.statusRevised")}</option>
-            </select>
+              {t("common.clearFilters")}
+            </motion.button>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Table */}
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="py-3 px-4 text-sm font-semibold text-gray-700">
-                {t("monitoringLog.reportName")}
-              </th>
-              <th className="px-4 text-sm font-semibold text-gray-700">
-                {t("monitoringLog.createdDate")}
-              </th>
-              <th className="px-4 text-sm font-semibold text-gray-700">
-                {t("monitoringLog.sampleName")}
-              </th>
-              <th className="px-4 text-sm font-semibold text-gray-700">
-                {t("common.status")}
-              </th>
-              <th className="px-4 text-sm font-semibold text-gray-700">
-                {t("monitoringLog.newest")}
-              </th>
-              <th className="px-4 text-sm font-semibold text-gray-700">
-                {t("common.action")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              Array.from({ length: PAGE_SIZE }).map((_, idx) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <tr key={idx} className="border-t animate-pulse">
-                  <td className="py-3 px-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  </td>
-                  <td className="px-4">
-                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                  </td>
-                </tr>
-              ))
-            ) : sortedData.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-400">
-                  {t("monitoringLog.noReports")}
-                </td>
-              </tr>
-            ) : (
-              sortedData.map((log) => (
-                <tr key={log.id} className="border-t hover:bg-green-50">
-                  <td className="py-3 px-4 font-medium">{log.name}</td>
-                  <td className="px-4">{formatDate(log.createdDate)}</td>
-                  <td className="px-4">{log.sampleName}</td>
-                  <td className="px-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                        log.status
-                      )}`}
-                    >
-                      {getStatusLabel(log.status)}
-                    </span>
-                  </td>
-                  <td className="px-4">
-                    {log.isNewest && (
-                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-50 border border-purple-200 text-purple-700">
-                        {t("monitoringLog.newest")}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4">
-                    <div className="flex items-center gap-2">
-                      {canApprove(log.status) && (
-                        <button
-                          type="button"
-                          disabled={submittingId === log.id}
-                          className="border cursor-pointer border-blue-700 text-blue-700 rounded-full px-3 py-1 hover:bg-blue-700 hover:text-white transition disabled:bg-gray-200 disabled:border-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
-                          onClick={() => {
-                            void handleSubmitApprovalRequest(log);
-                          }}
-                        >
-                          {submittingId === log.id
-                            ? t("monitoringLog.approving")
-                            : t("monitoringLog.approve")}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="border cursor-pointer border-green-800 text-green-800 rounded-full px-4 py-1 hover:bg-green-800 hover:text-white transition"
-                        onClick={() => void navigate(`/monitoring-logs/${log.id}`)}
+        {/* ── Table ── */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-16 gap-3"
+            >
+              <motion.div
+                className="w-10 h-10 border-4 border-[#DDEEE0] border-t-[#2D5A27] rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+              />
+              <span className="text-gray-500 text-sm">{t("common.loadingData")}</span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="table"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+              className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden"
+            >
+              <table className="w-full">
+                <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
+                  <tr>
+                    {[
+                      t("monitoringLog.reportName"),
+                      t("monitoringLog.createdDate"),
+                      t("monitoringLog.sampleName"),
+                      t("common.status"),
+                      t("monitoringLog.newest"),
+                      t("common.action"),
+                    ].map((header) => (
+                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-200">
+                  <AnimatePresence>
+                    {paginatedData.length === 0 ? (
+                      <motion.tr
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                       >
-                        {t("common.details")}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                        <td colSpan={6} className="p-12 text-center text-gray-500">
+                          {t("monitoringLog.noReports")}
+                        </td>
+                      </motion.tr>
+                    ) : (
+                      paginatedData.map((log, i) => (
+                        <motion.tr
+                          key={log.id}
+                          custom={i}
+                          variants={tableRowVariant}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          layout
+                          whileHover={{ backgroundColor: "#EBF7EE" }}
+                          className="cursor-default transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-900">{log.name}</td>
+                          <td className="px-6 py-4 text-[#4B6C54]">{formatDate(log.createdDate)}</td>
+                          <td className="px-6 py-4 text-gray-600">{log.sampleName}</td>
+
+                          {/* Status badge */}
+                          <td className="px-6 py-4">
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                                STATUS_COLORS[log.status] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"
+                              }`}
+                            >
+                              {getStatusIcon(log.status)}
+                              {getStatusLabel(log.status)}
+                            </motion.span>
+                          </td>
+
+                          {/* Newest badge */}
+                          <td className="px-6 py-4">
+                            {log.isNewest && (
+                              <motion.span
+                                initial={{ opacity: 0, scale: 0.85 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.03 + 0.15, type: "spring", stiffness: 280, damping: 22 }}
+                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]"
+                              >
+                                {t("monitoringLog.newest")}
+                              </motion.span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {canSubmit(log.status) && (
+                                <motion.button
+                                  type="button"
+                                  disabled={submittingId === log.id}
+                                  whileHover={{ scale: 1.04 }}
+                                  whileTap={{ scale: 0.96 }}
+                                  onClick={() => { void handleSubmitForApproval(log); }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#2D5A27] text-[#2D5A27] hover:bg-[#2D5A27] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <Send className="w-3.5 h-3.5" />
+                                  {submittingId === log.id
+                                    ? t("monitoringLog.submitting")
+                                    : log.status === "Created"
+                                    ? t("monitoringLog.submitDraft")
+                                    : t("monitoringLog.resubmit")}
+                                </motion.button>
+                              )}
+                              <motion.button
+                                type="button"
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => void navigate(`/monitoring-logs/${log.id}`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#DDEEE0] text-[#4B6C54] hover:bg-[#E4F0E8] hover:text-[#2D5A27] transition-colors"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                {t("common.details")}
+                              </motion.button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
+                >
+                  <span className="text-sm text-gray-600">
+                    {t("common.showing")} {paginatedData.length} {t("common.of")} {filteredData.length}{" "}
+                    {t("monitoringLog.reports", { defaultValue: "báo cáo" })}
+                  </span>
+                  <div className="flex gap-2">
+                    {currentPage > 1 && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
+                      >
+                        ←
+                      </motion.button>
+                    )}
+
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5)                    pageNum = i + 1;
+                      else if (currentPage <= 3)              pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else                                    pageNum = currentPage - 2 + i;
+                      return (
+                        <motion.button
+                          key={pageNum}
+                          type="button"
+                          whileHover={{ scale: 1.08 }}
+                          whileTap={{ scale: 0.93 }}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1.5 rounded-lg text-sm ${
+                            currentPage === pageNum
+                              ? "bg-[#2D5A27] text-white"
+                              : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
+                          }`}
+                        >
+                          {pageNum}
+                        </motion.button>
+                      );
+                    })}
+
+                    {currentPage < totalPages && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
+                      >
+                        →
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );

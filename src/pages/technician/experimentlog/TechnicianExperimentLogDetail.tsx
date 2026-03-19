@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
@@ -31,6 +29,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import { FaTimes, FaSeedling } from "react-icons/fa";
+import { Check } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { User } from "../../../types/Auth";
 import type {
@@ -50,7 +49,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // Status color mapping for samples - matching ListSample
 const SAMPLE_STATUS_COLOR_MAP: Record<string, string> = {
-  [SampleStatus.Created]: "bg-blue-100 text-blue-800",
+  [SampleStatus.Created]: "bg-green-100 text-green-800",
   [SampleStatus.InProgressed]: "bg-yellow-100 text-yellow-800",
   [SampleStatus.Completed]: "bg-green-100 text-green-800",
   [SampleStatus.ExecutedBecauseOfDisease]: "bg-red-100 text-red-800",
@@ -264,7 +263,7 @@ const TechnicianExperimentLogDetail = () => {
       [SampleStatus.ExecutedBecauseOfDisease]: t('sample.statusExecutedBecauseOfDisease'),
       [SampleStatus.ConvertedToSeedling]: t('sample.statusConvertedToSeedling'),
     };
-    return statusMap[status ?? ''] || status || t('common.none');
+    return statusMap[status ?? ''] ?? status ?? t('common.none');
   };
 
   useEffect(() => {
@@ -805,45 +804,46 @@ const TechnicianExperimentLogDetail = () => {
         {/* Info Card */}
         <section ref={infoCardRef} className="info-card">
           <div className="info-grid">
-            <div className="info-column">
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.method")}:</span>{" "}
-                <span className="info-value">{methodName}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.tissueCultureBatch")}:</span>{" "}
-                {batchName}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.labRoom")}:</span> {labRoomName}
-              </div>
-              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="info-label">{t("common.status")}:</span>{" "}
-                <span className={getStatusColor(log.status)}>
-                  {getStatusDisplay(log.status)}
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.expectedSampleCount")}:</span> {log.expectedSampleCount}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.dateCreated")}:</span>{" "}
-                {formatDate(log.createdDate)}
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t("experimentLog.creator")}:</span> {creator}
-              </div>
-              <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="info-label">{t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:</span>{" "}
-                <span className="current-stage">
-                  {currentStage}
-                </span>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.method")}</div>
+              <div className="info-value">{methodName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.tissueCultureBatch")}</div>
+              <div className="info-value">{batchName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.labRoom")}</div>
+              <div className="info-value">{labRoomName}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("common.status")}</div>
+              <div className={getStatusColor(log.status)}>
+                {getStatusDisplay(log.status)}
               </div>
             </div>
-            <div className="info-column">
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.expectedSampleCount")}</div>
+              <div className="info-value">{log.expectedSampleCount}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.dateCreated")}</div>
+              <div className="info-value">{formatDate(log.createdDate)}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.creator")}</div>
+              <div className="info-value">{creator}</div>
+            </div>
+            <div className="info-item">
+              <div className="info-label">{t("experimentLog.currentStage") || "Giai đoạn hiện tại"}</div>
+              <div className="info-value">{currentStage}</div>
+            </div>
+
+            <div className="info-item md:col-span-2">
               {log.notes && (
-                <div className="info-item">
-                  <span className="info-label">{t("common.description")}:</span> {log.notes}
+                <div>
+                  <div className="info-label">{t("common.description")}</div>
+                  <div className="info-value">{log.notes}</div>
                 </div>
               )}
               <div className="seedling-box">
@@ -870,6 +870,16 @@ const TechnicianExperimentLogDetail = () => {
           console.log('Stage Chemicals:', stageChemicals);
           console.log('Stage Materials:', stageMaterials);
           
+          // Group chemicals by category
+          const chemicalsByCategory = stageChemicals.reduce((acc, sc) => {
+            const category = sc.chemical?.category ?? (t("common.other") ?? "Khác");
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(sc.chemical);
+            return acc;
+          }, {} as Record<string, Chemical[]>);
+
+          const chemicalGroups = Object.entries(chemicalsByCategory);
+
           // Group materials by category
           const materialsByCategory = stageMaterials.reduce((acc, sm) => {
             const category = sm.material?.category ?? (t("common.other") ?? "Khác");
@@ -878,13 +888,7 @@ const TechnicianExperimentLogDetail = () => {
             return acc;
           }, {} as Record<string, Material[]>);
 
-          // Group chemicals by category
-          const chemicalsByCategory = stageChemicals.reduce((acc, sc) => {
-            const category = sc.chemical?.category ?? (t("common.other") ?? "Khác");
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(sc.chemical);
-            return acc;
-          }, {} as Record<string, Chemical[]>);
+          const materialGroups = Object.entries(materialsByCategory);
 
           // LUÔN LUÔN hiển thị section này, kể cả khi trống
           return (
@@ -906,29 +910,39 @@ const TechnicianExperimentLogDetail = () => {
                   {stageChemicals.length === 0 ? (
                     <p className="no-materials">{t("experimentLog.noChemicals") || "Không có hóa chất"}</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {Object.entries(chemicalsByCategory).map(([category, chemicals]) => (
-                        <div key={category} className="material-category">
+                    <div className="space-y-4">
+                      {chemicalGroups.map(([category, chemicals], idx) => (
+                        <div
+                          key={category}
+                          className={
+                            "pb-4 " +
+                            (idx < chemicalGroups.length - 1
+                              ? "border-b border-gray-100" 
+                              : "")
+                          }
+                        >
                           <p className="category-name">{category}</p>
-                          <ul className="material-list">
+                          <div className="space-y-2">
                             {chemicals.map((chem) => (
-                              <li key={chem.id} className="material-item">
-                                <span className="material-bullet chemical">•</span>
+                              <div key={chem.id} className="flex items-start gap-2">
+                                <span className="mt-1 text-[#2D5A27]">
+                                  <Check className="w-4 h-4" />
+                                </span>
                                 <div>
-                                  <span className="material-name">{chem.name}</span>
+                                  <div className="text-sm font-semibold text-gray-900">{chem.name}</div>
                                   {chem.concentrationUnit && (
-                                    <span className="material-unit">({chem.concentrationUnit})</span>
+                                    <div className="text-xs text-gray-500">{chem.concentrationUnit}</div>
                                   )}
                                 </div>
-                              </li>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                
+
                 {/* Materials/Equipment section */}
                 <div>
                   <h3 className="material-section-title">
@@ -939,23 +953,33 @@ const TechnicianExperimentLogDetail = () => {
                   {stageMaterials.length === 0 ? (
                     <p className="no-materials">{t("experimentLog.noMaterials") || "Không có dụng cụ"}</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {Object.entries(materialsByCategory).map(([category, materials]) => (
-                        <div key={category} className="material-category">
+                    <div className="space-y-4">
+                      {materialGroups.map(([category, materials], idx) => (
+                        <div
+                          key={category}
+                          className={
+                            "pb-4 " +
+                            (idx < materialGroups.length - 1
+                              ? "border-b border-gray-100" 
+                              : "")
+                          }
+                        >
                           <p className="category-name">{category}</p>
-                          <ul className="material-list">
+                          <div className="space-y-2">
                             {materials.map((mat) => (
-                              <li key={mat.id} className="material-item">
-                                <span className="material-bullet equipment">•</span>
+                              <div key={mat.id} className="flex items-start gap-2">
+                                <span className="mt-1 text-[#2D5A27]">
+                                  <Check className="w-4 h-4" />
+                                </span>
                                 <div>
-                                  <span className="material-name">{mat.name}</span>
+                                  <div className="text-sm font-semibold text-gray-900">{mat.name}</div>
                                   {mat.unit && (
-                                    <span className="material-unit">({mat.unit})</span>
+                                    <div className="text-xs text-gray-500">{mat.unit}</div>
                                   )}
                                 </div>
-                              </li>
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -976,22 +1000,28 @@ const TechnicianExperimentLogDetail = () => {
               {log.method.methodStages
                 .sort((a, b) => a.order - b.order)
                 .map((stage) => {
-                  const isCurrentStage = stage.order === log.currentStageOrder;
+                  const stageState =
+                    stage.order < (log.currentStageOrder ?? 0)
+                      ? 'completed'
+                      : stage.order === log.currentStageOrder
+                      ? 'current'
+                      : 'future';
+
                   return (
                     <div
                       key={stage.id}
-                      className={`stage-card ${isCurrentStage ? 'current' : 'normal'}`}
+                      className={`stage-card ${stageState}`}
                     >
                       <div className="stage-header">
-                        <span className={`stage-number ${isCurrentStage ? 'current' : 'normal'}`}>
-                          {stage.order}
+                        <span className={`stage-number ${stageState}`}>
+                          {stageState === 'completed' ? '✓' : stage.order}
                         </span>
                         <span className="stage-name">
                           {stage.stageDefinition?.name || t("experimentLog.notAvailable")}
                         </span>
-                        {isCurrentStage && (
+                        {stageState === 'current' && (
                           <span className="current-badge">
-                            {t("experimentLog.currentStage") || "Hiện tại"}
+                            {t("experimentLog.currentStage") || "Giai đoạn hiện tại"}
                           </span>
                         )}
                       </div>
