@@ -809,6 +809,18 @@ body[data-sidebar-collapsed="true"] #technician-experimentlog-detail {
   flex: 1;
 }
 
+#technician-experimentlog-detail .stage-card.completed .stage-name,
+#technician-experimentlog-detail .stage-card.completed .stage-description,
+#technician-experimentlog-detail .stage-card.completed .stage-tag {
+  color: #6b7280;
+}
+
+#technician-experimentlog-detail .stage-card.future .stage-name,
+#technician-experimentlog-detail .stage-card.future .stage-description,
+#technician-experimentlog-detail .stage-card.future .stage-tag {
+  color: #9ca3af;
+}
+
 :root[data-theme='dark'] #technician-experimentlog-detail .stage-name {
   color: #f9fafb;
 }
