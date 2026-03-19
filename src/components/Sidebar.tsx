@@ -8,11 +8,11 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
 const tabs = [
-  { nameKey: "navigation.method", path: "/method", icon: PiBlueprintFill },
-  { nameKey: "navigation.task", path: "/tasks", icon: FaTasks },
-  { nameKey: "navigation.experimentLog", path: "/experiment-log", icon: FaBook },
-  { nameKey: "navigation.seedling", path: "/seedlings", icon: FaSeedling },
-  { nameKey: "navigation.report", path: "/reports", icon: FaChartBar },
+  { nameKey: "navigation.method", path: "/researcher/method", icon: PiBlueprintFill },
+  { nameKey: "navigation.task", path: "/researcher/tasks", icon: FaTasks },
+  { nameKey: "navigation.experimentLog", path: "/researcher/experiment-log", icon: FaBook },
+  { nameKey: "navigation.seedling", path: "/researcher/seedlings", icon: FaSeedling },
+  { nameKey: "navigation.report", path: "/researcher/reports", icon: FaChartBar },
 ];
 
 export default function Sidebar() {

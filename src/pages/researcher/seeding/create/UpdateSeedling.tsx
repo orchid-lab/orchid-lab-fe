@@ -651,7 +651,7 @@ export default function UpdateSeedling() {
    */
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate(`/seedlings?page=${page}`);
+    navigate(`/researcher/seedlings?page=${page}`);
   };
 
   if (loading) {
@@ -677,7 +677,7 @@ export default function UpdateSeedling() {
             {error}
           </div>
           <button
-            onClick={() => navigate(`/seedlings?page=${page}`)}
+            onClick={() => navigate(`/researcher/seedlings?page=${page}`)}
             className="mt-6 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
           >
             Quay Lại

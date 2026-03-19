@@ -1,3 +1,5 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -139,7 +141,7 @@ export default function MethodList() {
                 <tr 
                   key={method.id} 
                   className="border-t hover:bg-green-50 cursor-pointer transition"
-                  onClick={() => void navigate(`/method/${method.id}`)}
+                  onClick={() => void navigate(`/researcher/method/${method.id}`)}
                 >
                   <td className="py-3 px-4 font-medium">{method.name}</td>
                   <td className="px-4 text-gray-700 max-w-[440px]">

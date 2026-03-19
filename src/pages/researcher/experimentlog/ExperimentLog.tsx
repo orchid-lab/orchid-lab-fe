@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Filter } from "lucide-react";
+import { Search, Plus, ChevronRight } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 
 type ExperimentStatus = "Created" | "Waiting" | "InProcess" | "Done" | "Cancel";
@@ -57,9 +58,6 @@ const ExperimentLog = () => {
     "all",
   );
   const [methodFilter, setMethodFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<
-    "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
-  >("all");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +86,7 @@ const ExperimentLog = () => {
   const logsPerPage = 5;
 
   // chuẩn hóa status từ API sang frontend
-  const normalizeStatus = (status?: number | string) => {
+  function normalizeStatus(status?: number | string): ExperimentStatus | string {
     const statusStr = String(status ?? "");
     switch (statusStr) {
       case "Created":
@@ -106,7 +104,32 @@ const ExperimentLog = () => {
       default:
         return statusStr;
     }
-  };
+  }
+
+  // Derived metrics for Researcher dashboard
+  const activeExperiments = stats.Created + stats.Waiting + stats.InProcess;
+  const completedOrFailed = stats.Done + stats.Cancel;
+  const successRate =
+    completedOrFailed > 0 ? Math.round((stats.Done / completedOrFailed) * 100) : 0;
+  const bottlenecksCount = stats.Waiting;
+
+  const approachingDeadlineLogs = logs.filter((log) => {
+    const now = Date.now();
+    const in7Days = now + 7 * 24 * 60 * 60 * 1000;
+    return Boolean(
+      log.stages?.some((stage) => {
+        if (!stage.dateOfProcessing) return false;
+        let ts = stage.dateOfProcessing;
+        if (ts < 1e12) ts = ts * 1000;
+        return ts >= now && ts <= in7Days;
+      }),
+    );
+  });
+  const approachingDeadlineCount = approachingDeadlineLogs.length;
+
+  const priorityLogs = logs
+    .filter((log) => normalizeStatus(log.status) === "Waiting")
+    .slice(0, 5);
 
   // dịch status sang tiếng Việt
   const statusToVietnamese = (status?: number | string) => {
@@ -215,29 +238,52 @@ const ExperimentLog = () => {
     };
   }
 
-  // Fetch methods
+  // Fetch all methods once on mount using GET /api/methods
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get(
-          "/api/methods?pageNumber=1&pageSize=100",
+        const res = await axiosInstance.get("/api/methods", {
+          params: {
+            PageNumber: 1,
+            PageSize: 100,
+          },
+        });
+        const raw: any = res.data;
+        let arr: { id: any; name: string }[] = [];
+
+        // Shape 1: { value: { data: [...] } }
+        if (Array.isArray(raw?.value?.data)) {
+          arr = raw.value.data;
+        }
+        // Shape 2: { value: [...] }
+        else if (Array.isArray(raw?.value)) {
+          arr = raw.value;
+        }
+        // Shape 3: { data: [...] }
+        else if (Array.isArray(raw?.data)) {
+          arr = raw.data;
+        }
+        // Shape 4: plain array
+        else if (Array.isArray(raw)) {
+          arr = raw;
+        }
+
+        setMethods(
+          arr
+            .filter((m) => m?.id != null && m?.name)
+            .map((m) => ({ id: String(m.id), name: String(m.name) })),
         );
-        const raw = res.data as {
-          value?: { data?: { id: string; name: string }[] };
-        };
-        const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
-        setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
       } catch {
         setMethods([]);
       }
     };
+
     void fetchMethods();
   }, []);
 
   // Fetch thống kê nhanh
   const fetchStatsOnly = useCallback(async () => {
     try {
-      // Fetch tất cả dữ liệu để đếm thống kê (use axiosInstance)
       let data: unknown;
       try {
         const res = await axiosInstance.get("/api/experiment-logs", {
@@ -249,7 +295,6 @@ const ExperimentLog = () => {
         const detail =
           apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
         if (typeof detail === "string" && detail.includes("OFFSET")) {
-          // Retry without params
           const retryRes = await axiosInstance.get("/api/experiment-logs");
           data = retryRes.data;
         } else {
@@ -283,7 +328,6 @@ const ExperimentLog = () => {
           .filter((x): x is ExperimentLogEntry => x !== null);
       }
 
-      // Đếm theo status
       const counts = {
         Created: 0,
         Waiting: 0,
@@ -342,20 +386,18 @@ const ExperimentLog = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      const params = new URLSearchParams();
-      params.append("pageNo", String(currentPage));
-      params.append("pageSize", String(logsPerPage));
-      if (methodFilter) {
-        params.append("filter", methodFilter);
-      }
+      const selectedMethod = methods.find((m) => m.id === methodFilter);
+      const methodName = selectedMethod ? selectedMethod.name : methodFilter;
 
       try {
-        // Use axiosInstance to fetch paged experiment logs
         const paramsObj: Record<string, unknown> = {
           pageNo: currentPage,
           pageSize: logsPerPage,
         };
-        if (methodFilter) paramsObj.filter = methodFilter;
+        if (methodName) {
+          paramsObj.methodNameSearchTerm = methodName;
+          paramsObj.MethodNameSearchTerm = methodName;
+        }
 
         let data: unknown;
         try {
@@ -446,19 +488,51 @@ const ExperimentLog = () => {
   const getStatusColor = (status?: number | string): string => {
     switch (normalizeStatus(status)) {
       case "Created":
-        return "bg-blue-100 text-blue-800";
+        return "bg-[#E6F1FF] text-[#005792]";
       case "Waiting":
-        return "bg-indigo-100 text-indigo-800";
+        return "bg-[#FFF2F0] text-[#D1433C]";
       case "InProcess":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-[#E0F7FA] text-[#006D73]";
       case "Done":
-        return "bg-green-100 text-green-800";
+        return "bg-[#E0F7FA] text-[#006D73]";
       case "Cancel":
-        return "bg-red-100 text-red-800";
+        return "bg-[#FFECEA] text-[#D1433C]";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const statusDistribution = [
+    { label: "Mới tạo", value: stats.Created, color: "#005792" },
+    { label: "Chờ", value: stats.Waiting, color: "#FF6F61" },
+    { label: "Đang thực hiện", value: stats.InProcess, color: "#00CED1" },
+    { label: "Hoàn thành", value: stats.Done, color: "#00CED1" },
+    { label: "Đã hủy", value: stats.Cancel, color: "#FF6F61" },
+  ];
+
+  const totalDistribution = statusDistribution.reduce(
+    (sum, item) => sum + item.value,
+    0,
+  );
+  const donutRadius = 38;
+  const donutCircumference = 2 * Math.PI * donutRadius;
+
+  let cumulativeOffset = 0;
+  const donutSlices = statusDistribution
+    .filter((item) => item.value > 0)
+    .map((item) => {
+      const dash =
+        totalDistribution > 0
+          ? (item.value / totalDistribution) * donutCircumference
+          : 0;
+      const slice = {
+        ...item,
+        dash,
+        offset: cumulativeOffset,
+      };
+      cumulativeOffset += dash;
+      return slice;
+    });
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -471,28 +545,11 @@ const ExperimentLog = () => {
     const matchesStatus =
       statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
 
-    let matchesStage = true;
-    if (
-      stageFilter !== "all" &&
-      log.stages &&
-      log.stages.length > 0 &&
-      log.currentStageName
-    ) {
-      const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      if (stageNumber >= 1 && stageNumber <= log.stages.length) {
-        const stageIndex = stageNumber - 1;
-        const targetStageName = log.stages[stageIndex].name;
-        matchesStage = log.currentStageName === targetStageName;
-      } else {
-        matchesStage = false;
-      }
-    }
-
-    return matchesSearch && matchesStatus && matchesStage;
+    return matchesSearch && matchesStatus;
   });
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-slate-900">
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -519,138 +576,284 @@ const ExperimentLog = () => {
         .row-hover:hover { transform: scale(1.01); box-shadow: 0 4px 12px rgba(34,197,94,0.12); }
       `}</style>
 
-      <div className="bg-white shadow-lg">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Nhật ký thí nghiệm
+      <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">
+              Quản lý &amp; Theo dõi Thí nghiệm Orchid Lab
             </h1>
-            <Link
-              to="/experiment-log/create"
-              className="ml-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold shadow hover:scale-105 transition-transform"
-            >
-              Tạo nhật ký thí nghiệm
-            </Link>
+            <p className="mt-1 text-sm text-slate-600">
+              Bảng điều khiển nghiên cứu viên: theo dõi trạng thái, tiến độ và điểm nghẽn.
+            </p>
+          </div>
+          <Link
+            to="/researcher/experiment-log/create"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#005792] text-white font-semibold shadow-sm hover:bg-[#00456a] transition"
+          >
+            <Plus className="w-4 h-4" />
+            Tạo nhật ký
+          </Link>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm animate-scale-in hover-lift">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Thí nghiệm hoạt động
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-[#005792]">
+              {activeExperiments}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Tổng số thí nghiệm đang chạy &amp; chờ xử lý.
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-            <div className="rounded-xl border bg-blue-50 border-blue-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
-              <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Created")}
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm animate-scale-in hover-lift">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Tỷ lệ thành công
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-semibold text-[#00CED1]">
+                {successRate}%
+              </span>
+              <span className="text-xs text-slate-500">
+                ({completedOrFailed} thí nghiệm đã kết thúc)
+              </span>
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Dựa trên kết quả hoàn thành/hủy.
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm animate-scale-in hover-lift">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Điểm nghẽn / Chờ review
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-[#D1433C]">
+              {bottlenecksCount}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Số thí nghiệm cần xác nhận hoặc thay đổi giai đoạn.
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm animate-scale-in hover-lift">
+            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Dự kiến hoàn thành
+            </div>
+            <div className="mt-2 text-3xl font-semibold text-[#005792]">
+              {approachingDeadlineCount}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              Thí nghiệm có mốc quan trọng trong 7 ngày tới.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 grid grid-cols-1 gap-6">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 animate-fade-in-up">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
+                <h2 className="text-lg font-semibold text-[#005792]">
+                  Phân bổ trạng thái thí nghiệm
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Quan sát nhanh tỷ lệ từng trạng thái để ưu tiên hành động.
+                </p>
               </div>
-              <div className="text-3xl font-bold text-blue-700">
-                {stats.Created}
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <svg width="120" height="120" viewBox="0 0 120 120">
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="38"
+                      fill="transparent"
+                      stroke="#e2e8f0"
+                      strokeWidth="12"
+                    />
+                    {donutSlices.map((slice) => (
+                      <circle
+                        key={slice.label}
+                        cx="60"
+                        cy="60"
+                        r="38"
+                        fill="transparent"
+                        stroke={slice.color}
+                        strokeWidth="12"
+                        strokeDasharray={`${slice.dash} ${donutCircumference}`}
+                        strokeDashoffset={-slice.offset}
+                        strokeLinecap="round"
+                        transform="rotate(-90 60 60)"
+                      />
+                    ))}
+                    <text
+                      x="60"
+                      y="60"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      className="text-sm font-semibold"
+                      fill="#0f172a"
+                    >
+                      {totalDistribution}
+                    </text>
+                  </svg>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {statusDistribution
+                    .filter((item) => item.value > 0)
+                    .map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-slate-700">{item.label}</span>
+                        <span className="ml-auto text-xs text-slate-500">
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                </div>
               </div>
             </div>
-            <div className="rounded-xl border bg-indigo-50 border-indigo-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
-              <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Waiting")}
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 animate-fade-in-up">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[#005792]">
+                  Thí nghiệm ưu tiên Review
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Danh sách thí nghiệm đang chờ review hoặc cần xác nhận.
+                </p>
               </div>
-              <div className="text-3xl font-bold text-indigo-700">
-                {stats.Waiting}
-              </div>
+              <span className="text-xs font-semibold text-slate-500">
+                {priorityLogs.length} mục
+              </span>
             </div>
-            <div className="rounded-xl border bg-yellow-50 border-yellow-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
-              <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("InProcess")}
+
+            <ul className="mt-4 space-y-3">
+              {priorityLogs.length > 0 ? (
+                priorityLogs.map((log) => (
+                  <li
+                    key={log.id}
+                    className="rounded-xl p-3 hover:bg-blue-50/50 transition cursor-pointer"
+                    onClick={() =>
+                      void navigate(`/researcher/experiment-log/${log.id}`)
+                    }
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-slate-900 truncate">
+                          {log.name}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate">
+                          {log.methodName} • {log.tissueCultureBatchName}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-[11px] font-semibold ${getStatusColor(
+                            log.status,
+                          )}`}
+                        >
+                          {statusToVietnamese(log.status)}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-slate-400" />
+                      </div>
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <div className="text-sm text-slate-500">
+                  Không có thí nghiệm đang chờ review.
+                </div>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        <div className="xl:col-span-1">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 animate-fade-in-up">
+            <h2 className="text-lg font-semibold text-[#005792]">Bộ lọc</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Lọc thí nghiệm theo trạng thái và phương pháp.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {/* Trạng thái */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">
+                  Trạng thái
+                </label>
+                <select
+                  className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
+                  value={statusFilter}
+                  onChange={(e) =>
+                    setStatusFilter(e.target.value as ExperimentStatus | "all")
+                  }
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="Created">Đã tạo</option>
+                  <option value="InProcess">Đang thực hiện</option>
+                  <option value="Done">Hoàn thành</option>
+                  <option value="Cancel">Đã hủy</option>
+                </select>
               </div>
-              <div className="text-3xl font-bold text-yellow-700">
-                {stats.InProcess}
+
+              {/* Phương pháp – dropdown thuần, data từ API */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">
+                  Phương pháp
+                </label>
+                <select
+                  className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
+                  value={methodFilter}
+                  onChange={(e) => setMethodFilter(e.target.value)}
+                >
+                  <option value="">Tất cả</option>
+                  {methods.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
-            <div className="rounded-xl border bg-green-50 border-green-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
-              <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Done")}
-              </div>
-              <div className="text-3xl font-bold text-green-700">
-                {stats.Done}
-              </div>
-            </div>
-            <div className="rounded-xl border bg-red-50 border-red-200 px-6 py-4 flex flex-col items-center animate-scale-in hover-lift">
-              <div className="text-sm text-gray-600 mb-2 font-medium">
-                {statusToVietnamese("Cancel")}
-              </div>
-              <div className="text-3xl font-bold text-red-700">
-                {stats.Cancel}
+
+              {/* Tìm kiếm */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">
+                  Tìm kiếm
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm thí nghiệm..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full border border-slate-200 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="bg-white p-6 rounded-xl shadow-lg animate-slide-in-left mt-3">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Filter className="text-sm text-gray-700 font-semibold" />
-            <select
-              className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as ExperimentStatus | "all")
-              }
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="Created">Đã tạo</option>
-              <option value="InProcess">Đang thực hiện</option>
-              <option value="Done">Hoàn thành</option>
-              <option value="Cancel">Đã hủy</option>
-            </select>
-          </div>
 
-          <div className="flex items-center gap-2 min-w-[220px]">
-            <span className="text-sm text-gray-700 font-semibold">
-              Phương pháp:
-            </span>
-            <select
-              className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
-            >
-              <option value="">Tất cả</option>
-              {methods.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-[180px]">
-            <span className="text-sm text-gray-700 font-semibold">
-              Giai đoạn:
-            </span>
-            <select
-              className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-              value={stageFilter}
-              onChange={(e) => setStageFilter(e.target.value as any)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="Giai đoạn 1">Giai đoạn 1</option>
-              <option value="Giai đoạn 2">Giai đoạn 2</option>
-              <option value="Giai đoạn 3">Giai đoạn 3</option>
-              <option value="Giai đoạn 4">Giai đoạn 4</option>
-            </select>
-          </div>
-
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="🔍 Tìm kiếm nhật ký thí nghiệm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-10 py-2 text-sm shadow-sm hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
       <div className="mt-3">
-        <div className="bg-white rounded-lg shadow">
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm">
+          <div className="bg-white/80 rounded-2xl shadow-sm overflow-hidden animate-fade-in-up stagger-2">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+                <thead className="bg-gradient-to-r from-[#E6F1FF] to-[#F0F8FF] border-b border-blue-100">
                   <tr>
                     <th className="text-left p-4 font-semibold text-gray-900">
                       Tên thí nghiệm
@@ -694,9 +897,9 @@ const ExperimentLog = () => {
                     filteredLogs.map((log, idx) => (
                       <tr
                         key={log.id}
-                        className="border-b hover:bg-gradient-to-r hover:from-green-50 hover:to-blue-50 cursor-pointer row-hover"
+                        className="border-b hover:bg-blue-50/60 cursor-pointer row-hover"
                         onClick={() =>
-                          void navigate(`/experiment-log/${log.id}`)
+                          void navigate(`/researcher/experiment-log/${log.id}`)
                         }
                         style={{ animationDelay: `${idx * 0.03}s` }}
                       >
@@ -716,7 +919,7 @@ const ExperimentLog = () => {
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(log.status)} bg-opacity-10 border transition-all duration-200 hover:scale-105`}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(log.status)} bg-opacity-20 border transition-all duration-200 hover:scale-105`}
                           >
                             {statusToVietnamese(log.status)}
                           </span>
@@ -748,7 +951,7 @@ const ExperimentLog = () => {
               </table>
             </div>
 
-            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+            <div className="flex justify-between items-center text-sm text-slate-600 p-6 bg-white/70">
               <span className="font-medium">
                 Hiển thị{" "}
                 {Math.min((currentPage - 1) * logsPerPage + 1, totalCount)}-

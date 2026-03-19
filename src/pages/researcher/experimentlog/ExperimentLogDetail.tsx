@@ -24,9 +24,6 @@ import { DiseaseIncidentStatus } from "../../../types/DiseaseIncident";
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
 
-// =============================================================================
-// TYPE DEFINITIONS
-//  =============================================================================
 interface Sample {
   id: string;
   name: string;
@@ -36,7 +33,6 @@ interface Sample {
   reason?: string;
   executionDate?: string;
   status?: string;
-  // Legacy fields
   description?: string;
   dob?: string;
   statusEnum?: string;
@@ -821,7 +817,7 @@ const ExperimentLogDetail = () => {
           <button
             type="button"
             className="back-button"
-            onClick={() => void navigate("/experiment-log")}
+            onClick={() => void navigate("/researcher/experiment-log")}
           >
             &larr;
           </button>
@@ -1194,7 +1190,7 @@ const ExperimentLogDetail = () => {
                     key={sample.id}
                     className="sample-card"
                     onClick={() =>
-                      navigate(`/samples/${sample.id}`, {
+                      navigate(`/researcher/samples/${sample.id}`, {
                         state: {
                           from: "researcherExperimentLogDetail",
                           experimentLogId: id,

@@ -286,7 +286,7 @@ export default function Seedlings() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/seedlings/create")}
+            onClick={() => navigate("/researcher/seedlings/create")}
             className="px-6 py-2 bg-blue-300 hover:bg-blue-400 text-blue-900 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -443,7 +443,7 @@ export default function Seedlings() {
               currentSeedlings.map((seedling, index) => (
                 <tr 
                   key={seedling.id} 
-                  onClick={() => navigate(`/seedlings/${seedling.id}`)}
+                  onClick={() => navigate(`/researcher/seedlings/${seedling.id}`)}
                   className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
                 >
                   <td className="p-4 text-center">{startIndex + index + 1}</td>
@@ -463,7 +463,7 @@ export default function Seedlings() {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!seedling.deletedDate && !seedling.deletedBy) {
-                            navigate(`/seedlings/update/${seedling.id}`);
+                            navigate(`/researcher/seedlings/update/${seedling.id}`);
                           }
                         }}
                         disabled={!!seedling.deletedDate || !!seedling.deletedBy}

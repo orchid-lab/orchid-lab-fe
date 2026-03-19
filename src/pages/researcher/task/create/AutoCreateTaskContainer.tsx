@@ -268,7 +268,7 @@ const AutoCreateTaskContainer: React.FC = () => {
       enqueueSnackbar(`Đã tạo thành công ${results.length} nhiệm vụ!`, {
         variant: "success",
       });
-      void navigate("/tasks");
+      void navigate("/researcher/tasks");
     } catch (error: unknown) {
       console.error("Error creating tasks:", error);
       if (

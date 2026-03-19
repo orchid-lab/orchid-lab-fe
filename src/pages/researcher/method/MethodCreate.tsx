@@ -247,7 +247,7 @@ export default function MethodCreate() {
         payload
       );
       setLoading(false);
-      void navigate("/method");
+      void navigate("/researcher/method");
       enqueueSnackbar("Tạo phương pháp thành công!", {
         variant: "success",
         autoHideDuration: 3000,

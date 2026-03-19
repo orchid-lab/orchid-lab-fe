@@ -433,7 +433,7 @@ const TaskDetailPage: React.FC = () => {
             enqueueSnackbar(t("task.taskDeletedSuccess"), {
               variant: "success",
             });
-            void navigate("/tasks");
+            void navigate("/researcher/tasks");
           })
           .catch((err) => {
             const errorMessage =
@@ -518,7 +518,7 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    void navigate("/tasks");
+    void navigate("/researcher/tasks");
   };
 
   const sortedChecklistItems =

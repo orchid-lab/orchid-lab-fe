@@ -495,7 +495,7 @@ export default function SeedlingCreate() {
    */
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate("/seedlings?page=1");
+    navigate("/researcher/seedlings?page=1");
   };
 
   if (loading) {
@@ -517,7 +517,7 @@ export default function SeedlingCreate() {
         {/* ============= HEADER ============= */}
         <div className="mb-8">
           <button
-            onClick={() => navigate("/seedlings")}
+            onClick={() => navigate("/researcher/seedlings")}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors mb-4"
           >
             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -900,7 +900,7 @@ export default function SeedlingCreate() {
           <div className="flex gap-4 justify-end">
             <button
               type="button"
-              onClick={() => navigate("/seedlings")}
+              onClick={() => navigate("/researcher/seedlings")}
               className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Hủy

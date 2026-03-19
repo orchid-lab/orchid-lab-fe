@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/array-type */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";

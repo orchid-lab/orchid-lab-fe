@@ -169,7 +169,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/method"
+              path="/researcher/method"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <Method />
@@ -177,7 +177,15 @@ function AppLayout() {
               }
             />
             <Route
-              path="/method/:id"
+              path="/researcher"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <Navigate to="/researcher/tasks" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/method/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <MethodDetail />
@@ -185,17 +193,31 @@ function AppLayout() {
               }
             />
             <Route
-              path="/method/new"
+              path="/researcher/method/new"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <MethodCreate />
                 </ProtectedRoute>
               }
             />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/experiment-log" element={<ExperimentLog />} />
             <Route
-              path="/seedlings"
+              path="/researcher/tasks"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <Tasks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/experiment-log"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ExperimentLog />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/seedlings"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <Seedlings />
@@ -203,7 +225,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/create"
+              path="/researcher/seedlings/create"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <SeedlingCreate />
@@ -211,7 +233,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/update/:id"
+              path="/researcher/seedlings/update/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <UpdateSeedling />
@@ -219,7 +241,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/:id"
+              path="/researcher/seedlings/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <SeedlingDetail />
@@ -227,7 +249,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/samples/:id"
+              path="/researcher/samples/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ResearcherSampleDetail />
@@ -235,7 +257,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/reports"
+              path="/researcher/reports"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ReportList />
@@ -299,7 +321,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/reports/:id/follow-up"
+              path="/researcher/reports/:id/follow-up"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ReportsFollowUpDetails />
@@ -315,22 +337,31 @@ function AppLayout() {
               }
             />
             <Route
-              path="/create-task/*"
+              path="/researcher/create-task/*"
               element={
-                <CreateTaskProvider>
-                  <Routes>
-                    <Route path="" element={<CreateTaskContainer />} />
-                    <Route path="step-1" element={<CreateTaskContainer />} />
-                    <Route
-                      path="step-2"
-                      element={<SelectTechnicianContainer />}
-                    />
-                    <Route path="step-3" element={<ConfirmTaskContainer />} />
-                  </Routes>
-                </CreateTaskProvider>
+                <ProtectedRoute requiredRole="Researcher">
+                  <CreateTaskProvider>
+                    <Routes>
+                      <Route path="" element={<CreateTaskContainer />} />
+                      <Route path="step-1" element={<CreateTaskContainer />} />
+                      <Route
+                        path="step-2"
+                        element={<SelectTechnicianContainer />}
+                      />
+                      <Route path="step-3" element={<ConfirmTaskContainer />} />
+                    </Routes>
+                  </CreateTaskProvider>
+                </ProtectedRoute>
               }
             />
-            <Route path="/tasks/:id" element={<TaskDetailPage />} />
+            <Route
+              path="/researcher/tasks/:id"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <TaskDetailPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/technician/tasks/:id"
               element={
@@ -347,36 +378,57 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/task-templates" element={<TaskTemplateList />} />
             <Route
-              path="/task-templates/new"
-              element={<TaskTemplateCreate />}
-            />
-            <Route
-              path="/task-templates/:id"
-              element={<TaskTemplateDetail />}
-            />
-            <Route
-              path="/experiment-log/create/*"
+              path="/researcher/task-templates"
               element={
-                <ExperimentLogFormProvider>
-                  <Routes>
-                    <Route path="step-1" element={<CreateExperimentStep1 />} />
-                    <Route path="step-2" element={<CreateExperimentStep2 />} />
-                    <Route path="step-3" element={<CreateExperimentStep3 />} />
-                    <Route
-                      path="/"
-                      element={<Navigate to="step-1" replace />}
-                    />
-                  </Routes>
-                </ExperimentLogFormProvider>
+                <ProtectedRoute requiredRole="Researcher">
+                  <TaskTemplateList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/task-templates/new"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <TaskTemplateCreate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/task-templates/:id"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <TaskTemplateDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/experiment-log/create/*"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ExperimentLogFormProvider>
+                    <Routes>
+                      <Route path="step-1" element={<CreateExperimentStep1 />} />
+                      <Route path="step-2" element={<CreateExperimentStep2 />} />
+                      <Route path="step-3" element={<CreateExperimentStep3 />} />
+                      <Route
+                        path="/"
+                        element={<Navigate to="step-1" replace />}
+                      />
+                    </Routes>
+                  </ExperimentLogFormProvider>
+                </ProtectedRoute>
               }
             />
 
             <Route path="/profile" element={<ProfilePage />} />
             <Route
-              path="/experiment-log/:id"
-              element={<ExperimentLogDetail />}
+              path="/researcher/experiment-log/:id"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ExperimentLogDetail />
+                </ProtectedRoute>
+              }
             />
 
             <Route

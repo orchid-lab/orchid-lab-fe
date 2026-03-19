@@ -69,19 +69,69 @@ function normalizeStatus(status: string): StatusType | null {
   return STATUS_NORMALIZE_MAP[status] ?? null;
 }
 
+const STATUS_UI: Record<StatusType, { labelKey: string; badgeClasses: string }> = {
+  Assigned: {
+    labelKey: "status.assigned",
+    badgeClasses: "bg-blue-50 text-blue-700 border border-blue-100",
+  },
+  Taken: {
+    labelKey: "status.taken",
+    badgeClasses: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  },
+  InProcess: {
+    labelKey: "status.inProcess",
+    badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  },
+  DoneInTime: {
+    labelKey: "status.doneInTime",
+    badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  DoneInLate: {
+    labelKey: "status.doneInLate",
+    badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100",
+  },
+  Cancel: {
+    labelKey: "status.cancel",
+    badgeClasses: "bg-red-50 text-red-700 border border-red-100",
+  },
+};
+
+const STATUS_UI_FALLBACK: Record<
+  string,
+  { labelKey: string; badgeClasses: string }
+> = {
+  InProgress: {
+    labelKey: "status.inProgress",
+    badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  },
+  WaitingForApproval: {
+    labelKey: "status.waitingForApproval",
+    badgeClasses: "bg-amber-50 text-amber-700 border border-amber-100",
+  },
+  DeclinedByTechnician: {
+    labelKey: "status.declinedByTechnician",
+    badgeClasses: "bg-red-50 text-red-700 border border-red-100",
+  },
+  CompletedInTime: {
+    labelKey: "status.completedInTime",
+    badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  CompletedOutTime: {
+    labelKey: "status.completedOutTime",
+    badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100",
+  },
+  ReworkRequired: {
+    labelKey: "status.reworkRequired",
+    badgeClasses: "bg-rose-50 text-rose-700 border border-rose-100",
+  },
+};
+
 function getStatusLabel(
   status: StatusType,
   t: (key: string) => string,
 ): string {
-  const labels: Record<StatusType, string> = {
-    Assigned: t("status.assigned"),
-    Taken: t("status.taken"),
-    InProcess: t("status.inProcess"),
-    DoneInTime: t("status.doneInTime"),
-    DoneInLate: t("status.doneInLate"),
-    Cancel: t("status.cancel"),
-  };
-  return labels[status] || status;
+  const statusKey = STATUS_UI[status]?.labelKey;
+  return statusKey ? t(statusKey) : status;
 }
 
 export default function Tasks() {
@@ -271,7 +321,7 @@ export default function Tasks() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
       <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -290,86 +340,91 @@ export default function Tasks() {
         .animate-slide-in-left { animation: slideInLeft 0.5s ease-out forwards; }
         .hover-lift { transition: all 0.28s cubic-bezier(0.4,0,0.2,1); }
         .hover-lift:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 24px -6px rgba(0,0,0,0.15); }
-        .row-hover { transition: all 0.2s ease; }
-        .row-hover:hover { transform: scale(1.01); box-shadow: 0 4px 12px rgba(34,197,94,0.12); }
       `}</style>
       <div className="space-y-6">
-        {/* Header + nút tạo task */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {t("task.researchTaskManagement")}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {t("task.researchTaskSubtitle")}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                void navigate("/task-templates");
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              {t("task.taskTemplates")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                void navigate("/create-task/step-1");
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              {t("task.createResearchTask")}
-            </button>
-          </div>
-        </div>
-
-        {/* 6 ô tổng hợp */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries({
-            Assigned: t("status.taskAssigned"),
-            Taken: t("status.taskTaken"),
-            InProcess: t("status.taskInProcess"),
-            DoneInTime: t("status.taskDoneInTime"),
-            DoneInLate: t("status.taskDoneInLate"),
-            Cancel: t("status.taskCancelled"),
-          }).map(([key, label], idx) => {
-            // Color and bg similar to ExperimentLog
-            let cardBg = "bg-blue-50 border-blue-200 text-blue-700";
-            if (key === "Taken")
-              cardBg = "bg-indigo-50 border-indigo-200 text-indigo-700";
-            if (key === "InProcess")
-              cardBg = "bg-yellow-50 border-yellow-200 text-yellow-700";
-            if (key === "DoneInTime")
-              cardBg = "bg-green-50 border-green-200 text-green-700";
-            if (key === "DoneInLate")
-              cardBg = "bg-orange-50 border-orange-200 text-orange-700";
-            if (key === "Cancel")
-              cardBg = "bg-red-50 border-red-200 text-red-700";
-            return (
-              <div
-                key={key}
-                className={`rounded-xl border px-6 py-4 flex flex-col items-center animate-scale-in hover-lift min-w-[150px] ${cardBg}`}
-                style={{ animationDelay: `${0.1 * (idx + 1)}s`, opacity: 0 }}
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+          {/* Header + nút tạo task */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">
+                {t("task.researchTaskManagement")}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {t("task.researchTaskSubtitle")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate("/researcher/task-templates");
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-5 py-2 text-sm font-medium text-[#005792] shadow-sm transition-all duration-200 hover:bg-white"
               >
-                <div className="text-sm text-gray-600 mb-2 font-medium">
-                  {label}
+                {t("task.taskTemplates")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate("/create-task/step-1");
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="h-5 w-5"
+                >
+                  <path d="M10 4v12m-6-6h12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {t("task.createResearchTask")}
+              </button>
+            </div>
+          </div>
+
+          {/* 6 ô tổng hợp */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries({
+              Assigned: t("status.taskAssigned"),
+              Taken: t("status.taskTaken"),
+              InProcess: t("status.taskInProcess"),
+              DoneInTime: t("status.taskDoneInTime"),
+              DoneInLate: t("status.taskDoneInLate"),
+              Cancel: t("status.taskCancelled"),
+            }).map(([key, label], idx) => {
+              // Ocean-tech stat cards
+              let textColor = "text-[#005792]";
+              if (key === "Taken") textColor = "text-indigo-700";
+              if (key === "InProcess") textColor = "text-yellow-700";
+              if (key === "DoneInTime") textColor = "text-green-700";
+              if (key === "DoneInLate") textColor = "text-orange-700";
+              if (key === "Cancel") textColor = "text-red-700";
+              return (
+                <div
+                  key={key}
+                  className={`rounded-2xl border border-blue-100 bg-white/70 p-5 flex flex-col items-center animate-scale-in hover-lift ${textColor}`}
+                  style={{ animationDelay: `${0.1 * (idx + 1)}s`, opacity: 0 }}
+                >
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {label}
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#005792]">
+                    {statusCounts[key as StatusType]}
+                  </div>
                 </div>
-                <div className={`text-3xl font-bold ${cardBg.split(" ")[2]}`}>
-                  {statusCounts[key as StatusType]}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* {t('common.filter')} */}
-        <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="bg-white/70 backdrop-blur-sm border border-blue-100 rounded-2xl p-5 shadow-sm">
           <div className="flex flex-wrap items-center gap-4 mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-blue-900/70 font-medium">
                 {t("common.status")}:
               </span>
               <select
@@ -377,7 +432,7 @@ export default function Tasks() {
                 onChange={(e) =>
                   setStatusFilter(e.target.value as StatusType | "Tất cả")
                 }
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="Tất cả">{t("common.all")}</option>
                 {Object.entries({
@@ -395,13 +450,13 @@ export default function Tasks() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">
+              <span className="text-sm text-blue-900/70 font-medium">
                 {t("task.researcher")}:
               </span>
               <select
                 value={researcherFilter}
                 onChange={(e) => setResearcherFilter(e.target.value)}
-                className="border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="Tất cả">{t("common.all")}</option>
                 {allResearchers.map((r) => (
@@ -412,13 +467,30 @@ export default function Tasks() {
               </select>
             </div>
             <div className="flex-1 min-w-[200px]">
-              <input
-                type="text"
-                placeholder="Tìm kiếm nhiệm vụ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#005792"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder={t("common.searchPlaceholder") ?? "Tìm kiếm nhiệm vụ..."}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full border border-blue-100 bg-white/90 rounded-xl px-10 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
+                />
+              </div>
             </div>
             <button
               type="button"
@@ -427,8 +499,11 @@ export default function Tasks() {
                 setResearcherFilter("Tất cả");
                 setSearchTerm("");
               }}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-4 py-2 text-sm font-medium text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
             >
+              <span className="text-lg leading-none" aria-hidden>
+                ✕
+              </span>
               {t("common.clear")} {t("common.filter").toLowerCase()}
             </button>
           </div>
@@ -442,17 +517,17 @@ export default function Tasks() {
                 {t("common.filter")} {t("common.selected").toLowerCase()}:
               </span>
               {statusFilter !== "Tất cả" && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-50 text-cyan-700">
                   {t("common.status")}: {getStatusLabel(statusFilter, t)}
                 </span>
               )}
               {researcherFilter !== "Tất cả" && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-800">
                   {t("task.researcher")}: {researcherFilter}
                 </span>
               )}
               {searchTerm.trim() && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-800">
                   {t("common.search")}: "{searchTerm}"
                 </span>
               )}
@@ -460,10 +535,10 @@ export default function Tasks() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl overflow-hidden shadow-sm animate-fade-in-up">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-green-50 border-b-2 border-green-200">
+              <thead className="bg-gradient-to-r from-[#E6F1FF] to-[#F0F8FF] border-b border-blue-100">
                 <tr>
                   <th className="text-left p-4 font-semibold text-gray-900">
                     {t("task.taskName")}
@@ -477,77 +552,109 @@ export default function Tasks() {
                   <th className="text-left p-4 font-semibold text-gray-900">
                     {t("task.technician")}
                   </th>
+                  <th className="sr-only">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-blue-900/60">
                       <div className="flex items-center gap-2 justify-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#005792]"></div>
                         {t("common.loadingData")}
                       </div>
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-red-500">
+                    <td colSpan={5} className="text-center py-8 text-red-500">
                       {error}
                     </td>
                   </tr>
                 ) : tasks.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
                       {t("task.noTasks")}
                     </td>
                   </tr>
                 ) : (
-                  tasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
-                      onClick={() => {
-                        void navigate(`/tasks/${task.id}`);
-                      }}
-                    >
-                      <td className="p-4 font-medium text-gray-900">
-                        {task.name ?? "-"}
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                          {task.status || "-"}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {task.expectedEndDate
-                          ? new Date(task.expectedEndDate).toLocaleDateString(
-                              "vi-VN",
-                            )
-                          : task.end_date
-                            ? new Date(task.end_date).toLocaleDateString(
+                  tasks.map((task) => {
+                    const normalizedStatus = normalizeStatus(task.status);
+                    const statusLabel = normalizedStatus
+                      ? getStatusLabel(normalizedStatus, t)
+                      : STATUS_UI_FALLBACK[task.status]?.labelKey
+                      ? t(STATUS_UI_FALLBACK[task.status].labelKey)
+                      : task.status || "-";
+                    const statusClasses = normalizedStatus
+                      ? STATUS_UI[normalizedStatus].badgeClasses
+                      : STATUS_UI_FALLBACK[task.status]?.badgeClasses ??
+                        "bg-gray-100 text-gray-700 border border-gray-200";
+                    return (
+                      <tr
+                        key={task.id}
+                        className="border-b hover:bg-blue-50/60 cursor-pointer row-hover"
+                        onClick={() => {
+                          void navigate(`/researcher/tasks/${task.id}`);
+                        }}
+                      >
+                        <td className="p-4 font-medium text-gray-900">
+                          {task.name ?? "-"}
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses} bg-opacity-25 transition-all duration-200 hover:scale-105`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-700 font-medium">
+                          {task.expectedEndDate
+                            ? new Date(task.expectedEndDate).toLocaleDateString(
                                 "vi-VN",
                               )
-                            : task.create_at
-                              ? new Date(task.create_at).toLocaleDateString(
+                            : task.end_date
+                              ? new Date(task.end_date).toLocaleDateString(
                                   "vi-VN",
                                 )
-                              : "-"}
-                      </td>
-                      <td className="p-4">
-                        {task.technicianId
-                          ? technicianNames[task.technicianId] ||
-                            task.technicianId
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))
+                              : task.create_at
+                                ? new Date(task.create_at).toLocaleDateString(
+                                    "vi-VN",
+                                  )
+                                : "-"}
+                        </td>
+                        <td className="p-4 text-gray-700 font-medium">
+                          {task.technicianId
+                            ? technicianNames[task.technicianId] ||
+                              task.technicianId
+                            : "-"}
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 border border-blue-100 transition-all duration-200 hover:bg-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#005792"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-5 w-5"
+                            >
+                              <path d="M15 12H9" />
+                              <path d="M12 15l-3-3 3-3" />
+                            </svg>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-slate-600 p-6 bg-white/70 border-t border-blue-100">
               <span className="font-medium">
                 {t("common.showing")}{" "}
                 {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
@@ -559,7 +666,7 @@ export default function Tasks() {
                   <button
                     type="button"
                     onClick={() => paginate(currentPage - 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
                   >
                     ←
                   </button>
@@ -582,8 +689,8 @@ export default function Tasks() {
                       onClick={() => paginate(pageNum)}
                       className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
                         currentPage === pageNum
-                          ? "bg-green-700 text-white"
-                          : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
+                          ? "bg-[#005792] text-white"
+                          : "bg-white/80 border border-blue-100 text-blue-950 hover:bg-white transition-all duration-200"
                       }`}
                     >
                       {pageNum}
@@ -594,7 +701,7 @@ export default function Tasks() {
                   <button
                     type="button"
                     onClick={() => paginate(currentPage + 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
                   >
                     →
                   </button>

@@ -76,7 +76,7 @@ const ConfirmTaskContainer: React.FC = () => {
     try {
       await axiosInstance.post("/api/tasks", body);
       enqueueSnackbar(t("task.createTaskSuccess"), { variant: "success" });
-      void navigate("/tasks");
+      void navigate("/researcher/tasks");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       enqueueSnackbar(
