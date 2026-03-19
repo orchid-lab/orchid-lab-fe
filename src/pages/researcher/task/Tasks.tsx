@@ -69,19 +69,69 @@ function normalizeStatus(status: string): StatusType | null {
   return STATUS_NORMALIZE_MAP[status] ?? null;
 }
 
+const STATUS_UI: Record<StatusType, { labelKey: string; badgeClasses: string }> = {
+  Assigned: {
+    labelKey: "status.assigned",
+    badgeClasses: "bg-blue-50 text-blue-700 border border-blue-100",
+  },
+  Taken: {
+    labelKey: "status.taken",
+    badgeClasses: "bg-indigo-50 text-indigo-700 border border-indigo-100",
+  },
+  InProcess: {
+    labelKey: "status.inProcess",
+    badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  },
+  DoneInTime: {
+    labelKey: "status.doneInTime",
+    badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  DoneInLate: {
+    labelKey: "status.doneInLate",
+    badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100",
+  },
+  Cancel: {
+    labelKey: "status.cancel",
+    badgeClasses: "bg-red-50 text-red-700 border border-red-100",
+  },
+};
+
+const STATUS_UI_FALLBACK: Record<
+  string,
+  { labelKey: string; badgeClasses: string }
+> = {
+  InProgress: {
+    labelKey: "status.inProgress",
+    badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100",
+  },
+  WaitingForApproval: {
+    labelKey: "status.waitingForApproval",
+    badgeClasses: "bg-amber-50 text-amber-700 border border-amber-100",
+  },
+  DeclinedByTechnician: {
+    labelKey: "status.declinedByTechnician",
+    badgeClasses: "bg-red-50 text-red-700 border border-red-100",
+  },
+  CompletedInTime: {
+    labelKey: "status.completedInTime",
+    badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+  },
+  CompletedOutTime: {
+    labelKey: "status.completedOutTime",
+    badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100",
+  },
+  ReworkRequired: {
+    labelKey: "status.reworkRequired",
+    badgeClasses: "bg-rose-50 text-rose-700 border border-rose-100",
+  },
+};
+
 function getStatusLabel(
   status: StatusType,
   t: (key: string) => string,
 ): string {
-  const labels: Record<StatusType, string> = {
-    Assigned: t("status.assigned"),
-    Taken: t("status.taken"),
-    InProcess: t("status.inProcess"),
-    DoneInTime: t("status.doneInTime"),
-    DoneInLate: t("status.doneInLate"),
-    Cancel: t("status.cancel"),
-  };
-  return labels[status] || status;
+  const statusKey = STATUS_UI[status]?.labelKey;
+  return statusKey ? t(statusKey) : status;
 }
 
 export default function Tasks() {
@@ -530,13 +580,15 @@ export default function Tasks() {
                 ) : (
                   tasks.map((task) => {
                     const normalizedStatus = normalizeStatus(task.status);
-                    const isActive = normalizedStatus !== "Cancel";
                     const statusLabel = normalizedStatus
                       ? getStatusLabel(normalizedStatus, t)
+                      : STATUS_UI_FALLBACK[task.status]?.labelKey
+                      ? t(STATUS_UI_FALLBACK[task.status].labelKey)
                       : task.status || "-";
-                    const statusClasses = isActive
-                      ? "bg-cyan-50 text-cyan-700"
-                      : "bg-gray-100 text-gray-700";
+                    const statusClasses = normalizedStatus
+                      ? STATUS_UI[normalizedStatus].badgeClasses
+                      : STATUS_UI_FALLBACK[task.status]?.badgeClasses ??
+                        "bg-gray-100 text-gray-700 border border-gray-200";
                     return (
                       <tr
                         key={task.id}
@@ -550,7 +602,7 @@ export default function Tasks() {
                         </td>
                         <td className="p-4">
                           <span
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses} bg-opacity-20 border transition-all duration-200 hover:scale-105`}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses} bg-opacity-25 transition-all duration-200 hover:scale-105`}
                           >
                             {statusLabel}
                           </span>
