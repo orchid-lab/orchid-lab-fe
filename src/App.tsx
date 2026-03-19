@@ -177,7 +177,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/method/:id"
+              path="/researcher/method/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <MethodDetail />
@@ -185,7 +185,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/method/new"
+              path="/researcher/method/new"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <MethodCreate />
@@ -195,7 +195,7 @@ function AppLayout() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/experiment-log" element={<ExperimentLog />} />
             <Route
-              path="/seedlings"
+              path="/researcher/seedlings"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <Seedlings />
@@ -203,7 +203,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/create"
+              path="/researcher/seedlings/create"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <SeedlingCreate />
@@ -211,7 +211,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/update/:id"
+              path="/researcher/seedlings/update/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <UpdateSeedling />
@@ -219,7 +219,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/seedlings/:id"
+              path="/researcher/seedlings/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <SeedlingDetail />
@@ -227,7 +227,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/samples/:id"
+              path="/researcher/samples/:id"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ResearcherSampleDetail />
@@ -235,7 +235,7 @@ function AppLayout() {
               }
             />
             <Route
-              path="/reports"
+              path="/researcher/reports"
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ReportList />
