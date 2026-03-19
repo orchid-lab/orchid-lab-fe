@@ -292,88 +292,82 @@ export default function Tasks() {
         .hover-lift:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 24px -6px rgba(0,0,0,0.15); }
       `}</style>
       <div className="space-y-6">
-        {/* Header + nút tạo task */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#005792]">
-              {t("task.researchTaskManagement")}
-            </h1>
-            <p className="text-blue-900/70 mt-1">
-              {t("task.researchTaskSubtitle")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 items-center">
-            <button
-              type="button"
-              onClick={() => {
-                void navigate("/researcher/task-templates");
-              }}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-white/80 px-4 py-2 text-sm font-medium text-[#005792] shadow-sm transition-all duration-200 hover:bg-white"
-            >
-              <span className="text-xl leading-none" aria-hidden>
-                🧭
-              </span>
-              {t("task.taskTemplates")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                void navigate("/create-task/step-1");
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73]"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="h-5 w-5"
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+          {/* Header + nút tạo task */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">
+                {t("task.researchTaskManagement")}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                {t("task.researchTaskSubtitle")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate("/researcher/task-templates");
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-5 py-2 text-sm font-medium text-[#005792] shadow-sm transition-all duration-200 hover:bg-white"
               >
-                <path d="M10 4v12m-6-6h12" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {t("task.createResearchTask")}
-            </button>
+                {t("task.taskTemplates")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate("/create-task/step-1");
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73]"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="h-5 w-5"
+                >
+                  <path d="M10 4v12m-6-6h12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {t("task.createResearchTask")}
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* 6 ô tổng hợp */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-          {Object.entries({
-            Assigned: t("status.taskAssigned"),
-            Taken: t("status.taskTaken"),
-            InProcess: t("status.taskInProcess"),
-            DoneInTime: t("status.taskDoneInTime"),
-            DoneInLate: t("status.taskDoneInLate"),
-            Cancel: t("status.taskCancelled"),
-          }).map(([key, label], idx) => {
-            // Color and bg similar to ExperimentLog
-            let cardBg = "bg-blue-50 border-blue-200 text-blue-700";
-            if (key === "Taken")
-              cardBg = "bg-indigo-50 border-indigo-200 text-indigo-700";
-            if (key === "InProcess")
-              cardBg = "bg-yellow-50 border-yellow-200 text-yellow-700";
-            if (key === "DoneInTime")
-              cardBg = "bg-green-50 border-green-200 text-green-700";
-            if (key === "DoneInLate")
-              cardBg = "bg-orange-50 border-orange-200 text-orange-700";
-            if (key === "Cancel")
-              cardBg = "bg-red-50 border-red-200 text-red-700";
-            return (
-              <div
-                key={key}
-                className={`rounded-xl border px-6 py-4 flex flex-col items-center animate-scale-in hover-lift min-w-[150px] ${cardBg}`}
-                style={{ animationDelay: `${0.1 * (idx + 1)}s`, opacity: 0 }}
-              >
-                <div className="text-sm text-gray-600 mb-2 font-medium">
-                  {label}
+          {/* 6 ô tổng hợp */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries({
+              Assigned: t("status.taskAssigned"),
+              Taken: t("status.taskTaken"),
+              InProcess: t("status.taskInProcess"),
+              DoneInTime: t("status.taskDoneInTime"),
+              DoneInLate: t("status.taskDoneInLate"),
+              Cancel: t("status.taskCancelled"),
+            }).map(([key, label], idx) => {
+              // Ocean-tech stat cards
+              let textColor = "text-[#005792]";
+              if (key === "Taken") textColor = "text-indigo-700";
+              if (key === "InProcess") textColor = "text-yellow-700";
+              if (key === "DoneInTime") textColor = "text-green-700";
+              if (key === "DoneInLate") textColor = "text-orange-700";
+              if (key === "Cancel") textColor = "text-red-700";
+              return (
+                <div
+                  key={key}
+                  className={`rounded-2xl border border-blue-100 bg-white/70 p-5 flex flex-col items-center animate-scale-in hover-lift ${textColor}`}
+                  style={{ animationDelay: `${0.1 * (idx + 1)}s`, opacity: 0 }}
+                >
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {label}
+                  </div>
+                  <div className="mt-2 text-3xl font-semibold text-[#005792]">
+                    {statusCounts[key as StatusType]}
+                  </div>
                 </div>
-                <div className={`text-3xl font-bold ${cardBg.split(" ")[2]}`}>
-                  {statusCounts[key as StatusType]}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* {t('common.filter')} */}
@@ -491,10 +485,10 @@ export default function Tasks() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in-up stagger-2">
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl overflow-hidden shadow-sm animate-fade-in-up">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-green-50 border-b-2 border-green-200">
+              <thead className="bg-gradient-to-r from-[#E6F1FF] to-[#F0F8FF] border-b border-blue-100">
                 <tr>
                   <th className="text-left p-4 font-semibold text-gray-900">
                     {t("task.taskName")}
@@ -508,77 +502,107 @@ export default function Tasks() {
                   <th className="text-left p-4 font-semibold text-gray-900">
                     {t("task.technician")}
                   </th>
+                  <th className="sr-only">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-blue-900/60">
                       <div className="flex items-center gap-2 justify-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#005792]"></div>
                         {t("common.loadingData")}
                       </div>
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-red-500">
+                    <td colSpan={5} className="text-center py-8 text-red-500">
                       {error}
                     </td>
                   </tr>
                 ) : tasks.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
                       {t("task.noTasks")}
                     </td>
                   </tr>
                 ) : (
-                  tasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className="row-hover border-b cursor-pointer hover:bg-green-50 transition-all duration-150"
-                      onClick={() => {
-                        void navigate(`/researcher/tasks/${task.id}`);
-                      }}
-                    >
-                      <td className="p-4 font-medium text-gray-900">
-                        {task.name ?? "-"}
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-block px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                          {task.status || "-"}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {task.expectedEndDate
-                          ? new Date(task.expectedEndDate).toLocaleDateString(
-                              "vi-VN",
-                            )
-                          : task.end_date
-                            ? new Date(task.end_date).toLocaleDateString(
+                  tasks.map((task) => {
+                    const normalizedStatus = normalizeStatus(task.status);
+                    const isActive = normalizedStatus !== "Cancel";
+                    const statusLabel = normalizedStatus
+                      ? getStatusLabel(normalizedStatus, t)
+                      : task.status || "-";
+                    const statusClasses = isActive
+                      ? "bg-cyan-50 text-cyan-700"
+                      : "bg-gray-100 text-gray-700";
+                    return (
+                      <tr
+                        key={task.id}
+                        className="border-b hover:bg-blue-50/60 cursor-pointer row-hover"
+                        onClick={() => {
+                          void navigate(`/researcher/tasks/${task.id}`);
+                        }}
+                      >
+                        <td className="p-4 font-medium text-gray-900">
+                          {task.name ?? "-"}
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses} bg-opacity-20 border transition-all duration-200 hover:scale-105`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-700 font-medium">
+                          {task.expectedEndDate
+                            ? new Date(task.expectedEndDate).toLocaleDateString(
                                 "vi-VN",
                               )
-                            : task.create_at
-                              ? new Date(task.create_at).toLocaleDateString(
+                            : task.end_date
+                              ? new Date(task.end_date).toLocaleDateString(
                                   "vi-VN",
                                 )
-                              : "-"}
-                      </td>
-                      <td className="p-4">
-                        {task.technicianId
-                          ? technicianNames[task.technicianId] ||
-                            task.technicianId
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))
+                              : task.create_at
+                                ? new Date(task.create_at).toLocaleDateString(
+                                    "vi-VN",
+                                  )
+                                : "-"}
+                        </td>
+                        <td className="p-4 text-gray-700 font-medium">
+                          {task.technicianId
+                            ? technicianNames[task.technicianId] ||
+                              task.technicianId
+                            : "-"}
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 border border-blue-100 transition-all duration-200 hover:bg-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#005792"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-5 w-5"
+                            >
+                              <path d="M15 12H9" />
+                              <path d="M12 15l-3-3 3-3" />
+                            </svg>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-slate-600 p-6 bg-white/70 border-t border-blue-100">
               <span className="font-medium">
                 {t("common.showing")}{" "}
                 {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
@@ -590,7 +614,7 @@ export default function Tasks() {
                   <button
                     type="button"
                     onClick={() => paginate(currentPage - 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
                   >
                     ←
                   </button>
@@ -613,8 +637,8 @@ export default function Tasks() {
                       onClick={() => paginate(pageNum)}
                       className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
                         currentPage === pageNum
-                          ? "bg-green-700 text-white"
-                          : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
+                          ? "bg-[#005792] text-white"
+                          : "bg-white/80 border border-blue-100 text-blue-950 hover:bg-white transition-all duration-200"
                       }`}
                     >
                       {pageNum}
@@ -625,7 +649,7 @@ export default function Tasks() {
                   <button
                     type="button"
                     onClick={() => paginate(currentPage + 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm transition-all duration-200 hover:bg-white"
                   >
                     →
                   </button>
