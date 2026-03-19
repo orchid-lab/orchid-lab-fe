@@ -77,7 +77,8 @@
     "loggingOut": "Đang đăng xuất...",
     "selected": "Đã chọn",
     "errorOccurred": "Đã xảy ra lỗi",
-    "duration": "Thời lượng"
+    "duration": "Thời lượng",
+    "searchPlaceholder": "Tìm kiếm theo tên công việc, trạng thái..."
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -310,8 +311,7 @@
     "sectionTemplate": "Template",
     "targetObject": "Đối tượng",
     "confirmCreateTask": "Tạo nhiệm vụ",
-    "createTaskSuccess": "Nhiệm vụ đã được tạo thành công!",
-    "createTaskFailed": "Tạo nhiệm vụ thất bại!"
+    "createTaskSuccess": "Nhiệm vụ đã được tạo thành công!"
   },
   "profile": {
     "title": "Hồ sơ cá nhân",
