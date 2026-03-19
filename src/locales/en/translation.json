@@ -77,7 +77,8 @@
     "loggingOut": "Logging out...",
     "selected": "Selected",
     "errorOccurred": "An error occurred",
-    "duration": "Duration"
+    "duration": "Duration",
+    "active": "Active"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -420,7 +421,7 @@
     "clonal": "Clonal",
     "sexual": "Sexual",
     "asexual": "Asexual",
-    "searchPlaceholder": "Search by method name or type...",
+    "searchPlaceholder": "Search by method name or description...",
     "totalMethods": "Total Methods",
     "clonalMethods": "Clonal Methods",
     "sexualMethods": "Sexual Methods",

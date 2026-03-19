@@ -269,62 +269,74 @@ export default function Seedlings() {
   };
 
   return (
+    <main className="ml-0 sm:ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: translateY(6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+        .animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
+        .hover-lift { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .hover-lift:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 10px 20px -8px rgba(0,0,0,0.18); }
+      `}</style>
 
-    <main className="ml-0 sm:ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 px-2 sm:px-4 md:px-8">
-      <div className="space-y-6">
+      {/* FIX 3: All sections are correctly nested inside this single container div */}
+      <div className="space-y-6 px-6 pb-10">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("seedling.seedlingManagement")}</h1>
-            <p className="text-gray-600 mt-1">
-              {t("seedling.seedlingManagementDesc")}
-            </p>
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">{t("seedling.seedlingManagement")}</h1>
+              <p className="mt-1 text-sm text-blue-900/70">{t("seedling.seedlingManagementDesc")}</p>
+            </div>
+            <button
+              onClick={() => navigate("/researcher/seedlings/create")}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t("common.add")}
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/researcher/seedlings/create")}
-            className="px-6 py-2 bg-blue-300 hover:bg-blue-400 text-blue-900 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            {t("common.add")}
-          </button>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Tổng số cây con */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6 flex items-center justify-between hover-lift">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">{t("seedling.totalSeedlingsCount")}</p>
-              <p className="text-3xl font-bold text-gray-900">{filteredSeedlings.length}</p>
+              <p className="text-sm font-medium text-blue-700 mb-1">{t("seedling.totalSeedlingsCount")}</p>
+              <p className="text-3xl font-semibold text-blue-950">{filteredSeedlings.length}</p>
             </div>
-            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-cyan-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
           </div>
-          {/* Hiển thị trên trang */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6 flex items-center justify-between hover-lift">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">{t("seedling.displayOnPage")}</p>
-              <p className="text-3xl font-bold text-green-700">{currentSeedlings.length}</p>
+              <p className="text-sm font-medium text-blue-700 mb-1">{t("seedling.displayOnPage")}</p>
+              <p className="text-3xl font-semibold text-blue-950">{currentSeedlings.length}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-cyan-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
           </div>
-          {/* Tổng số trang */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center justify-between">
+          <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6 flex items-center justify-between hover-lift">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">{t("seedling.totalPages")}</p>
-              <p className="text-3xl font-bold text-purple-700">{totalPages}</p>
+              <p className="text-sm font-medium text-blue-700 mb-1">{t("seedling.totalPages")}</p>
+              <p className="text-3xl font-semibold text-blue-950">{totalPages}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-cyan-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </div>
@@ -332,34 +344,39 @@ export default function Seedlings() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white p-4 rounded-lg shadow-sm">
-          <div className="flex flex-wrap items-center gap-4 mb-3">
-            {/* Search with Category */}
-            <div className="flex-1 min-w-[300px] flex gap-2">
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            <div className="flex-1 min-w-[260px] flex gap-2">
               <select
                 value={searchCategory}
                 onChange={(e) => setSearchCategory(e.target.value as SearchCategory)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50"
+                className="border border-blue-100 bg-white/90 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="localName">{t("seedling.localNameLabel")}</option>
                 <option value="scientificName">{t("seedling.scientificNameLabel")}</option>
               </select>
-              <input
-                type="text"
-                placeholder={`${t("seedling.searchByName")} ${searchCategory === "localName" ? t("seedling.localNameLabel") : t("seedling.scientificNameLabel")}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
+              <div className="relative flex-1">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005792]">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                    <path d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  placeholder={`${t("seedling.searchByName")} ${searchCategory === "localName" ? t("seedling.localNameLabel") : t("seedling.scientificNameLabel")}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full border border-blue-100 bg-white/90 rounded-xl px-4 py-2 pl-11 text-sm font-medium text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#005792] transition-all duration-200"
+                />
+              </div>
             </div>
 
-            {/* Creator Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700 font-medium">{t("seedling.creatorLabel")}</span>
+              <span className="text-sm text-blue-700 font-medium">{t("seedling.creatorLabel")}</span>
               <select
                 value={creatorFilter}
                 onChange={(e) => setCreatorFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value={t("common.all")}>{t("common.all")}</option>
                 {allCreators.map((creator) => (
@@ -370,27 +387,27 @@ export default function Seedlings() {
               </select>
             </div>
 
-            {/* Clear Button */}
             <button
               type="button"
               onClick={clearFilters}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-[#005792] border border-blue-100 rounded-xl hover:bg-blue-50 transition-all duration-200"
             >
               {t("common.clearFilters")}
             </button>
           </div>
 
-          {/* Active Filters Display */}
+          {/* FIX 2: Removed duplicate Active Filters Display — kept only this one instance */}
           {(searchTerm.trim() || creatorFilter !== t("common.all")) && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-              <span className="text-xs text-gray-500">{t("seedling.appliedFilters")}</span>
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-blue-100">
+              <span className="text-xs text-blue-700">{t("seedling.appliedFilters")}</span>
               {searchTerm.trim() && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                  {searchCategory === "localName" ? t("seedling.localNameLabel") : t("seedling.scientificNameLabel")}: "{searchTerm}"
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-800">
+                  {searchCategory === "localName" ? t("seedling.localNameLabel") : t("seedling.scientificNameLabel")}:
+                  "{searchTerm}"
                 </span>
               )}
               {creatorFilter !== t("common.all") && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-cyan-50 text-cyan-700">
                   {t("seedling.creatorLabel")} {creatorFilter}
                 </span>
               )}
@@ -399,167 +416,173 @@ export default function Seedlings() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+            <table className="min-w-full">
+              <thead className="bg-white/60">
                 <tr>
-                  <th className="text-center p-4 font-semibold text-gray-900">STT</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.localNameLabel")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.scientificNameLabel")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.parentA")} - {t("seedling.localNameLabel")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.parentA")} - {t("seedling.scientificNameLabel")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.createdDate")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.createdBy")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.deletedBy")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.deletedDate")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.updatedDate")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("seedling.updatedBy")}</th>
-                  <th className="text-center p-4 font-semibold text-gray-900">{t("common.action")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">STT</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.localNameLabel")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.scientificNameLabel")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.parentA")} - {t("seedling.localNameLabel")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.parentA")} - {t("seedling.scientificNameLabel")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.createdDate")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("seedling.createdBy")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("common.status")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">{t("common.action")}</th>
                 </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={12} className="text-center p-8">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                    <span className="ml-2">{t("seedling.loadingText")}</span>
-                  </div>
-                </td>
-              </tr>
-            ) : currentSeedlings.length === 0 ? (
-              <tr>
-                <td colSpan={12} className="text-center p-8 text-gray-500">
-                  {t("common.noData")}
-                </td>
-              </tr>
-            ) : (
-              currentSeedlings.map((seedling, index) => (
-                <tr 
-                  key={seedling.id} 
-                  onClick={() => navigate(`/researcher/seedlings/${seedling.id}`)}
-                  className="border-b hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <td className="p-4 text-center">{startIndex + index + 1}</td>
-                  <td className="p-4 text-center">{seedling.localName}</td>
-                  <td className="p-4 text-center">{seedling.scientificName}</td>
-                  <td className="p-4 text-center">{seedling.parentALocalName ?? "-"}</td>
-                  <td className="p-4 text-center">{seedling.parentAScientificName ?? "-"}</td>
-                  <td className="p-4 text-center">{formatDate(seedling.createdDate)}</td>
-                  <td className="p-4 text-center">{getUserName(seedling.createdBy)}</td>
-                  <td className="p-4 text-center">{getUserName(seedling.deletedBy) ?? "-"}</td>
-                  <td className="p-4 text-center">{formatDate(seedling.deletedDate) ?? "-"}</td>
-                  <td className="p-4 text-center">{getUserName(seedling.updatedBy) ?? "-"}</td>
-                  <td className="p-4 text-center">{formatDate(seedling.updatedDate) ?? "-"}</td>
-                  <td className="p-4 text-center">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!seedling.deletedDate && !seedling.deletedBy) {
-                            navigate(`/researcher/seedlings/update/${seedling.id}`);
-                          }
-                        }}
-                        disabled={!!seedling.deletedDate || !!seedling.deletedBy}
-                        className={`px-3 py-1 text-white text-sm rounded-lg transition-colors ${
-                          seedling.deletedDate || seedling.deletedBy
-                            ? "bg-gray-400 cursor-not-allowed opacity-50"
-                            : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-                        }`}
-                        title={seedling.deletedDate || seedling.deletedBy ? t("seedling.deletedCannotEdit") : t("common.edit")}
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="text-center p-8">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                        <span className="ml-2">{t("seedling.loadingText")}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentSeedlings.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center p-8 text-blue-900/40">
+                      {t("common.noData")}
+                    </td>
+                  </tr>
+                ) : (
+                  // FIX 1: Removed the duplicate `) : (` — only one ternary branch here
+                  currentSeedlings.map((seedling, index) => {
+                    const isDeleted = Boolean(seedling.deletedDate ?? seedling.deletedBy);
+                    return (
+                      <tr
+                        key={seedling.id}
+                        onClick={() => navigate(`/researcher/seedlings/${seedling.id}`)}
+                        className="border-b border-blue-50 hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7.5-1.5l4.5-4.5m0 0l-4.5 4.5" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!seedling.deletedDate && !seedling.deletedBy) {
-                            handleDelete(seedling.id);
-                          }
-                        }}
-                        disabled={!!seedling.deletedDate || !!seedling.deletedBy}
-                        className={`px-3 py-1 text-white text-sm rounded-lg transition-colors ${
-                          seedling.deletedDate || seedling.deletedBy
-                            ? "bg-gray-400 cursor-not-allowed opacity-50"
-                            : "bg-red-500 hover:bg-red-600 cursor-pointer"
-                        }`}
-                        title={seedling.deletedDate || seedling.deletedBy ? t("seedling.deletedCannotDelete") : t("common.delete")}
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                        <td className="py-4 px-6 font-medium text-blue-950">{startIndex + index + 1}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{seedling.localName}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{seedling.scientificName}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{seedling.parentALocalName ?? "-"}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{seedling.parentAScientificName ?? "-"}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{formatDate(seedling.createdDate)}</td>
+                        <td className="py-4 px-6 font-medium text-blue-950">{getUserName(seedling.createdBy)}</td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                            isDeleted ? "bg-gray-100 text-gray-700" : "bg-cyan-50 text-cyan-700"
+                          }`}>
+                            <span className={`h-2 w-2 rounded-full ${isDeleted ? "bg-gray-400" : "bg-cyan-700"}`} />
+                            {isDeleted ? t("common.inactive") : t("common.active")}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isDeleted) {
+                                  navigate(`/researcher/seedlings/update/${seedling.id}`);
+                                }
+                              }}
+                              disabled={isDeleted}
+                              className={`inline-flex items-center justify-center rounded-lg p-2 text-[#005792] transition-all duration-200 ${
+                                isDeleted ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-50 hover:text-[#003f60]"
+                              }`}
+                              aria-label={t("common.edit")}
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 20h9" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isDeleted) {
+                                  handleDelete(seedling.id);
+                                }
+                              }}
+                              disabled={isDeleted}
+                              className={`inline-flex items-center justify-center rounded-lg p-2 text-[#005792] transition-all duration-200 ${
+                                isDeleted ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-50 hover:text-[#003f60]"
+                              }`}
+                              aria-label={t("common.delete")}
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6v14h8V6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 10v6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10v6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 6V4h6v2" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         
-        {/* Pagination */}
-        {!loading && filteredSeedlings.length > 0 && (
-          <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
-            <span className="font-medium">
-              {t("seedling.displaying")}{" "}
-              {(page - 1) * PAGE_SIZE + 1}-
-              {Math.min(page * PAGE_SIZE, filteredSeedlings.length)} {t("common.of")}{" "}
-              {filteredSeedlings.length}
-            </span>
-            {totalPages > 1 && (
-              <div className="flex gap-2">
-                {page > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handlePageChange(page - 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
-                  >
-                    ←
-                  </button>
-                )}
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  return (
+          {/* Pagination */}
+          {!loading && filteredSeedlings.length > 0 && (
+            <div className="flex justify-between items-center text-sm text-gray-600 p-6 bg-gray-50">
+              <span className="font-medium">
+                {t("seedling.displaying")}{" "}
+                {(page - 1) * PAGE_SIZE + 1}-
+                {Math.min(page * PAGE_SIZE, filteredSeedlings.length)} {t("common.of")}{" "}
+                {filteredSeedlings.length}
+              </span>
+              {totalPages > 1 && (
+                <div className="flex gap-2">
+                  {page > 1 && (
                     <button
-                      key={pageNum}
                       type="button"
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
-                        page === pageNum
-                          ? "bg-green-700 text-white"
-                          : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
-                      }`}
+                      onClick={() => handlePageChange(page - 1)}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
                     >
-                      {pageNum}
+                      ←
                     </button>
-                  );
-                })}
-                {page < totalPages && (
-                  <button
-                    type="button"
-                    onClick={() => handlePageChange(page + 1)}
-                    className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
-                  >
-                    →
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (page <= 3) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
+                          page === pageNum
+                            ? "bg-green-700 text-white"
+                            : "bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  {page < totalPages && (
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(page + 1)}
+                      className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-green-50 hover:border-green-500 transition-all duration-200 font-medium shadow-sm"
+                    >
+                      →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
