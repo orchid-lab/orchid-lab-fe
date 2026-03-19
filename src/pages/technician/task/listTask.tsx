@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -91,7 +90,6 @@ const filterPanelVariant: Variants = {
   },
 };
 
-// Dropdown panel: trượt xuống + fade in từ trên
 const dropdownVariant: Variants = {
   hidden: {
     opacity: 0,
@@ -112,7 +110,6 @@ const dropdownVariant: Variants = {
   },
 };
 
-// Từng option stagger xuất hiện khi dropdown mở
 const dropdownItemVariant: Variants = {
   hidden: { opacity: 0, x: -6 },
   visible: (i: number) => ({
@@ -243,7 +240,6 @@ function AnimatedSelect<T extends string>({
   const selectedLabel =
     options.find((o) => o.value === value)?.label ?? placeholder;
 
-  // Đóng khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -254,7 +250,6 @@ function AnimatedSelect<T extends string>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Đóng khi nhấn Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -265,7 +260,6 @@ function AnimatedSelect<T extends string>({
 
   return (
     <div ref={ref} className="relative select-none">
-      {/* ── Trigger button ── */}
       <button
         type="button"
         disabled={disabled}
@@ -281,7 +275,6 @@ function AnimatedSelect<T extends string>({
         `}
       >
         <span>{selectedLabel}</span>
-        {/* Mũi tên xoay khi mở */}
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
@@ -291,7 +284,6 @@ function AnimatedSelect<T extends string>({
         </motion.span>
       </button>
 
-      {/* ── Dropdown panel ── */}
       <AnimatePresence>
         {open && (
           <motion.ul
@@ -406,21 +398,13 @@ export default function ListTask() {
 
   const tasksPerPage = 20;
 
-  // Build options cho AnimatedSelect
+  // Build status options for AnimatedSelect
   const statusOptions: SelectOption<TaskStatusType | "All">[] = [
     { value: "All", label: t("common.status") },
     ...STATUS_FILTER_ORDER.map((key) => ({
       value: key as TaskStatusType | "All",
       label: getStatusLabel(key),
     })),
-  ];
-
-  const dateRangeOptions: SelectOption<string>[] = [
-    { value: "all", label: t("technicianTask.dateRange") },
-  ];
-
-  const taskTypeOptions: SelectOption<string>[] = [
-    { value: "all", label: t("technicianTask.taskType") },
   ];
 
   const fetchTargetName = async (
@@ -706,22 +690,6 @@ export default function ListTask() {
                 placeholder={t("common.status")}
               />
             </div>
-
-            {/* Date range */}
-            <AnimatedSelect
-              value="all"
-              onChange={() => {}}
-              options={dateRangeOptions}
-              placeholder={t("technicianTask.dateRange")}
-            />
-
-            {/* Task type */}
-            <AnimatedSelect
-              value="all"
-              onChange={() => {}}
-              options={taskTypeOptions}
-              placeholder={t("technicianTask.taskType")}
-            />
 
             {/* Search */}
             <div className="flex-1 min-w-[300px] relative">
