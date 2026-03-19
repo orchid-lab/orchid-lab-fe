@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus, ChevronRight } from "lucide-react";
@@ -59,10 +58,6 @@ const ExperimentLog = () => {
     "all",
   );
   const [methodFilter, setMethodFilter] = useState<string>("");
-  const [methodSearchTerm, setMethodSearchTerm] = useState("");
-  const [stageFilter, setStageFilter] = useState<
-    "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4"
-  >("all");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -243,45 +238,32 @@ const ExperimentLog = () => {
     };
   }
 
-  // Fetch methods (supports search via API params)
+  // Fetch all methods once on mount using GET /api/methods
   useEffect(() => {
-    const controller = new AbortController();
     const fetchMethods = async () => {
       try {
         const res = await axiosInstance.get("/api/methods", {
           params: {
             PageNumber: 1,
             PageSize: 100,
-            SearchTerm: methodSearchTerm || undefined,
           },
-          signal: controller.signal,
         });
         const raw = res.data as {
           value?: { data?: { id: string; name: string }[] };
         };
         const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
         setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-      } catch (err) {
-        // ignore aborted requests
-        if ((err as any)?.name === "CanceledError") return;
+      } catch {
         setMethods([]);
       }
     };
 
-    const timer = window.setTimeout(() => {
-      void fetchMethods();
-    }, 250);
-
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [methodSearchTerm]);
+    void fetchMethods();
+  }, []);
 
   // Fetch thống kê nhanh
   const fetchStatsOnly = useCallback(async () => {
     try {
-      // Fetch tất cả dữ liệu để đếm thống kê (use axiosInstance)
       let data: unknown;
       try {
         const res = await axiosInstance.get("/api/experiment-logs", {
@@ -293,7 +275,6 @@ const ExperimentLog = () => {
         const detail =
           apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
         if (typeof detail === "string" && detail.includes("OFFSET")) {
-          // Retry without params
           const retryRes = await axiosInstance.get("/api/experiment-logs");
           data = retryRes.data;
         } else {
@@ -327,7 +308,6 @@ const ExperimentLog = () => {
           .filter((x): x is ExperimentLogEntry => x !== null);
       }
 
-      // Đếm theo status
       const counts = {
         Created: 0,
         Waiting: 0,
@@ -390,13 +370,11 @@ const ExperimentLog = () => {
       const methodName = selectedMethod ? selectedMethod.name : methodFilter;
 
       try {
-        // Use axiosInstance to fetch paged experiment logs
         const paramsObj: Record<string, unknown> = {
           pageNo: currentPage,
           pageSize: logsPerPage,
         };
         if (methodName) {
-          // backend may accept different casing
           paramsObj.methodNameSearchTerm = methodName;
           paramsObj.MethodNameSearchTerm = methodName;
         }
@@ -547,24 +525,7 @@ const ExperimentLog = () => {
     const matchesStatus =
       statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
 
-    let matchesStage = true;
-    if (
-      stageFilter !== "all" &&
-      log.stages &&
-      log.stages.length > 0 &&
-      log.currentStageName
-    ) {
-      const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      if (stageNumber >= 1 && stageNumber <= log.stages.length) {
-        const stageIndex = stageNumber - 1;
-        const targetStageName = log.stages[stageIndex].name;
-        matchesStage = log.currentStageName === targetStageName;
-      } else {
-        matchesStage = false;
-      }
-    }
-
-    return matchesSearch && matchesStatus && matchesStage;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -669,6 +630,7 @@ const ExperimentLog = () => {
           </div>
         </div>
       </div>
+
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 grid grid-cols-1 gap-6">
           <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 animate-fade-in-up">
@@ -731,9 +693,7 @@ const ExperimentLog = () => {
                           className="h-2 w-2 rounded-full"
                           style={{ backgroundColor: item.color }}
                         />
-                        <span className="text-slate-700">
-                          {item.label}
-                        </span>
+                        <span className="text-slate-700">{item.label}</span>
                         <span className="ml-auto text-xs text-slate-500">
                           {item.value}
                         </span>
@@ -804,10 +764,11 @@ const ExperimentLog = () => {
           <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 animate-fade-in-up">
             <h2 className="text-lg font-semibold text-[#005792]">Bộ lọc</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Lọc thí nghiệm theo trạng thái, phương pháp và giai đoạn.
+              Lọc thí nghiệm theo trạng thái và phương pháp.
             </p>
 
             <div className="mt-5 space-y-4">
+              {/* Trạng thái */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">
                   Trạng thái
@@ -827,20 +788,11 @@ const ExperimentLog = () => {
                 </select>
               </div>
 
+              {/* Phương pháp – dropdown thuần, data từ API */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">
                   Phương pháp
                 </label>
-                <div className="relative mb-3">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Tìm phương pháp..."
-                    value={methodSearchTerm}
-                    onChange={(e) => setMethodSearchTerm(e.target.value)}
-                    className="w-full border border-slate-200 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
-                  />
-                </div>
                 <select
                   className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
                   value={methodFilter}
@@ -855,23 +807,7 @@ const ExperimentLog = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">
-                  Giai đoạn
-                </label>
-                <select
-                  className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1] focus:border-transparent"
-                  value={stageFilter}
-                  onChange={(e) => setStageFilter(e.target.value as any)}
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="Giai đoạn 1">Giai đoạn 1</option>
-                  <option value="Giai đoạn 2">Giai đoạn 2</option>
-                  <option value="Giai đoạn 3">Giai đoạn 3</option>
-                  <option value="Giai đoạn 4">Giai đoạn 4</option>
-                </select>
-              </div>
-
+              {/* Tìm kiếm */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">
                   Tìm kiếm
@@ -891,6 +827,7 @@ const ExperimentLog = () => {
           </div>
         </div>
       </div>
+
       <div className="mt-3">
         <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm">
           <div className="bg-white/80 rounded-2xl shadow-sm overflow-hidden animate-fade-in-up stagger-2">
