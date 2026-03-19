@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { MonitoringLog, MonitoringLogApiResponse, MonitoringLogStatus } from "../../../types/MonitoringLog";
 import { useTranslation } from "react-i18next";
@@ -22,6 +23,7 @@ import {
   Send,
   Search,
   Filter,
+  ChevronDown,
 } from "lucide-react";
 
 Chart.register(ArcElement, Tooltip, Legend);
@@ -64,6 +66,26 @@ const tableRowVariant: Variants = {
   exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
 };
 
+const dropdownVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.88, y: -6 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    opacity: 0, scaleY: 0.9, y: -4,
+    transition: { duration: 0.15, ease: "easeIn" as const },
+  },
+};
+
+const dropdownItemVariant: Variants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.18, delay: i * 0.03, ease: "easeOut" as const },
+  }),
+};
+
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<MonitoringLogStatus, string> = {
@@ -96,6 +118,116 @@ const getStatusIcon = (status: MonitoringLogStatus) => {
     case "Revised":            return <RefreshCw className={cls} />;
   }
 };
+
+// ─── AnimatedSelect ───────────────────────────────────────────────────────────
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface AnimatedSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function AnimatedSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder = "Select...",
+  disabled = false,
+}: AnimatedSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative select-none">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`
+          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
+          transition-all duration-150 whitespace-nowrap
+          ${open
+            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
+            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
+          }
+          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        `}
+      >
+        <span>{selectedLabel}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+          className="flex items-center"
+        >
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            key="dropdown"
+            variants={dropdownVariant}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{ transformOrigin: "top center" }}
+            className="
+              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
+              bg-white border border-[#DDEEE0] rounded-xl
+              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
+              overflow-hidden py-1
+            "
+          >
+            {options.map((opt, i) => (
+              <motion.li
+                key={opt.value}
+                custom={i}
+                variants={dropdownItemVariant}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`
+                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
+                  transition-colors duration-75
+                  ${opt.value === value
+                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
+                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
+                  }
+                `}
+              >
+                {opt.label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -143,10 +275,29 @@ export default function ReportsTechnician() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [data, setData] = useState<MonitoringLog[]>([]);
 
-  // Filter & search state
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<MonitoringLogStatus | "All">("All");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const getStatusLabel = (status: MonitoringLogStatus) => {
+    const map: Record<MonitoringLogStatus, string> = {
+      Created:            t("monitoringLog.statusCreated"),
+      WaitingForApproval: t("monitoringLog.statusWaitingForApproval"),
+      Approved:           t("monitoringLog.statusApproved"),
+      Rejected:           t("monitoringLog.statusRejected"),
+      Revised:            t("monitoringLog.statusRevised"),
+    };
+    return map[status] ?? status;
+  };
+
+  // Build status options for AnimatedSelect
+  const statusOptions: SelectOption<MonitoringLogStatus | "All">[] = [
+    { value: "All", label: t("common.status") },
+    ...STATUS_FILTER_ORDER.map((s) => ({
+      value: s as MonitoringLogStatus | "All",
+      label: getStatusLabel(s),
+    })),
+  ];
 
   const fetchData = async () => {
     if (!user?.id) return;
@@ -165,11 +316,8 @@ export default function ReportsTechnician() {
   };
 
   useEffect(() => { void fetchData(); }, [user?.id]);
-
-  // Reset page on filter change
   useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
 
-  // Sort: newest first, then by date
   const sortedData = useMemo(() => {
     return [...data].sort((a, b) => {
       if (a.isNewest && !b.isNewest) return -1;
@@ -178,7 +326,6 @@ export default function ReportsTechnician() {
     });
   }, [data]);
 
-  // Apply search + status filter
   const filteredData = useMemo(() => {
     let result = sortedData;
     if (statusFilter !== "All")
@@ -192,7 +339,6 @@ export default function ReportsTechnician() {
     return result;
   }, [sortedData, statusFilter, searchTerm]);
 
-  // Paginated slice
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredData.slice(start, start + ITEMS_PER_PAGE);
@@ -256,17 +402,6 @@ export default function ReportsTechnician() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
-  };
-
-  const getStatusLabel = (status: MonitoringLogStatus) => {
-    const map: Record<MonitoringLogStatus, string> = {
-      Created:            t("monitoringLog.statusCreated"),
-      WaitingForApproval: t("monitoringLog.statusWaitingForApproval"),
-      Approved:           t("monitoringLog.statusApproved"),
-      Rejected:           t("monitoringLog.statusRejected"),
-      Revised:            t("monitoringLog.statusRevised"),
-    };
-    return map[status] ?? status;
   };
 
   const canSubmit = (status: MonitoringLogStatus): boolean =>
@@ -375,7 +510,7 @@ export default function ReportsTechnician() {
             </div>
           </motion.div>
 
-          {/* Stat cards 2×3 grid */}
+          {/* Stat cards */}
           <motion.div
             className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4"
             variants={staggerContainer}
@@ -403,20 +538,18 @@ export default function ReportsTechnician() {
           className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
         >
           <div className="flex flex-wrap items-center gap-4">
+            {/* Status filter — AnimatedSelect */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-[#2D5A27]" />
-              <select
+              <AnimatedSelect
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as MonitoringLogStatus | "All")}
-                className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
-              >
-                <option value="All">{t("common.status")}</option>
-                {STATUS_FILTER_ORDER.map((s) => (
-                  <option key={s} value={s}>{getStatusLabel(s)}</option>
-                ))}
-              </select>
+                onChange={(v) => setStatusFilter(v as MonitoringLogStatus | "All")}
+                options={statusOptions}
+                placeholder={t("common.status")}
+              />
             </div>
 
+            {/* Search */}
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -424,10 +557,11 @@ export default function ReportsTechnician() {
                 placeholder={t("monitoringLog.searchPlaceholder", { defaultValue: "Tìm theo tên báo cáo, tên mẫu..." })}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent"
+                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
               />
             </div>
 
+            {/* Clear filters */}
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
