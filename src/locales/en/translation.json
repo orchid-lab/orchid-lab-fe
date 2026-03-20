@@ -25,6 +25,7 @@
     "status": "Status",
     "role": "Role",
     "name": "Name",
+    "optional": "Optional",
     "email": "Email",
     "phone": "Phone",
     "action": "Action",
@@ -432,12 +433,14 @@
     "clonal": "Clonal",
     "sexual": "Sexual",
     "asexual": "Asexual",
-    "searchPlaceholder": "Search by method name or description...",    "totalMethods": "Total Methods",
+    "searchPlaceholder": "Search by method name or description...",    
+    "totalMethods": "Total Methods",
     "clonalMethods": "Clonal Methods",
     "sexualMethods": "Sexual Methods",
     "methodsOutOf": "methods out of",
     "methods": "methods",
-    "fetchFailed": "Failed to load methods list"
+    "fetchFailed": "Failed to load methods list",
+    "methodsManagement": "Method Management"
   },
   "seedling": {
     "seedlingManagement": "Seedling Management",

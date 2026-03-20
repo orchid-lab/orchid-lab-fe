@@ -25,6 +25,7 @@
     "status": "Trạng thái",
     "role": "Vai trò",
     "name": "Tên",
+    "optional": "Tùy chọn",
     "email": "Email",
     "phone": "Số điện thoại",
     "action": "Thao tác",

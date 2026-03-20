@@ -317,7 +317,7 @@ export default function MethodCreate() {
           </div>
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-              Loại phương pháp
+              {t("method.methodType")}
             </label>
             <select
               name="type"
@@ -326,7 +326,7 @@ export default function MethodCreate() {
               value={form.type}
               onChange={handleChange}
             >
-              <option value="">-- Chọn loại --</option>
+              <option value="">-- {t("common.select")} --</option>
               {methodTypes.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
@@ -337,7 +337,7 @@ export default function MethodCreate() {
           </div>
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-              Mô tả
+              {t("method.methodDescription")}
             </label>
             <textarea
               name="description"
@@ -345,14 +345,14 @@ export default function MethodCreate() {
               className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
               value={form.description}
               onChange={handleChange}
-              placeholder="Mô tả ngắn về phương pháp..."
+              placeholder={t("method.methodDescription") + "..."}
             />
             {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
           {/* Quy trình chi tiết */}
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-              Quy trình chi tiết
+              {t("method.stage")}
             </label>
             {form.stages.map((stage, stageIdx) => (
               <div
@@ -378,7 +378,7 @@ export default function MethodCreate() {
                   onChange={(e) =>
                     handleStageChange(stageIdx, "title", e.target.value)
                   }
-                  placeholder="Tên giai đoạn"
+                  placeholder={t("method.stageName")}
                   required
                   className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
                 />
@@ -388,14 +388,14 @@ export default function MethodCreate() {
                   onChange={(e) =>
                     handleStageChange(stageIdx, "content", e.target.value)
                   }
-                  placeholder="Mô tả giai đoạn"
+                  placeholder={t("method.stageDescription")}
                   required
                   className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
                 />
                 {error && <p className="text-red-500 mt-1">{error}</p>}
                 <div className="mb-2">
                   <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-                    Số ngày xử lý
+                    {t("method.processingDays")}
                   </label>
                   <input
                     type="number"
@@ -415,7 +415,7 @@ export default function MethodCreate() {
                   {error && <p className="text-red-500 mt-1">{error}</p>}
                 </div>
                 <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-                  Chọn nguyên vật liệu cho giai đoạn này
+                  {t("method.materialSelection")}
                 </label>
                 <Select
                   mode="multiple"
@@ -432,9 +432,9 @@ export default function MethodCreate() {
                 {error && <p className="text-red-500 mt-1">{error}</p>}
                 <div>
                   <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-                    Thông tin tham chiếu
+                    {t("method.referentInfo")}
                     <span className="text-blue-500 font-normal text-sm ml-2">
-                      (Tùy chọn)
+                      ({t("common.optional") ?? "Optional"})
                     </span>
                   </label>
 
@@ -520,7 +520,7 @@ export default function MethodCreate() {
                     className="text-[#005792] text-sm font-medium hover:text-[#00CED1] transition-colors mt-2 inline-block"
                     onClick={() => handleAddReferent(stageIdx)}
                   >
-                    + Thêm thông tin tham chiếu
+                    + {t("method.addReferent")}
                   </button>
                 </div>
               </div>
@@ -530,7 +530,7 @@ export default function MethodCreate() {
               className="w-full border-2 border-dashed border-[#00CED1] text-[#005792] bg-cyan-50/30 hover:bg-cyan-50 rounded-xl py-3 font-medium transition-colors flex items-center justify-center mt-4"
               onClick={handleAddStage}
             >
-              + Thêm giai đoạn
+              + {t("method.addStage")}
             </button>
             <div className="flex justify-end mt-5">
               <button
@@ -538,7 +538,7 @@ export default function MethodCreate() {
                 disabled={loading}
                 className="bg-[#005792] text-white px-8 py-3 rounded-xl font-semibold shadow-md shadow-blue-900/20 hover:bg-[#004370] hover:shadow-lg transition-all"
               >
-                {loading ? "Đang lưu..." : "Lưu phương pháp"}
+                {loading ? t("common.saving") : t("method.saveMethod")}
               </button>
             </div>
           </div>
