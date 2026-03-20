@@ -130,9 +130,9 @@ function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex bg-gray-100 dark:bg-gray-900">
       {sidebar}
-      <div className="flex-1 flex flex-col md:ml-64">
+      <div className="flex-1 flex flex-col">
         <Topbar />
         <main className="flex-1 p-8">
           <Routes>
