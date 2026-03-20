@@ -105,6 +105,8 @@
     "home": "Home",
     "admin": "Admin",
     "researcher": "Researcher",
+    "navigation": "Navigation",
+    "account": "Account",
     "technician": "Technician",
     "labRoom": "Lab Room",
     "method": "Method",
