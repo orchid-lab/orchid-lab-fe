@@ -1,6 +1,7 @@
 /* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import type { Element } from "../../../types/Element";
 import { Select } from "antd";
@@ -29,6 +30,7 @@ interface StageForm {
 
 export default function MethodCreate() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [elements, setElements] = useState<Element[]>([]);
   const [form, setForm] = useState<{
     name: string;
@@ -286,10 +288,10 @@ export default function MethodCreate() {
             className="text-[#005792] font-medium hover:text-blue-700 transition"
             onClick={() => void navigate(-1)}
           >
-            ← Trở về
+            ← {t("common.back")}
           </button>
           <h2 className="text-2xl font-bold text-[#005792]">
-            Thêm phương pháp mới
+            {t("method.createMethodTitle")}
           </h2>
         </div>
         <form
@@ -300,7 +302,7 @@ export default function MethodCreate() {
         >
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-              Tên phương pháp
+              {t("method.methodName")}
             </label>
             <input
               type="text"
@@ -309,7 +311,7 @@ export default function MethodCreate() {
               className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
               value={form.name}
               onChange={handleChange}
-              placeholder="VD: Nhân giống từ lá, Thụ phấn chéo..."
+              placeholder={t("method.methodName") + "..."}
             />
             {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>

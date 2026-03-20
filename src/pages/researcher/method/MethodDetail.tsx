@@ -64,12 +64,17 @@ interface MethodDetailApiResponse {
 }
 
 /* ─── Animation variants ─────────────────────────────────── */
+type CubicBezier = [number, number, number, number];
+
+const EASE_SMOOTH: CubicBezier = [0.22, 1, 0.36, 1];
+const EASE_SPRING: CubicBezier = [0.34, 1.56, 0.64, 1];
+
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
-  visible: (i: number = 0) => ({
+  visible: (i = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as number[] },
+    transition: { duration: 0.5, delay: (i as number) * 0.08, ease: EASE_SMOOTH },
   }),
 };
 
@@ -80,27 +85,27 @@ const fadeIn: Variants = {
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 40, scale: 0.97 },
-  visible: (i: number = 0) => ({
+  visible: (i = 0) => ({
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
       duration: 0.55,
-      delay: i * 0.12,
-      ease: [0.22, 1, 0.36, 1] as number[],
+      delay: (i as number) * 0.12,
+      ease: EASE_SMOOTH,
     },
   }),
 };
 
 const chipVariants: Variants = {
   hidden: { opacity: 0, scale: 0.7 },
-  visible: (i: number = 0) => ({
+  visible: (i = 0) => ({
     opacity: 1,
     scale: 1,
     transition: {
       duration: 0.35,
-      delay: i * 0.06,
-      ease: [0.34, 1.56, 0.64, 1] as number[],
+      delay: (i as number) * 0.06,
+      ease: EASE_SPRING,
     },
   }),
 };
