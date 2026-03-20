@@ -219,7 +219,7 @@
     "technician": "Kỹ thuật viên",
     "researchTaskManagement": "Quản lý công việc",
     "researchTaskSubtitle": "Theo dõi và quản lý các công việc nghiên cứu lai tạo và kết quả thí nghiệm",
-    "createResearchTask": "+ Tạo công việc nghiên cứu",
+    "createResearchTask": "Tạo công việc nghiên cứu",
     "noTasks": "Không có công việc nào",
     "cannotLoadList": "Không thể tải danh sách công việc",
     "breadcrumb": "công việc / Chi tiết",

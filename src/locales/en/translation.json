@@ -218,7 +218,7 @@
     "technician": "Technician",
     "researchTaskManagement": "Research Task Management",
     "researchTaskSubtitle": "Track and manage research hybridization tasks and experiment results",
-    "createResearchTask": "+ Create Research Task",
+    "createResearchTask": "Create Research Task",
     "noTasks": "No tasks",
     "cannotLoadList": "Cannot load task list",
     "breadcrumb": "Task / Detail",
