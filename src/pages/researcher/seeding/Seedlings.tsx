@@ -281,11 +281,11 @@ export default function Seedlings() {
               <p className="mt-1 text-sm text-blue-900/70">{t("seedling.seedlingManagementDesc")}</p>
             </div>
             <motion.button
-              whileHover={{ scale: 1.04, backgroundColor: "#004d73" }}
+              whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 350, damping: 22 }}
               onClick={() => navigate("/researcher/seedlings/create")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-6 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#004d73] active:bg-[#003f5a] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
             >
               <motion.svg
                 className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"

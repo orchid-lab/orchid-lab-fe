@@ -283,16 +283,16 @@ export default function Tasks() {
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 350, damping: 22 }}
                 onClick={() => void navigate("/researcher/task-templates")}
-                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-5 py-2 text-sm font-medium text-[#005792] shadow-sm hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-full border border-[#005792] bg-white px-5 py-2 text-sm font-medium text-[#005792] shadow-sm hover:bg-[#E9F4FF] focus:outline-none focus:ring-2 focus:ring-[#005792]/30"
               >
                 {t("task.taskTemplates")}
               </motion.button>
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.04, backgroundColor: "#004d73" }} whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 350, damping: 22 }}
                 onClick={() => void navigate("/create-task/step-1")}
-                className="inline-flex items-center gap-2 rounded-full bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm"
+                className="inline-flex items-center gap-2 rounded-full bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#004d73] active:bg-[#003f5a] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
               >
                 <motion.svg
                   xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"
