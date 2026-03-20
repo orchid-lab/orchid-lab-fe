@@ -1,7 +1,7 @@
 /* eslint-disable react-dom/no-missing-button-type */
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt, FaSearch } from "react-icons/fa";
+import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
@@ -17,9 +17,8 @@ const tabs = [
 
 export default function Sidebar() {
   const { t } = useTranslation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -48,16 +47,23 @@ export default function Sidebar() {
     }
   };
 
-  const filteredTabs = tabs.filter(tab =>
-    t(tab.nameKey).toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTabs = tabs;
+
+  const userInitials = user?.name
+    ? user.name
+        .split(" ")
+        .map((namePart) => namePart[0]?.toUpperCase() ?? "")
+        .slice(0, 2)
+        .join("")
+    : "UL";
+  const userRole = user?.role ? user.role : "Quản trị viên";
 
   return (
-    <aside className="w-64 h-screen fixed top-0 left-0 z-30 flex flex-col bg-[#1a1d29] text-gray-300">
+    <aside className="w-full md:w-64 h-auto md:h-screen fixed top-0 left-0 md:relative z-30 flex flex-col bg-[#003456] text-white">
       {/* Header */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-700/50">
+      <div className="h-16 flex items-center px-6 border-b border-[#00CED1]/20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#005792] rounded-lg flex items-center justify-center">
             <GiMicroscope className="text-white text-lg" />
           </div>
           <span className="text-white text-xl font-bold tracking-tight">
@@ -66,53 +72,41 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="px-4 py-4">
-        <div className="relative">
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
-          <input
-            type="text"
-            placeholder="What to search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#252836] text-gray-300 text-sm rounded-lg pl-9 pr-3 py-2.5 border border-transparent focus:border-gray-600 focus:outline-none placeholder-gray-500"
-          />
+      {/* User Profile */}
+      <div className="px-4 py-4 border-b border-[#00CED1]/20 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#00CED1]/20 flex items-center justify-center text-[#00CED1] font-bold">
+          {userInitials}
+        </div>
+        <div>
+          <p className="text-white text-sm font-semibold leading-tight">
+            {user?.name ?? "Nguyễn Văn A"}
+          </p>
+          <p className="text-blue-100 text-xs">{userRole}</p>
         </div>
       </div>
 
-      {/* Navigation Section */}
-      <div className="px-4 pt-4 pb-2">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">
-          Navigation
-        </p>
-      </div>
-
       {/* Navigation Links */}
-      <nav className="flex-1 px-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+      <nav className="flex-1 px-4 pt-4 overflow-y-auto scrollbar-thin scrollbar-thumb-[#00CED1]/40 scrollbar-track-transparent">
         {filteredTabs.map((tab) => {
           const Icon = tab.icon;
-          
           return (
             <NavLink
               key={tab.nameKey}
               to={tab.path}
-              className={({ isActive }) => 
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 mb-0.5 group ${
-                  isActive 
-                    ? "bg-[#252836] text-white" 
-                    : "text-white hover:bg-[#252836] hover:text-white"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 mb-2 ${
+                  isActive
+                    ? "bg-[#00CED1]/15 text-white font-semibold border-l-4 border-[#00CED1]"
+                    : "text-blue-100/90 hover:bg-[#00CED1]/10"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <span className={`text-base ${isActive ? "text-blue-500" : ""}`}>
+                  <span className={`text-base ${isActive ? "text-[#00CED1]" : "text-[#00CED1]/70"}`}>
                     <Icon />
                   </span>
                   <span className="text-sm font-medium">{t(tab.nameKey)}</span>
-                  {isActive && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                  )}
                 </>
               )}
             </NavLink>
@@ -120,23 +114,15 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Logout Section */}
-      <div className="px-4 pt-4 pb-2 border-t border-gray-700/50">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">
-          Account
-        </p>
-      </div>
-
       {/* Logout Button */}
-      <div className="px-4 pb-4">
+      <div className="px-4 py-4 border-t border-[#00CED1]/20">
         <button
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full group ${
-            isLoggingOut 
-              ? 'bg-[#252836] text-gray-500 cursor-not-allowed' 
-              : 'text-gray-400 hover:bg-red-500/10 hover:text-red-400'
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full ${
+            isLoggingOut
+              ? 'bg-[#003456]/70 text-blue-200 cursor-not-allowed'
+              : 'text-white hover:bg-[#00CED1]/20 hover:text-[#00CED1]'
           }`}
         >
           <span className="text-base">
