@@ -60,3 +60,14 @@ export interface SeedlingApiResponse {
     pageNumber: number;
     data: Seedling[];
 }
+
+export interface HybridSuccessRate {
+  seedlingParentId: string;
+  seedlingParentName: string;
+  methodId: number;
+  methodName: string;
+  totalExperiments: number;
+  completedExperiments: number;
+  successRate: number;
+  averageSurvivalRate: number;
+}

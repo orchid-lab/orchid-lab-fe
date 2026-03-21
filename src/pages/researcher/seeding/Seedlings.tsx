@@ -14,6 +14,7 @@ import gsap from "gsap";
 import type { Seedling, SeedlingApiResponse } from "../../../types/Seedling";
 import type { User } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
+import SuccessRateAnalysis from "./SuccessRateAnalysis";
 
 const PAGE_SIZE = 5;
 type SearchCategory = "localName" | "scientificName";
@@ -87,6 +88,7 @@ export default function Seedlings() {
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
 
+  const [activeTab, setActiveTab] = useState<"list" | "analysis">("list");
   const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
   const [allSeedlings, setAllSeedlings] = useState<Seedling[]>([]);
@@ -280,26 +282,65 @@ export default function Seedlings() {
               <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">{t("seedling.seedlingManagement")}</h1>
               <p className="mt-1 text-sm text-blue-900/70">{t("seedling.seedlingManagementDesc")}</p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 350, damping: 22 }}
-              onClick={() => navigate("/researcher/seedlings/create")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#004d73] active:bg-[#003f5a] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
-            >
-              <motion.svg
-                className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                whileHover={{ rotate: 90 }} transition={{ duration: 0.25 }}
+            {activeTab === "list" && (
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                onClick={() => navigate("/researcher/seedlings/create")}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#004d73] active:bg-[#003f5a] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </motion.svg>
-              {t("common.add")}
+                <motion.svg
+                  className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  whileHover={{ rotate: 90 }} transition={{ duration: 0.25 }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </motion.svg>
+                {t("common.add")}
+              </motion.button>
+            )}
+          </div>
+
+          {/* ── Tabs ── */}
+          <div className="flex gap-2 mt-6 border-b border-blue-100">
+            <motion.button
+              whileHover={{ backgroundColor: activeTab === "list" ? undefined : "rgba(239,246,255,0.5)" }}
+              onClick={() => setActiveTab("list")}
+              className={`px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                activeTab === "list"
+                  ? "text-[#005792] border-b-2 border-[#005792]"
+                  : "text-blue-900/60 hover:text-blue-900/80 border-b-2 border-transparent"
+              }`}
+            >
+              {t("seedling.seedlingList")}
+            </motion.button>
+            <motion.button
+              whileHover={{ backgroundColor: activeTab === "analysis" ? undefined : "rgba(239,246,255,0.5)" }}
+              onClick={() => setActiveTab("analysis")}
+              className={`px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                activeTab === "analysis"
+                  ? "text-[#005792] border-b-2 border-[#005792]"
+                  : "text-blue-900/60 hover:text-blue-900/80 border-b-2 border-transparent"
+              }`}
+            >
+              {t("seedling.successRateAnalysis")}
             </motion.button>
           </div>
         </motion.div>
 
-        {/* ── Stat cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── Content ── */}
+        <AnimatePresence mode="wait">
+          {activeTab === "list" ? (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              {/* ── Stat cards ── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {statItems.map((item, idx) => (
             <motion.div
               key={item.label}
@@ -579,6 +620,19 @@ export default function Seedlings() {
             )}
           </AnimatePresence>
         </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="analysis"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <SuccessRateAnalysis />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Delete Confirmation Modal ── */}
