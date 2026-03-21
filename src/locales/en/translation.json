@@ -737,7 +737,8 @@
     "loadingExperiments": "Loading experiments...",
     "currentSampleCount": "Current Sample Count",
     "tabDetail": "Detail",
-    "tabSummary": "Overview"
+    "tabSummary": "Overview",
+    "completeExperiment": "Complete Experiment"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",

@@ -738,7 +738,8 @@
     "loadingExperiments": "Đang tải thí nghiệm...",
     "currentSampleCount": "Số lượng mẫu hiện tại",
     "tabDetail": "Chi tiết",
-    "tabSummary": "Tổng quan"
+    "tabSummary": "Tổng quan",
+    "completeExperiment": "Hoàn thành thí nghiệm"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

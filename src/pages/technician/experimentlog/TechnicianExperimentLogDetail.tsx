@@ -25,12 +25,14 @@
 // IMPORTS
 // =============================================================================
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
+import { useSnackbar } from "notistack";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { useTranslation } from "react-i18next";
 import { FaTimes, FaSeedling } from "react-icons/fa";
 import { Check } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
+import type { AxiosError } from "axios";
 import type { User } from "../../../types/Auth";
 import type {
   ExperimentLogDetail,
@@ -43,6 +45,12 @@ import { SampleStatus } from "../../../types/Sample";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./TechnicianExperimentLogDetail.css";
+// API error response shape for extracting detailed messages
+interface ApiErrorResponse {
+  title?: string;
+  detail?: string;
+  status?: number;
+}
   
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
@@ -230,6 +238,7 @@ const TechnicianExperimentLogDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [log, setLog] = useState<ExperimentLogDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -243,6 +252,8 @@ const TechnicianExperimentLogDetail = () => {
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
   const [protocormQuantity, setProtocormQuantity] = useState<string>("");
   const [isChangingStage, setIsChangingStage] = useState(false);
+  // New state for completing experiment when at final stage
+  const [isCompleting, setIsCompleting] = useState(false);
   const [isChangeStageSuccessModalOpen, setIsChangeStageSuccessModalOpen] = useState(false);
 
   // Animation refs
@@ -282,7 +293,14 @@ const TechnicianExperimentLogDetail = () => {
         };
         setLog(normalized as ExperimentLogDetail);
       })
-      .catch(() => setError(t("common.errorLoading")))
+      .catch((e) => {
+        const axiosError = e as AxiosError<ApiErrorResponse>;
+        const apiDetail = axiosError.response?.data?.detail?.trim();
+        const apiTitle = axiosError.response?.data?.title?.trim();
+        const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+        enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+        setError(message);
+      })
       .finally(() => setLoading(false));
   }, [id, t]);
 
@@ -294,8 +312,13 @@ const TechnicianExperimentLogDetail = () => {
         status: "InProgress",
       });
       setLog((prev) => (prev ? { ...prev, status: "InProgress" } : prev));
-    } catch {
-      setError(t("common.errorLoading"));
+    } catch (e) {
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+      enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+      setError(message);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -311,8 +334,13 @@ const TechnicianExperimentLogDetail = () => {
       });
       setLog((prev) => (prev ? { ...prev, status: "Failed" } : prev));
       setIsCancelModalOpen(false);
-    } catch {
-      setError(t("common.errorLoading"));
+    } catch (e) {
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+      enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+      setError(message);
     } finally {
       setIsCancelling(false);
     }
@@ -327,10 +355,40 @@ const TechnicianExperimentLogDetail = () => {
       });
       setLog((prev) => (prev ? { ...prev, status: "WaitingForChangeStage" } : prev));
       setIsChangeStageSuccessModalOpen(true);
-    } catch {
-      setError(t("common.errorLoading"));
+    } catch (e) {
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+      enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+      setError(message);
     } finally {
       setIsChangingStage(false);
+    }
+  };
+
+  /**
+   * Complete the experiment when the current stage is the final stage of the method.
+   */
+  const handleCompleteExperiment = async () => {
+    if (!id) return;
+    setIsCompleting(true);
+    try {
+      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        status: "Completed",
+      });
+      // Update local log status to Completed
+      setLog((prev) => (prev ? { ...prev, status: "Completed" } : prev));
+      enqueueSnackbar(t("experimentLog.completed") || "Hoàn thành thí nghiệm", { variant: "success" });
+    } catch (e) {
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+      enqueueSnackbar(message, {autoHideDuration: 1000, variant: "warning" });
+      setError(message);
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -358,8 +416,13 @@ const TechnicianExperimentLogDetail = () => {
       setLog(normalized as ExperimentLogDetail);
       setIsProtocormPopoverOpen(false);
       setProtocormQuantity("");
-    } catch {
-      setError(t("common.errorLoading"));
+    } catch (e) {
+      const axiosError = e as AxiosError<ApiErrorResponse>;
+      const apiDetail = axiosError.response?.data?.detail?.trim();
+      const apiTitle = axiosError.response?.data?.title?.trim();
+      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+      enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+      setError(message);
     } finally {
       setIsCreatingProtocorm(false);
     }
@@ -378,7 +441,14 @@ const TechnicianExperimentLogDetail = () => {
           const name = (raw?.value?.labName as string) ?? (raw?.labName as string);
           setLabName(name ?? t("experimentLog.notAvailable"));
         })
-        .catch(() => setLabName(t("experimentLog.notAvailable")));
+        .catch((e) => {
+          const axiosError = e as AxiosError<ApiErrorResponse>;
+          const apiDetail = axiosError.response?.data?.detail?.trim();
+          const apiTitle = axiosError.response?.data?.title?.trim();
+          const message = apiDetail ?? apiTitle ?? t("experimentLog.notAvailable");
+          enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+          setLabName(message);
+        });
     }
   }, [log, t]);
 
@@ -394,7 +464,14 @@ const TechnicianExperimentLogDetail = () => {
           const userData: User | undefined = raw?.value ?? raw;
           setCreator(userData?.name ?? t("experimentLog.notAvailable"));
         })
-        .catch(() => setCreator(t("experimentLog.notAvailable")));
+        .catch((e) => {
+          const axiosError = e as AxiosError<ApiErrorResponse>;
+          const apiDetail = axiosError.response?.data?.detail?.trim();
+          const apiTitle = axiosError.response?.data?.title?.trim();
+          const message = apiDetail ?? apiTitle ?? t("experimentLog.notAvailable");
+          enqueueSnackbar(message, { autoHideDuration: 1000, variant: "warning" });
+          setCreator(message);
+        });
     }
   }, [log, t]);
 
@@ -476,11 +553,10 @@ const TechnicianExperimentLogDetail = () => {
         <div className="loading-state">{t("experimentLog.loadingData")}</div>
       </main>
     );
-  if (error) return (
-    <main id="technician-experimentlog-detail">
-      <div className="error-state">{error}</div>
-    </main>
-  );
+  if (error) {
+    // Error is already shown via snackbar; keep current page UI unchanged
+    // No early return, just continue rendering the existing content
+  }
   if (!log) return (
     <main id="technician-experimentlog-detail">
       <div className="no-data-state">{t("common.noData")}</div>
@@ -607,6 +683,18 @@ const TechnicianExperimentLogDetail = () => {
     return currentMethodStage?.stageDefinition?.name ?? t("experimentLog.notAvailable");
   };
   const currentStage = getCurrentStageName();
+
+  // Determine the order of the last stage in the method (if available)
+  const lastStageOrder = (() => {
+    if (!log?.method?.methodStages?.length) return undefined;
+    return Math.max(...log.method.methodStages.map((s) => s.order));
+  })();
+
+  // Determine if the current stage is the final stage of the method
+  const isLastStage =
+    log?.currentStageOrder !== undefined &&
+    lastStageOrder !== undefined &&
+    log.currentStageOrder === lastStageOrder;
 
   // Get current method stage object for checking isSampleGenerated
   const getCurrentMethodStage = (): MethodStage | undefined => {
@@ -787,16 +875,27 @@ const TechnicianExperimentLogDetail = () => {
                 {t("common.cancel") || "Hủy thí nghiệm"}
               </button>
             )}
-            {/* Change Stage Button */}
+            {/* Change Stage / Complete Experiment Button */}
             {normalizeStatus(log.status) === "InProgress" && (
-              <button
-                type="button"
-                onClick={() => void handleChangeStage()}
-                disabled={isChangingStage}
-                className="btn-change-stage"
-              >
-                {isChangingStage ? (t("experimentLog.changingStage") || "Đang thay đổi...") : (t("experimentLog.changeStage") || "Chuyển giai đoạn")}
-              </button>
+              isLastStage ? (
+                <button
+                  type="button"
+                  onClick={() => void handleCompleteExperiment()}
+                  disabled={isCompleting}
+                  className="btn-change-stage"
+                >
+                  {isCompleting ? (t("common.processing") || "Đang xử lý...") : (t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleChangeStage()}
+                  disabled={isChangingStage}
+                  className="btn-change-stage"
+                >
+                  {isChangingStage ? (t("experimentLog.changingStage") || "Đang thay đổi...") : (t("experimentLog.changeStage") || "Chuyển giai đoạn")}
+                </button>
+              )
             )}
           </div>
         </div>

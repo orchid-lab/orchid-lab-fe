@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useAuth } from "../../../context/AuthContext";
 import { useSnackbar } from "notistack";
@@ -13,8 +13,6 @@ export default function MonitoringLogDetail() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const page = searchParams.get("page") ?? "1";
   const { id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -180,9 +178,11 @@ export default function MonitoringLogDetail() {
 
     setApprovingOrRejecting(true);
     try {
-      await axiosInstance.patch(`/api/monitoring-log/${id}/reject`, {
-        rejectionReason: rejectionReason.trim(),
-      });
+      await axiosInstance.patch(
+        `/api/monitoring-log/${id}/reject`,
+        JSON.stringify(rejectionReason.trim()),
+        { headers: { "Content-Type": "application/json" } }
+      );
       enqueueSnackbar(t("monitoringLog.rejectSuccess"), { variant: "success" });
       setShowRejectModal(false);
       setRejectionReason("");
@@ -263,8 +263,8 @@ export default function MonitoringLogDetail() {
           onClick={() =>
             void navigate(
               isTechnician
-                ? `/technician/reports?page=${page}`
-                : `/reports?page=${page}`
+                ? `/technician/reports`
+                : `/researcher/reports`
             )
           }
         >

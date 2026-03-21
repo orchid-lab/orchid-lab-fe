@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import type { MonitoringLogDetail } from "../../../types/MonitoringLogDetail";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function ReportFollowUpDetails() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const page = searchParams.get("page") ?? "1";
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -19,6 +19,8 @@ export default function ReportFollowUpDetails() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const isTechnician = user?.roleId === 3;
 
   const canApproveOrReject =
     log?.status === "WaitingForApproval" || log?.status === "Revised";
@@ -164,7 +166,13 @@ export default function ReportFollowUpDetails() {
         <button
           type="button"
           className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-6 hover:bg-green-800 hover:text-white transition"
-          onClick={() => void navigate(`/reports?page=${page}`)}
+          onClick={() =>
+            void navigate(
+              isTechnician
+                ? `/technician/reports`
+                : `/researcher/reports`
+            )
+          }
         >
           &larr; {t("common.back")}
         </button>
