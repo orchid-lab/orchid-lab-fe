@@ -1,5 +1,7 @@
+/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 import type { Element } from "../../../types/Element";
 import { Select } from "antd";
@@ -28,6 +30,7 @@ interface StageForm {
 
 export default function MethodCreate() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [elements, setElements] = useState<Element[]>([]);
   const [form, setForm] = useState<{
     name: string;
@@ -277,18 +280,20 @@ export default function MethodCreate() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50">
-      <button
-        type="button"
-        className="border cursor-pointer border-green-800 text-green-800 rounded px-4 py-1 mb-4 hover:bg-green-800 hover:text-white transition"
-        onClick={() => void navigate(-1)}
-      >
-        ← Trở về
-      </button>
-      <h2 className="text-2xl font-bold mb-4 text-green-800">
-        Thêm phương pháp mới
-      </h2>
-      <div className="max-w-4xl mx-auto bg-white rounded shadow p-6">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#E7F5FF] p-6">
+      <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm shadow-sm border border-blue-100 rounded-2xl p-6 md:p-8">
+        <div className="flex items-center justify-between mb-5">
+          <button
+            type="button"
+            className="text-[#005792] font-medium hover:text-blue-700 transition"
+            onClick={() => void navigate(-1)}
+          >
+            ← {t("common.back")}
+          </button>
+          <h2 className="text-2xl font-bold text-[#005792]">
+            {t("method.createMethodTitle")}
+          </h2>
+        </div>
         <form
           onSubmit={(e) => {
             void handleSubmit(e);
@@ -296,64 +301,72 @@ export default function MethodCreate() {
           className="space-y-4"
         >
           <div>
-            <label className="block font-medium mb-1">Tên phương pháp</label>
+            <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+              {t("method.methodName")}
+            </label>
             <input
               type="text"
               name="name"
               required
-              className="w-full border rounded px-3 py-2"
+              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
               value={form.name}
               onChange={handleChange}
-              placeholder="VD: Nhân giống từ lá, Thụ phấn chéo..."
+              placeholder={t("method.methodName") + "..."}
             />
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
           <div>
-            <label className="block font-medium mb-1">Loại phương pháp</label>
+            <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+              {t("method.methodType")}
+            </label>
             <select
               name="type"
               required
-              className="w-full border rounded px-3 py-2"
+              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
               value={form.type}
               onChange={handleChange}
             >
-              <option value="">-- Chọn loại --</option>
+              <option value="">-- {t("common.select")} --</option>
               {methodTypes.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
                 </option>
               ))}
             </select>
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
           <div>
-            <label className="block font-medium mb-1">Mô tả</label>
+            <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+              {t("method.methodDescription")}
+            </label>
             <textarea
               name="description"
               rows={3}
-              className="w-full border rounded px-3 py-2"
+              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
               value={form.description}
               onChange={handleChange}
-              placeholder="Mô tả ngắn về phương pháp..."
+              placeholder={t("method.methodDescription") + "..."}
             />
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
           {/* Quy trình chi tiết */}
           <div>
-            <label className="block font-medium mb-2">Quy trình chi tiết</label>
+            <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+              {t("method.stage")}
+            </label>
             {form.stages.map((stage, stageIdx) => (
               <div
                 key={stageIdx}
-                className="mb-6 border p-4 rounded bg-gray-50"
+                className="mb-5 bg-[#F0F8FF]/60 border border-blue-100 rounded-xl p-5"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold">
-                    Giai đoạn {stageIdx + 1}
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-base font-semibold text-[#005792]">
+                    Giai đoạn {stageIdx + 1}
                   </span>
                   {form.stages.length > 1 && (
                     <button
                       type="button"
-                      className="text-red-600 hover:underline"
+                      className="text-[#005792] hover:text-[#00CED1] font-medium"
                       onClick={() => handleRemoveStage(stageIdx)}
                     >
                       Xóa giai đoạn
@@ -365,24 +378,24 @@ export default function MethodCreate() {
                   onChange={(e) =>
                     handleStageChange(stageIdx, "title", e.target.value)
                   }
-                  placeholder="Tên giai đoạn"
+                  placeholder={t("method.stageName")}
                   required
-                  className="mb-2 w-full border px-3 py-2 rounded"
+                  className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
                 />
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-red-500 mt-1">{error}</p>}
                 <textarea
                   value={stage.content}
                   onChange={(e) =>
                     handleStageChange(stageIdx, "content", e.target.value)
                   }
-                  placeholder="Mô tả giai đoạn"
+                  placeholder={t("method.stageDescription")}
                   required
-                  className="mb-2 w-full border px-3 py-2 rounded"
+                  className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
                 />
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-red-500 mt-1">{error}</p>}
                 <div className="mb-2">
-                  <label className="block font-medium mb-1">
-                    Số ngày xử lý
+                  <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+                    {t("method.processingDays")}
                   </label>
                   <input
                     type="number"
@@ -397,12 +410,12 @@ export default function MethodCreate() {
                     }
                     placeholder="Số ngày"
                     required
-                    className="w-full border px-3 py-2 rounded"
+                    className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
                   />
-                  {error && <p className="text-red-500">{error}</p>}
+                  {error && <p className="text-red-500 mt-1">{error}</p>}
                 </div>
-                <label className="block font-semibold mb-1">
-                  Chọn nguyên vật liệu cho giai đoạn này
+                <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+                  {t("method.materialSelection")}
                 </label>
                 <Select
                   mode="multiple"
@@ -416,12 +429,12 @@ export default function MethodCreate() {
                     value: el.id,
                   }))}
                 />
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-red-500 mt-1">{error}</p>}
                 <div>
-                  <label className="block font-semibold mb-1">
-                    Thông tin tham chiếu
-                    <span className="text-gray-500 font-normal text-sm ml-2">
-                      (Tùy chọn)
+                  <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+                    {t("method.referentInfo")}
+                    <span className="text-blue-500 font-normal text-sm ml-2">
+                      ({t("common.optional") ?? "Optional"})
                     </span>
                   </label>
 
@@ -504,29 +517,31 @@ export default function MethodCreate() {
                   {/* Nút thêm thông tin tham chiếu */}
                   <button
                     type="button"
-                    className="text-green-700 hover:underline cursor-pointer text-sm"
+                    className="text-[#005792] text-sm font-medium hover:text-[#00CED1] transition-colors mt-2 inline-block"
                     onClick={() => handleAddReferent(stageIdx)}
                   >
-                    + Thêm thông tin tham chiếu
+                    + {t("method.addReferent")}
                   </button>
                 </div>
               </div>
             ))}
             <button
               type="button"
-              className="bg-green-100 cursor-pointer text-green-800 px-4 py-1 rounded font-semibold hover:bg-green-200 transition"
+              className="w-full border-2 border-dashed border-[#00CED1] text-[#005792] bg-cyan-50/30 hover:bg-cyan-50 rounded-xl py-3 font-medium transition-colors flex items-center justify-center mt-4"
               onClick={handleAddStage}
             >
-              + Thêm giai đoạn
+              + {t("method.addStage")}
             </button>
+            <div className="flex justify-end mt-5">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#005792] text-white px-8 py-3 rounded-xl font-semibold shadow-md shadow-blue-900/20 hover:bg-[#004370] hover:shadow-lg transition-all"
+              >
+                {loading ? t("common.saving") : t("method.saveMethod")}
+              </button>
+            </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-800 cursor-pointer text-white px-6 py-2 rounded-full font-semibold hover:bg-green-900 transition"
-          >
-            {loading ? "Đang lưu..." : "Lưu phương pháp"}
-          </button>
         </form>
       </div>
     </main>
