@@ -316,7 +316,7 @@ function AppLayout() {
               path="/monitoring-logs/:id"
               element={
                 <ProtectedRoute requiredRole={["Researcher", "Lab Technician"]}>
-                  <ReportsFollowUpDetails />
+                  <MonitoringLogDetail />
                 </ProtectedRoute>
               }
             />
@@ -560,6 +560,7 @@ function AppLayout() {
 
 import { NotificationProvider } from "./context/NotificationContext";
 import Sidebar from "./components/Sidebar";
+import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
 
 function App() {
   return (

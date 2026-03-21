@@ -76,6 +76,8 @@ export default function ReportsCreate() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  // Lưu lại preview của ảnh đã gửi phân tích để hiển thị ở kết quả
+  const [analysisImagePreview, setAnalysisImagePreview] = useState<string>("");
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -212,7 +214,6 @@ export default function ReportsCreate() {
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
-      
       // Add sampleStageId if available
       const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
       if (currentSampleStage?.id) {
@@ -231,6 +232,7 @@ export default function ReportsCreate() {
 
       setAnalysisResult(response.data);
       setShowImageModal(false);
+      setAnalysisImagePreview(imagePreview); // Lưu lại preview ảnh đã gửi phân tích
       enqueueSnackbar("Phân tích bệnh thành công", { variant: "success" });
     } catch (error) {
       console.error("Failed to analyze disease", error);
@@ -298,10 +300,38 @@ export default function ReportsCreate() {
     setSubmitting(true);
     try {
       const submitImmediately = submitMode === "immediate";
-      await axiosInstance.post(
+      // Gửi tạo monitoring log, nhận response là string
+      const res = await axiosInstance.post(
         `/api/monitoring-log?submitImmediately=${submitImmediately ? "true" : "false"}`,
-        payload
+        payload,
+        { responseType: "text" }
       );
+      const responseText = res.data as string;
+      // Cắt chuỗi lấy ID dạng GUID
+      // Ví dụ: "Tạo và gửi báo cáo thành công. ID: 123e4567-e89b-12d3-a456-426614174000"
+      let monitoringLogId = "";
+      const idMatch = responseText.match(/ID:\s*([0-9a-fA-F\-]{32,})/);
+      if (idMatch && idMatch[1]) {
+        monitoringLogId = idMatch[1];
+      }
+
+      // Nếu có ảnh đã gửi phân tích thì gửi tiếp lên /api/images
+      if (analysisImagePreview && monitoringLogId) {
+        const imageBlob = await fetch(analysisImagePreview).then(r => r.blob());
+        const imageForm = new FormData();
+        imageForm.append("image", imageBlob, "monitoring-log-image.png");
+        imageForm.append("targetType", "MonitoringLog");
+        imageForm.append("targetId", monitoringLogId);
+        try {
+          await axiosInstance.post(`/api/images`, imageForm, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } catch (err) {
+          // Không hiển thị gì, chỉ log nếu lỗi
+          console.error("Failed to upload image for monitoring log", err);
+        }
+      }
+
       enqueueSnackbar(
         submitImmediately
           ? t("monitoringLog.createSuccessSubmitted")
@@ -510,6 +540,16 @@ export default function ReportsCreate() {
             {analysisResult ? (
               <div className="border rounded-lg p-4 bg-green-50 border-green-200 space-y-3">
                 <p className="font-semibold text-green-800">Đã có kết quả phân tích bệnh</p>
+                {/* Hiển thị ảnh đã gửi phân tích nếu có */}
+                {analysisImagePreview && (
+                  <div className="w-full flex justify-center mb-3">
+                    <img
+                      src={analysisImagePreview}
+                      alt="Ảnh đã gửi phân tích"
+                      className="max-h-60 rounded-lg border border-gray-300 object-contain"
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500">{t("sample.stageName")}: </span>

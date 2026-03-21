@@ -205,7 +205,7 @@ export default function ReportsDetails() {
             void navigate(
               user?.roleId === 3
                 ? `/technician/reports?page=${page}`
-                : `/reports?page=${page}`
+                : `/researcher/reports`
             )
           }
         >
