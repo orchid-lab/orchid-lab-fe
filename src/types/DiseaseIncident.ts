@@ -1,8 +1,8 @@
 export const DiseaseIncidentStatus = {
-  AIDetected: 0,
-  UnderReview: 1,
-  Confirmed: 2,
-  Dismissed: 3,
+  AIDetected: "AIDetected",
+  UnderReview: "UnderReview",
+  Confirmed: "Confirmed",
+  Dismissed: "Dismissed",
 } as const;
 
 export type DiseaseIncidentStatus =
@@ -19,7 +19,7 @@ export interface DiseaseIncident {
 }
 
 export interface DiseaseIncidentListResponse {
-  items: DiseaseIncident[];
+  data: DiseaseIncident[];
   totalCount: number;
   pageNo: number;
   pageSize: number;

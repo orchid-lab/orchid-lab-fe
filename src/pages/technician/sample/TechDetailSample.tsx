@@ -152,6 +152,11 @@ export default function TechDetailSample() {
   const [destroyReason, setDestroyReason] = useState("");
   const [isDestroying, setIsDestroying] = useState(false);
 
+  // --- Confirm Delete (Confirmed status) modal state ---
+  const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // --- Disease Incidents state ---
   const [incidents, setIncidents] = useState<DiseaseIncident[]>([]);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
@@ -226,11 +231,23 @@ export default function TechDetailSample() {
 
     setIncidentsLoading(true);
     setIncidentsError(null);
+
+    //Fetch stageId first, then fetch incidents based on stageId and filter
+    const stageIdSet = new Set(
+      normalizeStageList(sample?.sampleStageDto).map((stage: SampleStageDetail) => stage.id)
+    );
+
     getDiseaseIncidents({
       experimentLogId: expLogId,
       status: incidentStatusFilter,
     })
-      .then((data) => setIncidents(data.items ?? []))
+      .then((data) => {
+        // Filter incidents to only include those related to the sample's stages
+        const filteredIncidents = data.data?.filter((incident) =>
+          stageIdSet.has(incident.sampleStageId),
+        ) ?? [];
+        setIncidents(filteredIncidents);
+      })
       .catch(() => setIncidentsError(t("diseaseIncident.loadError")))
       .finally(() => setIncidentsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -264,7 +281,7 @@ export default function TechDetailSample() {
           experimentLogId: expLogId,
           status: incidentStatusFilter,
         });
-        setIncidents(data.items ?? []);
+        setIncidents(data.data ?? []);
       }
     } catch {
       setReviewError(t("common.error"));
@@ -425,6 +442,34 @@ export default function TechDetailSample() {
     }
   };
 
+  // --- Confirm Delete (Confirmed incident) modal handlers ---
+  const handleCancelDeleteModal = () => {
+    setShowConfirmDeleteModal(false);
+    setDeleteReason("");
+  };
+
+  const handleConfirmDeleteSample = async () => {
+    if (!sample?.id) return;
+    setIsDeleting(true);
+    try {
+      await axiosInstance.delete(`/api/samples/${sample.id}`, {
+        data: { reason: deleteReason },
+      });
+      enqueueSnackbar(t("common.success") ?? "Xóa thành công", { variant: "success" });
+      // After deletion, navigate back to list or previous page
+      handleBack();
+    } catch {
+      enqueueSnackbar(t("common.error") ?? "Lỗi khi xóa", { variant: "error" });
+    } finally {
+      setIsDeleting(false);
+      setShowConfirmDeleteModal(false);
+      setDeleteReason("");
+    }
+  };
+
+  // Open confirm delete modal (for Confirmed incidents)
+  const openConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
+
   const getStatusLabel = (status: SampleStatus): string => {
     const statusMap: Record<SampleStatus, string> = {
       [SampleStatusValue.Created]: t("sample.statusCreated"),
@@ -557,7 +602,17 @@ export default function TechDetailSample() {
           <h2 className="text-2xl font-semibold">
             Chi tiết mẫu thí nghiệm: {sample.name}
           </h2>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            {/* Delete button for Confirmed incidents */}
+            {incidents.some((inc) => inc.status === DiseaseIncidentStatus.Confirmed) && (
+                <button
+                type="button"
+                onClick={openConfirmDeleteModal}
+                className={`px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium`}
+              >
+                {t("sample.destroySample") ?? "Xóa"}
+              </button>
+            )}
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
               <button
                 onClick={handleAnalyzeDisease}
@@ -875,7 +930,7 @@ export default function TechDetailSample() {
                   setIncidentStatusFilter(
                     val === ""
                       ? undefined
-                      : (Number(val) as DiseaseIncidentStatus),
+                      : (val as DiseaseIncidentStatus),
                   );
                 }}
                 className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
@@ -969,6 +1024,7 @@ export default function TechDetailSample() {
                             {t("diseaseIncident.review")}
                           </button>
                         )}
+                        {/* Delete button for Confirmed incidents moved to header */}
                       </td>
                     </tr>
                   ))}
@@ -1237,6 +1293,58 @@ export default function TechDetailSample() {
               >
                 {t("common.close")}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal for Confirmed incidents */}
+      {showConfirmDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="border-b p-6 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {t("sample.destroySample") ?? "Xác nhận tiêu hủy mẫu"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowConfirmDeleteModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">
+                  {t("sample.deleteReason") ?? "Lý do xóa"}
+                </label>
+                <textarea
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
+                  placeholder={t("sample.deleteReason") ?? "Nhập lý do"}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelDeleteModal}
+                  disabled={isDeleting}
+                  className="px-3 py-2 text-sm rounded-lg border border-orange-500 text-orange-500 hover:bg-orange-50 disabled:opacity-60"
+                >
+                  {t("common.cancel") ?? "Hủy"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteSample}
+                  disabled={isDeleting}
+                  className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {isDeleting ? t("common.deleting") ?? "Đang xóa..." : t("common.confirm") ?? "Xác nhận"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

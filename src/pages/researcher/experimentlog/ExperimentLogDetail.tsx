@@ -3,12 +3,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useLayoutEffect, useRef } from "react";
+import { useSnackbar } from "notistack";
 import "./ExperimentLogDetail.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import type { AxiosError } from "axios";
 import type { User } from "../../../types/Auth";
+import { SampleStatus } from "../../../types/Sample";
 import { FaSeedling } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
@@ -20,6 +22,7 @@ import {
 } from "../../../api/diseaseIncidentApi";
 import type { DiseaseIncident } from "../../../types/DiseaseIncident";
 import { DiseaseIncidentStatus } from "../../../types/DiseaseIncident";
+import { useAuth } from "../../../context/AuthContext";
 
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
@@ -180,10 +183,13 @@ interface ExperimentLogSummary {
 }
 
 const ExperimentLogDetail = () => {
+  const {user} = useAuth();
+  const isResearcher = user?.roleId === 2;
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
+  const [isCancelled, setIsCancelled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [labName, setLabName] = useState<string>(
@@ -236,6 +242,12 @@ const ExperimentLogDetail = () => {
   const [exportingProcess, setExportingProcess] = useState(false);
   const [exportingSummary, setExportingSummary] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+
+  // ----- Cancel Experiment state -----
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const downloadPdf = async (type: "process" | "summary") => {
     if (!id) return;
@@ -298,7 +310,8 @@ const ExperimentLogDetail = () => {
         experimentLogId: id,
         status: incidentStatusFilter,
       });
-      setIncidents(data.items ?? []);
+      console.log("Fetched incidents:", data.data);
+      setIncidents(data.data ?? []);
     } catch {
       setIncidentsError(t("diseaseIncident.loadError"));
     } finally {
@@ -447,6 +460,8 @@ const ExperimentLogDetail = () => {
 
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       const logData = res.data.value ?? res.data;
+      if(logData.status === "Destroyed")
+        setIsCancelled(true);
       setLog(logData as ExperimentLogDetailType);
       setCurrentBatchId(selectedBatchId);
       setIsChangeStageModalOpen(false);
@@ -458,6 +473,27 @@ const ExperimentLogDetail = () => {
       setChangeStageError(apiDetail ?? apiTitle ?? t("common.errorLoading"));
     } finally {
       setChangingStage(false);
+    }
+  };
+  // ----- Cancel Experiment handler -----
+  const handleCancelExperiment = async () => {
+    setCancelLoading(true);
+    try {
+      // API expects a JSON string body containing the reason
+      const payload = cancelReason.trim() ? cancelReason.trim() : '';
+      await axiosInstance.delete(`/api/experiment-logs/${id}`, {
+        data: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      enqueueSnackbar(t('common.success') || 'Thí nghiệm đã được hủy', { variant: 'success' });
+      // Refresh log data after cancel
+      const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
+      setLog(res.data.value ?? res.data);
+      setIsCancelModalOpen(false);
+    } catch (e) {
+      enqueueSnackbar(t('common.error') || 'Lỗi khi hủy thí nghiệm', { variant: 'error' });
+    } finally {
+      setCancelLoading(false);
     }
   };
   const samples = log?.samples ?? [];
@@ -701,6 +737,8 @@ const ExperimentLogDetail = () => {
         return "Completed";
       case "Destroyed":
         return "Destroyed";
+      case "ExecutedBecauseOfDisease":
+        return "ExecutedBecauseOfDisease";
       default:
         return statusStr;
     }
@@ -717,6 +755,8 @@ const ExperimentLogDetail = () => {
         return t("experimentLog.completed");
       case "Destroyed":
         return t("experimentLog.destroyed");
+      case "ExecutedBecauseOfDisease":
+        return t("sample.executedBecauseOfDisease");
       default:
         return t("common.none");
     }
@@ -738,6 +778,9 @@ const ExperimentLogDetail = () => {
         className += "completed";
         break;
       case "Destroyed":
+        className += "destroyed";
+        break;
+      case "ExecutedBecauseOfDisease":
         className += "destroyed";
         break;
       default:
@@ -867,8 +910,20 @@ const ExperimentLogDetail = () => {
                 /* Create Task logic here */
               }}
             >
-              Tạo nhiệm vụ
+              Tạo công việc
             </button>
+            {/* Cancel Experiment button - visible only when all samples have status ExecutedBecauseOfDisease */}
+            {samples.length > 0 &&
+              samples.every((s) => s.status === SampleStatus.ExecutedBecauseOfDisease) && isResearcher && isCancelled && (
+                <button
+                  type="button"
+                  className="btn-start"
+                  style={{ minWidth: 140, backgroundColor: '#ef4444', color: '#fff' }}
+                  onClick={() => setIsCancelModalOpen(true)}
+                >
+                  Hủy thí nghiệm
+                </button>
+              )}
           </div>
         </div>
       </div>
@@ -1266,7 +1321,7 @@ const ExperimentLogDetail = () => {
                     setIncidentStatusFilter(
                       val === ""
                         ? undefined
-                        : (Number(val) as DiseaseIncidentStatus),
+                        : (val as DiseaseIncidentStatus),
                     );
                   }}
                   style={{
@@ -1410,6 +1465,27 @@ const ExperimentLogDetail = () => {
             )}
           </section>
         </>
+      )}
+      {/* Cancel Experiment Modal */}
+      {isCancelModalOpen && (
+        <div className="modal-backdrop" onClick={() => setIsCancelModalOpen(false)}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">{t("experimentLog.cancelExperiment") || "Hủy thí nghiệm"}</h3>
+                <button type="button" className="modal-close" onClick={() => setIsCancelModalOpen(false)} disabled={cancelLoading}>×</button>
+              </div>
+              <div className="modal-body">
+                <label className="modal-label" htmlFor="cancel-reason">{t("common.reason") || "Lý do"}</label>
+                <textarea id="cancel-reason" className="modal-textarea" value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3} placeholder={t("common.reason") || "Nhập lý do"} disabled={cancelLoading} />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-cancel" onClick={() => setIsCancelModalOpen(false)} disabled={cancelLoading}>{t("common.cancel") || "Hủy"}</button>
+                <button type="button" className="btn-start" onClick={handleCancelExperiment} disabled={cancelLoading}>{cancelLoading ? t("common.loading") : t("experimentLog.cancelExperiment")}</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {activeTab === "summary" && (
