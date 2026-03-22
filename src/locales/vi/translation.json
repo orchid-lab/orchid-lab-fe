@@ -80,7 +80,8 @@
     "errorOccurred": "Đã xảy ra lỗi",
     "duration": "Thời lượng",
     "searchPlaceholder": "Tìm kiếm theo tên công việc, trạng thái...",
-    "active": "Hoạt động"
+    "active": "Hoạt động",
+    "reason": "Lý do"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -411,7 +412,10 @@
       "systemStatus": "Trạng thái từ hệ thống",
       "available": "Đã có",
       "notAvailable": "Chưa có"
-    }
+    },
+    "destroySample": "Tiêu hủy mẫu",
+    "deleteReason": "Lý do tiêu hủy",
+    "executedBecauseOfDisease": "Tiêu hủy do bệnh"
   },
   "method": {
     "methodManagement": "Quản lý phương pháp",

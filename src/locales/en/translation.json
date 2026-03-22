@@ -79,7 +79,8 @@
     "selected": "Selected",
     "errorOccurred": "An error occurred",
     "duration": "Duration",
-    "active": "Active"
+    "active": "Active",
+    "reason": "Reason"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -411,7 +412,10 @@
       "systemStatus": "System Status",
       "available": "Available",
       "notAvailable": "Not Available"
-    }
+    },
+    "destroySample": "Destroy Sample",
+    "deleteReason": "Delete Reason",
+    "executedBecauseOfDisease": "Executed because of disease"
   },
   "method": {
     "methodManagement": "Method Management",
