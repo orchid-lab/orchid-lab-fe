@@ -47,6 +47,14 @@ const getCurrentSampleStage = (
   if (!Array.isArray(sampleStageDto)) return sampleStageDto;
   if (sampleStageDto.length === 0) return null;
 
+  // Ưu tiên lấy stage có status là 'InProgressed' (hoặc 'inprogress')
+  const inProgressStage = sampleStageDto.find(
+    (stage) =>
+      stage.status?.toLowerCase() === "inprogressed" ||
+      stage.status?.toLowerCase() === "inprogress"
+  );
+  if (inProgressStage) return inProgressStage;
+  // Nếu không có, lấy stage có startAt mới nhất
   return [...sampleStageDto].sort(
     (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
   )[0];

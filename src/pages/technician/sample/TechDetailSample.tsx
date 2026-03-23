@@ -514,6 +514,11 @@ export default function TechDetailSample() {
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
 
+    const inProgressStage = sampleStages.find(
+      (stage) => stage.status === SampleStatusValue.InProgressed,
+    );
+    if (inProgressStage) return inProgressStage;
+    
     return [...sampleStages].sort(
       (a, b) =>
         new Date(b.startAt ?? "").getTime() -
