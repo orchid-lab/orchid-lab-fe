@@ -85,6 +85,7 @@ export interface SampleDetail {
   notes: string | null;
   reason: string | null;
   executionDate: string | null;
+  currentSampleStage: string | null;
   status: SampleStatus;
   createdBy?: string | null;
   createdDate?: string | null;

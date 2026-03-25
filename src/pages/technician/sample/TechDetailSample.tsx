@@ -93,32 +93,7 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
-const normalizeText = (value?: string | null): string => {
-  if (!value) return "";
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-};
 
-const isStageMatched = (
-  stage: SampleStageDetail,
-  predefinedStage: PredefinedStage,
-): boolean => {
-  if (stage.sampleStageDefinition?.order === predefinedStage.order) {
-    return true;
-  }
-
-  const stageDefinitionName = normalizeText(stage.sampleStageDefinition?.name);
-  const currentSampleStage = normalizeText(stage.currentSampleStage);
-
-  return predefinedStage.keywords.some(
-    (keyword) =>
-      stageDefinitionName.includes(keyword) ||
-      currentSampleStage.includes(keyword),
-  );
-};
 
 export default function TechDetailSample() {
   const navigate = useNavigate();
@@ -511,57 +486,43 @@ export default function TechDetailSample() {
     [sample?.sampleStageDto],
   );
 
+  // Lấy latestStage: ưu tiên InProgressed, nếu không lấy stage cuối cùng (theo thứ tự API)
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
-
-    const inProgressStage = sampleStages.find(
-      (stage) => stage.status === SampleStatusValue.InProgressed,
-    );
+    const inProgressStage = sampleStages.find((stage) => stage.status === SampleStatusValue.InProgressed);
     if (inProgressStage) return inProgressStage;
-    
-    return [...sampleStages].sort(
-      (a, b) =>
-        new Date(b.startAt ?? "").getTime() -
-        new Date(a.startAt ?? "").getTime(),
-    )[0];
+    return sampleStages[sampleStages.length - 1];
   }, [sampleStages]);
 
-  const currentStageLabel = latestStage?.currentSampleStage || "-";
+  // Lấy currentStageLabel từ sample.currentSampleStage
+  const currentStageLabel = sample?.currentSampleStage ?? "-";
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
 
+  // Tiến trình giai đoạn nuôi cấy: không sort, lấy đúng thứ tự sampleStages từ API
   const stageProgressRows = useMemo(() => {
-    const currentStageOrder = latestStage?.sampleStageDefinition?.order ?? null;
-
-    return PREDEFINED_STAGES.map((predefinedStage) => {
-      const matchedStage = sampleStages.find((stage) =>
-        isStageMatched(stage, predefinedStage),
+    return sampleStages.map((stage) => {
+      const predefinedStage = PREDEFINED_STAGES.find(
+        (pre) => pre.order === stage.sampleStageDefinition?.order
       );
-      const hasReport = (matchedStage?.logDetailDtos?.length ?? 0) > 0;
-      const stageImageUrl = resolveImageUrl(matchedStage?.latestImageUrl);
+      const hasReport = (stage.logDetailDtos?.length ?? 0) > 0;
+      const stageImageUrl = resolveImageUrl(stage.latestImageUrl);
       const hasImage = Boolean(stageImageUrl);
-
       let progressLabel = t("sample.stageProgress.future");
       let progressClass = "bg-blue-100 text-blue-800";
-
-      if (matchedStage) {
+      if (stage.status === SampleStatusValue.Completed) {
+        progressLabel = t("sample.stageProgress.passed");
+        progressClass = "bg-emerald-100 text-emerald-800";
+      } else if (stage.status === SampleStatusValue.InProgressed) {
+        progressLabel = t("sample.stageProgress.current");
+        progressClass = "bg-yellow-100 text-yellow-800";
+      } else if (hasReport) {
         progressLabel = t("sample.stageProgress.hasData");
         progressClass = "bg-green-100 text-green-800";
       }
-
-      if (currentStageOrder != null) {
-        if (predefinedStage.order < currentStageOrder) {
-          progressLabel = t("sample.stageProgress.passed");
-          progressClass = "bg-emerald-100 text-emerald-800";
-        } else if (predefinedStage.order === currentStageOrder) {
-          progressLabel = t("sample.stageProgress.current");
-          progressClass = "bg-yellow-100 text-yellow-800";
-        }
-      }
-
       return {
         predefinedStage,
-        matchedStage,
+        matchedStage: stage,
         hasReport,
         hasImage,
         stageImageUrl,
@@ -569,7 +530,7 @@ export default function TechDetailSample() {
         progressClass,
       };
     });
-  }, [sampleStages, latestStage, t]);
+  }, [sampleStages, t]);
 
   if (loading) {
     return (
@@ -697,7 +658,7 @@ export default function TechDetailSample() {
             {t("sample.stageProgress.title")}
           </h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {stageProgressRows.map((row) => {
+            {stageProgressRows.map((row, idx) => {
               const {
                 predefinedStage,
                 matchedStage,
@@ -707,11 +668,9 @@ export default function TechDetailSample() {
                 progressLabel,
                 progressClass,
               } = row;
+              if (!predefinedStage) return null;
               return (
-                <article
-                  key={predefinedStage.order}
-                  className="border border-gray-200 rounded-lg p-4 bg-white h-full"
-                >
+                <article key={predefinedStage.order ?? idx} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
                   <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
                     <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
                       {predefinedStage.order}. {t(predefinedStage.nameKey)}
@@ -723,9 +682,7 @@ export default function TechDetailSample() {
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">
-                    {t(predefinedStage.descriptionKey)}
-                  </p>
+                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">{t(predefinedStage.descriptionKey)}</p>
 
                   <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
                     {hasImage ? (
@@ -744,54 +701,33 @@ export default function TechDetailSample() {
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">
-                        {t("sample.stageProgress.standardDuration")}
-                      </span>
+                      <span className="text-gray-500">{t("sample.stageProgress.standardDuration")}</span>
                       <span className="text-gray-800 font-medium">
-                        {predefinedStage.minDurationDays} -{" "}
-                        {predefinedStage.maxDurationDays} {t("common.days")}
+                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays} {t("common.days")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">
-                        {t("sample.stageProgress.actualStartDate")}
-                      </span>
+                      <span className="text-gray-500">{t("sample.stageProgress.actualStartDate")}</span>
                       <span className="text-gray-800 font-medium">
-                        {formatDate(matchedStage?.startAt) || "-"}
+                        {formatDate(matchedStage?.startAt) ?? "-"}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">
-                        {t("sample.stageProgress.report")}
-                      </span>
-                      <span
-                        className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}
-                      >
-                        {hasReport
-                          ? t("sample.stageProgress.available")
-                          : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">{t("sample.stageProgress.report")}</span>
+                      <span className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}>
+                        {hasReport ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">
-                        {t("sample.stageProgress.stageImage")}
-                      </span>
-                      <span
-                        className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}
-                      >
-                        {hasImage
-                          ? t("sample.stageProgress.available")
-                          : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">{t("sample.stageProgress.stageImage")}</span>
+                      <span className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}>
+                        {hasImage ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">
-                        {t("sample.stageProgress.systemStatus")}
-                      </span>
+                      <span className="text-gray-500">{t("sample.stageProgress.systemStatus")}</span>
                       <span className="text-gray-800 font-medium">
-                        {matchedStage?.status
-                          ? getStatusLabel(matchedStage.status)
-                          : "-"}
+                        {matchedStage?.status ? getStatusLabel(matchedStage.status) : "-"}
                       </span>
                     </div>
                   </div>

@@ -90,28 +90,6 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
-const normalizeText = (value?: string | null): string => {
-  if (!value) return "";
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-};
-
-const isStageMatched = (stage: SampleStageDetail, predefinedStage: PredefinedStage): boolean => {
-  if (stage.sampleStageDefinition?.order === predefinedStage.order) {
-    return true;
-  }
-
-  const stageDefinitionName = normalizeText(stage.sampleStageDefinition?.name);
-  const currentSampleStage = normalizeText(stage.currentSampleStage);
-
-  return predefinedStage.keywords.some(
-    (keyword) =>
-      stageDefinitionName.includes(keyword) ?? currentSampleStage.includes(keyword)
-  );
-};
 
 export default function SampleDetail() {
   const navigate = useNavigate();
@@ -378,27 +356,72 @@ export default function SampleDetail() {
     [sample?.sampleStageDto]
   );
 
+  // Lấy latestStage: ưu tiên InProgressed, nếu không lấy stage cuối cùng (theo thứ tự API)
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
-
-    return [...sampleStages].sort(
-      (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
-    )[0];
+    const inProgressStage = sampleStages.find((stage) => stage.status === SampleStatusValue.InProgressed);
+    if (inProgressStage) return inProgressStage;
+    return sampleStages[sampleStages.length - 1];
   }, [sampleStages]);
 
-  const currentStageLabel = latestStage?.currentSampleStage ?? "-";
+  // Lấy currentStageLabel từ sample.currentSampleStage
+  const currentStageLabel = sample?.currentSampleStage ?? "-";
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
   const hasApprovedLogForCurrentStage = reportRows.length > 0;
-  const canChangeStage = user?.roleId === 2 && hasApprovedLogForCurrentStage;
-
-  // Logic kiểm tra điều kiện hiện nút "Chuyển thành cây giống"
   const isLastStage = latestStage?.sampleStageDefinition?.order === Math.max(...PREDEFINED_STAGES.map((s) => s.order));
-  const canConvertToSeedling = 
-    user?.roleId === 2 && 
-    isLastStage && 
-    sample?.status !== SampleStatusValue.ConvertedToSeedling && 
+  const lastStageOrder = Math.max(...PREDEFINED_STAGES.map((s) => s.order));
+  const lastStage = sampleStages.find(
+    (stage) => stage.sampleStageDefinition?.order === lastStageOrder
+  );
+  const hasReportForLastStage = (lastStage?.logDetailDtos?.length ?? 0) > 0;
+  const allStagesCompleted = PREDEFINED_STAGES.every((pre) => {
+    const stage = sampleStages.find((s) => s.sampleStageDefinition?.order === pre.order && s.status === SampleStatusValue.Completed);
+    return stage && (stage.logDetailDtos?.length ?? 0) > 0;
+  });
+  const canChangeStage = user?.roleId === 2 &&
+    sample?.status !== SampleStatusValue.ConvertedToSeedling &&
+    sample?.status !== SampleStatusValue.ExecutedBecauseOfDisease &&
+    hasApprovedLogForCurrentStage;
+  const canConvertToSeedling =
+    user?.roleId === 2 &&
+    allStagesCompleted &&
+    sample?.status !== SampleStatusValue.ConvertedToSeedling &&
     sample?.status !== SampleStatusValue.ExecutedBecauseOfDisease;
+
+  // Tiến trình giai đoạn nuôi cấy: không sort, lấy đúng thứ tự sampleStages từ API
+  const stageProgressRows = useMemo(() => {
+    return sampleStages.map((stage) => {
+      const predefinedStage = PREDEFINED_STAGES.find(
+        (pre) => pre.order === stage.sampleStageDefinition?.order
+      );
+      const hasReport = (stage.logDetailDtos?.length ?? 0) > 0;
+      const stageImageUrl = resolveImageUrl(stage.latestImageUrl);
+      const hasImage = Boolean(stageImageUrl);
+      // Status lấy trực tiếp từ stage.status
+      let progressLabel = t("sample.stageProgress.future");
+      let progressClass = "bg-blue-100 text-blue-800";
+      if (stage.status === SampleStatusValue.Completed) {
+        progressLabel = t("sample.stageProgress.passed");
+        progressClass = "bg-emerald-100 text-emerald-800";
+      } else if (stage.status === SampleStatusValue.InProgressed) {
+        progressLabel = t("sample.stageProgress.current");
+        progressClass = "bg-yellow-100 text-yellow-800";
+      } else if (hasReport) {
+        progressLabel = t("sample.stageProgress.hasData");
+        progressClass = "bg-green-100 text-green-800";
+      }
+      return {
+        predefinedStage,
+        matchedStage: stage,
+        hasReport,
+        hasImage,
+        stageImageUrl,
+        progressLabel,
+        progressClass,
+      };
+    });
+  }, [sampleStages, t]);
 
   const handleChangeStage = async () => {
     if (!id || !canChangeStage || isChangingStage) return;
@@ -418,46 +441,7 @@ export default function SampleDetail() {
     }
   };
 
-  const stageProgressRows = useMemo(() => {
-    const currentStageOrder = latestStage?.sampleStageDefinition?.order ?? null;
-
-    return PREDEFINED_STAGES.map((predefinedStage) => {
-      const matchedStage = sampleStages.find((stage) =>
-        isStageMatched(stage, predefinedStage)
-      );
-      const hasReport = (matchedStage?.logDetailDtos?.length ?? 0) > 0;
-      const stageImageUrl = resolveImageUrl(matchedStage?.latestImageUrl);
-      const hasImage = Boolean(stageImageUrl);
-
-      let progressLabel = t("sample.stageProgress.future");
-      let progressClass = "bg-blue-100 text-blue-800";
-
-      if (matchedStage) {
-        progressLabel = t("sample.stageProgress.hasData");
-        progressClass = "bg-green-100 text-green-800";
-      }
-
-      if (currentStageOrder != null) {
-        if (predefinedStage.order < currentStageOrder) {
-          progressLabel = t("sample.stageProgress.passed");
-          progressClass = "bg-emerald-100 text-emerald-800";
-        } else if (predefinedStage.order === currentStageOrder) {
-          progressLabel = t("sample.stageProgress.current");
-          progressClass = "bg-yellow-100 text-yellow-800";
-        }
-      }
-
-      return {
-        predefinedStage,
-        matchedStage,
-        hasReport,
-        hasImage,
-        stageImageUrl,
-        progressLabel,
-        progressClass,
-      };
-    });
-  }, [sampleStages, latestStage, t]);
+  // Đã chuyển lên trên, không khai báo lại ở đây nữa
 
   if (loading) {
     return (
@@ -492,6 +476,7 @@ export default function SampleDetail() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
           <div className="flex gap-3">
+            {/* Ẩn CHỈ nút chuyển giai đoạn/hoàn thành mẫu vật nếu giai đoạn cuối đã hoàn thành */}
             {canConvertToSeedling && (
               <button
                 type="button"
@@ -502,19 +487,24 @@ export default function SampleDetail() {
                 Chuyển thành cây giống
               </button>
             )}
-            
-            <button
-              type="button"
-              onClick={() => void handleChangeStage()}
-              disabled={!canChangeStage || isChangingStage}
-              className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
-                canChangeStage && !isChangingStage
-                  ? "bg-emerald-600 hover:bg-emerald-700"
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
-            >
-              {isChangingStage ? "Đang chuyển..." : "Chuyển giai đoạn"}
-            </button>
+            {!(isLastStage && latestStage?.status === SampleStatusValue.Completed) && (
+              <button
+                type="button"
+                onClick={() => void handleChangeStage()}
+                disabled={!canChangeStage || isChangingStage}
+                className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
+                  canChangeStage && !isChangingStage
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+              >
+                {isChangingStage
+                  ? "Đang chuyển..."
+                  : (isLastStage && hasReportForLastStage)
+                    ? "Hoàn thành mẫu vật"
+                    : "Chuyển giai đoạn"}
+              </button>
+            )}
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
               <button
                 onClick={handleAnalyzeDisease}
@@ -589,7 +579,7 @@ export default function SampleDetail() {
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
           <h3 className="text-lg font-semibold mb-4">{t("sample.stageProgress.title")}</h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {stageProgressRows.map((row) => {
+            {stageProgressRows.map((row, idx) => {
               const {
                 predefinedStage,
                 matchedStage,
@@ -599,8 +589,9 @@ export default function SampleDetail() {
                 progressLabel,
                 progressClass,
               } = row;
+              if (!predefinedStage) return null;
               return (
-                <article key={predefinedStage.order} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
+                <article key={predefinedStage.order ?? idx} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
                   <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
                     <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
                       {predefinedStage.order}. {t(predefinedStage.nameKey)}
