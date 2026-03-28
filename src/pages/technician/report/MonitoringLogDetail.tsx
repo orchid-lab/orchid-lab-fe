@@ -148,6 +148,24 @@ export default function MonitoringLogDetail() {
     if (!id) return;
     setApprovingOrRejecting(true);
     try {
+      // Lấy sampleStageId từ log
+      const monitoringLogRes = await axiosInstance.get(`/api/monitoring-log/${id}`);
+      const monitoringLog = monitoringLogRes.data as MonitoringLogDetail;
+      const sampleStageId = (monitoringLog as any).sampleStageId || (log as any)?.sampleStageId;
+      // Lấy ảnh đầu tiên của monitoring log (nếu có)
+      const imageObj = monitoringLog.images && monitoringLog.images.length > 0 ? monitoringLog.images[0] : null;
+      if (imageObj && sampleStageId) {
+        // Lấy file từ url (fetch blob)
+        const response = await fetch(imageObj.url);
+        const blob = await response.blob();
+        const formData = new FormData();
+        formData.append("image", blob, "monitoring-log-image.jpg");
+        formData.append("targetType", "SampleStage");
+        formData.append("targetId", sampleStageId);
+        await axiosInstance.post("/api/images", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
       await axiosInstance.patch(`/api/monitoring-log/${id}/approve`);
       enqueueSnackbar(t("monitoringLog.approveSuccess"), { variant: "success" });
       await fetchLog();
