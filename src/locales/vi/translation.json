@@ -887,6 +887,12 @@
     "materials": "vật liệu"
   },
   "technicianTask": {
+    "loadingTasks": "Đang tải công việc...",
+    "targetName": "Kỹ thuật viên",
+    "pageTitle": "Quản lý công việc",
+    "pageDescription": "Theo dõi và quản lý các công việc được giao trong quá trình nuôi cấy mô",
+    "pageSubtitle": "Danh sách công việc",
+    "overallTaskDistribution": "Phân bố công việc tổng thể",
     "detailTitle": "Chi tiết công việc",
     "updating": "Đang cập nhật...",
     "acceptTask": "Nhận công việc",
