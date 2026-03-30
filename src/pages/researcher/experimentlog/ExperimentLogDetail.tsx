@@ -11,6 +11,7 @@ import { Doughnut } from "react-chartjs-2";
 import type { AxiosError } from "axios";
 import type { User } from "../../../types/Auth";
 import { SampleStatus } from "../../../types/Sample";
+import { SAMPLE_STATUS_MAP } from "../../../utils/sampleStatus";
 import { FaSeedling } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
@@ -23,6 +24,8 @@ import {
 import type { DiseaseIncident } from "../../../types/DiseaseIncident";
 import { DiseaseIncidentStatus } from "../../../types/DiseaseIncident";
 import { useAuth } from "../../../context/AuthContext";
+import { getTasks } from "../../../api/taskApi";
+import type { Task } from "../../../api/taskApi";
 
 Chart.register(ArcElement, Tooltip, Legend);
 gsap.registerPlugin(ScrollTrigger);
@@ -248,6 +251,71 @@ const ExperimentLogDetail = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+
+      // State cho nút hoàn thành nhật ký thí nghiệm
+    const [isCompleting, setIsCompleting] = useState(false);
+    // Xác định giai đoạn cuối cùng của phương pháp
+    const lastStageOrder = (() => {
+      if (!log?.method?.methodStages?.length) return undefined;
+      return Math.max(...log.method.methodStages.map((s) => s.order));
+    })();
+  // State to track if all related tasks are completed
+  const [allTasksCompleted, setAllTasksCompleted] = useState<boolean>(false);
+
+  // Fetch and check tasks for this experiment log
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!id) return;
+      try {
+        const tasks: Task[] = await getTasks();
+        const filtered = tasks.filter(
+          (task) =>
+            task.taskTargetType === "ExperimentLog" &&
+            String(task.targetId) === String(id)
+        );
+        // Status can be "Completed (In Time)" or "Completed (Out Time)"
+        const allCompleted =
+          filtered.length > 0 &&
+          filtered.every((task) =>
+            String(task.status).toLowerCase().includes("completed")
+          );
+        setAllTasksCompleted(allCompleted);
+      } catch {
+        setAllTasksCompleted(false);
+      }
+    };
+    fetchTasks();
+  }, [id]);
+
+    // Kiểm tra có phải đang ở giai đoạn cuối cùng không
+    const isLastStage =
+      log?.currentStageOrder !== undefined &&
+      lastStageOrder !== undefined &&
+      log.currentStageOrder === lastStageOrder;
+
+    // Hàm hoàn thành nhật ký thí nghiệm
+    const handleCompleteExperiment = async () => {
+      if (!id) return;
+      setIsCompleting(true);
+      try {
+        await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+          status: "Completed",
+        });
+        // Update local log status to Completed
+        const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
+        setLog(res.data.value ?? res.data);
+        enqueueSnackbar(t("experimentLog.completed") || "Hoàn thành thí nghiệm", { variant: "success" });
+      } catch (e) {
+        const axiosError = e as AxiosError<ApiErrorResponse>;
+        const apiDetail = axiosError.response?.data?.detail?.trim();
+        const apiTitle = axiosError.response?.data?.title?.trim();
+        const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+        enqueueSnackbar(message, {autoHideDuration: 1000, variant: "warning" });
+        setError(message);
+      } finally {
+        setIsCompleting(false);
+      }
+    };
 
   const downloadPdf = async (type: "process" | "summary") => {
     if (!id) return;
@@ -743,50 +811,16 @@ const ExperimentLogDetail = () => {
         return statusStr;
     }
   };
-  const getStatusDisplay = (status?: string | number): string => {
-    switch (normalizeStatus(status)) {
-      case "Created":
-        return t("status.created");
-      case "InProgress":
-        return t("experimentLog.inProgress");
-      case "WaitingForChangeStage":
-        return t("experimentLog.waitingForStageChange");
-      case "Completed":
-        return t("experimentLog.completed");
-      case "Destroyed":
-        return t("experimentLog.destroyed");
-      case "ExecutedBecauseOfDisease":
-        return t("sample.executedBecauseOfDisease");
-      default:
-        return t("common.none");
-    }
-  };
-  const getStatusColor = (status?: string | number): string => {
+  // Unified badge helper using the shared SAMPLE_STATUS_MAP.
+  // Returns the full class name (base + suffix) and translated label.
+  const getSampleBadge = (status?: string | number) => {
     const normalized = normalizeStatus(status);
-    let className = "status-badge ";
-    switch (normalized) {
-      case "Created":
-        className += "created";
-        break;
-      case "WaitingForChangeStage":
-        className += "waiting";
-        break;
-      case "InProgress":
-        className += "in-progress";
-        break;
-      case "Completed":
-        className += "completed";
-        break;
-      case "Destroyed":
-        className += "destroyed";
-        break;
-      case "ExecutedBecauseOfDisease":
-        className += "destroyed";
-        break;
-      default:
-        className += "created";
-    }
-    return className;
+    const entry = SAMPLE_STATUS_MAP[normalized];
+    const className = entry
+      ? `status-badge ${entry.classSuffix}`
+      : "status-badge created"; // fallback to created style
+    const label = entry ? t(entry.labelKey) : t("common.none");
+    return { className, label };
   };
 
   // Lấy stage hiện tại từ log (dựa vào currentStageOrder và methodStages)
@@ -902,6 +936,18 @@ const ExperimentLogDetail = () => {
                 </button>
               </>
             )}
+            {/* Nút hoàn thành nhật ký thí nghiệm cho researcher */}
+            {isResearcher && normalizeStatus(log.status) === "InProgress" && isLastStage && allTasksCompleted && (
+              <button
+                type="button"
+                onClick={handleCompleteExperiment}
+                disabled={isCompleting}
+                className="btn-start"
+                style={{ minWidth: 180 }}
+              >
+                {isCompleting ? (t("common.processing") || "Đang xử lý...") : (t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm")}
+              </button>
+            )}
             <button
               type="button"
               className="btn-start"
@@ -982,9 +1028,13 @@ const ExperimentLogDetail = () => {
                   }}
                 >
                   <span className="info-label">{t("common.status")}: </span>
-                  <span className={getStatusColor(log.status)}>
-                    {getStatusDisplay(log.status)}
-                  </span>
+                  {/* Unified badge for log status */}
+                  {(() => {
+                    const badge = getSampleBadge(log.status);
+                    return (
+                      <span className={badge.className}>{badge.label}</span>
+                    );
+                  })()}
                 </div>
                 <div className="info-item">
                   <span className="info-label">
@@ -1018,18 +1068,17 @@ const ExperimentLogDetail = () => {
                     {t("experimentLog.currentStage") || "Giai đoạn hiện tại"}:
                   </span>
                   <span className="current-stage">{currentStage}</span>
-                  <button
-                    type="button"
-                    className="btn-start"
-                    style={{ minWidth: 120, marginLeft: 8 }}
-                    onClick={openChangeStageModal}
-                    disabled={
-                      changingStage ||
-                      normalizeStatus(log.status) === "InProgress"
-                    }
-                  >
-                    {t("experimentLog.changeStage") || "Chuyển giai đoạn"}
-                  </button>
+                  {normalizeStatus(log.status) === "WaitingForChangeStage" && (
+                    <button
+                      type="button"
+                      className="btn-start"
+                      style={{ minWidth: 120, marginLeft: 8 }}
+                      onClick={openChangeStageModal}
+                      disabled={changingStage}
+                    >
+                      {t("experimentLog.changeStage") || "Chuyển giai đoạn"}
+                    </button>
+                  )}
                   {changeStageError && (
                     <div
                       style={{ color: "red", marginLeft: 8, fontSize: "0.9em" }}
@@ -1267,13 +1316,17 @@ const ExperimentLogDetail = () => {
                       </div>
                     )}
                     <div className="sample-status">
-                      <span
-                        className={getStatusColor(
+                      {/* Unified badge for sample status */}
+                      {(() => {
+                        const badge = getSampleBadge(
                           sample.status ?? sample.statusEnum,
-                        )}
-                      >
-                        {getStatusDisplay(sample.status ?? sample.statusEnum)}
-                      </span>
+                        );
+                        return (
+                          <span className={badge.className}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}

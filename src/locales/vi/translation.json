@@ -307,6 +307,8 @@
     "step3": "Bước 3",
     "stepBasicInfo": "Thông tin cơ bản",
     "stepConfirm": "Xác nhận",
+    "objective": "Mục đích thí nghiệm",
+    "objectivePlaceholder": "Nhập mục đích thí nghiệm...",
     "selectTechnicianSubtitle": "Chọn kỹ thuật viên sẽ thực hiện nhiệm vụ này",
     "loadingTechnicians": "Đang tải danh sách kỹ thuật viên...",
     "noTechniciansAvailable": "Không có kỹ thuật viên nào!",

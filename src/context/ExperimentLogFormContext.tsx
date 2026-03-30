@@ -19,6 +19,7 @@ export interface ExperimentLogFormData {
   technicianNames?: string[]; // chỉ để hiển thị
   startDate?: string; // chọn ở bước 3
   endDate?: string; // chọn ở bước 3
+  objective?: string; // mục đích thí nghiệm
 }
 
 interface ExperimentLogFormContextType {
@@ -44,6 +45,7 @@ const defaultForm: ExperimentLogFormData = {
   technicianNames: [],
   startDate: "",
   endDate: "",
+  objective: "",
 };
 
 const ExperimentLogFormContext = createContext<

@@ -81,14 +81,15 @@ const CreateExperimentStep3 = () => {
     }
 
     // Map form to backend payload shape
-    const payload = {
-      methodId: methodId,
-      batchesId: batchesId,
-      parentAId: parentAId,
-      name: name ?? "",
-      expectedSampleCount: numberOfSample ?? 1,
-      assignedToTechnicianId: assignedToTechnicianId,
-    };
+      const payload = {
+        methodId: methodId,
+        batchesId: batchesId,
+        parentAId: parentAId,
+        name: name ?? "",
+        expectedSampleCount: numberOfSample ?? 1,
+        assignedToTechnicianId: assignedToTechnicianId,
+        objective: form.objective ?? "",
+      };
     console.log("Payload gửi lên API:", payload);
 
     try {
@@ -209,6 +210,13 @@ const CreateExperimentStep3 = () => {
                   </h3>
                   <p className="text-gray-600">{name ?? "Chưa nhập"}</p>
                 </div>
+                      {/* Objective */}
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <h3 className="font-medium text-gray-900 mb-2">
+                          Mục đích thí nghiệm
+                        </h3>
+                        <p className="text-gray-600">{form.objective ?? "Chưa nhập"}</p>
+                      </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-800 mb-1">
                     Thời gian

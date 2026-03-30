@@ -306,6 +306,8 @@
     "step3": "Step 3",
     "stepBasicInfo": "Basic Information",
     "stepConfirm": "Confirm",
+    "objective": "Experiment Objective",
+    "objectivePlaceholder": "Enter experiment objective...",
     "selectTechnicianSubtitle": "Select the technician to perform this task",
     "loadingTechnicians": "Loading technician list...",
     "noTechniciansAvailable": "No technicians available!",
