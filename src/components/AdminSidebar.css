@@ -1,0 +1,101 @@
+/* ==================== RED THEME OVERRIDES ==================== */
+
+/* Ghi đè biến cho Light Theme */
+:root[data-theme='light'] {
+    /* Màu chủ đạo */
+    --accent-color: #dc2626 !important; /* Red-600 */
+    --accent-ring: rgba(220, 38, 38, 0.1) !important;
+    
+    /* Sidebar */
+    --sidebar-border: #fee2e2 !important; /* Red-100 */
+    --logo-bg: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    
+    /* Navigation */
+    --nav-hover-bg: #fef2f2 !important; /* Red-50 */
+    --nav-active-bg: #fee2e2 !important; /* Red-100 */
+    
+    /* Search & Tools */
+    --search-bg: #fef2f2 !important;
+    --notification-badge-bg: #ef4444 !important;
+    --avatar-placeholder-bg: linear-gradient(135deg, #ef4444 0%, #991b1b 100%) !important;
+    
+    /* Scrollbar */
+    --scrollbar-thumb: #fca5a5 !important;
+    --scrollbar-thumb-hover: #ef4444 !important;
+}
+
+/* Ghi đè biến cho Dark Theme */
+:root[data-theme='dark'] {
+    --accent-color: #f87171 !important; /* Red-400 */
+    --accent-ring: rgba(248, 113, 113, 0.2) !important;
+    
+    /* Sidebar */
+    --sidebar-border: #3f1616 !important;
+    --logo-bg: linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%) !important;
+    
+    /* Navigation */
+    --nav-hover-bg: rgba(220, 38, 38, 0.1) !important;
+    --nav-active-bg: rgba(220, 38, 38, 0.2) !important;
+    
+    /* Profile & Misc */
+    --profile-bg: #1a1a25 !important;
+    --logout-hover-bg: rgba(239, 68, 68, 0.2) !important;
+    --logout-hover-color: #fca5a5 !important;
+}
+
+/* ==================== SPECIFIC COMPONENT FIXES ==================== */
+
+/* Topbar Gradient Fix (Ghi đè dải màu xanh từ global.css) */
+:root[data-theme='light'] .topbar-header {
+    background: linear-gradient(to right, #ffffff, #fef2f2/30, #ffffff) !important;
+    border-bottom-color: #fee2e2 !important;
+}
+
+/* Ghi đè các hiệu ứng hover chung của button trong header */
+:root[data-theme='light'] header button:hover {
+    background-color: #fef2f2 !important;
+}
+
+:root[data-theme='light'] header button:hover svg {
+    color: #dc2626 !important;
+}
+
+/* Navigation Icon Active State */
+.sidebar-nav-icon-active {
+    color: var(--accent-color) !important;
+}
+
+/* Navigation Indicator (Chấm tròn active) */
+.sidebar-nav-indicator {
+    background-color: var(--accent-color) !important;
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+}
+
+/* Custom Scrollbar cho Sidebar */
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb) !important;
+}
+
+/* Tooltip cho trạng thái Collapsed */
+.sidebar-nav-tooltip {
+    background: #450a0a !important; /* Deep red dark */
+    border-left: 2px solid #ef4444;
+}
+
+/* Badge trạng thái (Status Dot) */
+.sidebar-status-dot.bg-red-500 {
+    background-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px var(--sidebar-bg);
+}
+
+/* Ghi đè hiệu ứng cho thanh Search */
+.sidebar-search-input:focus {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 0 3px var(--accent-ring) !important;
+}
+
+/* Fix cho nút Logout */
+.sidebar-logout-btn:hover {
+    background-color: var(--logout-hover-bg) !important;
+    color: var(--logout-hover-color) !important;
+}
