@@ -6,7 +6,17 @@ import { FaBell } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 
-const NotificationBell: React.FC = () => {
+interface NotificationBellProps {
+  accentClass?: string;
+  accentBgClass?: string;
+  hoverBgClass?: string;
+}
+
+const NotificationBell: React.FC<NotificationBellProps> = ({
+  accentClass = "text-blue-500",
+  accentBgClass = "bg-blue-500",
+  hoverBgClass = "hover:bg-gray-100",
+}) => {
   const { notifications, markAsRead } = useNotification();
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -51,16 +61,15 @@ const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+        className={`relative p-2 rounded-full transition-colors ${hoverBgClass}`}
         aria-label={t("notification.title")}
       >
         <FaBell
           size={22}
-          color={open ? "#2D5A27" : "#6B7280"}
-          className={open ? "drop-shadow-[0_0_6px_rgba(45,90,39,0.4)]" : ""}
+          className={`${open ? accentClass : "text-gray-500"} ${open ? "shadow-sm" : ""}`}
         />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#ef4444] text-[11px] text-white font-semibold shadow-sm border-2 border-white">
+          <span className={`absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 rounded-full ${accentBgClass} text-[11px] text-white font-semibold shadow-sm border-2 border-white`}>
             {unreadCount}
           </span>
         )}
@@ -86,12 +95,12 @@ const NotificationBell: React.FC = () => {
                 } hover:bg-gray-50 cursor-pointer`}
               >
                 {!n.isRead && (
-                  <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#2D5A27] flex-shrink-0" />
+                  <span className={`mt-1 h-2.5 w-2.5 rounded-full ${accentBgClass} flex-shrink-0`} />
                 )}
                 <div className="min-w-0">
                   <div
                     className={`truncate ${
-                      n.isRead ? "text-gray-900" : "text-[#2D5A27] font-semibold"
+                      n.isRead ? "text-gray-900" : `${accentClass} font-semibold`
                     }`}
                   >
                     {n.title}

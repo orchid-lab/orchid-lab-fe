@@ -3,19 +3,25 @@ import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { FaSun, FaMoon } from 'react-icons/fa';
 
-const ThemeToggle: React.FC = () => {
+interface ThemeToggleProps {
+  accentClass?: string;
+}
+
+const ThemeToggle: React.FC<ThemeToggleProps> = ({
+  accentClass = 'text-blue-500',
+}) => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
     <button
       onClick={toggleTheme}
-      className="theme-toggle-btn flex items-center justify-center rounded-full transition-colors duration-200"
+      className="theme-toggle-btn flex items-center justify-center rounded-full transition-colors duration-200 hover:bg-gray-100"
       aria-label="Toggle theme"
     >
       {isDark ? (
-        <FaSun className="text-yellow-500" size={18} />
+        <FaSun className={`${accentClass} text-lg`} size={18} />
       ) : (
-        <FaMoon className="text-gray-700" size={18} />
+        <FaMoon className={`${accentClass} text-lg`} size={18} />
       )}
     </button>
   );

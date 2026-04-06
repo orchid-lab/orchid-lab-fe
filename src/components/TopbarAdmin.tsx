@@ -76,10 +76,10 @@ export default function TopbarAdmin() {
 
       <div className="flex items-center gap-4">
         <div style={{ position: "relative" }}>
-          <NotificationBell />
+          <NotificationBell accentClass="text-red-500" accentBgClass="bg-red-500" hoverBgClass="hover:bg-red-50" />
         </div>
-        <ThemeToggle />
-        <LanguageSelector />
+        <ThemeToggle accentClass="text-red-500" />
+        <LanguageSelector accentClass="text-red-500" hoverBgClass="hover:bg-red-50/40 dark:hover:bg-gray-700" activeBgClass="bg-red-900 dark:bg-red-700" activeTextClass="text-white" />
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
         <div
           className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"

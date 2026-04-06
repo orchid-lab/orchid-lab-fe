@@ -2,7 +2,19 @@ import { useTranslation } from 'react-i18next';
 import { useState, useRef, useEffect } from 'react';
 import { FaGlobe } from 'react-icons/fa';
 
-export default function LanguageSelector() {
+interface LanguageSelectorProps {
+  accentClass?: string;
+  hoverBgClass?: string;
+  activeBgClass?: string;
+  activeTextClass?: string;
+}
+
+export default function LanguageSelector({
+  accentClass = 'text-blue-500',
+  hoverBgClass = 'hover:bg-blue-50/40 dark:hover:bg-gray-700',
+  activeBgClass = 'bg-blue-900 dark:bg-blue-700',
+  activeTextClass = 'text-white dark:text-green-100',
+}: LanguageSelectorProps) {
   const { i18n, t } = useTranslation();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -40,10 +52,10 @@ export default function LanguageSelector() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 p-2 rounded-lg hover:bg-green-50/40 dark:hover:bg-gray-700 transition-all duration-300 group"
+        className={`flex items-center gap-2 p-2 rounded-lg transition-all duration-300 group ${hoverBgClass}`}
         title={t('common.language')}
       >
-        <FaGlobe className="text-gray-400 dark:text-gray-200 text-lg group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors duration-300" />
+        <FaGlobe className={`${accentClass} text-lg transition-colors duration-300`} />
         <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">
           {currentLanguage.flag}
         </span>
@@ -64,7 +76,7 @@ export default function LanguageSelector() {
               onClick={() => changeLanguage(lang.code)}
               className={`flex items-center w-full text-left px-3 py-2 rounded-lg transition-all duration-200 ${
                 i18n.language === lang.code
-                  ? 'bg-blue-900 dark:bg-blue-700 text-white-700 dark:text-green-100'
+                  ? `${activeBgClass} ${activeTextClass}`
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >

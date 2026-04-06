@@ -24,7 +24,7 @@ function getRoleBadgeColor(role: string | undefined) {
       return "bg-blue-500";
     case "technician":
     case "lab technician":
-      return "bg-blue-500";
+      return "bg-green-500";
     default:
       return "bg-gray-500";
   }
@@ -76,10 +76,10 @@ export default function TopbarTechnician() {
 
       <div className="flex items-center gap-4">
         <div style={{ position: "relative" }}>
-          <NotificationBell />
+          <NotificationBell accentClass="text-green-500" accentBgClass="bg-green-500" hoverBgClass="hover:bg-green-50" />
         </div>
-        <ThemeToggle />
-        <LanguageSelector />
+        <ThemeToggle accentClass="text-green-500" />
+        <LanguageSelector accentClass="text-green-500" hoverBgClass="hover:bg-green-50/40 dark:hover:bg-gray-700" activeBgClass="bg-green-900 dark:bg-green-700" activeTextClass="text-white" />
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
         <div
           className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
