@@ -207,7 +207,7 @@ const AdminExperimentLog = () => {
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get("/api/methods?PageNumber=1&PageSize=100");
+        const res = await axiosInstance.get("/api/methods?pageNumber=1&pageSize=100");
         const raw = res.data as { value?: { data?: { id: string; name: string }[] } };
         const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
         setMethods(arr.map((m) => ({ id: m.id, name: m.name })));

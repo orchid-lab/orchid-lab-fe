@@ -28,7 +28,7 @@ export default function AdminSeedlings() {
       setLoading(true);
       try {
         const allRes = await axiosInstance.get(
-          "api/seedlings?PageNumber=1&PageSize=1000"
+          "/api/seedlings?pageNumber=1&pageSize=1000"
         );
         const allJson = allRes.data as SeedlingApiResponse;
         setAllSeedlings((allJson.data || []).reverse());
@@ -45,7 +45,7 @@ export default function AdminSeedlings() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axiosInstance.get("/api/user?PageNumber=1&PageSize=1000");
+        const response = await axiosInstance.get("/api/user?pageNumber=1&pageSize=1000");
         const users = response.data?.data || [];
 
         // Filter researchers (role = "Researcher")
