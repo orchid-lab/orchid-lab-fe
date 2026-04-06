@@ -76,7 +76,7 @@ export default function TopbarAdmin() {
 
       <div className="flex items-center gap-4">
         <div style={{ position: "relative" }}>
-          <NotificationBell accentClass="text-red-500" accentBgClass="bg-red-500" hoverBgClass="hover:bg-red-50" />
+          <NotificationBell/>
         </div>
         <ThemeToggle accentClass="text-red-500" />
         <LanguageSelector accentClass="text-red-500" hoverBgClass="hover:bg-red-50/40 dark:hover:bg-gray-700" activeBgClass="bg-red-900 dark:bg-red-700" activeTextClass="text-white" />

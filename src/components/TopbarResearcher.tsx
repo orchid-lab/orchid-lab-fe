@@ -76,7 +76,7 @@ export default function TopbarResearcher() {
 
       <div className="flex items-center gap-4">
         <div style={{ position: "relative" }}>
-          <NotificationBell accentClass="text-blue-500" accentBgClass="bg-blue-500" hoverBgClass="hover:bg-blue-50" />
+          <NotificationBell/>
         </div>
         <ThemeToggle accentClass="text-blue-500" />
         <LanguageSelector accentClass="text-blue-500" hoverBgClass="hover:bg-blue-50/40 dark:hover:bg-gray-700" activeBgClass="bg-blue-900 dark:bg-blue-700" activeTextClass="text-white" />

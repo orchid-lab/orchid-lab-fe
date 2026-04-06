@@ -76,7 +76,7 @@ export default function TopbarTechnician() {
 
       <div className="flex items-center gap-4">
         <div style={{ position: "relative" }}>
-          <NotificationBell accentClass="text-green-500" accentBgClass="bg-green-500" hoverBgClass="hover:bg-green-50" />
+          <NotificationBell/>
         </div>
         <ThemeToggle accentClass="text-green-500" />
         <LanguageSelector accentClass="text-green-500" hoverBgClass="hover:bg-green-50/40 dark:hover:bg-gray-700" activeBgClass="bg-green-900 dark:bg-green-700" activeTextClass="text-white" />
