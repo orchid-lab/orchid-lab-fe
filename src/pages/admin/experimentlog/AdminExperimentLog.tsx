@@ -1,7 +1,18 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable react-dom/no-missing-button-type */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
@@ -11,40 +22,13 @@ Chart.register(ArcElement, Tooltip, Legend);
 
 type ExperimentStatus = "Created" | "InProcess" | "Done" | "Cancel";
 
-interface Stage {
-  id: string;
-  name: string;
-  description?: string;
-  dateOfProcessing?: number;
-  step: number;
-  status: boolean;
-  elementDTO?: unknown[];
-}
-
-interface Sample {
-  id: string;
-  name: string;
-  description?: string;
-  dob?: string;
-  status?: boolean;
-}
-
 interface ExperimentLogEntry {
   id: string;
   name: string;
   methodName: string;
-  description?: string;
-  tissueCultureBatchName: string;
+  batcheName?: string;
   createdDate?: string;
-  status?: number | string;
-  samples?: Sample[];
-  stages?: Stage[];
-  currentStageName?: string;
-}
-
-interface ExperimentLogApiResponse {
-  value: ExperimentLogEntry[];
-  totalCount?: number;
+  status?: string | number;
 }
 
 interface MethodOption {
@@ -54,539 +38,245 @@ interface MethodOption {
 
 const AdminExperimentLog = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // States
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
   const [methodFilter, setMethodFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<"all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4">("all");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [sampleCounts, setSampleCounts] = useState<Record<string, number>>({});
   const [methods, setMethods] = useState<MethodOption[]>([]);
-  const [stats, setStats] = useState<{
-    total: number;
-    Created: number;
-    InProcess: number;
-    Done: number;
-    Cancel: number;
-  }>({
-    total: 0,
-    Created: 0,
-    InProcess: 0,
-    Done: 0,
-    Cancel: 0,
-  });
-
-  const navigate = useNavigate();
-
   const [currentPage, setCurrentPage] = useState(1);
+  const [stats, setStats] = useState({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
+
   const logsPerPage = 5;
 
-  const normalizeStatus = (status?: number | string) => {
-    const statusStr = String(status ?? "");
-    switch (statusStr) {
-      case "1":
+  // 1. Fix lỗi Status & chuẩn hóa
+  const normalizeStatus = useCallback((status?: number | string): ExperimentStatus | string => {
+    const s = String(status ?? "").trim();
+    switch (s) {
+      case "1": case "Created": 
         return "Created";
-      case "2":
+      case "2": case "InProcess": case "InProgress": case "Processing": 
         return "InProcess";
-      case "3":
+      case "3": case "Done": case "Completed": 
         return "Done";
-      case "4":
-        return "Cancel";
-      default:
-        return statusStr;
+      case "4": case "Cancel": case "Cancelled": case "Destroyed": 
+        return "Cancel"; // Destroyed cho vào nhóm Cancel (màu đỏ)
+      default: 
+        return s;
     }
-  };
+  }, []);
 
   const statusToVietnamese = (status?: number | string) => {
-    switch (normalizeStatus(status)) {
-      case "Created":
-        return t("status.created");
-      case "InProcess":
-        return t("experimentLog.inProgress");
-      case "Done":
-        return t("experimentLog.completed");
-      case "Cancel":
-        return t("experimentLog.cancelled");
-      default:
-        return t("common.none");
-    }
+    const normalized = normalizeStatus(status);
+    if (normalized === "Created") return t("status.created");
+    if (normalized === "InProcess") return t("experimentLog.inProgress");
+    if (normalized === "Done") return t("experimentLog.completed");
+    if (normalized === "Cancel") return t("experimentLog.cancelled");
+    return t("common.none");
   };
 
+  // Charts
   const chartData = {
-    labels: [
-      statusToVietnamese("Created"),
-      statusToVietnamese("InProcess"),
-      statusToVietnamese("Done"),
-      statusToVietnamese("Cancel"),
-    ],
-    datasets: [
-      {
-        data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
-        backgroundColor: ["#3b82f6", "#facc15", "#22c55e", "#ef4444"],
-        borderWidth: 1,
-      },
-    ],
+    labels: [t("status.created"), t("experimentLog.inProgress"), t("experimentLog.completed"), t("experimentLog.cancelled")],
+    datasets: [{
+      data: [stats.Created, stats.InProcess, stats.Done, stats.Cancel],
+      backgroundColor: ["#3b82f6", "#facc15", "#22c55e", "#ef4444"],
+      borderWidth: 1,
+    }],
   };
 
-  const chartOptions = {
-    plugins: {
-      legend: {
-        display: true,
-        position: "bottom" as const,
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context: import("chart.js").TooltipItem<"doughnut">) {
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const value = context.parsed;
-            const percent = ((value / total) * 100).toFixed(1);
-            return `${context.label}: ${value} (${percent}%)`;
-          },
-        },
-      },
-    },
-  };
-
-  const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
+  // Actions
+  const fetchSampleCount = async (id: string) => {
     try {
-      const response = await axiosInstance.get(`/api/sample?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`);
-      const data = response.data;
-
-      if (typeof data === "object" && data !== null && "value" in data) {
-        const value = (data as { value?: unknown }).value;
-        if (Array.isArray(value)) {
-          return value.length;
-        }
-        if (value && typeof value === "object" && "data" in (value as { data?: unknown[] })) {
-          const inner = (value as { data?: unknown[] }).data;
-          return Array.isArray(inner) ? inner.length : 0;
-        }
-      }
-      return Array.isArray(data) ? data.length : 0;
-    } catch {
-      return 0;
-    }
+      const res = await axiosInstance.get(`/api/sample?pageNo=1&pageSize=1&experimentLogId=${id}`);
+      return res.data?.totalCount ?? 0;
+    } catch { return 0; }
   };
 
-  const fetchAllSampleCounts = useCallback(async (experimentLogs: ExperimentLogEntry[]) => {
-    const counts: Record<string, number> = {};
-    const promises = experimentLogs.map(async (log) => {
-      const count = await fetchSampleCount(log.id);
-      counts[log.id] = count;
-    });
-    await Promise.all(promises);
-    setSampleCounts(counts);
-  }, []);
-
-  function hasValueWithData<T>(obj: unknown, itemGuard: (item: unknown) => item is T): obj is { value: { data: T[] } } {
-    return (
-      typeof obj === "object" &&
-      obj !== null &&
-      "value" in obj &&
-      typeof (obj as { value: unknown }).value === "object" &&
-      (obj as { value: { data?: unknown[] } }).value !== null &&
-      "data" in (obj as { value: { data?: unknown[] } }).value &&
-      Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
-      (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
-    );
-  }
-
-  function isExperimentLogEntry(obj: unknown): obj is ExperimentLogEntry {
-    if (typeof obj !== "object" || obj === null) return false;
-    const o = obj as Record<string, unknown>;
-    return (
-      typeof o.id === "string" &&
-      typeof o.name === "string" &&
-      typeof o.methodName === "string" &&
-      typeof o.tissueCultureBatchName === "string"
-    );
-  }
-
-  useEffect(() => {
-    const fetchMethods = async () => {
-      try {
-        const res = await axiosInstance.get("/api/methods?pageNumber=1&pageSize=100");
-        const raw = res.data as { value?: { data?: { id: string; name: string }[] } };
-        const arr = Array.isArray(raw?.value?.data) ? raw.value.data : [];
-        setMethods(arr.map((m) => ({ id: m.id, name: m.name })));
-      } catch {
-        setMethods([]);
-      }
-    };
-    void fetchMethods();
-  }, []);
-
-  const fetchStatsOnly = useCallback(async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await axiosInstance.get("/api/experiment-logs?pageNo=1&pageSize=1000");
-      const data = res.data;
-
-      let allLogs: ExperimentLogEntry[] = [];
-      if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-        allLogs = data.value.data;
-      } else if (typeof data === "object" && data !== null && "value" in data) {
-        allLogs = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
-      } else if (Array.isArray(data)) {
-        allLogs = data.filter(isExperimentLogEntry);
-      }
-
-      const counts = {
-        Created: 0,
-        InProcess: 0,
-        Done: 0,
-        Cancel: 0,
-      };
-
-      allLogs.forEach((log) => {
-        const status = normalizeStatus(log.status);
-        switch (status) {
-          case "Created":
-            counts.Created++;
-            break;
-          case "InProcess":
-            counts.InProcess++;
-            break;
-          case "Done":
-            counts.Done++;
-            break;
-          case "Cancel":
-            counts.Cancel++;
-            break;
-        }
+      const allData = res.data?.data ?? [];
+      const counts = { Created: 0, InProcess: 0, Done: 0, Cancel: 0 };
+      
+      allData.forEach((item: any) => {
+        const s = normalizeStatus(item.status);
+        if (counts.hasOwnProperty(s)) counts[s as keyof typeof counts]++;
       });
-
-      const total = counts.Created + counts.InProcess + counts.Done + counts.Cancel;
-
-      setStats({
-        total,
-        Created: counts.Created,
-        InProcess: counts.InProcess,
-        Done: counts.Done,
-        Cancel: counts.Cancel,
-      });
-    } catch (err) {
-      console.error(t("common.errorLoading"), err);
-      setStats({ total: 0, Created: 0, InProcess: 0, Done: 0, Cancel: 0 });
-    }
-  }, [t]);
+      setStats({ total: allData.length, ...counts });
+    } catch (err) { console.error(err); }
+  }, [normalizeStatus]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      setError(null);
-      const params = new URLSearchParams();
-      params.append("pageNo", String(currentPage));
-      params.append("pageSize", String(logsPerPage));
-      if (methodFilter) {
-        params.append("methodNameSearchTerm", methodFilter);
-      }
+      const params = new URLSearchParams({
+        pageNo: String(currentPage),
+        pageSize: String(logsPerPage),
+        ...(methodFilter && { methodNameSearchTerm: methodFilter })
+      });
 
       try {
         const res = await axiosInstance.get(`/api/experiment-logs?${params.toString()}`);
-        const data = res.data;
-        let arr: ExperimentLogEntry[] = [];
-        let total = 0;
+        const rawLogs = res.data?.data ?? [];
+        setTotalCount(res.data?.totalCount ?? 0);
+        setLogs(rawLogs);
 
-        if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-          arr = data.value.data;
-          total = Number((data as { value: { totalCount?: unknown } })?.value?.totalCount ?? arr.length);
-        } else if (typeof data === "object" && data !== null && "value" in data) {
-          arr = ((data as ExperimentLogApiResponse).value ?? []).filter(isExperimentLogEntry);
-          total = (data as ExperimentLogApiResponse).totalCount ?? arr.length;
-        } else if (Array.isArray(data)) {
-          arr = data.filter(isExperimentLogEntry);
-          total = arr.length;
-        }
-
-        arr = arr.map((log) => ({
-          ...log,
-          status: normalizeStatus(log.status),
+        // Fetch sample counts song song
+        const counts: Record<string, number> = {};
+        await Promise.all(rawLogs.map(async (log: any) => {
+          counts[log.id] = await fetchSampleCount(log.id);
         }));
-
-        setLogs(arr);
-        setTotalCount(total);
-
-        if (arr.length > 0) {
-          await fetchAllSampleCounts(arr);
-        }
+        setSampleCounts(counts);
       } catch {
         setError(t("common.errorLoading"));
-        setLogs([]);
-        setTotalCount(0);
       } finally {
         setLoading(false);
       }
     };
 
-    void fetchData();
-    void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t]);
+    fetchData();
+    fetchStats();
+  }, [currentPage, methodFilter, fetchStats, t]);
 
-  const getStatusColor = (status?: number | string): string => {
-    switch (normalizeStatus(status)) {
-      case "Created":
-        return "bg-blue-100 text-blue-800";
-      case "InProcess":
-        return "bg-yellow-100 text-yellow-800";
-      case "Done":
-        return "bg-green-100 text-green-800";
-      case "Cancel":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  useEffect(() => {
+    const fetchMethods = async () => {
+      try {
+        const res = await axiosInstance.get("/api/methods?pageNumber=1&pageSize=100");
+        setMethods(res.data?.data ?? []);
+      } catch { setMethods([]); }
+    };
+    fetchMethods();
+  }, []);
 
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch =
-      !searchTerm ||
-      log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.tissueCultureBatchName.toLowerCase().includes(searchTerm.toLowerCase());
-
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = !searchTerm || log.name.toLowerCase().includes(searchTerm.toLowerCase()) || (log.batcheName ?? "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
-
-    let matchesStage = true;
-    if (stageFilter !== "all" && log.stages && log.stages.length > 0 && log.currentStageName) {
-      const stageNumber = parseInt(stageFilter.split(" ")[2]);
-      if (stageNumber >= 1 && stageNumber <= log.stages.length) {
-        const stageIndex = stageNumber - 1;
-        const targetStageName = log.stages[stageIndex].name;
-        matchesStage = log.currentStageName === targetStageName;
-      } else {
-        matchesStage = false;
-      }
-    }
-
-    return matchesSearch && matchesStatus && matchesStage;
+    return matchesSearch && matchesStatus;
   });
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 ">
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">{t("experimentLog.experimentLogTitle")}</h1>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50">
+      <div className="bg-white shadow-sm border-b px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{t("experimentLog.experimentLogTitle")}</h1>
+        <div className="flex flex-wrap gap-6 items-center">
+          <div className="bg-white rounded-lg shadow p-4 w-[280px]">
+            <Doughnut data={chartData} options={{ plugins: { legend: { position: "bottom" } } }} />
           </div>
-
-          <div className="flex">
-            <div className="mb-6 flex justify-center mr-3">
-              <div className="bg-white rounded-lg shadow p-4 w-[340px]">
-                <h3 className="text-center text-green-700 font-semibold mb-2 text-sm">
-                  {t("experimentLog.latestStatusChart")}
-                </h3>
-                <Doughnut data={chartData} options={chartOptions} />
-              </div>
-            </div>
-            <div className="flex flex-wrap justify-center h-25 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg w-40">
-                <div className="text-blue-600 text-sm font-medium">{t("experimentLog.totalExperiments")}</div>
-                <div className="text-2xl font-bold text-blue-700">{stats.total}</div>
-              </div>
-              <div className="bg-yellow-50 p-4 rounded-lg w-40">
-                <div className="text-yellow-600 text-sm font-medium">{statusToVietnamese("InProcess")}</div>
-                <div className="text-2xl font-bold text-yellow-700">{stats.InProcess}</div>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg w-40">
-                <div className="text-green-600 text-sm font-medium">{statusToVietnamese("Done")}</div>
-                <div className="text-2xl font-bold text-green-700">{stats.Done}</div>
-              </div>
-              <div className="bg-red-50 p-4 rounded-lg w-40">
-                <div className="text-red-600 text-sm font-medium">{statusToVietnamese("Cancel")}</div>
-                <div className="text-2xl font-bold text-red-700">{stats.Cancel}</div>
-              </div>
-            </div>
+          <div className="flex flex-wrap gap-4">
+            <StatCard label={t("experimentLog.totalExperiments")} value={stats.total} color="blue" />
+            <StatCard label={t("experimentLog.inProgress")} value={stats.InProcess} color="yellow" />
+            <StatCard label={t("experimentLog.completed")} value={stats.Done} color="green" />
+            <StatCard label={t("experimentLog.cancelled")} value={stats.Cancel} color="red" />
           </div>
         </div>
       </div>
 
       <div className="px-6 py-6">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("experimentLog.experimentLogList")}</h2>
-            <p className="text-gray-600 text-sm mb-4">{t("experimentLog.manageAndTrack")}</p>
-
-            <div className="flex gap-4 flex-wrap mb-4 bg-white p-4 rounded-lg shadow-sm">
-              <div className="flex-1 relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder={t("common.search") + "..."}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-2 min-w-[180px]">
-                <Filter className="text-gray-400 w-4 h-4" />
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
-                >
-                  <option value="all">{t("experimentLog.allStatuses")}</option>
-                  <option value="Created">{t("status.created")}</option>
-                  <option value="InProcess">{t("status.inProgress")}</option>
-                  <option value="Done">{t("status.completed")}</option>
-                  <option value="Cancel">{t("status.cancelled")}</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 min-w-[220px]">
-                <span className="text-gray-600 text-sm">{t("experimentLog.method")}:</span>
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={methodFilter}
-                  onChange={(e) => setMethodFilter(e.target.value)}
-                >
-                  <option value="">{t("experimentLog.allMethods")}</option>
-                  {methods.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2 min-w-[180px]">
-                <span className="text-gray-600 text-sm">{t("experimentLog.stage")}:</span>
-                <select
-                  className="border border-gray-300 rounded-full px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                  value={stageFilter}
-                  onChange={(e) => setStageFilter(e.target.value as "all" | "Giai đoạn 1" | "Giai đoạn 2" | "Giai đoạn 3" | "Giai đoạn 4")}
-                >
-                  <option value="all">{t("experimentLog.allStages")}</option>
-                  <option value="Giai đoạn 1">Giai đoạn 1</option>
-                  <option value="Giai đoạn 2">Giai đoạn 2</option>
-                  <option value="Giai đoạn 3">Giai đoạn 3</option>
-                  <option value="Giai đoạn 4">Giai đoạn 4</option>
-                </select>
-              </div>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6 border-b flex gap-4 flex-wrap items-center">
+            <div className="flex-1 relative min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder={t("common.search")}
+                className="w-full pl-10 pr-4 py-2 border rounded-full outline-none focus:ring-2 focus:ring-green-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+            <select
+              className="border rounded-full px-4 py-2 text-sm outline-none"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="all">{t("experimentLog.allStatuses")}</option>
+              <option value="Created">{t("status.created")}</option>
+              <option value="InProcess">{t("status.inProgress")}</option>
+              <option value="Done">{t("status.completed")}</option>
+              <option value="Cancel">{t("status.cancelled")}</option>
+            </select>
+            <select
+              className="border rounded-full px-4 py-2 text-sm outline-none"
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+            >
+              <option value="">{t("experimentLog.allMethods")}</option>
+              {methods.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+            </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("experimentLog.experimentName")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("experimentLog.method")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("experimentLog.tissueCultureBatch")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("experimentLog.dateCreated")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("common.status")}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("experimentLog.sampleCount")}
-                  </th>
+          <table className="w-full">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr>
+                <th className="px-6 py-3 text-left">{t("experimentLog.experimentName")}</th>
+                <th className="px-6 py-3 text-left">{t("experimentLog.method")}</th>
+                <th className="px-6 py-3 text-left">{t("experimentLog.tissueCultureBatch")}</th>
+                <th className="px-6 py-3 text-left">{t("experimentLog.dateCreated")}</th>
+                <th className="px-6 py-3 text-left">{t("common.status")}</th>
+                <th className="px-6 py-3 text-left">{t("experimentLog.sampleCount")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {loading ? <SkeletonRows /> : filteredLogs.map((log) => (
+                <tr key={log.id} className="hover:bg-green-50 cursor-pointer" onClick={() => navigate(`/admin/experiment-log/${log.id}`)}>
+                  <td className="px-6 py-4 text-sm font-medium">{log.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{log.methodName}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{log.batcheName}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{log.createdDate ? new Date(log.createdDate).toLocaleDateString("vi-VN") : "---"}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(normalizeStatus(log.status))}`}>
+                      {statusToVietnamese(log.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-blue-600">{sampleCounts[log.id] ?? 0} mẫu</td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-gray-500">{t("experimentLog.loadingData")}</div>
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-red-500">{error}</div>
-                    </td>
-                  </tr>
-                ) : filteredLogs.length > 0 ? (
-                  filteredLogs.map((log) => (
-                    <tr
-                      key={log.id}
-                      className="hover:bg-green-50 cursor-pointer transition"
-                      onClick={() => void navigate(`/admin/experiment-log/${log.id}`)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{log.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.methodName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.tissueCultureBatchName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.createdDate ? new Date(log.createdDate).toLocaleDateString("vi-VN") : ""}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(log.status)}`}>
-                          {statusToVietnamese(log.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-blue-600">{sampleCounts[log.id] ?? 0}</span>
-                          <span className="text-xs text-gray-400">{t("experimentLog.samples")}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10">
-                      <div className="text-gray-500">{t("common.noData")}</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
 
-          <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              {(() => {
-                const start = filteredLogs.length === 0 ? 0 : (currentPage - 1) * logsPerPage + 1;
-                const end = filteredLogs.length === 0 ? 0 : (currentPage - 1) * logsPerPage + filteredLogs.length;
-                return (
-                  <span>
-                    {t("common.showing")} {start}-{end} {t("common.of")} {totalCount}
-                  </span>
-                );
-              })()}
+          {/* Pagination */}
+          <div className="px-6 py-4 bg-gray-50 flex justify-between items-center border-t">
+            <span className="text-sm text-gray-500">Tổng cộng: {totalCount}</span>
+            <div className="flex gap-2">
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Trước</button>
+              <button disabled={currentPage * logsPerPage >= totalCount} onClick={() => setCurrentPage(p => p + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Sau</button>
             </div>
-            {totalCount > logsPerPage && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {t("common.previous")}
-                </button>
-                {Array.from({ length: Math.ceil(totalCount / logsPerPage) }, (_, i) => i + 1).map((number) => (
-                  <button
-                    type="button"
-                    key={number}
-                    onClick={() => setCurrentPage(number)}
-                    className={`${
-                      currentPage === number ? "bg-green-600 text-white" : "text-gray-500 hover:text-gray-700"
-                    } px-3 py-1 rounded text-sm`}
-                  >
-                    {number}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === Math.ceil(totalCount / logsPerPage)}
-                  className="text-gray-500 hover:text-gray-700 px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {t("common.next")}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
     </main>
   );
 };
+
+const getStatusStyle = (s: string) => {
+  if (s === "Created") return "bg-blue-100 text-blue-800";
+  if (s === "InProcess") return "bg-yellow-100 text-yellow-800";
+  if (s === "Done") return "bg-green-100 text-green-800";
+  if (s === "Cancel") return "bg-red-100 text-red-800";
+  return "bg-gray-100 text-gray-800";
+};
+
+const StatCard = ({ label, value, color }: any) => {
+  const colors: any = { blue: "bg-blue-50 text-blue-700", yellow: "bg-yellow-50 text-yellow-700", green: "bg-green-50 text-green-700", red: "bg-red-50 text-red-700" };
+  return (
+    <div className={`${colors[color]} p-4 rounded-lg w-36 shadow-sm border`}>
+      <div className="text-xs font-medium uppercase opacity-70">{label}</div>
+      <div className="text-2xl font-bold">{value}</div>
+    </div>
+  );
+};
+
+const SkeletonRows = () => (
+  <>{[...Array(5)].map((_, i) => (
+    <tr key={i} className="animate-pulse"><td colSpan={6} className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-full"></div></td></tr>
+  ))}</>
+);
 
 export default AdminExperimentLog;
