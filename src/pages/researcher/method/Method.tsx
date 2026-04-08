@@ -13,6 +13,7 @@ import {
   type Variants,
   type Transition,
 } from "framer-motion";
+import "./Method.css";
 import axiosInstance from "../../../api/axiosInstance";
 
 interface MethodListItem {
@@ -152,7 +153,7 @@ export default function MethodList() {
   }, [data, searchTerm]);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
+    <main className="method-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
       <motion.div
         className="space-y-6 px-6 pb-10"
         variants={pageVariants}
@@ -181,8 +182,8 @@ export default function MethodList() {
             <motion.button
               type="button"
               onClick={() => void navigate("/researcher/method/new")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
-              whileHover={{ scale: 1.04, backgroundColor: "#004d73" }}
+              className="method-create-button inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60 hover:bg-[#004d73] transition-colors duration-200"
+              whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 320, damping: 20 }}
             >
@@ -366,11 +367,6 @@ export default function MethodList() {
                       layout
                       onClick={() => void navigate(`/researcher/method/${method.id}`)}
                       className="border-b border-blue-50 cursor-pointer"
-                      whileHover={{
-                        backgroundColor: "rgba(239,246,255,0.7)",
-                        x: 3,
-                        transition: { duration: 0.18 },
-                      }}
                     >
                       <td className="py-4 px-6 font-medium text-blue-950">
                         {method.name}
@@ -463,8 +459,8 @@ function ActionButton({
       onClick={onClick}
       className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors duration-200 ${
         danger
-          ? "text-[#005792] hover:bg-red-50 hover:text-red-500"
-          : "text-[#005792] hover:bg-blue-50 hover:text-[#003f60]"
+          ? "text-[#005792] !hover:bg-red-50 !hover:text-red-500"
+          : "text-[#005792] !hover:bg-blue-50 !hover:text-[#003f60]"
       }`}
       whileHover={{ scale: 1.2 }}
       whileTap={{ scale: 0.85, rotate: danger ? -10 : 0 }}

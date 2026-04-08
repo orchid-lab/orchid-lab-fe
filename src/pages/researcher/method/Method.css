@@ -1,0 +1,17 @@
+.method-page .method-create-button {
+  background-color: #005792 !important;
+  color: #ffffff !important;
+}
+
+.method-page .method-create-button:hover {
+  background-color: #004d73 !important;
+}
+
+.method-page .method-create-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 87, 146, 0.24) !important;
+}
+
+.method-page .method-create-button:active {
+  background-color: #003f60 !important;
+}
