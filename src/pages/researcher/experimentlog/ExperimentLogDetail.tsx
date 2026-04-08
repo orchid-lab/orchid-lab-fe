@@ -144,6 +144,9 @@ interface ExperimentLogDetailType {
   updatedDate?: string;
   updatedBy?: string;
   samples?: Sample[];
+  conclusion?: string;
+  issues?: string;
+  recommendations?: string;
   // Legacy fields for backward compatibility
   methodName?: string;
   tissueCultureBatchName?: string;
@@ -192,7 +195,6 @@ const ExperimentLogDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [log, setLog] = useState<ExperimentLogDetailType | null>(null);
-  const [isCancelled, setIsCancelled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [labName, setLabName] = useState<string>(
@@ -250,11 +252,18 @@ const ExperimentLogDetail = () => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  
+  // ----- Completion Modal state -----
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [completionConclusion, setCompletionConclusion] = useState("");
+  const [completionIssues, setCompletionIssues] = useState("");
+  const [completionRecommendations, setCompletionRecommendations] = useState("");
+  const [isSubmittingCompletion, setIsSubmittingCompletion] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+  
   const { enqueueSnackbar } = useSnackbar();
 
-      // State cho nút hoàn thành nhật ký thí nghiệm
-    const [isCompleting, setIsCompleting] = useState(false);
-    // Xác định giai đoạn cuối cùng của phương pháp
+  // Xác định giai đoạn cuối cùng của phương pháp
     const lastStageOrder = (() => {
       if (!log?.method?.methodStages?.length) return undefined;
       return Math.max(...log.method.methodStages.map((s) => s.order));
@@ -293,27 +302,49 @@ const ExperimentLogDetail = () => {
       lastStageOrder !== undefined &&
       log.currentStageOrder === lastStageOrder;
 
-    // Hàm hoàn thành nhật ký thí nghiệm
-    const handleCompleteExperiment = async () => {
+    // Mở modal hoàn thành nhật ký thí nghiệm
+    const handleOpenCompletionModal = () => {
+      setIsCompletionModalOpen(true);
+      setCompletionConclusion("");
+      setCompletionIssues("");
+      setCompletionRecommendations("");
+      setCompletionError(null);
+    };
+
+    // Đóng modal hoàn thành
+    const closeCompletionModal = () => {
+      if (isSubmittingCompletion) return;
+      setIsCompletionModalOpen(false);
+    };
+
+    // Submit hoàn thành nhật ký thí nghiệm
+    const handleSubmitCompletion = async () => {
       if (!id) return;
-      setIsCompleting(true);
+      setIsSubmittingCompletion(true);
+      setCompletionError(null);
       try {
-        await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
+        const payload = {
           status: "Completed",
-        });
+          conclusion: completionConclusion.trim() || undefined,
+          issues: completionIssues.trim() || undefined,
+          recommendations: completionRecommendations.trim() || undefined,
+        };
+
+        await axiosInstance.put(`/api/experiment-logs/${id}/status`, payload);
         // Update local log status to Completed
         const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
         setLog(res.data.value ?? res.data);
+        setIsCompletionModalOpen(false);
         enqueueSnackbar(t("experimentLog.completed") || "Hoàn thành thí nghiệm", { variant: "success" });
       } catch (e) {
         const axiosError = e as AxiosError<ApiErrorResponse>;
         const apiDetail = axiosError.response?.data?.detail?.trim();
         const apiTitle = axiosError.response?.data?.title?.trim();
         const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
+        setCompletionError(message);
         enqueueSnackbar(message, {autoHideDuration: 1000, variant: "warning" });
-        setError(message);
       } finally {
-        setIsCompleting(false);
+        setIsSubmittingCompletion(false);
       }
     };
 
@@ -528,8 +559,6 @@ const ExperimentLogDetail = () => {
 
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       const logData = res.data.value ?? res.data;
-      if(logData.status === "Destroyed")
-        setIsCancelled(true);
       setLog(logData as ExperimentLogDetailType);
       setCurrentBatchId(selectedBatchId);
       setIsChangeStageModalOpen(false);
@@ -940,12 +969,12 @@ const ExperimentLogDetail = () => {
             {isResearcher && normalizeStatus(log.status) === "InProgress" && isLastStage && allTasksCompleted && (
               <button
                 type="button"
-                onClick={handleCompleteExperiment}
-                disabled={isCompleting}
+                onClick={handleOpenCompletionModal}
+                disabled={isSubmittingCompletion}
                 className="btn-start"
                 style={{ minWidth: 180 }}
               >
-                {isCompleting ? (t("common.processing") || "Đang xử lý...") : (t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm")}
+                {isSubmittingCompletion ? (t("common.processing") || "Đang xử lý...") : (t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm")}
               </button>
             )}
             <button
@@ -958,18 +987,29 @@ const ExperimentLogDetail = () => {
             >
               Tạo công việc
             </button>
-            {/* Cancel Experiment button - visible only when all samples have status ExecutedBecauseOfDisease */}
-            {samples.length > 0 &&
-              samples.every((s) => s.status === SampleStatus.ExecutedBecauseOfDisease) && isResearcher && isCancelled && (
-                <button
-                  type="button"
-                  className="btn-start"
-                  style={{ minWidth: 140, backgroundColor: '#ef4444', color: '#fff' }}
-                  onClick={() => setIsCancelModalOpen(true)}
-                >
-                  Hủy thí nghiệm
-                </button>
-              )}
+            {/* Cancel Experiment button - visible when > 50% samples have status ExecutedBecauseOfDisease and status is InProgress */}
+            {(() => {
+              const cancelledSamplesCount = samples.filter(
+                (s) => s.status === SampleStatus.ExecutedBecauseOfDisease,
+              ).length;
+              const cancelledPercentage =
+                samples.length > 0 ? (cancelledSamplesCount / samples.length) * 100 : 0;
+              return (
+                samples.length > 0 &&
+                cancelledPercentage > 50 &&
+                isResearcher &&
+                normalizeStatus(log.status) === "InProgress" && (
+                  <button
+                    type="button"
+                    className="btn-start"
+                    style={{ minWidth: 140, backgroundColor: '#ef4444', color: '#fff' }}
+                    onClick={() => setIsCancelModalOpen(true)}
+                  >
+                    Hủy thí nghiệm
+                  </button>
+                )
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1106,6 +1146,54 @@ const ExperimentLogDetail = () => {
               </div>
             </div>
           </section>
+
+          {/* Completion Details Section - shown when status is Completed */}
+          {normalizeStatus(log.status) === "Completed" && (log.conclusion || log.issues || log.recommendations) && (
+            <section className="info-card" style={{ marginTop: "1rem" }}>
+              <h2 style={{ marginBottom: "1rem", fontSize: "1.125rem", fontWeight: 600 }}>
+                {t("experimentLog.completionDetails") || "Thông tin hoàn thành"}
+              </h2>
+              <div className="info-grid">
+                {log.conclusion && (
+                  <div className="info-column">
+                    <div className="info-item">
+                      <span className="info-label">
+                        {t("experimentLog.conclusion") || "Kết luận"}:{" "}
+                      </span>
+                      <span className="info-value" style={{ whiteSpace: "pre-wrap" }}>
+                        {log.conclusion}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {log.issues && (
+                  <div className="info-column">
+                    <div className="info-item">
+                      <span className="info-label">
+                        {t("experimentLog.issues") || "Vấn đề gặp phải"}:{" "}
+                      </span>
+                      <span className="info-value" style={{ whiteSpace: "pre-wrap" }}>
+                        {log.issues}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {log.recommendations && (
+                  <div className="info-column">
+                    <div className="info-item">
+                      <span className="info-label">
+                        {t("experimentLog.recommendations") || "Đề xuất"}:{" "}
+                      </span>
+                      <span className="info-value" style={{ whiteSpace: "pre-wrap" }}>
+                        {log.recommendations}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           <section className="materials-card" ref={materialsCardRef}>
             <h2 className="materials-title">
               {t("experimentLog.chemicalsAndMaterials") ||
@@ -1519,6 +1607,74 @@ const ExperimentLogDetail = () => {
           </section>
         </>
       )}
+
+      {/* Completion Modal */}
+      {isCompletionModalOpen && (
+        <div className="modal-backdrop" onClick={closeCompletionModal}>
+          <div className="modal-container" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3 className="modal-title">{t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm"}</h3>
+                <button type="button" className="modal-close" onClick={closeCompletionModal} disabled={isSubmittingCompletion}>×</button>
+              </div>
+              <div className="modal-body">
+                <div>
+                  <label className="modal-label" htmlFor="completion-conclusion">
+                    {t("experimentLog.conclusion") || "Kết luận"}
+                  </label>
+                  <textarea
+                    id="completion-conclusion"
+                    className="modal-textarea"
+                    value={completionConclusion}
+                    onChange={e => setCompletionConclusion(e.target.value)}
+                    rows={3}
+                    placeholder={t("experimentLog.conclusionPlaceholder") || "Nhập kết luận (tùy chọn)"}
+                    disabled={isSubmittingCompletion}
+                  />
+                </div>
+                <div>
+                  <label className="modal-label" htmlFor="completion-issues">
+                    {t("experimentLog.issues") || "Vấn đề gặp phải"}
+                  </label>
+                  <textarea
+                    id="completion-issues"
+                    className="modal-textarea"
+                    value={completionIssues}
+                    onChange={e => setCompletionIssues(e.target.value)}
+                    rows={3}
+                    placeholder={t("experimentLog.issuesPlaceholder") || "Nhập các vấn đề gặp phải (tùy chọn)"}
+                    disabled={isSubmittingCompletion}
+                  />
+                </div>
+                <div>
+                  <label className="modal-label" htmlFor="completion-recommendations">
+                    {t("experimentLog.recommendations") || "Đề xuất"}
+                  </label>
+                  <textarea
+                    id="completion-recommendations"
+                    className="modal-textarea"
+                    value={completionRecommendations}
+                    onChange={e => setCompletionRecommendations(e.target.value)}
+                    rows={3}
+                    placeholder={t("experimentLog.recommendationsPlaceholder") || "Nhập các đề xuất (tùy chọn)"}
+                    disabled={isSubmittingCompletion}
+                  />
+                </div>
+                {completionError && (
+                  <p className="modal-error" style={{ marginBottom: 0 }}>
+                    {completionError}
+                  </p>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-cancel" onClick={closeCompletionModal} disabled={isSubmittingCompletion}>{t("common.cancel") || "Hủy"}</button>
+                <button type="button" className="btn-start" onClick={handleSubmitCompletion} disabled={isSubmittingCompletion}>{isSubmittingCompletion ? t("common.loading") : (t("experimentLog.completeExperiment") || "Hoàn thành")}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cancel Experiment Modal */}
       {isCancelModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsCancelModalOpen(false)}>
