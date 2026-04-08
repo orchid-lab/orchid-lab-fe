@@ -1,17 +1,20 @@
-.method-page .method-create-button {
-  background-color: #005792 !important;
+button.method-create-button.method-page,
+.method-page button.method-create-button {
+  background-color: rgba(30, 58, 138, 0.7) !important;
   color: #ffffff !important;
+  transition: background-color 0.2s ease !important;
 }
 
-.method-page .method-create-button:hover {
-  background-color: #004d73 !important;
+button.method-create-button.method-page:hover,
+.method-page button.method-create-button:hover {
+  background-color: rgba(30, 58, 138, 1.0) !important;
 }
 
-.method-page .method-create-button:focus-visible {
+.method-page button.method-create-button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px rgba(0, 87, 146, 0.24) !important;
 }
 
-.method-page .method-create-button:active {
-  background-color: #003f60 !important;
+.method-page button.method-create-button:active {
+  background-color: #002f52 !important;
 }
