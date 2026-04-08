@@ -251,6 +251,9 @@ const ExperimentLogDetail = () => {
   // ----- Cancel Experiment state -----
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [cancelConclusion, setCancelConclusion] = useState("");
+  const [cancelIssue, setCancelIssue] = useState("");
+  const [cancelRecommendation, setCancelRecommendation] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   
   // ----- Completion Modal state -----
@@ -315,6 +318,25 @@ const ExperimentLogDetail = () => {
     const closeCompletionModal = () => {
       if (isSubmittingCompletion) return;
       setIsCompletionModalOpen(false);
+    };
+
+    // Mở modal hủy thí nghiệm  
+    const handleOpenCancelModal = () => {
+      setIsCancelModalOpen(true);
+      setCancelReason("");
+      setCancelConclusion("");
+      setCancelIssue("");
+      setCancelRecommendation("");
+    };
+
+    // Đóng modal hủy
+    const closeCancelModal = () => {
+      if (cancelLoading) return;
+      setCancelReason("");
+      setCancelConclusion("");
+      setCancelIssue("");
+      setCancelRecommendation("");
+      setIsCancelModalOpen(false);
     };
 
     // Submit hoàn thành nhật ký thí nghiệm
@@ -576,16 +598,25 @@ const ExperimentLogDetail = () => {
   const handleCancelExperiment = async () => {
     setCancelLoading(true);
     try {
-      // API expects a JSON string body containing the reason
-      const payload = cancelReason.trim() ? cancelReason.trim() : '';
+      const payload = {
+        reason: cancelReason.trim() || undefined,
+        conclusion: cancelConclusion.trim() || undefined,
+        issue: cancelIssue.trim() || undefined,
+        recommendation: cancelRecommendation.trim() || undefined,
+      };
       await axiosInstance.delete(`/api/experiment-logs/${id}`, {
-        data: JSON.stringify(payload),
+        data: payload,
         headers: { 'Content-Type': 'application/json' },
       });
       enqueueSnackbar(t('common.success') || 'Thí nghiệm đã được hủy', { variant: 'success' });
       // Refresh log data after cancel
       const res = await axiosInstance.get(`/api/experiment-logs/${id}`);
       setLog(res.data.value ?? res.data);
+      // Reset fields when closing
+      setCancelReason("");
+      setCancelConclusion("");
+      setCancelIssue("");
+      setCancelRecommendation("");
       setIsCancelModalOpen(false);
     } catch (e) {
       enqueueSnackbar(t('common.error') || 'Lỗi khi hủy thí nghiệm', { variant: 'error' });
@@ -1003,7 +1034,7 @@ const ExperimentLogDetail = () => {
                     type="button"
                     className="btn-start"
                     style={{ minWidth: 140, backgroundColor: '#ef4444', color: '#fff' }}
-                    onClick={() => setIsCancelModalOpen(true)}
+                    onClick={() => handleOpenCancelModal()}
                   >
                     Hủy thí nghiệm
                   </button>
@@ -1677,19 +1708,33 @@ const ExperimentLogDetail = () => {
 
       {/* Cancel Experiment Modal */}
       {isCancelModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsCancelModalOpen(false)}>
+        <div className="modal-backdrop" onClick={closeCancelModal}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-header">
                 <h3 className="modal-title">{t("experimentLog.cancelExperiment") || "Hủy thí nghiệm"}</h3>
-                <button type="button" className="modal-close" onClick={() => setIsCancelModalOpen(false)} disabled={cancelLoading}>×</button>
+                <button type="button" className="modal-close" onClick={closeCancelModal} disabled={cancelLoading}>×</button>
               </div>
               <div className="modal-body">
-                <label className="modal-label" htmlFor="cancel-reason">{t("common.reason") || "Lý do"}</label>
-                <textarea id="cancel-reason" className="modal-textarea" value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3} placeholder={t("common.reason") || "Nhập lý do"} disabled={cancelLoading} />
+                <div>
+                  <label className="modal-label" htmlFor="cancel-reason">{t("common.reason") || "Lý do"}</label>
+                  <textarea id="cancel-reason" className="modal-textarea" value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3} placeholder={t("common.reason") || "Nhập lý do"} disabled={cancelLoading} />
+                </div>
+                <div>
+                  <label className="modal-label" htmlFor="cancel-conclusion">{t("experimentLog.conclusion") || "Kết luận"}</label>
+                  <textarea id="cancel-conclusion" className="modal-textarea" value={cancelConclusion} onChange={e => setCancelConclusion(e.target.value)} rows={3} placeholder={t("experimentLog.conclusionPlaceholder") || "Nhập kết luận (tùy chọn)"} disabled={cancelLoading} />
+                </div>
+                <div>
+                  <label className="modal-label" htmlFor="cancel-issue">{t("experimentLog.issues") || "Vấn đề gặp phải"}</label>
+                  <textarea id="cancel-issue" className="modal-textarea" value={cancelIssue} onChange={e => setCancelIssue(e.target.value)} rows={3} placeholder={t("experimentLog.issuesPlaceholder") || "Nhập các vấn đề gặp phải (tùy chọn)"} disabled={cancelLoading} />
+                </div>
+                <div>
+                  <label className="modal-label" htmlFor="cancel-recommendation">{t("experimentLog.recommendations") || "Đề xuất"}</label>
+                  <textarea id="cancel-recommendation" className="modal-textarea" value={cancelRecommendation} onChange={e => setCancelRecommendation(e.target.value)} rows={3} placeholder={t("experimentLog.recommendationsPlaceholder") || "Nhập các đề xuất (tùy chọn)"} disabled={cancelLoading} />
+                </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={() => setIsCancelModalOpen(false)} disabled={cancelLoading}>{t("common.cancel") || "Hủy"}</button>
+                <button type="button" className="btn-cancel" onClick={closeCancelModal} disabled={cancelLoading}>{t("common.cancel") || "Hủy"}</button>
                 <button type="button" className="btn-start" onClick={handleCancelExperiment} disabled={cancelLoading}>{cancelLoading ? t("common.loading") : t("experimentLog.cancelExperiment")}</button>
               </div>
             </div>

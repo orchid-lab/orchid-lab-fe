@@ -466,7 +466,7 @@ export default function ReportsCreate() {
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
                   <div className="text-sm text-gray-500">{t("monitoringLog.createForm.currentSampleStage")}</div>
                   <div className="font-medium text-gray-900">
-                    {getCurrentSampleStage(sampleDetail.sampleStageDto)?.currentSampleStage ?? "-"}
+                    {getCurrentSampleStage(sampleDetail.sampleStageDto)?.sampleStageDefinition?.name ?? "-"}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
