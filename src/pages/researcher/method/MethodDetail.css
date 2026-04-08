@@ -114,6 +114,24 @@
 :root[data-theme='dark'] .method-detail-page thead th {
   color: #e2e8f0 !important;
   border-color: rgba(96, 165, 250, 0.15) !important;
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  background-image: none !important;
+}
+
+.dark .method-detail-page .from-\[#E6F1FF\],
+:root[data-theme='dark'] .method-detail-page .from-\[#E6F1FF\] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-stops: transparent !important;
+}
+
+.dark .method-detail-page .to-\[#F0F8FF\],
+:root[data-theme='dark'] .method-detail-page .to-\[#F0F8FF\] {
+  --tw-gradient-to: transparent !important;
+}
+
+.dark .method-detail-page .bg-gradient-to-r,
+:root[data-theme='dark'] .method-detail-page .bg-gradient-to-r {
+  background-image: none !important;
 }
 
 .dark .method-detail-page tbody tr,
