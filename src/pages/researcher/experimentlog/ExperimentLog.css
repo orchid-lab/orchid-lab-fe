@@ -14,6 +14,12 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
 }
 
+.dark .experiment-log-page .bg-white\/70,
+:root[data-theme='dark'] .experiment-log-page .bg-white\/70 {
+  background-color: rgba(20, 28, 50, 0.92) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
 .dark .experiment-log-page .border-blue-100,
 :root[data-theme='dark'] .experiment-log-page .border-blue-100 {
   border-color: rgba(96, 165, 250, 0.18) !important;
@@ -27,6 +33,11 @@
 .dark .experiment-log-page .text-slate-900,
 :root[data-theme='dark'] .experiment-log-page .text-slate-900 {
   color: #e2e8f0 !important;
+}
+
+.dark .experiment-log-page .text-slate-500,
+:root[data-theme='dark'] .experiment-log-page .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
 }
 
 .dark .experiment-log-page .text-blue-900,

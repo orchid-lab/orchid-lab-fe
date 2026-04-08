@@ -14,6 +14,12 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
 }
 
+.dark .success-rate-page .bg-white\/70,
+:root[data-theme='dark'] .success-rate-page .bg-white\/70 {
+  background-color: rgba(20, 28, 50, 0.92) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
 .dark .success-rate-page .border-blue-100,
 :root[data-theme='dark'] .success-rate-page .border-blue-100 {
   border-color: rgba(96, 165, 250, 0.18) !important;
@@ -62,6 +68,11 @@
 .dark .success-rate-page .text-slate-700,
 :root[data-theme='dark'] .success-rate-page .text-slate-700 {
   color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .success-rate-page .text-slate-500,
+:root[data-theme='dark'] .success-rate-page .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
 }
 
 .dark .success-rate-page .border-gray-200,

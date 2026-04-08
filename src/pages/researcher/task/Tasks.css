@@ -19,6 +19,12 @@
   background-color: rgba(10, 20, 42, 0.84) !important;
 }
 
+.dark .tasks-page .bg-white\/70,
+:root[data-theme='dark'] .tasks-page .bg-white\/70 {
+  background-color: rgba(20, 28, 50, 0.92) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
 .dark .tasks-page .border-blue-100,
 :root[data-theme='dark'] .tasks-page .border-blue-100 {
   border-color: rgba(96, 165, 250, 0.18) !important;
@@ -82,6 +88,11 @@
 .dark .tasks-page .text-slate-700,
 :root[data-theme='dark'] .tasks-page .text-slate-700 {
   color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .tasks-page .text-slate-500,
+:root[data-theme='dark'] .tasks-page .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
 }
 
 .dark .tasks-page .border-gray-200,
