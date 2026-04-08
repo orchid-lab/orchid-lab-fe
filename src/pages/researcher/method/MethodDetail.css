@@ -48,6 +48,90 @@
   background-color: rgba(20, 28, 50, 0.85) !important;
 }
 
+.dark .method-detail-page .text-blue-950,
+:root[data-theme='dark'] .method-detail-page .text-blue-950 {
+  color: #e2e8f0 !important;
+}
+
+.dark .method-detail-page .text-gray-700,
+:root[data-theme='dark'] .method-detail-page .text-gray-700 {
+  color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.dark .method-detail-page .text-gray-800,
+:root[data-theme='dark'] .method-detail-page .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .method-detail-page .text-slate-800,
+:root[data-theme='dark'] .method-detail-page .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .method-detail-page .text-slate-700,
+:root[data-theme='dark'] .method-detail-page .text-slate-700 {
+  color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .method-detail-page .border-gray-200,
+:root[data-theme='dark'] .method-detail-page .border-gray-200 {
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark .method-detail-page .border-gray-300,
+:root[data-theme='dark'] .method-detail-page .border-gray-300 {
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .method-detail-page input,
+:root[data-theme='dark'] .method-detail-page input,
+.dark .method-detail-page select,
+:root[data-theme='dark'] .method-detail-page select,
+.dark .method-detail-page textarea,
+:root[data-theme='dark'] .method-detail-page textarea {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .method-detail-page .shadow-lg,
+:root[data-theme='dark'] .method-detail-page .shadow-lg {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Table styling for Method Detail */
+.dark .method-detail-page table,
+:root[data-theme='dark'] .method-detail-page table {
+  background-color: rgba(10, 20, 42, 0.6) !important;
+}
+
+.dark .method-detail-page thead,
+:root[data-theme='dark'] .method-detail-page thead {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.dark .method-detail-page thead th,
+:root[data-theme='dark'] .method-detail-page thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark .method-detail-page tbody tr,
+:root[data-theme='dark'] .method-detail-page tbody tr {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .method-detail-page tbody tr:hover,
+:root[data-theme='dark'] .method-detail-page tbody tr:hover {
+  background-color: rgba(20, 28, 50, 0.6) !important;
+}
+
+.dark .method-detail-page tbody td,
+:root[data-theme='dark'] .method-detail-page tbody td {
+  color: rgba(219, 234, 254, 0.85) !important;
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
 .dark .method-detail-page .text-gray-700,
 :root[data-theme='dark'] .method-detail-page .text-gray-700 {
   color: rgba(203, 213, 225, 0.9) !important;
@@ -112,4 +196,3 @@
   background-color: rgba(0, 87, 146, 0.9) !important;
 }
 
-}

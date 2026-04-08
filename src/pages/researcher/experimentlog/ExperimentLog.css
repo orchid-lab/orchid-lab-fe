@@ -176,6 +176,12 @@
   background-color: rgba(15, 23, 42, 0.95) !important;
 }
 
+.dark .experiment-log-page thead th,
+:root[data-theme='dark'] .experiment-log-page thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
 .dark .experiment-log-page tbody tr,
 :root[data-theme='dark'] .experiment-log-page tbody tr {
   border-color: rgba(96, 165, 250, 0.12) !important;
@@ -184,4 +190,10 @@
 .dark .experiment-log-page tbody tr:hover,
 :root[data-theme='dark'] .experiment-log-page tbody tr:hover {
   background-color: rgba(20, 28, 50, 0.6) !important;
+}
+
+.dark .experiment-log-page tbody td,
+:root[data-theme='dark'] .experiment-log-page tbody td {
+  color: rgba(219, 234, 254, 0.85) !important;
+  border-color: rgba(96, 165, 250, 0.12) !important;
 }
