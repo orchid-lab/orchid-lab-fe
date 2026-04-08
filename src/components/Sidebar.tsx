@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
-/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-dom/no-missing-button-type */
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
@@ -20,33 +18,11 @@ const tabs = [
 export default function Sidebar() {
   const { t } = useTranslation();
   const { logout, user } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return;
-    
-    setIsLoggingOut(true);
-    try {
-      const response = await fetch('/api/authentication/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', 
-      });
-
-      if (response.ok) {
-        logout();
-      } else {
-        console.error('Logout failed:', await response.text());
-        logout();
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      logout();
-    } finally {
-      setIsLoggingOut(false);
-    }
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    logout();
   };
 
   const filteredTabs = tabs;
@@ -75,7 +51,6 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 min-h-0 px-2 pt-2 overflow-y-auto scrollbar-thin scrollbar-thumb-[#00CED1]/40 scrollbar-track-transparent">
-
         {filteredTabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -118,19 +93,12 @@ export default function Sidebar() {
         </div>
         <button
           onClick={handleLogout}
-          disabled={isLoggingOut}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full ${
-            isLoggingOut
-              ? 'bg-[#005792]/70 text-blue-200 cursor-not-allowed'
-              : 'text-white hover:bg-[#FF6F61]/10 hover:text-[#FF6F61]'
-          }`}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full text-white hover:bg-[#FF6F61]/10 hover:text-[#FF6F61]"
         >
           <span className="text-base">
-            <FaSignOutAlt className={isLoggingOut ? 'animate-spin' : ''} />
+            <FaSignOutAlt />
           </span>
-          <span className="text-sm font-medium">
-            {isLoggingOut ? t('common.loggingOut') || 'Logging out...' : t('common.logout')}
-          </span>
+          <span className="text-sm font-medium">{t('common.logout')}</span>
         </button>
       </div>
     </aside>

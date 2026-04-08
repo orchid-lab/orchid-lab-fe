@@ -89,19 +89,19 @@ const dropdownItemVariant: Variants = {
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<MonitoringLogStatus, string> = {
-  Created:            "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  Created:            "bg-[#E0F2FE] text-[#005792] border-[#BAE6FD]",
   WaitingForApproval: "bg-[#FFF4E6] text-[#F97316] border-[#FCD5B8]",
-  Approved:           "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  Approved:           "bg-[#E0F2FE] text-[#005792] border-[#BAE6FD]",
   Rejected:           "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
-  Revised:            "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
+  Revised:            "bg-[#E0F9FF] text-[#00CED1] border-[#B2F0F5]",
 };
 
 const STATUS_ICON_COLORS: Record<MonitoringLogStatus, string> = {
-  Created:            "text-[#2D5A27]",
+  Created:            "text-[#005792]",
   WaitingForApproval: "text-[#F97316]",
-  Approved:           "text-[#2D5A27]",
+  Approved:           "text-[#005792]",
   Rejected:           "text-[#B91C1C]",
-  Revised:            "text-[#DA70D6]",
+  Revised:            "text-[#00CED1]",
 };
 
 const STATUS_FILTER_ORDER: MonitoringLogStatus[] = [
@@ -170,8 +170,8 @@ function AnimatedSelect<T extends string>({
           flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
           transition-all duration-150 whitespace-nowrap
           ${open
-            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
-            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
+            ? "border-[#005792] ring-2 ring-[#005792]/20 text-[#005792]"
+            : "border-blue-100 text-gray-700 hover:border-[#005792]/50"
           }
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
         `}
@@ -197,8 +197,8 @@ function AnimatedSelect<T extends string>({
             style={{ transformOrigin: "top center" }}
             className="
               absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
-              bg-white border border-[#DDEEE0] rounded-xl
-              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
+              bg-white border border-blue-100 rounded-xl
+              shadow-[0_8px_32px_rgba(0,87,146,0.14)]
               overflow-hidden py-1
             "
           >
@@ -214,8 +214,8 @@ function AnimatedSelect<T extends string>({
                   px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
                   transition-colors duration-75
                   ${opt.value === value
-                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
-                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
+                    ? "bg-[#E0F2FE] text-[#005792] font-medium"
+                    : "text-gray-700 hover:bg-[#F0F8FF] hover:text-[#005792]"
                   }
                 `}
               >
@@ -243,12 +243,12 @@ function StatCard({ dotColor, label, value, valueColor, borderColor }: StatCardP
   return (
     <motion.div
       variants={cardVariant}
-      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(45,90,39,0.14)" }}
-      className={`bg-white rounded-2xl shadow-[0_14px_32px_rgba(45,90,39,0.10)] border ${borderColor} p-5 cursor-default`}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,87,146,0.14)" }}
+      className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_14px_32px_rgba(0,87,146,0.10)] border ${borderColor} p-5 cursor-default`}
     >
       <div className="flex items-center gap-2 mb-3">
         <span className={`inline-block h-3 w-3 rounded-full ${dotColor}`} />
-        <span className="text-sm font-medium text-[#2D5A27] leading-tight">{label}</span>
+        <span className="text-sm font-medium text-[#005792] leading-tight">{label}</span>
       </div>
       <motion.div
         key={value}
@@ -290,7 +290,6 @@ export default function ReportsTechnician() {
     return map[status] ?? status;
   };
 
-  // Build status options for AnimatedSelect
   const statusOptions: SelectOption<MonitoringLogStatus | "All">[] = [
     { value: "All", label: t("common.status") },
     ...STATUS_FILTER_ORDER.map((s) => ({
@@ -303,7 +302,7 @@ export default function ReportsTechnician() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ pageNo: "1", pageSize: "10000"});
+      const params = new URLSearchParams({ pageNo: "1", pageSize: "10000" });
       const res = await axiosInstance.get(`/api/monitoring-log?${params.toString()}`);
       const json = res.data as MonitoringLogApiResponse;
       const items = json.data ?? json.items ?? [];
@@ -377,7 +376,7 @@ export default function ReportsTechnician() {
         statusSummary.revised,
         statusSummary.approved,
       ],
-      backgroundColor: ["#2D5A27", "#F97316", "#B91C1C", "#DA70D6", "#4B5563"],
+      backgroundColor: ["#005792", "#F97316", "#B91C1C", "#00CED1", "#4B5563"],
       borderWidth: 0,
       spacing: 2,
     }],
@@ -430,7 +429,7 @@ export default function ReportsTechnician() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}
@@ -438,22 +437,22 @@ export default function ReportsTechnician() {
           variants={fadeInDown}
           initial="hidden"
           animate="visible"
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
         >
           <div>
-            <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
+            <h1 className="text-3xl font-semibold text-[#005792] mb-1">
               {t("monitoringLog.title")}
             </h1>
-            <p className="text-[#4B6C54] text-lg">
+            <p className="text-blue-900/70 text-sm">
               {t("monitoringLog.subtitle", { defaultValue: "Quản lý và theo dõi nhật ký giám sát" })}
             </p>
           </div>
           <motion.button
             type="button"
-            whileHover={{ scale: 1.04, boxShadow: "0 8px 24px rgba(45,90,39,0.25)" }}
+            whileHover={{ scale: 1.04, boxShadow: "0 8px 24px rgba(0,87,146,0.25)" }}
             whileTap={{ scale: 0.97 }}
             onClick={() => void navigate("/reports/new")}
-            className="inline-flex items-center gap-2 bg-[#2D5A27] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#1e3e1c] transition-colors shadow-[0_4px_14px_rgba(45,90,39,0.3)]"
+            className="inline-flex items-center gap-2 bg-[#005792] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#004d73] transition-colors shadow-[0_4px_14px_rgba(0,87,146,0.3)]"
           >
             <Plus className="w-5 h-5" />
             {t("monitoringLog.createNew")}
@@ -467,13 +466,13 @@ export default function ReportsTechnician() {
             variants={cardVariant}
             initial="hidden"
             animate="visible"
-            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(45,90,39,0.18)" }}
-            className="lg:col-span-1 bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6"
+            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(0,87,146,0.18)" }}
+            className="lg:col-span-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_18px_40px_rgba(0,87,146,0.10)] border border-blue-100 p-6"
           >
-            <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
+            <h3 className="text-lg font-semibold text-[#005792] mb-1">
               {t("monitoringLog.totalReports")}
             </h3>
-            <p className="text-sm text-[#4B6C54] mb-6">
+            <p className="text-sm text-blue-900/60 mb-6">
               {t("monitoringLog.reportDistribution", { defaultValue: "Phân bổ theo trạng thái" })}
             </p>
             <div className="flex items-center justify-between gap-6">
@@ -483,23 +482,23 @@ export default function ReportsTechnician() {
                   initial={{ opacity: 0, scale: 0.6 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                  className="text-5xl font-bold text-[#2D5A27]"
+                  className="text-5xl font-bold text-[#005792]"
                 >
                   {total}
                 </motion.div>
-                <div className="text-sm text-[#4B6C54] mt-1">{t("monitoringLog.totalReports")}</div>
+                <div className="text-sm text-blue-900/60 mt-1">{t("monitoringLog.totalReports")}</div>
                 <div className="mt-4 space-y-1.5">
                   {[
-                    { label: t("monitoringLog.statusCreated"),            color: "bg-[#2D5A27]", value: statusSummary.created },
+                    { label: t("monitoringLog.statusCreated"),            color: "bg-[#005792]", value: statusSummary.created },
                     { label: t("monitoringLog.statusWaitingForApproval"), color: "bg-[#F97316]", value: statusSummary.waitingForApproval },
                     { label: t("monitoringLog.statusApproved"),           color: "bg-[#4B5563]", value: statusSummary.approved },
                     { label: t("monitoringLog.statusRejected"),           color: "bg-[#B91C1C]", value: statusSummary.rejected },
-                    { label: t("monitoringLog.statusRevised"),            color: "bg-[#DA70D6]", value: statusSummary.revised },
+                    { label: t("monitoringLog.statusRevised"),            color: "bg-[#00CED1]", value: statusSummary.revised },
                   ].map(({ label, color, value }) => (
-                    <div key={label} className="flex items-center gap-2 text-xs text-[#4B6C54]">
+                    <div key={label} className="flex items-center gap-2 text-xs text-blue-900/60">
                       <span className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${color}`} />
                       <span className="truncate">{label}</span>
-                      <span className="ml-auto font-semibold text-[#2D5A27]">{value}</span>
+                      <span className="ml-auto font-semibold text-[#005792]">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -517,16 +516,16 @@ export default function ReportsTechnician() {
             initial="hidden"
             animate="visible"
           >
-            <StatCard dotColor="bg-[#2D5A27]" label={t("monitoringLog.statusCreated")}
-              value={statusSummary.created} valueColor="text-[#2D5A27]" borderColor="border-[#DDEEE0]" />
+            <StatCard dotColor="bg-[#005792]" label={t("monitoringLog.statusCreated")}
+              value={statusSummary.created} valueColor="text-[#005792]" borderColor="border-blue-100" />
             <StatCard dotColor="bg-[#F97316]" label={t("monitoringLog.statusWaitingForApproval")}
               value={statusSummary.waitingForApproval} valueColor="text-[#F97316]" borderColor="border-[#FCD5B8]" />
             <StatCard dotColor="bg-[#4B5563]" label={t("monitoringLog.statusApproved")}
               value={statusSummary.approved} valueColor="text-[#4B5563]" borderColor="border-[#E5E7EB]" />
             <StatCard dotColor="bg-[#B91C1C]" label={t("monitoringLog.statusRejected")}
               value={statusSummary.rejected} valueColor="text-[#B91C1C]" borderColor="border-[#FECACA]" />
-            <StatCard dotColor="bg-[#DA70D6]" label={t("monitoringLog.statusRevised")}
-              value={statusSummary.revised} valueColor="text-[#DA70D6]" borderColor="border-[#F3D4EB]" />
+            <StatCard dotColor="bg-[#00CED1]" label={t("monitoringLog.statusRevised")}
+              value={statusSummary.revised} valueColor="text-[#00CED1]" borderColor="border-[#B2F0F5]" />
           </motion.div>
         </div>
 
@@ -535,12 +534,12 @@ export default function ReportsTechnician() {
           variants={filterPanelVariant}
           initial="hidden"
           animate="visible"
-          className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_10px_20px_rgba(0,87,146,0.08)] border border-blue-100 p-6 origin-top"
         >
           <div className="flex flex-wrap items-center gap-4">
-            {/* Status filter — AnimatedSelect */}
+            {/* Status filter */}
             <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-[#2D5A27]" />
+              <Filter className="w-5 h-5 text-[#005792]" />
               <AnimatedSelect
                 value={statusFilter}
                 onChange={(v) => setStatusFilter(v as MonitoringLogStatus | "All")}
@@ -557,7 +556,7 @@ export default function ReportsTechnician() {
                 placeholder={t("monitoringLog.searchPlaceholder", { defaultValue: "Tìm theo tên báo cáo, tên mẫu..." })}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
+                className="w-full border border-blue-100 bg-white/90 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#005792]/30 focus:border-[#005792] transition-shadow"
               />
             </div>
 
@@ -567,7 +566,7 @@ export default function ReportsTechnician() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => { setSearchTerm(""); setStatusFilter("All"); setCurrentPage(1); }}
-              className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1e3e1c] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
+              className="px-4 py-2.5 text-sm text-[#005792] hover:text-[#004d73] hover:bg-[#E0F2FE] border border-blue-100 rounded-lg transition-colors font-medium"
             >
               {t("common.clearFilters")}
             </motion.button>
@@ -585,11 +584,11 @@ export default function ReportsTechnician() {
               className="flex flex-col items-center justify-center py-16 gap-3"
             >
               <motion.div
-                className="w-10 h-10 border-4 border-[#DDEEE0] border-t-[#2D5A27] rounded-full"
+                className="w-10 h-10 border-4 border-blue-100 border-t-[#005792] rounded-full"
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
               />
-              <span className="text-gray-500 text-sm">{t("common.loadingData")}</span>
+              <span className="text-blue-900/50 text-sm">{t("common.loadingData")}</span>
             </motion.div>
           ) : (
             <motion.div
@@ -598,10 +597,10 @@ export default function ReportsTechnician() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
-              className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden"
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_18px_40px_rgba(0,87,146,0.08)] border border-blue-100 overflow-hidden"
             >
               <table className="w-full">
-                <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
+                <thead className="bg-white/60 border-b border-blue-100">
                   <tr>
                     {[
                       t("monitoringLog.reportName"),
@@ -611,14 +610,14 @@ export default function ReportsTechnician() {
                       t("monitoringLog.newest"),
                       t("common.action"),
                     ].map((header) => (
-                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
+                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#005792] text-xs uppercase tracking-wider">
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-blue-50">
                   <AnimatePresence>
                     {paginatedData.length === 0 ? (
                       <motion.tr
@@ -627,7 +626,7 @@ export default function ReportsTechnician() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <td colSpan={6} className="p-12 text-center text-gray-500">
+                        <td colSpan={6} className="p-12 text-center text-blue-900/40">
                           {t("monitoringLog.noReports")}
                         </td>
                       </motion.tr>
@@ -641,12 +640,12 @@ export default function ReportsTechnician() {
                           animate="visible"
                           exit="exit"
                           layout
-                          whileHover={{ backgroundColor: "#EBF7EE" }}
+                          whileHover={{ backgroundColor: "rgba(239,246,255,0.85)" }}
                           className="cursor-default transition-colors"
                         >
-                          <td className="px-6 py-4 font-medium text-gray-900">{log.name}</td>
-                          <td className="px-6 py-4 text-[#4B6C54]">{formatDate(log.createdDate)}</td>
-                          <td className="px-6 py-4 text-gray-600">{log.sampleName}</td>
+                          <td className="px-6 py-4 font-medium text-blue-950">{log.name}</td>
+                          <td className="px-6 py-4 text-blue-900/60">{formatDate(log.createdDate)}</td>
+                          <td className="px-6 py-4 text-blue-900/70">{log.sampleName}</td>
 
                           {/* Status badge */}
                           <td className="px-6 py-4">
@@ -670,7 +669,7 @@ export default function ReportsTechnician() {
                                 initial={{ opacity: 0, scale: 0.85 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: i * 0.03 + 0.15, type: "spring", stiffness: 280, damping: 22 }}
-                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]"
+                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border bg-[#E0F9FF] text-[#00CED1] border-[#B2F0F5]"
                               >
                                 {t("monitoringLog.newest")}
                               </motion.span>
@@ -687,7 +686,7 @@ export default function ReportsTechnician() {
                                   whileHover={{ scale: 1.04 }}
                                   whileTap={{ scale: 0.96 }}
                                   onClick={() => { void handleSubmitForApproval(log); }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#2D5A27] text-[#2D5A27] hover:bg-[#2D5A27] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#005792] text-[#005792] hover:bg-[#005792] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   <Send className="w-3.5 h-3.5" />
                                   {submittingId === log.id
@@ -702,7 +701,7 @@ export default function ReportsTechnician() {
                                 whileHover={{ scale: 1.04 }}
                                 whileTap={{ scale: 0.96 }}
                                 onClick={() => void navigate(`/monitoring-logs/${log.id}`)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#DDEEE0] text-[#4B6C54] hover:bg-[#E4F0E8] hover:text-[#2D5A27] transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-blue-100 text-blue-900/60 hover:bg-[#E0F2FE] hover:text-[#005792] transition-colors"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                                 {t("common.details")}
@@ -722,9 +721,9 @@ export default function ReportsTechnician() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
+                  className="px-6 py-4 bg-white/70 border-t border-blue-100 flex justify-between items-center"
                 >
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-blue-900/60 font-medium">
                     {t("common.showing")} {paginatedData.length} {t("common.of")} {filteredData.length}{" "}
                     {t("monitoringLog.reports", { defaultValue: "báo cáo" })}
                   </span>
@@ -735,7 +734,7 @@ export default function ReportsTechnician() {
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
+                        className="px-3 py-1.5 rounded-lg bg-white border border-blue-100 hover:bg-[#E0F2FE] hover:border-blue-300 text-sm font-medium shadow-sm"
                       >
                         ←
                       </motion.button>
@@ -754,10 +753,10 @@ export default function ReportsTechnician() {
                           whileHover={{ scale: 1.08 }}
                           whileTap={{ scale: 0.93 }}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1.5 rounded-lg text-sm ${
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm ${
                             currentPage === pageNum
-                              ? "bg-[#2D5A27] text-white"
-                              : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
+                              ? "bg-[#005792] text-white"
+                              : "bg-white border border-blue-100 hover:bg-[#E0F2FE] hover:border-blue-300"
                           }`}
                         >
                           {pageNum}
@@ -771,7 +770,7 @@ export default function ReportsTechnician() {
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
+                        className="px-3 py-1.5 rounded-lg bg-white border border-blue-100 hover:bg-[#E0F2FE] hover:border-blue-300 text-sm font-medium shadow-sm"
                       >
                         →
                       </motion.button>

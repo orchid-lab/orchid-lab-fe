@@ -19,14 +19,15 @@ import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
 
+// Chuyển màu các badge chức vụ sang tông đỏ/hồng để phân biệt
 function getRoleBadgeColor(role: string | undefined) {
   switch (role?.toLowerCase()) {
     case "admin":
-      return "bg-red-500";
+      return "bg-red-600";
     case "researcher":
-      return "bg-blue-500";
+      return "bg-red-400";
     case "technician":
-      return "bg-blue-500";
+      return "bg-orange-500"; // Giữ màu cam hoặc đỏ nhạt cho kỹ thuật viên
     default:
       return "bg-gray-500";
   }
@@ -42,7 +43,6 @@ export default function SidebarAdmin() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
-
       try {
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
         setUser(response.data);
@@ -51,11 +51,9 @@ export default function SidebarAdmin() {
         setUser(authUser);
       }
     };
-
     void fetchUserData();
   }, [authUser]);
 
-  // Update body data attribute when sidebar collapse state changes
   useEffect(() => {
     document.body.setAttribute("data-sidebar-collapsed", String(isCollapsed));
   }, [isCollapsed]);
@@ -78,32 +76,28 @@ export default function SidebarAdmin() {
 
   return (
     <aside
-      className={`sidebar-modern ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out`}
+      className={`sidebar-modern ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out border-r border-red-100 dark:border-gray-800 bg-white dark:bg-gray-900`}
     >
       {/* Header */}
-      <div className="sidebar-header h-16 flex items-center justify-between px-4 border-b">
+      <div className="sidebar-header h-16 flex items-center justify-between px-4 border-b border-red-50 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          {/* Logo background đổi sang Red */}
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-200 dark:shadow-none">
             <GiMicroscope className="text-white text-lg" />
           </div>
           {!isCollapsed && (
-            <span className="sidebar-title text-lg font-bold tracking-tight">
-              OrchidLab
+            <span className="sidebar-title text-lg font-bold tracking-tight text-gray-800 dark:text-white">
+              Orchid<span className="text-red-600">Lab</span>
             </span>
           )}
         </div>
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="sidebar-toggle p-2 rounded-lg hover:bg-opacity-10 transition-colors"
+          className="sidebar-toggle p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-800 text-gray-500 transition-colors"
           aria-label="Toggle sidebar"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isCollapsed ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             ) : (
@@ -117,24 +111,15 @@ export default function SidebarAdmin() {
       {!isCollapsed && (
         <div className="px-3 py-4">
           <div className="sidebar-search relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-sm opacity-50" />
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-red-400 opacity-70" />
             <input
               type="text"
-              placeholder="Search"
+              placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 focus:outline-none focus:ring-2 transition-all"
+              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 bg-red-50/50 dark:bg-gray-800 focus:ring-2 focus:ring-red-500/50 outline-none transition-all"
             />
           </div>
-        </div>
-      )}
-
-      {/* Navigation Section Label */}
-      {!isCollapsed && (
-        <div className="px-4 pb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider px-2 opacity-40">
-            Navigation
-          </p>
         </div>
       )}
 
@@ -142,21 +127,22 @@ export default function SidebarAdmin() {
       <nav className="flex-1 px-3 overflow-y-auto sidebar-scrollbar">
         {filteredItems.map((item) => {
           const Icon = item.icon;
-
           return (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 `sidebar-nav-item flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mb-1 group relative ${
-                  isActive ? "sidebar-nav-item-active" : ""
+                  isActive 
+                    ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 shadow-sm" 
+                    : "text-gray-600 dark:text-gray-400 hover:bg-red-50/50 dark:hover:bg-gray-800 hover:text-red-600"
                 } ${isCollapsed ? "justify-center" : ""}`
               }
               title={isCollapsed ? t(item.labelKey) : undefined}
             >
               {({ isActive }) => (
                 <>
-                  <span className={`sidebar-nav-icon text-lg ${isActive ? "sidebar-nav-icon-active" : ""}`}>
+                  <span className={`sidebar-nav-icon text-lg transition-colors ${isActive ? "text-red-600" : "group-hover:text-red-500"}`}>
                     <Icon />
                   </span>
                   {!isCollapsed && (
@@ -164,11 +150,8 @@ export default function SidebarAdmin() {
                       <span className="sidebar-nav-text text-sm font-medium flex-1">
                         {t(item.labelKey)}
                       </span>
-                      {isActive && <span className="sidebar-nav-indicator"></span>}
+                      {isActive && <span className="absolute right-2 w-1.5 h-1.5 bg-red-600 rounded-full"></span>}
                     </>
-                  )}
-                  {isCollapsed && isActive && (
-                    <div className="sidebar-nav-tooltip">{t(item.labelKey)}</div>
                   )}
                 </>
               )}
@@ -178,48 +161,49 @@ export default function SidebarAdmin() {
       </nav>
 
       {/* Bottom Section */}
-      <div className="sidebar-bottom border-t">
-        {/* Access Controls Label */}
+      <div className="sidebar-bottom border-t border-red-50 dark:border-gray-800">
         {!isCollapsed && (
           <div className="px-4 pt-3 pb-1">
-            <p className="text-xs font-semibold uppercase tracking-wider px-2 opacity-40">
-              Access Controls
+            <p className="text-[10px] font-bold uppercase tracking-widest px-2 text-gray-400">
+              User Account
             </p>
           </div>
         )}
 
         {/* User Profile */}
-        <div className={`sidebar-profile px-3 py-3 ${isCollapsed ? "justify-center" : ""}`}>
-          <div className="flex items-center gap-3">
+        <div className={`sidebar-profile px-3 py-3 ${isCollapsed ? "flex justify-center" : ""}`}>
+          <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50">
             <div className="relative flex-shrink-0">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
-                  alt="User avatar"
-                  className="sidebar-avatar w-10 h-10 rounded-full object-cover"
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
                 />
               ) : (
-                <div className="sidebar-avatar-placeholder w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                   {user?.name?.charAt(0).toUpperCase() ?? "U"}
                 </div>
               )}
-              <div className={`sidebar-status-dot ${getRoleBadgeColor(user?.role)}`}></div>
+              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-900 shadow-sm`}></div>
             </div>
+            
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="sidebar-profile-name text-sm font-semibold truncate">
-                  {user?.name ?? t("common.loading")}
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+                  {user?.name ?? "Loading..."}
                 </p>
-                <p className="sidebar-profile-email text-xs truncate opacity-60">
-                  {user?.email ?? ""}
+                <p className="text-xs text-gray-500 truncate uppercase font-medium">
+                  {user?.role ?? "User"}
                 </p>
               </div>
             )}
+            
             {!isCollapsed && (
               <button
                 type="button"
                 onClick={logout}
-                className="sidebar-logout-btn p-1.5 rounded-md transition-colors"
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 title={t("common.logout")}
               >
                 <FaSignOutAlt className="text-sm" />

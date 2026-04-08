@@ -97,7 +97,7 @@ const AdminExperimentLogDetail = () => {
       const stageId = stage.id;
       
       axiosInstance
-        .get(`/api/tasks?pageNo=1&pageSize=1000&experimentlogId=${id}&stageId=${stageId}`)
+        .get(`/api/tasks?pageNumber=1&pageSize=1000&experimentlogId=${id}&stageId=${stageId}`)
         .then((res: { data: { value?: { data?: Task[] } } }) => {
           setStageTasks((prev) => ({
             ...prev,

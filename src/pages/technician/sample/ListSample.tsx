@@ -589,9 +589,7 @@ export default function ListSample() {
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            layout
-                            whileHover={{ backgroundColor: "#EBF7EE" }}
-                            className="cursor-pointer transition-colors"
+                            className="cursor-pointer transition-colors hover:bg-[#EBF7EE]" 
                             onClick={() => navigate(`/technician/samples/${sample.id}`, { state: { from: "sampleList" } })}
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">{rowNumber}</td>

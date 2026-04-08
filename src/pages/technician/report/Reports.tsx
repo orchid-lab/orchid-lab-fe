@@ -454,9 +454,7 @@ export default function ReportsTechnician() {
                           initial="hidden"
                           animate="visible"
                           exit="exit"
-                          layout
-                          whileHover={{ backgroundColor: "#EBF7EE" }}
-                          className="cursor-default transition-colors"
+                          className="cursor-default transition-colors hover:bg-[#EBF7EE]" 
                         >
                           <td className="px-6 py-4 font-medium text-gray-900">{log.name}</td>
                           <td className="px-6 py-4 text-[#4B6C54]">{formatDate(log.createdDate)}</td>

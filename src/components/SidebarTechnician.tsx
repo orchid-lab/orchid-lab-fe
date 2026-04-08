@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
+import './SidebarTechnician.css';
 
 const tabs = [
   { nameKey: "navigation.task", path: "/technician/tasks", icon: FaTasks },

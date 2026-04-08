@@ -8,7 +8,9 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import Topbar from "./components/Topbar";
+import TopbarAdmin from "./components/TopbarAdmin";
+import TopbarResearcher from "./components/TopbarResearcher";
+import TopbarTechnician from "./components/TopbarTechnician";
 import Method from "./pages/researcher/method/Method";
 import Tasks from "./pages/researcher/task/Tasks";
 import ExperimentLog from "./pages/researcher/experimentlog/ExperimentLog";
@@ -106,13 +108,17 @@ function AppLayout() {
   const userRole = getUserRole(user);
 
   let sidebar = <SidebarTechnician />;
+  let topbar = <TopbarTechnician />;
 
   if (userRole === "admin") {
     sidebar = <SidebarAdmin />;
+    topbar = <TopbarAdmin />;
   } else if (userRole === "researcher") {
     sidebar = <Sidebar />;
+    topbar = <TopbarResearcher />;
   } else if (userRole === "lab technician") {
     sidebar = <SidebarTechnician />;
+    topbar = <TopbarTechnician />;
   }
 
   if (isLoginPage) {
@@ -135,7 +141,7 @@ function AppLayout() {
     <div className="flex bg-gray-100 dark:bg-gray-900">
       {sidebar}
       <div className="flex-1 flex flex-col">
-        <Topbar />
+        {topbar}
         <main className="flex-1 p-8">
           <Routes>
             <Route

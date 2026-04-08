@@ -21,15 +21,16 @@ function getRoleBadgeColor(role: string | undefined) {
     case "admin":
       return "bg-red-500";
     case "researcher":
-      return "bg-red-600"; // Đổi sang đỏ
+      return "bg-blue-500";
     case "technician":
-      return "bg-red-400"; // Đổi sang đỏ nhạt hơn
+    case "lab technician":
+      return "bg-blue-500";
     default:
       return "bg-gray-500";
   }
 }
 
-export default function Topbar() {
+export default function TopbarResearcher() {
   const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
@@ -38,14 +39,16 @@ export default function Topbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
+
       try {
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
         setUser(response.data);
       } catch (error) {
-        console.error("Error fetching user data in Topbar:", error);
+        console.error("Error fetching user data in TopbarResearcher:", error);
         setUser(authUser);
       }
     };
+
     fetchUserData();
   }, [authUser]);
 
@@ -54,39 +57,36 @@ export default function Topbar() {
   };
 
   return (
-    // Thay đổi gradient: blue-50/30 -> red-50/30 và border-blue-100 -> border-red-100
-    <header className="topbar-header h-16 fixed top-0 right-0 z-20 bg-gradient-to-r from-white via-red-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-red-100 dark:border-gray-700">
-      
-      {/* Left side - Decorative elements (Chuyển chấm tròn sang màu đỏ) */}
+    <header className="topbar-header h-16 fixed top-0 right-0 z-20 bg-gradient-to-r from-white via-blue-50/30 to-white dark:from-gray-800 dark:via-gray-900/30 dark:to-gray-800 shadow-md backdrop-blur-sm flex items-center justify-between px-8 border-b border-blue-100 dark:border-gray-700">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-          <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-          <div className="w-2 h-2 bg-red-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+          <div className="w-2 h-2 bg-blue-300 rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
         </div>
         <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">
           {new Date().toLocaleDateString("vi-VN", {
-            weekday: "long", year: "numeric", month: "long", day: "numeric",
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </span>
       </div>
 
       <div className="flex items-center gap-4">
-        <NotificationBell />
-        <ThemeToggle />
-        <LanguageSelector />
-
+        <div style={{ position: "relative" }}>
+          <NotificationBell/>
+        </div>
+        <ThemeToggle accentClass="text-blue-500" />
+        <LanguageSelector accentClass="text-blue-500" hoverBgClass="hover:bg-blue-50/40 dark:hover:bg-gray-700" activeBgClass="bg-blue-900 dark:bg-blue-700" activeTextClass="text-white" />
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
-
-        {/* User section - Hover sang màu đỏ */}
         <div
-          className="flex items-center gap-3 cursor-pointer hover:bg-red-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
+          className="flex items-center gap-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-300 px-4 py-2 rounded-lg group"
           onClick={handleAvatarClick}
         >
           <div className="relative group">
-            {/* Glow effect sang màu đỏ */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-red-400 to-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
-            
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur"></div>
             {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -94,16 +94,17 @@ export default function Topbar() {
                 className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md transition-transform duration-300 group-hover:scale-110 object-cover"
               />
             ) : (
-              // Placeholder avatar sang màu đỏ
-              <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center text-red-700 font-semibold transition-transform duration-300 group-hover:scale-110">
+              <div className="relative w-10 h-10 rounded-full border-2 border-white dark:border-gray-700 shadow-md bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-700 font-semibold transition-transform duration-300 group-hover:scale-110">
                 {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </div>
             )}
-            <div className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}></div>
+            <div
+              className={`absolute bottom-0 right-0 w-3 h-3 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-700`}
+            ></div>
           </div>
 
           <div className="flex flex-col">
-            <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors duration-300">
+            <span className="text-gray-800 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-300">
               {user?.name ?? t("common.loading")}
             </span>
             <span className="text-gray-500 dark:text-gray-400 text-xs">

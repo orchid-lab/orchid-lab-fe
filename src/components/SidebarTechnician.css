@@ -1,0 +1,396 @@
+/* ==================== SIDEBAR TECHNICIAN - COMPONENT STYLES ==================== */
+/* Import this file in SidebarTechnician.tsx:
+   import './SidebarTechnician.css';
+   Then remove all sidebar-related rules from the global CSS file.
+*/
+
+/* ==================== LAYOUT & BASE ==================== */
+
+.sidebar-modern {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: var(--sidebar-shadow);
+}
+
+.sidebar-expanded {
+  width: 260px;
+}
+
+.sidebar-collapsed {
+  width: 72px;
+}
+
+/* ==================== TOPBAR ADJUSTMENT ==================== */
+
+.topbar-header {
+  transition: left 0.3s ease-in-out;
+}
+
+body:not([data-sidebar-collapsed="true"]) .topbar-header {
+  left: 260px;
+}
+
+body[data-sidebar-collapsed="true"] .topbar-header {
+  left: 72px;
+}
+
+/* ==================== CUSTOM SCROLLBAR ==================== */
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ==================== HEADER ==================== */
+
+.sidebar-header {
+  border-bottom-color: var(--sidebar-border);
+}
+
+.sidebar-logo {
+  width: 40px;
+  height: 40px;
+  background: var(--logo-bg);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--logo-color);
+}
+
+.sidebar-title {
+  color: var(--sidebar-text-primary);
+}
+
+.sidebar-toggle {
+  color: var(--sidebar-text-secondary);
+}
+
+.sidebar-toggle:hover {
+  background: var(--hover-bg);
+  color: var(--sidebar-text-primary);
+}
+
+/* ==================== SEARCH BAR ==================== */
+
+.sidebar-search-input {
+  background: var(--search-bg);
+  color: var(--sidebar-text-primary);
+  border: 1px solid var(--search-border);
+}
+
+.sidebar-search-input::placeholder {
+  color: var(--sidebar-text-tertiary);
+}
+
+.sidebar-search-input:focus {
+  background: var(--search-focus-bg);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* ==================== NAVIGATION ITEMS ==================== */
+
+.sidebar-nav-item {
+  color: var(--sidebar-text-secondary);
+}
+
+.sidebar-nav-item:hover {
+  background: var(--nav-hover-bg);
+  color: var(--sidebar-text-primary);
+}
+
+.sidebar-nav-item-active {
+  background: var(--nav-active-bg);
+  color: var(--sidebar-text-primary);
+}
+
+.sidebar-nav-icon {
+  transition: color 0.2s ease;
+}
+
+.sidebar-nav-icon-active {
+  color: var(--accent-color);
+}
+
+.sidebar-nav-text {
+  color: inherit;
+}
+
+.sidebar-nav-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  flex-shrink: 0;
+}
+
+/* ==================== TOOLTIP (COLLAPSED STATE) ==================== */
+
+.sidebar-nav-tooltip {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 12px;
+  padding: 6px 12px;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-nav-item:hover .sidebar-nav-tooltip {
+  opacity: 1;
+}
+
+/* ==================== BOTTOM SECTION ==================== */
+
+.sidebar-bottom {
+  border-top-color: var(--sidebar-border);
+}
+
+.sidebar-bottom-item {
+  color: var(--sidebar-text-secondary);
+}
+
+.sidebar-bottom-item:hover {
+  background: var(--nav-hover-bg);
+  color: var(--sidebar-text-primary);
+}
+
+/* ==================== NOTIFICATION BADGE ==================== */
+
+.sidebar-notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: var(--notification-badge-bg);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ==================== PROFILE SECTION ==================== */
+
+.sidebar-profile {
+  background: var(--profile-bg);
+  border-top-color: var(--sidebar-border);
+}
+
+.sidebar-avatar {
+  border: 2px solid var(--avatar-border);
+}
+
+.sidebar-avatar-placeholder {
+  background: var(--avatar-placeholder-bg);
+}
+
+.sidebar-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
+}
+
+.sidebar-profile-name {
+  color: var(--sidebar-text-primary);
+}
+
+.sidebar-profile-email {
+  color: var(--sidebar-text-secondary);
+}
+
+.sidebar-logout-btn {
+  color: var(--sidebar-text-secondary);
+}
+
+.sidebar-logout-btn:hover {
+  background: var(--logout-hover-bg) !important;
+  color: var(--logout-hover-color) !important;
+}
+
+/* ==================== LIGHT THEME VARIABLES ==================== */
+
+:root[data-theme='light'] {
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e5e7eb;
+  --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  --sidebar-text-primary: #1f2937;
+  --sidebar-text-secondary: #6b7280;
+  --sidebar-text-tertiary: #9ca3af;
+
+  --logo-bg: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  --logo-color: #ffffff;
+
+  --search-bg: #f3f4f6;
+  --search-border: #e5e7eb;
+  --search-focus-bg: #ffffff;
+  --accent-ring: rgba(22, 163, 74, 0.1);
+
+  --nav-hover-bg: #f0fdf4;
+  --nav-active-bg: #dcfce7;
+  --accent-color: #16a34a;
+
+  --hover-bg: rgba(0, 0, 0, 0.05);
+
+  --profile-bg: #f9fafb;
+  --avatar-border: #bbf7d0;
+  --avatar-placeholder-bg: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+
+  --logout-hover-bg: #fee2e2;
+  --logout-hover-color: #dc2626;
+
+  --notification-badge-bg: #16a34a;
+
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb-hover: #9ca3af;
+
+  --tooltip-bg: #1f2937;
+  --tooltip-text: #ffffff;
+}
+
+/* ==================== DARK THEME VARIABLES ==================== */
+
+:root[data-theme='dark'] {
+  --sidebar-bg: #1e1e2e;
+  --sidebar-border: #2a2a3a;
+  --sidebar-shadow: 2px 0 16px rgba(0, 0, 0, 0.3);
+  --sidebar-text-primary: #e5e7eb;
+  --sidebar-text-secondary: #9ca3af;
+  --sidebar-text-tertiary: #6b7280;
+
+  --logo-bg: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  --logo-color: #ffffff;
+
+  --search-bg: #2a2a3a;
+  --search-border: #374151;
+  --search-focus-bg: #2d2d3d;
+  --accent-ring: rgba(22, 163, 74, 0.2);
+
+  --nav-hover-bg: #1a2e1e;
+  --nav-active-bg: rgba(22, 163, 74, 0.15);
+  --accent-color: #4ade80;
+
+  --hover-bg: rgba(255, 255, 255, 0.05);
+
+  --profile-bg: #252535;
+  --avatar-border: #374151;
+  --avatar-placeholder-bg: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+
+  --logout-hover-bg: rgba(220, 38, 38, 0.15);
+  --logout-hover-color: #f87171;
+
+  --notification-badge-bg: #16a34a;
+
+  --scrollbar-thumb: #374151;
+  --scrollbar-thumb-hover: #4b5563;
+
+  --tooltip-bg: #374151;
+  --tooltip-text: #e5e7eb;
+}
+
+/* ==================== ICON HOVER COLOR OVERRIDES ==================== */
+/* Force green accent on sidebar icons — overrides global blue hover rules */
+
+.sidebar-nav-item:hover .sidebar-nav-icon,
+.sidebar-nav-item:hover svg,
+.sidebar-nav-item-active .sidebar-nav-icon,
+.sidebar-nav-item-active svg {
+  color: var(--accent-color) !important;
+  transition: color 0.2s ease;
+}
+
+/* Override global light theme rule: button:hover svg → blue */
+:root[data-theme='light'] .sidebar-nav-item:hover svg,
+:root[data-theme='light'] .sidebar-nav-item:hover .sidebar-nav-icon,
+:root[data-theme='light'] .sidebar-nav-item-active svg,
+:root[data-theme='light'] .sidebar-nav-item-active .sidebar-nav-icon {
+  color: var(--accent-color) !important;
+}
+
+/* Override global dark theme rule: button:hover svg → accent */
+:root[data-theme='dark'] .sidebar-nav-item:hover svg,
+:root[data-theme='dark'] .sidebar-nav-item:hover .sidebar-nav-icon,
+:root[data-theme='dark'] .sidebar-nav-item-active svg,
+:root[data-theme='dark'] .sidebar-nav-item-active .sidebar-nav-icon {
+  color: var(--accent-color) !important;
+}
+
+/* ==================== DARK MODE OVERRIDES ==================== */
+/* Override global dark button styles specifically for sidebar buttons */
+
+:root[data-theme='dark'] .sidebar-toggle,
+:root[data-theme='dark'] .sidebar-logout-btn {
+  background-color: transparent !important;
+  border-radius: 0.5rem !important;
+}
+
+:root[data-theme='dark'] .sidebar-toggle:hover {
+  background: var(--hover-bg) !important;
+  transform: none !important;
+}
+
+/* ==================== ENTER ANIMATION ==================== */
+
+@keyframes sidebar-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar-modern {
+  animation: sidebar-fade-in 0.25s ease-out;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .sidebar-expanded {
+    width: 240px;
+  }
+
+  .sidebar-collapsed {
+    width: 64px;
+  }
+
+  body:not([data-sidebar-collapsed="true"]) .topbar-header {
+    left: 240px;
+  }
+
+  body[data-sidebar-collapsed="true"] .topbar-header {
+    left: 64px;
+  }
+}
