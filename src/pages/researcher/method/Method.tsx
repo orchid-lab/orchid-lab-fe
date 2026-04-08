@@ -153,7 +153,7 @@ export default function MethodList() {
   }, [data, searchTerm]);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
+    <main className="method-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
       <motion.div
         className="space-y-6 px-6 pb-10"
         variants={pageVariants}
