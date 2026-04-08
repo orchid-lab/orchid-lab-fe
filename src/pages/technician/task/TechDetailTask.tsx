@@ -204,7 +204,14 @@ const TechDetailTask: React.FC = () => {
 
       if (response.status === 200) {
         setTaskData((prev) => (prev ? { ...prev, status: statusString } : null));
-        enqueueSnackbar(`${t("common.statusUpdated")}: ${getStatusLabel(statusString)}`, {
+        
+        // Custom messages for different status transitions
+        let successMessage = `${t("common.statusUpdated")}: ${getStatusLabel(statusString)}`;
+        if (newStatus === 2) {
+          successMessage = t("technicianTask.requestApprovalSuccess") || "Yêu cầu duyệt thành công";
+        }
+        
+        enqueueSnackbar(successMessage, {
           variant: "success",
         });
         return true;
@@ -357,6 +364,8 @@ const TechDetailTask: React.FC = () => {
       }
       await handleCompleteChecklistItem(reportingChecklistItemId);
       setShowChecklistReportPopup(false);
+      setChecklistItemSelectedFiles([]);
+      setChecklistItemPreviewUrls([]);
       enqueueSnackbar(t("technicianTask.submitEvidenceSuccess"), { variant: "success" });
     } catch (error: any) {
       enqueueSnackbar(error.response?.data ?? t("technicianTask.submitReportFailed"), { variant: "error" });
@@ -539,7 +548,7 @@ const TechDetailTask: React.FC = () => {
                             <div className="flex flex-col gap-1">
                               {isEditing ? (
                                 <>
-                                  {item.status === "InProgress" && <button onClick={() => { setReportingChecklistItemId(item.id); setShowChecklistReportPopup(true); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs">{t("technicianTask.completeCriteria")}</button>}
+                                  {item.status === "InProgress" && <button onClick={() => { setReportingChecklistItemId(item.id); setChecklistItemSelectedFiles([]); setChecklistItemPreviewUrls([]); setShowChecklistReportPopup(true); }} className="bg-green-600 text-white px-2 py-1 rounded text-xs">{t("technicianTask.completeCriteria")}</button>}
                                   <button onClick={() => setEditingChecklistItem(null)} className="bg-gray-300 px-2 py-1 rounded text-xs">{t("common.cancel", "Cancel")}</button>
                                 </>
                               ) : (
@@ -601,7 +610,7 @@ const TechDetailTask: React.FC = () => {
               {checklistItemPreviewUrls.length > 0 && <p className="text-sm italic">{t("technicianTask.selectedPhotos", { count: checklistItemPreviewUrls.length })}</p>}
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <button onClick={() => setShowChecklistReportPopup(false)} className="px-4 py-2 bg-gray-200 rounded">{t("common.cancel", "Cancel")}</button>
+              <button onClick={() => { setShowChecklistReportPopup(false); setChecklistItemSelectedFiles([]); setChecklistItemPreviewUrls([]); }} className="px-4 py-2 bg-gray-200 rounded">{t("common.cancel", "Cancel")}</button>
               <button onClick={handleSubmitChecklistItemReport} disabled={submittingChecklistItemReport || !checklistItemSelectedFiles.length} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
                 {submittingChecklistItemReport ? t("technicianTask.submittingLabel") : t("technicianTask.completeCriteria")}
               </button>

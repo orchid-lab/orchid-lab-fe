@@ -663,7 +663,6 @@
     "inProgress": "Đang thực hiện",
     "inProgressHelp": "Các thí nghiệm đang tiến hành",
     "waitingHelp": "Các thí nghiệm chờ chuyển giai đoạn",
-    "completed": "Hoàn thành",
     "completedHelp": "Các thí nghiệm đã hoàn thành",
     "cancelled": "Đã hủy",
     "cancelledHelp": "Các thí nghiệm đã bị hủy",
@@ -748,7 +747,14 @@
     "currentSampleCount": "Số lượng mẫu hiện tại",
     "tabDetail": "Chi tiết",
     "tabSummary": "Tổng quan",
-    "completeExperiment": "Hoàn thành thí nghiệm"
+    "completeExperiment": "Hoàn thành thí nghiệm",
+    "conclusion": "Kết luận",
+    "conclusionPlaceholder": "Nhập kết luận (tùy chọn)",
+    "issues": "Vấn đề gặp phải",
+    "issuesPlaceholder": "Nhập các vấn đề gặp phải (tùy chọn)",
+    "recommendations": "Đề xuất",
+    "recommendationsPlaceholder": "Nhập các đề xuất (tùy chọn)",
+    "completed": "Hoàn thành thí nghiệm"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

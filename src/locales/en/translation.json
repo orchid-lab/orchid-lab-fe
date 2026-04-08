@@ -747,7 +747,13 @@
     "currentSampleCount": "Current Sample Count",
     "tabDetail": "Detail",
     "tabSummary": "Overview",
-    "completeExperiment": "Complete Experiment"
+    "completeExperiment": "Complete Experiment",
+    "conclusion": "Conclusion",
+    "conclusionPlaceholder": "Enter conclusion (optional)",
+    "issues": "Issues Encountered",
+    "issuesPlaceholder": "Enter issues encountered (optional)",
+    "recommendations": "Recommendations",
+    "recommendationsPlaceholder": "Enter recommendations (optional)"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
