@@ -1,0 +1,31 @@
+/* Page-specific styles for the researcher Sample Detail page */
+.sample-detail-page {}
+
+.dark .sample-detail-page,
+:root[data-theme='dark'] .sample-detail-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .sample-detail-page .bg-white,
+:root[data-theme='dark'] .sample-detail-page .bg-white {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.dark .sample-detail-page .border,
+:root[data-theme='dark'] .sample-detail-page .border {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .sample-detail-page .text-gray-700,
+:root[data-theme='dark'] .sample-detail-page .text-gray-700 {
+  color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.dark .sample-detail-page .text-gray-600,
+:root[data-theme='dark'] .sample-detail-page .text-gray-600 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+}

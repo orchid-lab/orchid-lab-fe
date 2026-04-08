@@ -14,6 +14,7 @@ import gsap from "gsap";
 import type { Seedling, SeedlingApiResponse } from "../../../types/Seedling";
 import type { User } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
+import "./Seedlings.css";
 import SuccessRateAnalysis from "./SuccessRateAnalysis";
 
 const PAGE_SIZE = 5;
@@ -261,7 +262,7 @@ export default function Seedlings() {
   ];
 
   return (
-    <main className="ml-0 sm:ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
+    <main className="seedlings-page ml-0 sm:ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
 
       {/* GSAP top progress bar */}
       <div

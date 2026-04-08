@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import "./MethodDetail.css";
 import { useSnackbar } from "notistack";
 import { motion, AnimatePresence, useInView, type Variants } from "framer-motion";
 import gsap from "gsap";
@@ -119,7 +120,7 @@ function SkeletonLoader() {
       variants={fadeIn}
       initial="hidden"
       animate="visible"
-      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
+      className="method-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
     >
       <div className="animate-pulse">
         <div className="h-8 bg-gray-300 rounded w-1/3 mb-4" />
@@ -431,7 +432,7 @@ export default function MethodDetail() {
         variants={fadeIn}
         initial="hidden"
         animate="visible"
-        className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
+        className="method-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
       >
         <motion.div
           variants={fadeUp}
@@ -460,7 +461,7 @@ export default function MethodDetail() {
       variants={fadeIn}
       initial="hidden"
       animate="visible"
-      className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
+      className="method-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 p-6"
     >
       {/* Top progress bar — GSAP scaleX from 0→1 */}
       <div

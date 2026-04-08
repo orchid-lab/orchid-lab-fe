@@ -57,8 +57,8 @@ button.method-create-button.method-page:hover,
   color: #cbd5e1 !important;
 }
 
-.dark .method-page .text-[#005792],
-:root[data-theme='dark'] .method-page .text-[#005792] {
+.dark .method-page .text-\[\#005792\],
+:root[data-theme='dark'] .method-page .text-\[\#005792\] {
   color: #7dd3fc !important;
 }
 

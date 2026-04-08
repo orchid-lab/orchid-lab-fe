@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { MonitoringLog, MonitoringLogApiResponse, MonitoringLogStatus } from "../../../types/MonitoringLog";
 import { useTranslation } from "react-i18next";
+import "./Reports.css";
 import { useSnackbar } from "notistack";
 import { Doughnut } from "react-chartjs-2";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
@@ -429,7 +430,7 @@ export default function ReportsTechnician() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] p-8">
+    <main className="reports-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}

@@ -5,6 +5,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import "./Tasks.css";
 import gsap from "gsap";
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -254,7 +255,7 @@ export default function Tasks() {
   });
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
+    <main className="tasks-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
 
       {/* GSAP progress bar */}
       <div
