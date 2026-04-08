@@ -253,8 +253,7 @@ const TechnicianExperimentLogDetail = () => {
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
   const [protocormQuantity, setProtocormQuantity] = useState<string>("");
   const [isChangingStage, setIsChangingStage] = useState(false);
-  // New state for completing experiment when at final stage
-  const [isCompleting, setIsCompleting] = useState(false);
+  // ...existing code...
   const [isChangeStageSuccessModalOpen, setIsChangeStageSuccessModalOpen] = useState(false);
 
   // Animation refs
@@ -368,30 +367,7 @@ const TechnicianExperimentLogDetail = () => {
     }
   };
 
-  /**
-   * Complete the experiment when the current stage is the final stage of the method.
-   */
-  const handleCompleteExperiment = async () => {
-    if (!id) return;
-    setIsCompleting(true);
-    try {
-      await axiosInstance.put(`/api/experiment-logs/${id}/status`, {
-        status: "Completed",
-      });
-      // Update local log status to Completed
-      setLog((prev) => (prev ? { ...prev, status: "Completed" } : prev));
-      enqueueSnackbar(t("experimentLog.completed") || "Hoàn thành thí nghiệm", { variant: "success" });
-    } catch (e) {
-      const axiosError = e as AxiosError<ApiErrorResponse>;
-      const apiDetail = axiosError.response?.data?.detail?.trim();
-      const apiTitle = axiosError.response?.data?.title?.trim();
-      const message = apiDetail ?? apiTitle ?? t("common.errorLoading");
-      enqueueSnackbar(message, {autoHideDuration: 1000, variant: "warning" });
-      setError(message);
-    } finally {
-      setIsCompleting(false);
-    }
-  };
+  // ...existing code...
 
   /**
    * Create protocorms using POST /api/samples
@@ -876,27 +852,16 @@ const TechnicianExperimentLogDetail = () => {
                 {t("common.cancel") || "Hủy thí nghiệm"}
               </button>
             )}
-            {/* Change Stage / Complete Experiment Button */}
-            {normalizeStatus(log.status) === "InProgress" && (
-              isLastStage ? (
-                <button
-                  type="button"
-                  onClick={() => void handleCompleteExperiment()}
-                  disabled={isCompleting}
-                  className="btn-change-stage"
-                >
-                  {isCompleting ? (t("common.processing") || "Đang xử lý...") : (t("experimentLog.completeExperiment") || "Hoàn thành thí nghiệm")}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleChangeStage()}
-                  disabled={isChangingStage}
-                  className="btn-change-stage"
-                >
-                  {isChangingStage ? (t("experimentLog.changingStage") || "Đang thay đổi...") : (t("experimentLog.changeStage") || "Chuyển giai đoạn")}
-                </button>
-              )
+            {/* Change Stage Button (no complete experiment for technician) */}
+            {normalizeStatus(log.status) === "InProgress" && !isLastStage && (
+              <button
+                type="button"
+                onClick={() => void handleChangeStage()}
+                disabled={isChangingStage}
+                className="btn-change-stage"
+              >
+                {isChangingStage ? (t("experimentLog.changingStage") || "Đang thay đổi...") : (t("experimentLog.changeStage") || "Chuyển giai đoạn")}
+              </button>
             )}
           </div>
         </div>

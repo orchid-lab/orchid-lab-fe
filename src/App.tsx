@@ -73,6 +73,8 @@ import AdminTissueCultureBatchDetail from "./pages/admin/tissueculturebatch/Admi
 import AdminConfig from "./pages/admin/config/AdminConfig";
 import TechnicianExperimentLogDetail from "./pages/technician/experimentlog/TechnicianExperimentLogDetail";
 import TechnicianExperimentLog from "./pages/technician/experimentlog/TechnicianExperimentLog";
+import TechnicianBatchList from "./pages/technician/batch/TechnicianBatchList";
+import TechnicianBatchDetail from "./pages/technician/batch/TechnicianBatchDetail";
 
 function getUserRole(user: any): string {
   const roleValue = user?.role ?? user?.Role;
@@ -307,6 +309,22 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Lab Technician">
                   <ReportsTechnician />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician/batches"
+              element={
+                <ProtectedRoute requiredRole="Lab Technician">
+                  <TechnicianBatchList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician/batches/:id"
+              element={
+                <ProtectedRoute requiredRole="Lab Technician">
+                  <TechnicianBatchDetail />
                 </ProtectedRoute>
               }
             />

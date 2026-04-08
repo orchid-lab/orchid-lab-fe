@@ -92,6 +92,8 @@ const CreateExperimentStep1 = () => {
   const [numberOfSample, _setNumberOfSample] = useState(
     form.numberOfSample ?? 1,
   );
+  // New field: objective of the experiment
+  const [objective, setObjective] = useState(form.objective ?? "");
 
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loadingBatch, setLoadingBatch] = useState(true);
@@ -125,6 +127,11 @@ const CreateExperimentStep1 = () => {
         ? form.technicianID[0]
         : "",
   );
+
+  // Store detailed stages for the selected method fetched from /api/methods/{id}
+  const [methodStages, setMethodStages] = useState<
+    { name: string; description: string }[]
+  >([]);
 
   // Experiment logs validation is not required for now; keep empty
   useEffect(() => {
@@ -231,6 +238,32 @@ const CreateExperimentStep1 = () => {
       .catch(() => setMethods([]));
   }, []);
 
+  // Fetch detailed method info (stages) when a method is selected
+  useEffect(() => {
+    if (!selectedMethod) {
+      setMethodStages([]);
+      return;
+    }
+    if (DEV_OFFLINE) {
+      // In offline mode, we don't have stage details; keep empty
+      setMethodStages([]);
+      return;
+    }
+    void axiosInstance
+      .get(`/api/methods/${selectedMethod}`)
+      .then((res) => {
+        const data = res.data as any;
+        const stages = Array.isArray(data.methodStages)
+          ? data.methodStages.map((s: any) => ({
+              name: s.stageDefinition?.name ?? "",
+              description: s.stageDefinition?.description ?? "",
+            }))
+          : [];
+        setMethodStages(stages);
+      })
+      .catch(() => setMethodStages([]));
+  }, [selectedMethod]);
+
   // Fetch technicians from API
   useEffect(() => {
     if (DEV_OFFLINE) {
@@ -323,6 +356,7 @@ const CreateExperimentStep1 = () => {
       startDate,
       endDate,
       numberOfSample,
+      objective,
       tissueCultureBatchID: selectedBatch,
       batchName: batchObj?.name ?? "",
       methodID: methodObj?.id ?? "",
@@ -341,6 +375,7 @@ const CreateExperimentStep1 = () => {
     startDate,
     endDate,
     numberOfSample,
+    objective,
     selectedTechnician,
     technicians,
   ]);
@@ -553,6 +588,19 @@ const CreateExperimentStep1 = () => {
                       <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                     </div>
                   </div>
+                  {/* Objective */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mục đích thí nghiệm <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={objective}
+                      onChange={(e) => setObjective(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                      placeholder="Nhập mục đích thí nghiệm..."
+                    />
+                  </div>
                   {/* Chi Tiết Method */}
                   {selectedMethod && (
                     <div className="bg-gray-50 p-4 rounded-lg">
@@ -577,25 +625,14 @@ const CreateExperimentStep1 = () => {
                         <div>
                           <strong>Các giai đoạn:</strong>
                           <ul className="list-disc list-inside ml-4 space-y-1">
-                            {methods
-                              .find((m) => String(m.id) === selectedMethod)
-                              ?.stages?.map(
-                                (
-                                  stage: {
-                                    id: string;
-                                    name: string;
-                                    description: string;
-                                    dateOfProcessing: number;
-                                    step: number;
-                                    status: boolean;
-                                  },
-                                  index: number,
-                                ) => (
-                                  <li key={stage.id}>
-                                    Giai đoạn {index + 1}: {stage.name}
+                            {methodStages.length > 0
+                              ? methodStages.map((stage, index) => (
+                                  <li key={index}>
+                                    <strong>{stage.name}</strong>
+                                    {stage.description && `: ${stage.description}`}
                                   </li>
-                                ),
-                              ) ?? <li>Không có thông tin giai đoạn</li>}
+                                ))
+                              : <li>Không có thông tin giai đoạn</li>}
                           </ul>
                         </div>
                       </div>
