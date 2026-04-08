@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Element page */
-.element-page {}
 
 .dark .element-page,
 :root[data-theme='dark'] .element-page {

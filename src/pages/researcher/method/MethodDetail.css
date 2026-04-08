@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Method Detail page */
-.method-detail-page {}
 
 .dark .method-detail-page,
 :root[data-theme='dark'] .method-detail-page {

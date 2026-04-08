@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher ExperimentLog page */
-.experiment-log-page {}
 
 .dark .experiment-log-page,
 :root[data-theme='dark'] .experiment-log-page {
@@ -112,4 +111,77 @@
 .dark .experiment-log-page .shadow-lg,
 :root[data-theme='dark'] .experiment-log-page .shadow-lg {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Status badge colors in dark mode */
+.dark .experiment-log-page .bg-\[#E6F1FF\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#E6F1FF\] {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+  color: #7dd3fc !important;
+}
+
+.dark .experiment-log-page .bg-\[#FFF2F0\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#FFF2F0\] {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .bg-\[#E0F7FA\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#E0F7FA\] {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  color: #86efac !important;
+}
+
+.dark .experiment-log-page .bg-\[#FFECEA\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#FFECEA\] {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .text-\[#D1433C\],
+:root[data-theme='dark'] .experiment-log-page .text-\[#D1433C\] {
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .text-\[#006D73\],
+:root[data-theme='dark'] .experiment-log-page .text-\[#006D73\] {
+  color: #86efac !important;
+}
+
+.dark .experiment-log-page .bg-\[#005792\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#005792\] {
+  background-color: rgba(59, 130, 246, 0.8) !important;
+  color: #ffffff !important;
+}
+
+.dark .experiment-log-page .bg-\[#005792\]:hover,
+:root[data-theme='dark'] .experiment-log-page .bg-\[#005792\]:hover {
+  background-color: rgba(59, 130, 246, 1) !important;
+}
+
+/* Backdrop blur effect */
+.dark .experiment-log-page .backdrop-blur-sm,
+:root[data-theme='dark'] .experiment-log-page .backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Table styling */
+.dark .experiment-log-page table,
+:root[data-theme='dark'] .experiment-log-page table {
+  background-color: rgba(10, 20, 42, 0.6) !important;
+}
+
+.dark .experiment-log-page thead,
+:root[data-theme='dark'] .experiment-log-page thead {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.dark .experiment-log-page tbody tr,
+:root[data-theme='dark'] .experiment-log-page tbody tr {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .experiment-log-page tbody tr:hover,
+:root[data-theme='dark'] .experiment-log-page tbody tr:hover {
+  background-color: rgba(20, 28, 50, 0.6) !important;
 }

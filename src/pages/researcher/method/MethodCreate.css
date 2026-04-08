@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Method Create page */
-.method-create-page {}
 
 .dark .method-create-page,
 :root[data-theme='dark'] .method-create-page {

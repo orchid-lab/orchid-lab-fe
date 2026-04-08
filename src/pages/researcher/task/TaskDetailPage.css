@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Task Detail page */
-.task-detail-page {}
 
 .dark .task-detail-page,
 :root[data-theme='dark'] .task-detail-page {

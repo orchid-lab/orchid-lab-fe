@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Reports Follow-up Details page */
-.reports-follow-up-details-page {}
 
 .dark .reports-follow-up-details-page,
 :root[data-theme='dark'] .reports-follow-up-details-page {
@@ -80,6 +79,4 @@
 .dark .reports-follow-up-details-page .shadow-lg,
 :root[data-theme='dark'] .reports-follow-up-details-page .shadow-lg {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
-}
-
 }

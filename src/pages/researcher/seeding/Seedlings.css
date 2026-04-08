@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Seedlings page */
-.seedlings-page {}
 
 .dark .seedlings-page,
 :root[data-theme='dark'] .seedlings-page {
