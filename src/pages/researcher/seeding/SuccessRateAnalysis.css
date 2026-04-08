@@ -19,6 +19,11 @@
   border-color: rgba(96, 165, 250, 0.18) !important;
 }
 
+.dark .success-rate-page .text-\\[\\#005792\\],
+:root[data-theme='dark'] .success-rate-page .text-\\[\\#005792\\] {
+  color: #7dd3fc !important;
+}
+
 .dark .success-rate-page .text-blue-900,
 :root[data-theme='dark'] .success-rate-page .text-blue-900 {
   color: rgba(219, 234, 254, 0.85) !important;
