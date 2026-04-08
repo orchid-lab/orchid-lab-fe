@@ -1,5 +1,4 @@
 /* Page-specific styles for the researcher Success Rate Analysis page */
-.success-rate-page {}
 
 .dark .success-rate-page,
 :root[data-theme='dark'] .success-rate-page {
@@ -7,8 +6,8 @@
     linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
 }
 
-.dark .success-rate-page .bg-white\\/80,
-:root[data-theme='dark'] .success-rate-page .bg-white\\/80 {
+.dark .success-rate-page .bg-white\/80,
+:root[data-theme='dark'] .success-rate-page .bg-white\/80 {
   background-color: rgba(10, 20, 42, 0.96) !important;
   border-color: rgba(148, 163, 184, 0.15) !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
@@ -25,8 +24,8 @@
   border-color: rgba(96, 165, 250, 0.18) !important;
 }
 
-.dark .success-rate-page .text-\\[\\#005792\\],
-:root[data-theme='dark'] .success-rate-page .text-\\[\\#005792\\] {
+.dark .success-rate-page .text-\[\#005792\],
+:root[data-theme='dark'] .success-rate-page .text-\[\#005792\] {
   color: #7dd3fc !important;
 }
 
@@ -97,9 +96,4 @@
 .dark .success-rate-page .shadow-lg,
 :root[data-theme='dark'] .success-rate-page .shadow-lg {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
-}
-
-.dark .success-rate-page .text-gray-600,
-:root[data-theme='dark'] .success-rate-page .text-gray-600 {
-  color: rgba(203, 213, 225, 0.7) !important;
 }
