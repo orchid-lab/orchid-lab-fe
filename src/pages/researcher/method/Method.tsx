@@ -1,9 +1,18 @@
 /* eslint-disable react-x/no-array-index-key */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useInView,
+  type Variants,
+  type Transition,
+} from "framer-motion";
 import axiosInstance from "../../../api/axiosInstance";
 
 interface MethodListItem {
@@ -23,6 +32,71 @@ interface MethodApiResponse {
 
 const SKELETON_ROWS = 8;
 
+// ── Animated counter ────────────────────────────────────────────────────────
+function AnimatedCounter({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const motionVal = useMotionValue(0);
+  const spring = useSpring(motionVal, { stiffness: 80, damping: 18 });
+  const inView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (inView) motionVal.set(value);
+  }, [value, inView]);
+
+  useEffect(() => {
+    return spring.on("change", (v) => {
+      if (ref.current) ref.current.textContent = Math.round(v).toString();
+    });
+  }, [spring]);
+
+  return <span ref={ref}>0</span>;
+}
+
+// ── Shared easing ─────────────────────────────────────────────────────────────
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+// ── Variants ─────────────────────────────────────────────────────────────────
+const pageVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.05 } as Transition,
+  },
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 28, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.55, ease: EASE_OUT_EXPO } as Transition,
+  },
+};
+
+const rowVariants: Variants = {
+  hidden: { opacity: 0, x: -16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: i * 0.055,
+      duration: 0.4,
+      ease: EASE_OUT_EXPO,
+    },
+  }),
+  exit: { opacity: 0, x: 16, transition: { duration: 0.22 } as Transition },
+};
+
+const skeletonVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: (i: number) => ({
+    opacity: 1,
+    transition: { delay: i * 0.06, duration: 0.35 },
+  }),
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function MethodList() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -32,6 +106,7 @@ export default function MethodList() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -40,7 +115,6 @@ export default function MethodList() {
         PageNumber: "1",
         PageSize: "1000",
       });
-
       const res = await axiosInstance.get(`/api/methods?${params.toString()}`);
       const json = res.data as MethodApiResponse;
       const items = json.data ?? [];
@@ -68,7 +142,6 @@ export default function MethodList() {
     if (!keyword) {
       return [...data].sort((a, b) => a.name.localeCompare(b.name));
     }
-
     return data
       .filter(
         (item) =>
@@ -78,42 +151,90 @@ export default function MethodList() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [data, searchTerm]);
 
-
-
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes scaleIn {
-          from { opacity: 0; transform: translateY(6px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
-        .animate-scale-in { animation: scaleIn 0.5s ease-out forwards; }
-        .hover-lift { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
-        .hover-lift:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 10px 20px -8px rgba(0,0,0,0.18); }
-      `}</style>
-
-      <div className="space-y-6 px-6 pb-10">
-        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
+      <motion.div
+        className="space-y-6 px-6 pb-10"
+        variants={pageVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* ── Header ── */}
+        <motion.div
+          variants={cardVariants}
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
+        >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
               <h1 className="text-2xl md:text-3xl font-semibold text-[#005792]">
                 {t("method.methodsManagement")}
               </h1>
               <p className="mt-1 text-sm text-blue-900/70">
                 {t("method.methodSubtitle")}
               </p>
-            </div>
-            <button
+            </motion.div>
+
+            <motion.button
               type="button"
-              onClick={() => {
-                void navigate("/researcher/method/new");
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#004d73] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
+              onClick={() => void navigate("/researcher/method/new")}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
+              whileHover={{ scale: 1.04, backgroundColor: "#004d73" }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 320, damping: 20 }}
+            >
+              <motion.span
+                initial={{ rotate: 0 }}
+                whileHover={{ rotate: 90 }}
+                transition={{ duration: 0.25 }}
+                className="flex"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  className="h-5 w-5"
+                >
+                  <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </motion.span>
+              {t("method.createMethod")}
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* ── Stats ── */}
+        <motion.div
+          variants={cardVariants}
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
+        >
+          <div className="text-sm font-medium text-blue-700 mb-1">
+            {t("method.totalMethods")}
+          </div>
+          <div className="text-3xl font-semibold text-blue-950">
+            <AnimatedCounter value={totalCount} />
+          </div>
+        </motion.div>
+
+        {/* ── Search ── */}
+        <motion.div
+          variants={cardVariants}
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
+        >
+          <motion.div
+            className="relative max-w-xl"
+            animate={searchFocused ? { scale: 1.015 } : { scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+          >
+            <motion.span
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005792]"
+              animate={searchFocused ? { scale: 1.15, color: "#003f60" } : { scale: 1 }}
+              transition={{ duration: 0.2 }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -123,165 +244,233 @@ export default function MethodList() {
                 strokeWidth={2}
                 className="h-5 w-5"
               >
-                <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
-              {t("method.createMethod")}
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
-          <div className="text-sm font-medium text-blue-700 mb-1">{t("method.totalMethods")}</div>
-          <div className="text-3xl font-semibold text-blue-950">{totalCount}</div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6">
-          <div className="relative max-w-xl">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005792]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="h-5 w-5"
-              >
-                <path d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
+            </motion.span>
             <input
               type="text"
               className="w-full border border-blue-100 bg-white/90 rounded-xl px-4 py-2 pl-11 text-sm font-medium text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#005792] transition-all duration-200"
               placeholder={t("method.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
             />
-          </div>
-        </div>
+            <AnimatePresence>
+              {searchTerm && (
+                <motion.button
+                  key="clear"
+                  type="button"
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.6 }}
+                  transition={{ duration: 0.18 }}
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-700 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                  </svg>
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </motion.div>
 
-        <div className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm overflow-hidden">
+        {/* ── Table ── */}
+        <motion.div
+          variants={cardVariants}
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm overflow-hidden"
+        >
           <table className="min-w-full">
             <thead className="bg-white/60">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">
-                  {t("method.methodName")}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">
-                  {t("common.description")}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">
-                  {t("common.duration")}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60">
-                  {t("common.action")}
-                </th>
+                {["method.methodName", "common.description", "common.duration", "common.action"].map(
+                  (key, i) => (
+                    <motion.th
+                      key={key}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
+                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60"
+                    >
+                      {t(key)}
+                    </motion.th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                Array.from({ length: SKELETON_ROWS }).map((_, idx) => (
-                  <tr key={`method-skeleton-${idx}`} className="border-b border-blue-50 animate-pulse">
-                    <td className="py-4 px-6"><div className="h-4 bg-blue-100 rounded w-3/4"></div></td>
-                    <td className="py-4 px-6"><div className="h-4 bg-blue-100 rounded w-full"></div></td>
-                    <td className="py-4 px-6"><div className="h-4 bg-blue-100 rounded w-1/3"></div></td>
-                    <td className="py-4 px-6"><div className="h-4 bg-blue-100 rounded w-1/2"></div></td>
-                  </tr>
-                ))
-              ) : filteredData.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-10 text-blue-900/40">
-                    {t("common.noData")}
-                  </td>
-                </tr>
-              ) : (
-                filteredData.map((method) => (
-                  <tr
-                    key={method.id}
-                    className="border-b border-blue-50 hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                    onClick={() => void navigate(`/researcher/method/${method.id}`)}
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <>
+                    {Array.from({ length: SKELETON_ROWS }).map((_, idx) => (
+                      <motion.tr
+                        key={`skeleton-${idx}`}
+                        variants={skeletonVariants}
+                        initial="hidden"
+                        animate="visible"
+                        custom={idx}
+                        className="border-b border-blue-50"
+                      >
+                        {[3 / 4, 1, 1 / 3, 1 / 2].map((w, ci) => (
+                          <td key={ci} className="py-4 px-6">
+                            <motion.div
+                              className="h-4 bg-blue-100 rounded"
+                              style={{ width: `${w * 100}%` }}
+                              animate={{ opacity: [0.5, 1, 0.5] }}
+                              transition={{
+                                duration: 1.4,
+                                repeat: Infinity,
+                                delay: idx * 0.08 + ci * 0.05,
+                                ease: "easeInOut",
+                              }}
+                            />
+                          </td>
+                        ))}
+                      </motion.tr>
+                    ))}
+                  </>
+                ) : filteredData.length === 0 ? (
+                  <motion.tr
+                    key="empty"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    <td className="py-4 px-6 font-medium text-blue-950">{method.name}</td>
-                    <td className="py-4 px-6 text-blue-900 max-w-[440px]">
-                      <div className="line-clamp-2" title={method.description}>
-                        {method.description}
-                      </div>
+                    <td colSpan={4} className="text-center py-14 text-blue-900/40">
+                      <motion.div
+                        animate={{ scale: [1, 1.05, 1] }}
+                        transition={{ duration: 2.5, repeat: Infinity }}
+                        className="text-4xl mb-3"
+                      >
+                        🔍
+                      </motion.div>
+                      {t("common.noData")}
                     </td>
-                    <td className="py-4 px-6">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 border border-cyan-100">
-                        {method.totalDurationDays} {t("common.days")}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void navigate(`/researcher/method/${method.id}`);
-                          }}
-                          className="inline-flex items-center justify-center rounded-lg p-2 text-[#005792] transition-all duration-200 hover:bg-blue-50 hover:text-[#003f60]"
-                          aria-label={t("common.view")}
+                  </motion.tr>
+                ) : (
+                  filteredData.map((method, idx) => (
+                    <motion.tr
+                      key={method.id}
+                      custom={idx}
+                      variants={rowVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      layout
+                      onClick={() => void navigate(`/researcher/method/${method.id}`)}
+                      className="border-b border-blue-50 cursor-pointer"
+                      whileHover={{
+                        backgroundColor: "rgba(239,246,255,0.7)",
+                        x: 3,
+                        transition: { duration: 0.18 },
+                      }}
+                    >
+                      <td className="py-4 px-6 font-medium text-blue-950">
+                        {method.name}
+                      </td>
+                      <td className="py-4 px-6 text-blue-900 max-w-[440px]">
+                        <div className="line-clamp-2" title={method.description}>
+                          {method.description}
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <motion.span
+                          className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 border border-cyan-100"
+                          whileHover={{ scale: 1.08 }}
+                          transition={{ type: "spring", stiffness: 350, damping: 20 }}
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            className="h-4 w-4"
+                          {method.totalDurationDays} {t("common.days")}
+                        </motion.span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          {/* View */}
+                          <ActionButton
+                            label={t("common.view")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void navigate(`/researcher/method/${method.id}`);
+                            }}
                           >
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center justify-center rounded-lg p-2 text-[#005792] transition-all duration-200 hover:bg-blue-50 hover:text-[#003f60]"
-                          aria-label={t("common.edit")}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            className="h-4 w-4"
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </ActionButton>
+
+                          {/* Edit */}
+                          <ActionButton
+                            label={t("common.edit")}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center justify-center rounded-lg p-2 text-[#005792] transition-all duration-200 hover:bg-blue-50 hover:text-[#003f60]"
-                          aria-label={t("common.delete")}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            className="h-4 w-4"
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                            </svg>
+                          </ActionButton>
+
+                          {/* Delete */}
+                          <ActionButton
+                            label={t("common.delete")}
+                            onClick={(e) => e.stopPropagation()}
+                            danger
                           >
-                            <path d="M3 6h18" />
-                            <path d="M8 6v14h8V6" />
-                            <path d="M10 10v6" />
-                            <path d="M14 10v6" />
-                            <path d="M9 6V4h6v2" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                              <path d="M3 6h18" />
+                              <path d="M8 6v14h8V6" />
+                              <path d="M10 10v6" />
+                              <path d="M14 10v6" />
+                              <path d="M9 6V4h6v2" />
+                            </svg>
+                          </ActionButton>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </main>
+  );
+}
+
+// ── ActionButton ──────────────────────────────────────────────────────────────
+function ActionButton({
+  children,
+  label,
+  onClick,
+  danger = false,
+}: {
+  children: React.ReactNode;
+  label: string;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  danger?: boolean;
+}) {
+  return (
+    <motion.button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors duration-200 ${
+        danger
+          ? "text-[#005792] hover:bg-red-50 hover:text-red-500"
+          : "text-[#005792] hover:bg-blue-50 hover:text-[#003f60]"
+      }`}
+      whileHover={{ scale: 1.2 }}
+      whileTap={{ scale: 0.85, rotate: danger ? -10 : 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 18 }}
+    >
+      {children}
+    </motion.button>
   );
 }
