@@ -95,7 +95,7 @@ export default function AdminElement() {
         </div>
 
         {/* ─── Tab Content Area ─── */}
-        <div className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full">
+        <div className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -105,7 +105,8 @@ export default function AdminElement() {
               exit="exit"
               className="w-full"
             >
-              <div className="p-6">
+              {/* Tăng padding thành p-8 để các item bên trong rộng rãi hơn */}
+              <div className="p-8">
                 {activeTab === "chemical" ? (
                   <ChemicalList t={t} />
                 ) : (
