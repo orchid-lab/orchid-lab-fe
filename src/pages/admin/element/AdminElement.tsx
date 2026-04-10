@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { FlaskConical, TestTube2, Layers } from "lucide-react";
 import ChemicalList from "../../../components/AdminChemical";
 import MaterialList from "../../../components/AdminMaterial";
-import "./AdminElement.css"; // Import CSS riêng biệt
+import "./AdminElement.css";
 
 export default function AdminElement() {
   const { t } = useTranslation();
@@ -16,30 +16,33 @@ export default function AdminElement() {
   ] as const;
 
   // --- Framer Motion Variants ---
-  const pageVariants = {
+  const pageVariants: Variants = {
     hidden: { opacity: 0, y: 15 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } 
-    }
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+      },
+    },
   };
 
-  const tabContentVariants = {
+  const tabContentVariants: Variants = {
     enter: { opacity: 0, y: 10 },
     center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { opacity: 0, y: -10, transition: { duration: 0.2, ease: "easeIn" } }
+    exit: { opacity: 0, y: -10, transition: { duration: 0.2, ease: "easeIn" } },
   };
 
   return (
     <main className="admin-element-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8">
-      <motion.div 
-        initial="hidden" 
-        animate="visible" 
-        variants={pageVariants} 
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={pageVariants}
         className="max-w-[1600px] mx-auto flex flex-col"
       >
-        
+
         {/* ─── Header Section ─── */}
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 bg-rose-50 rounded-xl border border-rose-100 shadow-sm">
@@ -61,15 +64,15 @@ export default function AdminElement() {
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
-              
+
               return (
                 <button
                   key={tab.id}
-                  type="button" // Đã thêm type="button" để fix lỗi ESLint
+                  type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={`relative flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-300 outline-none ${
-                    isActive 
-                      ? "text-[#9f1239]" 
+                    isActive
+                      ? "text-[#9f1239]"
                       : "text-slate-500 hover:text-slate-700 hover:bg-rose-50/50"
                   }`}
                 >
@@ -91,10 +94,8 @@ export default function AdminElement() {
           </div>
         </div>
 
-        {/* ─── Tab Content Area (Tự động giãn chiều cao theo nội dung, không có thanh cuộn trong) ─── */}
+        {/* ─── Tab Content Area ─── */}
         <div className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] w-full">
-          {/* Sử dụng mode="wait" để chờ Component cũ biến mất hẳn rồi Component mới mới xuất hiện, 
-              tránh làm khung layout bị giật/đẩy khi thay đổi nội dung */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
