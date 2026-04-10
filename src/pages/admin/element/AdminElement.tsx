@@ -2,40 +2,30 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { FlaskConical, TestTube2, Layers } from "lucide-react";
+import { TestTube2, Layers } from "lucide-react";
 import ChemicalList from "../../../components/AdminChemical";
 import MaterialList from "../../../components/AdminMaterial";
 import gsap from "gsap";
 import "./AdminElement.css";
 
-/* ─── Animation variants (đồng bộ với ExperimentLog) ──── */
+/* ─── Animation variants ──────────────────────────────── */
 type CubicBezier = [number, number, number, number];
 const EASE_OUT: CubicBezier = [0.22, 1, 0.36, 1];
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
+    opacity: 1, y: 0,
     transition: { duration: 0.5, delay: (i as number) * 0.08, ease: EASE_OUT },
   }),
 };
 
 const tabContent: Variants = {
   enter: { opacity: 0, y: 10 },
-  center: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: EASE_OUT },
-  },
-  exit: {
-    opacity: 0,
-    y: -10,
-    transition: { duration: 0.2, ease: [0.36, 0, 1, 0] },
-  },
+  center: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE_OUT } },
+  exit:  { opacity: 0, y: -10, transition: { duration: 0.2, ease: [0.36, 0, 1, 0] } },
 };
 
-/* ─── Tab config ──────────────────────────────────────── */
 const TAB_IDS = ["chemical", "material"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
@@ -48,36 +38,23 @@ export default function AdminElement() {
     { id: "material", labelKey: "element.material", icon: Layers },
   ];
 
-  /* ── GSAP progress bar (giống ExperimentLog) ── */
+  /* ── GSAP progress bar ── */
   const progressRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!progressRef.current) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        progressRef.current,
-        { scaleX: 0, opacity: 1 },
-        { scaleX: 1, duration: 1, ease: "power3.out" }
-      );
+      gsap.fromTo(progressRef.current, { scaleX: 0, opacity: 1 }, { scaleX: 1, duration: 1, ease: "power3.out" });
       gsap.to(progressRef.current, { opacity: 0, duration: 0.5, delay: 1.2 });
     });
     return () => ctx.revert();
   }, []);
 
-  /* Replay progress bar khi đổi tab */
   const handleTabChange = (id: TabId) => {
     setActiveTab(id);
     if (progressRef.current) {
       gsap.set(progressRef.current, { scaleX: 0, opacity: 1 });
-      gsap.to(progressRef.current, {
-        scaleX: 1,
-        duration: 0.7,
-        ease: "power3.out",
-      });
-      gsap.to(progressRef.current, {
-        opacity: 0,
-        duration: 0.4,
-        delay: 0.9,
-      });
+      gsap.to(progressRef.current, { scaleX: 1, duration: 0.7, ease: "power3.out" });
+      gsap.to(progressRef.current, { opacity: 0, duration: 0.4, delay: 0.9 });
     }
   };
 
@@ -95,30 +72,19 @@ export default function AdminElement() {
 
         {/* ── Header card ── */}
         <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={0}
+          variants={fadeUp} initial="hidden" animate="visible" custom={0}
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-rose-50 rounded-xl border border-rose-100 shadow-sm">
-                <FlaskConical className="w-6 h-6 text-[#9f1239]" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
-                  {t("element.elementManagement") || "Quản lý Yếu tố Thí nghiệm"}
-                </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  {t("element.elementManagementDescription") ||
-                    "Quản lý danh sách hóa chất và vật tư tiêu hao trong hệ thống"}
-                </p>
-              </div>
-            </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
+              {t("element.elementManagement")}
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              {t("element.elementManagementDescription")}
+            </p>
           </div>
 
-          {/* ── Animated Tab Bar (trong header card) ── */}
+          {/* ── Tab Bar ── */}
           <div className="mt-6 flex">
             <div className="flex p-1.5 gap-1 bg-rose-50/60 border border-rose-100 rounded-2xl shadow-inner">
               {tabs.map((tab) => {
@@ -130,9 +96,7 @@ export default function AdminElement() {
                     type="button"
                     onClick={() => handleTabChange(tab.id)}
                     className={`relative flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#f43f5e] ${
-                      isActive
-                        ? "text-[#9f1239]"
-                        : "text-slate-500 hover:text-slate-700"
+                      isActive ? "text-[#9f1239]" : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
                     {isActive && (
@@ -140,11 +104,7 @@ export default function AdminElement() {
                         layoutId="activeTabBg"
                         className="absolute inset-0 bg-white border border-rose-100 rounded-xl shadow-sm"
                         initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 28,
-                        }}
+                        transition={{ type: "spring", stiffness: 380, damping: 28 }}
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-2">
@@ -160,26 +120,17 @@ export default function AdminElement() {
 
         {/* ── Tab content card ── */}
         <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          custom={1}
+          variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm overflow-hidden"
         >
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
               variants={tabContent}
-              initial="enter"
-              animate="center"
-              exit="exit"
+              initial="enter" animate="center" exit="exit"
               className="p-6"
             >
-              {activeTab === "chemical" ? (
-                <ChemicalList t={t} />
-              ) : (
-                <MaterialList t={t} />
-              )}
+              {activeTab === "chemical" ? <ChemicalList t={t} /> : <MaterialList t={t} />}
             </motion.div>
           </AnimatePresence>
         </motion.div>
