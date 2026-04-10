@@ -67,14 +67,24 @@
 
 .admin-element-page div[class*="bg-green"]:not(button):not(a),
 .admin-element-page span[class*="bg-green"]:not(button):not(a) {
-  background-color: #fff1f2 !important;
+  background-color: #ffffff !important;
   color: #9f1239 !important;
-  border: 1px solid #fecdd3 !important;
+  border: 1.5px solid #f43f5e !important;
+  border-radius: 0.75rem !important;
   box-shadow: none !important;
 }
 
 .admin-element-page div[class*="bg-green"]:not(button):not(a) *,
 .admin-element-page span[class*="bg-green"]:not(button):not(a) * {
+  color: #9f1239 !important;
+}
+
+/* ── "Quản lý hóa chất / vật tư" heading trong ChemicalList / MaterialList ── */
+.admin-element-page h2[class*="text-green"],
+.admin-element-page h3[class*="text-green"],
+.admin-element-page [class*="text-green-7"],
+.admin-element-page [class*="text-green-8"],
+.admin-element-page [class*="text-green-9"] {
   color: #9f1239 !important;
 }
 
@@ -230,8 +240,9 @@
 :root[data-theme='dark'] .admin-element-page div[class*="bg-green"]:not(button):not(a),
 .dark .admin-element-page span[class*="bg-green"]:not(button):not(a),
 :root[data-theme='dark'] .admin-element-page span[class*="bg-green"]:not(button):not(a) {
-  background-color: rgba(159, 18, 57, 0.2) !important;
-  border: 1px solid rgba(244, 63, 94, 0.25) !important;
+  background-color: rgba(28, 15, 20, 0.9) !important;
+  border: 1.5px solid #f43f5e !important;
+  border-radius: 0.75rem !important;
   box-shadow: none !important;
 }
 
