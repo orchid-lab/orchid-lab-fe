@@ -6,7 +6,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { 
-  ChevronLeft, AlertCircle, Info, Layers, TestTube2, 
+  ChevronLeft, AlertCircle, Info, Layers, 
   FlaskConical, CheckCircle2, XCircle, Beaker, Box
 } from "lucide-react";
 
