@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { useState, useMemo, useEffect, useRef } from "react";
 import axiosInstance from "../../../api/axiosInstance";

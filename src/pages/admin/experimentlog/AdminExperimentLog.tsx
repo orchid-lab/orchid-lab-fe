@@ -7,14 +7,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Plus, ChevronRight } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import "./AdminExperimentLog.css";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
 
-/* ─── Types (Giữ nguyên 100%) ─────────────────────────────── */
+/* ─── Types ─────────────────────────────── */
 type ExperimentStatus = "Created" | "Waiting" | "InProcess" | "Done" | "Cancel";
 
 interface Stage {
@@ -76,7 +76,7 @@ function AnimatedCounter({ value, className }: { value: number; className?: stri
   return <span ref={ref} className={className}>0</span>;
 }
 
-/* ─── Helpers (Đổi tone màu Orchid Lab) ───────────────────── */
+/* ─── Helpers (Tone màu Orchid Lab) ───────────────────── */
 function normalizeStatus(status?: number | string): ExperimentStatus | string {
   const s = String(status ?? "");
   switch (s) {
@@ -95,7 +95,7 @@ function getStatusColor(status?: number | string): string {
     case "Waiting": return "bg-amber-50 text-amber-700";
     case "InProcess": return "bg-rose-50 text-[#9f1239]"; // Ruby Red cho Active state
     case "Done": return "bg-emerald-50 text-emerald-700";
-    case "Cancel": return "bg-zinc-100 text-zinc-500"; // Muted cho Cancel để nhường spotlight cho Ruby
+    case "Cancel": return "bg-zinc-100 text-zinc-500"; // Muted cho Cancel
     default: return "bg-gray-100 text-gray-800";
   }
 }
@@ -196,8 +196,6 @@ const ExperimentLog = () => {
       return ts >= now && ts <= in7Days;
     }));
   }).length;
-
-  const priorityLogs = logs.filter((log) => normalizeStatus(log.status) === "Waiting").slice(0, 5);
 
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
@@ -447,154 +445,112 @@ const ExperimentLog = () => {
         </div>
       </motion.div>
 
-      {/* ── Middle row ── */}
+      {/* ── Middle row (Bố cục mới: Biểu đồ & Bộ lọc tỷ lệ 2:1) ── */}
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 grid grid-cols-1 gap-6">
-
-          {/* Donut chart */}
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div>
-                <h2 className="text-lg font-semibold text-[#9f1239]">{t("experimentLog.latestStatusChart")}</h2>
-                <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <svg width="120" height="120" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="38" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
-                    {donutSlices.map((slice, i) => (
-                      <motion.circle
-                        key={slice.label}
-                        cx="60" cy="60" r="38" fill="transparent"
-                        stroke={slice.color} strokeWidth="12"
-                        strokeDasharray={`${slice.dash} ${donutCircumference}`}
-                        strokeDashoffset={-slice.offset}
-                        strokeLinecap="round"
-                        transform="rotate(-90 60 60)"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-                      />
-                    ))}
-                    <text x="60" y="60" textAnchor="middle" dominantBaseline="central" className="text-sm font-semibold" fill="#0f172a">
-                      {totalDistribution}
-                    </text>
-                  </svg>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                  {statusDistribution.filter((item) => item.value > 0).map((item, i) => (
-                    <motion.div key={item.label}
-                      initial={{ opacity: 0, x: 12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + i * 0.08, duration: 0.3, ease: EASE_OUT }}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-slate-700">{item.label}</span>
-                      <span className="ml-auto text-xs text-slate-500">{item.value}</span>
-                    </motion.div>
+        
+        {/* Donut chart (Chiếm 2 phần) */}
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
+          className="xl:col-span-2 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col justify-center">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center gap-12 w-full">
+            <div className="text-center lg:text-left">
+              <h2 className="text-lg font-semibold text-[#9f1239]">{t("experimentLog.latestStatusChart")}</h2>
+              <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              <div className="relative">
+                <svg width="140" height="140" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="38" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                  {donutSlices.map((slice, i) => (
+                    <motion.circle
+                      key={slice.label}
+                      cx="60" cy="60" r="38" fill="transparent"
+                      stroke={slice.color} strokeWidth="12"
+                      strokeDasharray={`${slice.dash} ${donutCircumference}`}
+                      strokeDashoffset={-slice.offset}
+                      strokeLinecap="round"
+                      transform="rotate(-90 60 60)"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+                    />
                   ))}
-                </div>
+                  <text x="60" y="60" textAnchor="middle" dominantBaseline="central" className="text-lg font-semibold" fill="#0f172a">
+                    {totalDistribution}
+                  </text>
+                </svg>
               </div>
-            </div>
-          </motion.div>
-
-          {/* Priority list */}
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
-            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-[#9f1239]">{t("experimentLog.waitingForStageChange")}</h2>
-                <p className="mt-1 text-sm text-slate-500">{t("experimentLog.waitingHelp")}</p>
-              </div>
-              <span className="text-xs font-semibold text-slate-500">
-                {priorityLogs.length} {t("common.items")}
-              </span>
-            </div>
-            <ul className="mt-4 space-y-2">
-              {priorityLogs.length > 0 ? priorityLogs.map((log, i) => (
-                <motion.li
-                  key={log.id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + i * 0.07, duration: 0.3, ease: EASE_OUT }}
-                  whileHover={{ backgroundColor: "rgba(255,241,242,0.8)", x: 4, transition: { duration: 0.15 } }}
-                  className="rounded-xl p-3 cursor-pointer"
-                  onClick={() => void navigate(`/researcher/experiment-log/${log.id}`)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-900 truncate">{log.name}</div>
-                      <div className="text-xs text-slate-500 truncate">{log.methodName} • {log.tissueCultureBatchName}</div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                {statusDistribution.filter((item) => item.value > 0).map((item, i) => (
+                  <motion.div key={item.label}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.08, duration: 0.3, ease: EASE_OUT }}
+                    className="flex items-center justify-between gap-4 text-sm min-w-[120px]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-slate-700 font-medium">{item.label}</span>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`px-2 py-1 rounded-full text-[11px] font-semibold ${getStatusColor(log.status)}`}>
-                        {statusToLabel(log.status)}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-rose-300" />
-                    </div>
-                  </div>
-                </motion.li>
-              )) : (
-                <div className="text-sm text-slate-500">{t("common.noData")}</div>
-              )}
-            </ul>
-          </motion.div>
-        </div>
-
-        {/* Filter panel */}
-        <div className="xl:col-span-1">
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
-            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-[#9f1239]">{t("common.filter")}</h2>
-            <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
-            <div className="mt-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.status")}</label>
-                <select
-                  className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
-                >
-                  <option value="all">{t("experimentLog.allStatuses")}</option>
-                  <option value="Created">{t("status.created")}</option>
-                  <option value="InProcess">{t("status.inProgress")}</option>
-                  <option value="Done">{t("status.completed")}</option>
-                  <option value="Cancel">{t("status.cancelled")}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">{t("experimentLog.method")}</label>
-                <select
-                  className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
-                  value={methodFilter}
-                  onChange={(e) => setMethodFilter(e.target.value)}
-                >
-                  <option value="">{t("experimentLog.allMethods")}</option>
-                  {methods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.search")}</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder={t("sample.searchPlaceholder")}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full border border-rose-100 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
-                  />
-                </div>
+                    <span className="text-sm font-semibold text-slate-900">{item.value}</span>
+                  </motion.div>
+                ))}
               </div>
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
+
+        {/* Filter panel (Chiếm 1 phần) */}
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
+          className="xl:col-span-1 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-[#9f1239]">{t("common.filter")}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
+          <div className="mt-5 space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.status")}</label>
+              <select
+                className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
+              >
+                <option value="all">{t("experimentLog.allStatuses")}</option>
+                <option value="Created">{t("status.created")}</option>
+                <option value="InProcess">{t("status.inProgress")}</option>
+                <option value="Done">{t("status.completed")}</option>
+                <option value="Cancel">{t("status.cancelled")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("experimentLog.method")}</label>
+              <select
+                className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
+              >
+                <option value="">{t("experimentLog.allMethods")}</option>
+                {methods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.search")}</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder={t("sample.searchPlaceholder")}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full border border-rose-100 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* ── Table ── */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={4} className="mt-3">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="mt-6">
         <div className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
