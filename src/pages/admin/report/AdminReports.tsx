@@ -1,17 +1,254 @@
-import { useState, useMemo, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+import { useState, useMemo, useEffect, useRef } from "react";
 import axiosInstance from "../../../api/axiosInstance";
 import type { ReportApiResponse, Report } from "../../../types/Report";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Doughnut } from "react-chartjs-2";
+import { Chart, ArcElement, Tooltip, Legend } from "chart.js";
+import type { ChartOptions, TooltipItem } from "chart.js";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  FileText,
+  CheckCircle2,
+  Clock,
+  ChevronDown,
+  Filter,
+  Search,
+  Eye,
+} from "lucide-react";
 
-const PAGE_SIZE = 5;
+Chart.register(ArcElement, Tooltip, Legend);
+
+const PAGE_SIZE = 10;
+
+// ─── Animation Variants ───────────────────────────────────────────────────────
+
+const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
+const fadeInDown: Variants = {
+  hidden: { opacity: 0, y: -16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
+};
+
+const staggerContainer: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const cardVariant: Variants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
+};
+
+const filterPanelVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.96, y: -8 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.35, ease: EASE_OUT_EXPO },
+  },
+};
+
+const tableRowVariant: Variants = {
+  hidden: { opacity: 0, x: -12 },
+  visible: (i: number = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.35, delay: i * 0.04, ease: "easeOut" as const },
+  }),
+  exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
+};
+
+const dropdownVariant: Variants = {
+  hidden: { opacity: 0, scaleY: 0.88, y: -6 },
+  visible: {
+    opacity: 1, scaleY: 1, y: 0,
+    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
+  },
+  exit: {
+    opacity: 0, scaleY: 0.9, y: -4,
+    transition: { duration: 0.15, ease: "easeIn" as const },
+  },
+};
+
+const dropdownItemVariant: Variants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: (i: number) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.18, delay: i * 0.03, ease: "easeOut" as const },
+  }),
+};
+
+// ─── Status config ────────────────────────────────────────────────────────────
+
+type ReportStatus = "Seen" | "NotSeen";
+
+const STATUS_COLORS: Record<ReportStatus, string> = {
+  Seen:    "bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]",
+  NotSeen: "bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]",
+};
+
+const STATUS_ICON_COLORS: Record<ReportStatus, string> = {
+  Seen:    "text-[#991B1B]",
+  NotSeen: "text-[#C2410C]",
+};
+
+const getStatusIcon = (status: ReportStatus) => {
+  const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
+  return status === "Seen"
+    ? <CheckCircle2 className={cls} />
+    : <Clock className={cls} />;
+};
+
+// ─── AnimatedSelect ───────────────────────────────────────────────────────────
+
+interface SelectOption<T extends string> {
+  value: T;
+  label: string;
+}
+
+interface AnimatedSelectProps<T extends string> {
+  value: T;
+  onChange: (value: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+}
+
+function AnimatedSelect<T extends string>({
+  value,
+  onChange,
+  options,
+  placeholder = "Select...",
+}: AnimatedSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative select-none">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className={`
+          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
+          transition-all duration-150 whitespace-nowrap
+          ${open
+            ? "border-[#991B1B] ring-2 ring-[#991B1B]/20 text-[#991B1B]"
+            : "border-red-100 text-gray-700 hover:border-[#991B1B]/50"
+          }
+        `}
+      >
+        <span>{selectedLabel}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+          className="flex items-center"
+        >
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            key="dropdown"
+            variants={dropdownVariant}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{ transformOrigin: "top center" }}
+            className="
+              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
+              bg-white border border-red-100 rounded-xl
+              shadow-[0_8px_32px_rgba(153,27,27,0.14)]
+              overflow-hidden py-1
+            "
+          >
+            {options.map((opt, i) => (
+              <motion.li
+                key={opt.value}
+                custom={i}
+                variants={dropdownItemVariant}
+                initial="hidden"
+                animate="visible"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`
+                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
+                  transition-colors duration-75
+                  ${opt.value === value
+                    ? "bg-[#FEE2E2] text-[#991B1B] font-medium"
+                    : "text-gray-700 hover:bg-[#FFF5F5] hover:text-[#991B1B]"
+                  }
+                `}
+              >
+                {opt.label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  dotColor: string;
+  label: string;
+  value: number;
+  valueColor: string;
+  borderColor: string;
+}
+
+function StatCard({ dotColor, label, value, valueColor, borderColor }: StatCardProps) {
+  return (
+    <motion.div
+      variants={cardVariant}
+      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(153,27,27,0.14)" }}
+      className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_14px_32px_rgba(153,27,27,0.10)] border ${borderColor} p-5 cursor-default`}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`inline-block h-3 w-3 rounded-full ${dotColor}`} />
+        <span className="text-sm font-medium text-[#991B1B] leading-tight">{label}</span>
+      </div>
+      <motion.div
+        key={value}
+        initial={{ opacity: 0, scale: 0.7 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className={`text-3xl font-bold ${valueColor}`}
+      >
+        {value}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function AdminReport() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
+
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ReportStatus | "All">("All");
   const [data, setData] = useState<Report[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -23,13 +260,9 @@ export default function AdminReport() {
       setLoading(true);
       try {
         const res = await axiosInstance.get<ReportApiResponse>("/api/report", {
-          params: {
-            pageNumber: page,
-            pageSize: PAGE_SIZE,
-          },
+          params: { pageNumber: page, pageSize: PAGE_SIZE },
         });
-        
-        const json = res.data; 
+        const json = res.data;
         setData(json.value.data || []);
         setTotal(json.value.totalCount || 0);
         setTotalPages(json.value.pageCount || 1);
@@ -45,249 +278,378 @@ export default function AdminReport() {
     void fetchData();
   }, [page]);
 
-  // Lọc dữ liệu
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
+
   const filteredReports = useMemo(() => {
     return data.filter((r) => {
       const matchSearch =
         r.name.toLowerCase().includes(search.toLowerCase()) ||
         r.technician.toLowerCase().includes(search.toLowerCase());
-      return matchSearch;
+      const matchStatus =
+        statusFilter === "All" || r.status === statusFilter;
+      return matchSearch && matchStatus;
     });
-  }, [data, search]);
+  }, [data, search, statusFilter]);
+
+  const seenCount    = data.filter((r) => r.status === "Seen").length;
+  const notSeenCount = data.filter((r) => r.status !== "Seen").length;
+
+  const chartData = useMemo(() => ({
+    labels: [t("report.seen"), t("report.notSeen")],
+    datasets: [{
+      data: [seenCount, notSeenCount],
+      backgroundColor: ["#991B1B", "#C2410C"],
+      borderWidth: 0,
+      spacing: 2,
+    }],
+  }), [seenCount, notSeenCount, t]);
+
+  const chartOptions: ChartOptions<"doughnut"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label(context: TooltipItem<"doughnut">) {
+            return `${context.label}: ${context.parsed}`;
+          },
+        },
+      },
+    },
+    cutout: "68%",
+  };
+
+  const statusOptions: SelectOption<ReportStatus | "All">[] = [
+    { value: "All",    label: t("common.status") },
+    { value: "Seen",    label: t("report.seen") },
+    { value: "NotSeen", label: t("report.notSeen") },
+  ];
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-b from-stone-50 to-stone-100">
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-stone-900 tracking-tight mb-2">
-            {t("report.reportManagement")}
-          </h1>
-          <div className="h-1 w-16 bg-gradient-to-r from-red-800 to-red-600 rounded-full"></div>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#FFF5F5] p-8">
+      <div className="max-w-[1400px] mx-auto space-y-6">
+
+        {/* ── Header ── */}
+        <motion.div
+          variants={fadeInDown}
+          initial="hidden"
+          animate="visible"
+          className="bg-white/80 backdrop-blur-sm border border-red-100 rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
+        >
+          <div>
+            <h1 className="text-3xl font-semibold text-[#991B1B] mb-1">
+              {t("report.reportManagement")}
+            </h1>
+            <p className="text-red-900/70 text-sm">
+              {t("report.subtitle", { defaultValue: "Quản lý và theo dõi báo cáo kỹ thuật viên" })}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* ── Summary ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Donut card */}
+          <motion.div
+            variants={cardVariant}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(153,27,27,0.18)" }}
+            className="lg:col-span-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_18px_40px_rgba(153,27,27,0.10)] border border-red-100 p-6"
+          >
+            <h3 className="text-lg font-semibold text-[#991B1B] mb-1">
+              {t("report.totalReports")}
+            </h3>
+            <p className="text-sm text-red-900/60 mb-6">
+              {t("report.reportDistribution", { defaultValue: "Phân bổ theo trạng thái" })}
+            </p>
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex-1 min-w-0">
+                <motion.div
+                  key={total}
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="text-5xl font-bold text-[#991B1B]"
+                >
+                  {total}
+                </motion.div>
+                <div className="text-sm text-red-900/60 mt-1">{t("report.totalReports")}</div>
+                <div className="mt-4 space-y-1.5">
+                  {[
+                    { label: t("report.seen"),    color: "bg-[#991B1B]", value: seenCount },
+                    { label: t("report.notSeen"), color: "bg-[#C2410C]", value: notSeenCount },
+                  ].map(({ label, color, value }) => (
+                    <div key={label} className="flex items-center gap-2 text-xs text-red-900/60">
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full flex-shrink-0 ${color}`} />
+                      <span className="truncate">{label}</span>
+                      <span className="ml-auto font-semibold text-[#991B1B]">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="h-36 w-36 flex-shrink-0">
+                <Doughnut data={chartData} options={chartOptions} />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Stat cards */}
+          <motion.div
+            className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <StatCard
+              dotColor="bg-[#991B1B]"
+              label={t("report.totalReports")}
+              value={total}
+              valueColor="text-[#991B1B]"
+              borderColor="border-red-100"
+            />
+            <StatCard
+              dotColor="bg-green-600"
+              label={t("report.seen")}
+              value={seenCount}
+              valueColor="text-green-700"
+              borderColor="border-green-100"
+            />
+            <StatCard
+              dotColor="bg-[#C2410C]"
+              label={t("report.notSeen")}
+              value={notSeenCount}
+              valueColor="text-[#C2410C]"
+              borderColor="border-orange-100"
+            />
+          </motion.div>
         </div>
 
-        {/* Filter Section - Pro Max Aesthetic */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-red-700">
-          <div className="flex flex-col gap-4">
-            <label className="text-sm font-semibold text-stone-700 uppercase tracking-wider">
-              {t("report.search")}
-            </label>
-            <div className="relative">
+        {/* ── Filter panel ── */}
+        <motion.div
+          variants={filterPanelVariant}
+          initial="hidden"
+          animate="visible"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_10px_20px_rgba(153,27,27,0.08)] border border-red-100 p-6 origin-top"
+        >
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-5 h-5 text-[#991B1B]" />
+              <AnimatedSelect
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as ReportStatus | "All")}
+                options={statusOptions}
+                placeholder={t("common.status")}
+              />
+            </div>
+
+            <div className="flex-1 min-w-[300px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                className="w-full border-2 border-stone-200 rounded-lg px-5 py-3 pl-12 text-stone-900 placeholder-stone-400 transition-all duration-200 focus:outline-none focus:border-red-700 focus:shadow-md focus:ring-0"
                 placeholder={t("report.searchPlaceholder")}
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full border border-red-100 bg-white/90 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#991B1B]/30 focus:border-[#991B1B] transition-shadow"
               />
-              <span className="absolute left-4 top-3.5 text-stone-400">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                  <path
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
-                  />
-                </svg>
-              </span>
             </div>
-          </div>
-        </div>
 
-        {/* Data Table - Modern Professional */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-stone-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gradient-to-r from-stone-50 to-stone-100 border-b-2 border-red-700">
-                  <th className="py-4 px-6 text-sm font-bold text-stone-900 uppercase tracking-wider">{t("report.taskName")}</th>
-                  <th className="px-6 text-sm font-bold text-stone-900 uppercase tracking-wider">{t("report.description")}</th>
-                  <th className="px-6 text-sm font-bold text-stone-900 uppercase tracking-wider">{t("report.writer")}</th>
-                  <th className="px-6 text-sm font-bold text-stone-900 uppercase tracking-wider">{t("report.status")}</th>
-                  <th className="px-6 text-sm font-bold text-stone-900 uppercase tracking-wider text-center">{t("report.action")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: PAGE_SIZE }).map((_, idx) => {
-                    const skeletonId = `skeleton-row-${page}-${idx}`;
-                    return (
-                      <tr key={skeletonId} className="border-b border-stone-100 animate-pulse">
-                        <td className="py-4 px-6">
-                          <div className="h-4 bg-stone-200 rounded-lg w-3/4"></div>
-                        </td>
-                        <td className="px-6">
-                          <div className="h-4 bg-stone-200 rounded-lg w-2/3"></div>
-                        </td>
-                        <td className="px-6">
-                          <div className="h-4 bg-stone-200 rounded-lg w-2/3"></div>
-                        </td>
-                        <td className="px-6">
-                          <div className="h-4 bg-stone-200 rounded-lg w-1/2"></div>
-                        </td>
-                        <td className="px-6">
-                          <div className="h-8 bg-stone-200 rounded-lg w-20 mx-auto"></div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : filteredReports.length === 0 ? (
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { setSearch(""); setStatusFilter("All"); setPage(1); }}
+              className="px-4 py-2.5 text-sm text-[#991B1B] hover:text-[#7F1D1D] hover:bg-[#FEE2E2] border border-red-100 rounded-lg transition-colors font-medium"
+            >
+              {t("common.clearFilters")}
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* ── Table ── */}
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-16 gap-3"
+            >
+              <motion.div
+                className="w-10 h-10 border-4 border-red-100 border-t-[#991B1B] rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
+              />
+              <span className="text-red-900/50 text-sm">{t("common.loadingData")}</span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="table"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-[0_18px_40px_rgba(153,27,27,0.08)] border border-red-100 overflow-hidden"
+            >
+              <table className="w-full">
+                <thead className="bg-white/60 border-b border-red-100">
                   <tr>
-                    <td colSpan={5} className="text-center py-12 text-stone-500">
-                      <div className="text-lg font-medium">{t("report.noReports")}</div>
-                      <div className="text-sm mt-1">Bắt đầu thêm báo cáo để xem chúng ở đây</div>
-                    </td>
+                    {[
+                      t("report.taskName"),
+                      t("report.description"),
+                      t("report.writer"),
+                      t("common.status"),
+                      t("common.action"),
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className="text-left px-6 py-4 font-semibold text-[#991B1B] text-xs uppercase tracking-wider"
+                      >
+                        {header}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  filteredReports.map((r) => (
-                    <tr key={r.id} className="border-b border-stone-100 hover:bg-red-50 transition-colors duration-200">
-                      <td className="py-4 px-6 font-medium text-stone-900">{r.name}</td>
-                      <td className="px-6 text-stone-700">{r.description}</td>
-                      <td className="px-6 text-stone-600">{r.technician}</td>
-                      <td className="px-6">
-                        <span
-                          className={`inline-block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                            r.status === "Seen"
-                              ? "bg-green-100 text-green-700 border border-green-200"
-                              : "bg-amber-100 text-amber-700 border border-amber-200"
+                </thead>
+
+                <tbody className="divide-y divide-red-50">
+                  <AnimatePresence>
+                    {filteredReports.length === 0 ? (
+                      <motion.tr
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <td colSpan={5} className="p-12 text-center text-red-900/40">
+                          <div className="flex flex-col items-center gap-2">
+                            <FileText className="w-10 h-10 text-red-200" />
+                            <span className="text-base font-medium">{t("report.noReports")}</span>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ) : (
+                      filteredReports.map((r, i) => (
+                        <motion.tr
+                          key={r.id}
+                          custom={i}
+                          variants={tableRowVariant}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                          layout
+                          whileHover={{ backgroundColor: "rgba(254,242,242,0.85)" }}
+                          className="cursor-default transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium text-red-950">{r.name}</td>
+                          <td className="px-6 py-4 text-red-900/70 max-w-xs truncate">{r.description}</td>
+                          <td className="px-6 py-4 text-red-900/60">{r.technician}</td>
+
+                          {/* Status badge */}
+                          <td className="px-6 py-4">
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                                STATUS_COLORS[r.status as ReportStatus] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"
+                              }`}
+                            >
+                              {getStatusIcon(r.status as ReportStatus)}
+                              {r.status === "Seen" ? t("report.seen") : t("report.notSeen")}
+                            </motion.span>
+                          </td>
+
+                          {/* Action */}
+                          <td className="px-6 py-4">
+                            <motion.button
+                              type="button"
+                              whileHover={{ scale: 1.04 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => void navigate(`/admin/report/${r.id}?page=${page}`)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#991B1B] text-[#991B1B] hover:bg-[#991B1B] hover:text-white transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              {t("report.details")}
+                            </motion.button>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="px-6 py-4 bg-white/70 border-t border-red-100 flex justify-between items-center"
+                >
+                  <span className="text-sm text-red-900/60 font-medium">
+                    {t("common.showing")}{" "}
+                    <span className="font-bold text-[#991B1B]">{filteredReports.length}</span>{" "}
+                    {t("report.reportsOutOf")}{" "}
+                    <span className="font-bold text-[#991B1B]">{total}</span>{" "}
+                    {t("report.reports")}
+                  </span>
+                  <div className="flex gap-2">
+                    {page > 1 && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setPage(page - 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-red-100 hover:bg-[#FEE2E2] hover:border-red-300 text-sm font-medium shadow-sm"
+                      >
+                        ←
+                      </motion.button>
+                    )}
+
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5)             pageNum = i + 1;
+                      else if (page <= 3)              pageNum = i + 1;
+                      else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else                             pageNum = page - 2 + i;
+                      return (
+                        <motion.button
+                          key={pageNum}
+                          type="button"
+                          whileHover={{ scale: 1.08 }}
+                          whileTap={{ scale: 0.93 }}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm ${
+                            page === pageNum
+                              ? "bg-[#991B1B] text-white"
+                              : "bg-white border border-red-100 hover:bg-[#FEE2E2] hover:border-red-300"
                           }`}
                         >
-                          {r.status === "Seen" ? t("report.seen") : t("report.notSeen")}
-                        </span>
-                      </td>
-                      <td className="px-6 text-center">
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-2 px-4 py-2 border-2 border-red-700 text-red-700 rounded-lg font-slightly-bold hover:bg-red-700 hover:text-white transition-all duration-200 hover:shadow-md cursor-pointer"
-                          onClick={() =>
-                            void navigate(`/admin/report/${r.id}?page=${page}`)
-                          }
-                        >
-                          {t("report.details")}
-                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeWidth="2" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                          {pageNum}
+                        </motion.button>
+                      );
+                    })}
 
-        {/* Metric Summary Cards - Design Focus */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white rounded-xl shadow-md border-l-4 border-red-700 p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-stone-600 uppercase tracking-wide">
-                  {t("report.totalReports")}
-                </div>
-                <div className="text-4xl font-bold text-red-700 mt-2">{total}</div>
-              </div>
-              <div className="text-5xl opacity-10 text-red-700">📊</div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl shadow-md border-l-4 border-red-600 p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-stone-600 uppercase tracking-wide">
-                  Báo cáo đã xem
-                </div>
-                <div className="text-4xl font-bold text-green-700 mt-2">
-                  {data.filter((r) => r.status === "Seen").length}
-                </div>
-              </div>
-              <div className="text-5xl opacity-10 text-green-700">✓</div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md border-l-4 border-amber-500 p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-stone-600 uppercase tracking-wide">
-                  Chờ xem
-                </div>
-                <div className="text-4xl font-bold text-amber-600 mt-2">
-                  {data.filter((r) => r.status !== "Seen").length}
-                </div>
-              </div>
-              <div className="text-5xl opacity-10 text-amber-600">⏳</div>
-            </div>
-          </div>
-        </div>
-        {/* Pagination - Premium Pro Max */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center text-sm text-stone-600 mt-8 bg-white rounded-xl shadow-md p-6 border border-stone-200">
-            <div>
-              <span className="font-medium text-stone-900">
-                {t("common.showing")} <span className="text-red-700 font-bold">{filteredReports.length}</span>{" "}
-                {t("report.reportsOutOf")} <span className="text-red-700 font-bold">{total}</span> {t("report.reports")}
-              </span>
-            </div>
-            <div className="flex gap-1.5 items-center">
-              {/* Previous button */}
-              {page > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setPage(page - 1)}
-                  className="w-10 h-10 rounded-lg bg-stone-100 text-stone-700 hover:bg-red-700 hover:text-white transition-all duration-200 font-bold flex items-center justify-center hover:shadow-md"
-                  title="Previous page"
-                >
-                  ←
-                </button>
+                    {page < totalPages && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setPage(page + 1)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-red-100 hover:bg-[#FEE2E2] hover:border-red-300 text-sm font-medium shadow-sm"
+                      >
+                        →
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              {/* Page numbers */}
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (page <= 3) {
-                  pageNum = i + 1;
-                } else if (page >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = page - 2 + i;
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    type="button"
-                    onClick={() => setPage(pageNum)}
-                    className={`w-10 h-10 rounded-lg font-semibold transition-all duration-200 ${
-                      page === pageNum
-                        ? "bg-red-700 text-white shadow-md"
-                        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
-                    }`}
-                    aria-current={page === pageNum ? "page" : undefined}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              {/* Next button */}
-              {page < totalPages && (
-                <button
-                  type="button"
-                  onClick={() => setPage(page + 1)}
-                  className="w-10 h-10 rounded-lg bg-stone-100 text-stone-700 hover:bg-red-700 hover:text-white transition-all duration-200 font-bold flex items-center justify-center hover:shadow-md"
-                  title="Next page"
-                >
-                  →
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </main>
   );
