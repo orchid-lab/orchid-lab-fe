@@ -1,0 +1,391 @@
+/* ========================================
+   ORCHID LAB - Reusable Component Styles
+   ======================================== */
+
+/* ============ CONTAINERS ============ */
+
+.orchid-container {
+  @apply bg-white rounded-xl shadow-md border border-stone-200 p-6 transition-shadow hover:shadow-lg;
+}
+
+.orchid-page-bg {
+  @apply bg-gradient-to-b from-stone-50 to-stone-100;
+}
+
+.orchid-card-elevated {
+  @apply bg-white rounded-xl shadow-md border-l-4 border-red-700 p-6;
+}
+
+/* ============ SEARCH INPUT ============ */
+
+.orchid-search-input {
+  @apply w-full border-2 border-stone-200 rounded-lg px-5 py-3 pl-12 text-stone-900 placeholder-stone-400 transition-all duration-200 focus:outline-none focus:border-red-700 focus:shadow-md;
+}
+
+.orchid-search-wrapper {
+  @apply relative;
+}
+
+.orchid-search-icon {
+  @apply absolute left-4 top-3.5 text-stone-400 pointer-events-none;
+}
+
+/* ============ BUTTONS ============ */
+
+.orchid-btn-primary {
+  @apply inline-flex items-center gap-2 px-4 py-2 border-2 border-red-700 text-red-700 rounded-lg font-semibold hover:bg-red-700 hover:text-white transition-all duration-200 hover:shadow-md cursor-pointer;
+}
+
+.orchid-btn-secondary {
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg font-semibold hover:bg-stone-200 transition-all duration-200 cursor-pointer;
+}
+
+.orchid-btn-page {
+  @apply w-10 h-10 rounded-lg font-bold flex items-center justify-center transition-all duration-200;
+}
+
+.orchid-btn-page-inactive {
+  @apply orchid-btn-page bg-stone-100 text-stone-700 hover:bg-stone-200;
+}
+
+.orchid-btn-page-active {
+  @apply orchid-btn-page bg-red-700 text-white shadow-md;
+}
+
+/* ============ TABLES ============ */
+
+.orchid-table {
+  @apply w-full text-left;
+}
+
+.orchid-table-header {
+  @apply bg-gradient-to-r from-stone-50 to-stone-100 border-b-2 border-red-700;
+}
+
+.orchid-table-header-cell {
+  @apply py-4 px-6 text-sm font-bold text-stone-900 uppercase tracking-wider;
+}
+
+.orchid-table-body-row {
+  @apply border-b border-stone-100 hover:bg-red-50 transition-colors duration-200;
+}
+
+.orchid-table-body-cell {
+  @apply py-4 px-6 text-stone-900;
+}
+
+/*  Status Badges  */
+
+.orchid-badge {
+  @apply inline-block px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border;
+}
+
+.orchid-badge-success {
+  @apply orchid-badge bg-green-100 text-green-700 border-green-200;
+}
+
+.orchid-badge-warning {
+  @apply orchid-badge bg-amber-100 text-amber-700 border-amber-200;
+}
+
+.orchid-badge-error {
+  @apply orchid-badge bg-red-100 text-red-700 border-red-200;
+}
+
+.orchid-badge-info {
+  @apply orchid-badge bg-cyan-100 text-cyan-700 border-cyan-200;
+}
+
+/* ============ TYPOGRAPHY ============ */
+
+.orchid-h1 {
+  @apply text-3xl font-bold text-stone-900 tracking-tight;
+}
+
+.orchid-h2 {
+  @apply text-2xl font-semibold text-stone-900 tracking-normal;
+}
+
+.orchid-h3 {
+  @apply text-xl font-semibold text-stone-900;
+}
+
+.orchid-body {
+  @apply text-base font-normal text-stone-900;
+}
+
+.orchid-body-sm {
+  @apply text-sm font-normal text-stone-700;
+}
+
+.orchid-body-muted {
+  @apply text-sm font-normal text-stone-600;
+}
+
+.orchid-label {
+  @apply text-xs font-semibold text-stone-600 uppercase tracking-wide;
+}
+
+.orchid-small {
+  @apply text-xs font-normal text-stone-500;
+}
+
+/* Brand underline accent */
+
+.orchid-title-accent {
+  @apply h-1 w-16 bg-gradient-to-r from-red-800 to-red-600 rounded-full mt-2;
+}
+
+/* ============ METRIC CARDS ============ */
+
+.orchid-metric-card {
+  @apply bg-white rounded-xl shadow-md border-l-4 p-6 hover:shadow-lg transition-shadow;
+}
+
+.orchid-metric-card-primary {
+  @apply orchid-metric-card border-l-red-700;
+}
+
+.orchid-metric-card-accent {
+  @apply orchid-metric-card border-l-red-600;
+}
+
+.orchid-metric-label {
+  @apply text-sm font-semibold text-stone-600 uppercase tracking-wide;
+}
+
+.orchid-metric-value {
+  @apply text-4xl font-bold text-red-700 mt-2;
+}
+
+.orchid-metric-icon {
+  @apply text-5xl opacity-10 text-red-700;
+}
+
+/* ============ FORMS ============ */
+
+.orchid-input {
+  @apply w-full border-2 border-stone-200 rounded-lg px-4 py-2.5 text-stone-900 placeholder-stone-400 transition-all duration-200 focus:outline-none focus:border-red-700 focus:ring-0;
+}
+
+.orchid-textarea {
+  @apply orchid-input resize-none;
+}
+
+.orchid-select {
+  @apply orchid-input appearance-none cursor-pointer;
+}
+
+.orchid-checkbox {
+  @apply w-5 h-5 rounded border-2 border-stone-300 text-red-700 cursor-pointer;
+}
+
+.orchid-radio {
+  @apply w-5 h-5 border-2 border-stone-300 text-red-700 cursor-pointer;
+}
+
+/* Label styling */
+
+.orchid-form-label {
+  @apply block text-sm font-semibold text-stone-700 mb-2;
+}
+
+.orchid-form-group {
+  @apply mb-4;
+}
+
+/* ============ MODALS & OVERLAYS ============ */
+
+.orchid-modal-backdrop {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center;
+}
+
+.orchid-modal {
+  @apply bg-white rounded-xl shadow-lg max-w-md w-full mx-4;
+}
+
+.orchid-modal-header {
+  @apply px-6 py-4 border-b border-stone-200;
+}
+
+.orchid-modal-body {
+  @apply px-6 py-4;
+}
+
+.orchid-modal-footer {
+  @apply px-6 py-4 border-t border-stone-200 flex gap-2 justify-end;
+}
+
+/* ============ PAGINATION ============ */
+
+.orchid-pagination {
+  @apply flex justify-between items-center text-sm text-stone-600 bg-white rounded-xl shadow-md p-6 border border-stone-200;
+}
+
+.orchid-pagination-buttons {
+  @apply flex gap-1.5 items-center;
+}
+
+.orchid-pagination-info {
+  @apply font-medium text-stone-900;
+}
+
+.orchid-pagination-count {
+  @apply text-red-700 font-bold;
+}
+
+/* ============ STATUS INDICATORS ============ */
+
+.orchid-status-dot {
+  @apply w-3 h-3 rounded-full inline-block mr-2;
+}
+
+.orchid-status-dot-active {
+  @apply orchid-status-dot bg-green-500;
+}
+
+.orchid-status-dot-inactive {
+  @apply orchid-status-dot bg-gray-400;
+}
+
+.orchid-status-dot-pending {
+  @apply orchid-status-dot bg-amber-500;
+}
+
+/* ============ LOADING STATES ============ */
+
+.orchid-skeleton {
+  @apply bg-stone-200 rounded-lg animate-pulse;
+}
+
+.orchid-skeleton-text {
+  @apply h-4 orchid-skeleton w-full;
+}
+
+.orchid-skeleton-circle {
+  @apply w-10 h-10 rounded-full orchid-skeleton;
+}
+
+/* ============ UTILITY CLASSES ============ */
+
+.orchid-divider {
+  @apply border-b border-stone-200;
+}
+
+.orchid-divider-accent {
+  @apply border-b-2 border-red-700;
+}
+
+.orchid-shadow-sm {
+  @apply shadow-sm;
+}
+
+.orchid-shadow-md {
+  @apply shadow-md;
+}
+
+.orchid-shadow-lg {
+  @apply shadow-lg;
+}
+
+.orchid-transition-smooth {
+  @apply transition-all duration-200;
+}
+
+.orchid-transition-smooth-lg {
+  @apply transition-all duration-300;
+}
+
+/* ============ RESPONSIVE HELPERS ============ */
+
+@media (max-width: 768px) {
+  .orchid-container {
+    @apply p-4;
+  }
+
+  .orchid-table-header-cell,
+  .orchid-table-body-cell {
+    @apply px-3 py-2 text-xs;
+  }
+
+  .orchid-h1 {
+    @apply text-2xl;
+  }
+
+  .orchid-metric-value {
+    @apply text-3xl;
+  }
+}
+
+/* ============ DARK MODE (Optional) ============ */
+
+@media (prefers-color-scheme: dark) {
+  /* If implementing dark mode in future */
+  
+  /* 
+  .orchid-container {
+    @apply bg-stone-900 border-stone-700;
+  }
+  
+  .orchid-page-bg {
+    @apply bg-gradient-to-b from-stone-900 to-stone-950;
+  }
+  */
+}
+
+/* ============ ANIMATIONS ============ */
+
+@keyframes orchid-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.orchid-pulse {
+  animation: orchid-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes orchid-slide-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.orchid-slide-in {
+  animation: orchid-slide-in 0.3s ease-out;
+}
+
+/* ============ HOVER EFFECTS ============ */
+
+.orchid-hover-lift {
+  @apply transition-all duration-200 hover:shadow-lg hover:translate-y-px;
+}
+
+.orchid-hover-text-red {
+  @apply transition-colors duration-200 hover:text-red-700;
+}
+
+/* ============ ACCESSIBILITY ============ */
+
+.orchid-sr-only {
+  @apply sr-only;
+}
+
+.orchid-focus-visible {
+  @apply outline-none ring-2 ring-red-700 ring-offset-2;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply orchid-focus-visible;
+}
