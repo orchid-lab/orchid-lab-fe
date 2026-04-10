@@ -542,7 +542,10 @@
     "highestSuccessRateCombination": "Tổ hợp có tỉ lệ thành công cao nhất",
     "totalCombinations": "Tổng số tổ hợp",
     "averageSuccessRate": "Tỉ lệ thành công trung bình",
-    "averageSurvivalRateOverall": "Tỉ lệ sống trung bình"
+    "averageSurvivalRateOverall": "Tỉ lệ sống trung bình",
+        "filterAndSearch": "Bộ lọc & Tìm kiếm",
+    "seedlingLocalNameOfHybrid": "Tên địa phương của cây lai",
+    "seedlingScientificNameOfHybrid": "Tên khoa học của cây lai"
   },
   "report": {
     "reportManagement": "Quản lý báo cáo",
@@ -853,7 +856,8 @@
     "pleaseEnterName": "Vui lòng nhập tên!",
     "pleaseEnterDescription": "Vui lòng nhập mô tả!",
     "elementsOutOf": "nguyên vật liệu trên tổng số",
-    "elements": "nguyên vật liệu"
+    "elements": "nguyên vật liệu",
+    "elementManagementDescription": "Quản lý danh sách hóa chất và vật tư tiêu hao trong hệ thống"
   },
   "notification": {
     "title": "Thông báo",

@@ -541,7 +541,10 @@
     "highestSuccessRateCombination": "Highest Success Rate Combination",
     "totalCombinations": "Total Combinations",
     "averageSuccessRate": "Average Success Rate",
-    "averageSurvivalRateOverall": "Average Survival Rate"
+    "averageSurvivalRateOverall": "Average Survival Rate",
+    "filterAndSearch": "Filters & Search",
+    "seedlingLocalNameOfHybrid": "Local Name of Hybrid",
+    "seedlingScientificNameOfHybrid": "Scientific Name of Hybrid"
   },
   "report": {
     "reportManagement": "Report Management",
@@ -852,7 +855,8 @@
     "elementsOutOf": "elements out of",
     "elements": "elements",
     "chemical": "Chemical",
-    "material": "Material"
+    "material": "Material",
+    "elementManagementDescription": "Manage chemicals and consumable materials in the system"
   },
   "notification": {
     "title": "Notifications",
