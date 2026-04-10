@@ -8,6 +8,10 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
+import { 
+  ChevronLeft, Trash2, Edit2, Loader2, Info, 
+  FlaskConical, TestTube2, Layers, AlertCircle 
+} from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface StageMaterial {
@@ -28,8 +32,8 @@ interface MethodStage {
   durationDays: number;
   stageDefinitionId?: number;
   stageDefinitionName?: string;
-  materials: StageMaterial[];
-  chemicals: StageChemical[];
+  materials?: StageMaterial[]; // Sửa type để an toàn
+  chemicals?: StageChemical[]; // Sửa type để an toàn
 }
 
 interface MethodDetail {
@@ -63,21 +67,29 @@ function ConfirmDeleteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4" initial={{ opacity: 0, scale: 0.92, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 24 }} transition={{ duration: 0.22 }}>
-        <div className="px-6 pt-6 pb-4 text-center">
-          <motion.div className="bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 w-14 h-14" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}>
-            <svg className="w-7 h-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        exit={{ opacity: 0, scale: 0.95, y: 20 }} 
+        transition={{ duration: 0.2 }}
+      >
+        <div className="px-6 pt-8 pb-6 text-center">
+          <motion.div className="bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5 w-16 h-16" 
+            initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}>
+            <AlertCircle className="w-8 h-8 text-rose-600" />
           </motion.div>
-          <h2 className="text-lg font-bold text-gray-900 mb-1">{title}</h2>
-          <p className="text-sm text-gray-500 mb-1">{description}</p>
-          <p className="text-xs text-red-500">Hành động này không thể hoàn tác.</p>
-          {error && <p className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
+          <p className="text-sm text-gray-500 mb-2">{description}</p>
+          <p className="text-xs font-medium text-rose-500 bg-rose-50 inline-block px-3 py-1 rounded-full">Hành động này không thể hoàn tác.</p>
+          {error && <p className="mt-3 text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-xl">{error}</p>}
         </div>
-        <div className="flex gap-3 px-6 pb-6">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
-          <motion.button type="button" onClick={() => void handleConfirm()} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors" whileHover={{ scale: deleting ? 1 : 1.02 }} whileTap={{ scale: deleting ? 1 : 0.98 }}>
-            {deleting ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Đang xóa...</> : "Xóa"}
+        <div className="flex gap-3 px-6 pb-6 bg-gray-50/50 pt-4 border-t border-gray-100">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-800 transition-colors">Hủy</button>
+          <motion.button type="button" onClick={() => void handleConfirm()} disabled={deleting} 
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 shadow-sm shadow-rose-200 disabled:opacity-60 transition-colors" 
+            whileHover={{ scale: deleting ? 1 : 1.02 }} whileTap={{ scale: deleting ? 1 : 0.98 }}>
+            {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Đang xóa...</> : "Xóa"}
           </motion.button>
         </div>
       </motion.div>
@@ -86,10 +98,8 @@ function ConfirmDeleteModal({
 }
 
 // ─── Edit Material Modal ───────────────────────────────────────────────────────
-// PUT /api/methods/{methodId}/method-stages/{methodStageId}/materials/{stageMaterialId}
 function EditMaterialModal({
-  methodId, stageId, stageMaterialId, currentMaterialId,
-  onClose, onSuccess,
+  methodId, stageId, stageMaterialId, currentMaterialId, onClose, onSuccess,
 }: {
   methodId: number; stageId: number; stageMaterialId: string; currentMaterialId: number;
   onClose: () => void; onSuccess: () => void;
@@ -101,34 +111,34 @@ function EditMaterialModal({
   const handleSave = async () => {
     setSaving(true); setError("");
     try {
-      await axiosInstance.put(
-        `/api/methods/${methodId}/method-stages/${stageId}/materials/${stageMaterialId}`,
-        { materialId }
-      );
+      await axiosInstance.put(`/api/methods/${methodId}/method-stages/${stageId}/materials/${stageMaterialId}`, { materialId });
       onSuccess(); onClose();
     } catch (err) { console.error(err); setError("Cập nhật thất bại."); }
     finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4" initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 20 }} transition={{ duration: 0.22 }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2 }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-slate-50/50">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Cập nhật vật liệu</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Stage Material ID: <span className="font-mono text-gray-700">{stageMaterialId}</span></p>
+            <h2 className="text-base font-bold text-slate-800">Cập nhật Vật liệu</h2>
+            <p className="text-xs text-slate-500 mt-1">ID: <span className="font-mono text-slate-600">{stageMaterialId}</span></p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-        <div className="px-6 py-5">
-          {error && <p className="mb-3 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Material ID <span className="text-red-500">*</span></label>
-          <input type="number" min={0} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" value={materialId} onChange={(e) => setMaterialId(Number(e.target.value))} />
+        <div className="px-6 py-6">
+          {error && <p className="mb-4 text-sm text-rose-600 bg-rose-50 px-4 py-2.5 rounded-xl border border-rose-100">{error}</p>}
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Material ID mới <span className="text-rose-500">*</span></label>
+          <input type="number" min={0} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all" 
+            value={materialId} onChange={(e) => setMaterialId(Number(e.target.value))} />
         </div>
-        <div className="flex gap-3 px-6 pb-5">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
-          <motion.button type="button" onClick={() => void handleSave()} disabled={saving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 disabled:opacity-60 transition-colors" whileHover={{ scale: saving ? 1 : 1.02 }} whileTap={{ scale: saving ? 1 : 0.98 }}>
-            {saving ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Đang lưu...</> : "Lưu"}
+        <div className="flex gap-3 px-6 pb-6">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Hủy</button>
+          <motion.button type="button" onClick={() => void handleSave()} disabled={saving} 
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-sm shadow-emerald-200 disabled:opacity-60 transition-colors" 
+            whileHover={{ scale: saving ? 1 : 1.02 }} whileTap={{ scale: saving ? 1 : 0.98 }}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Đang lưu...</> : "Lưu thay đổi"}
           </motion.button>
         </div>
       </motion.div>
@@ -137,10 +147,8 @@ function EditMaterialModal({
 }
 
 // ─── Edit Chemical Modal ───────────────────────────────────────────────────────
-// PUT /api/methods/{methodId}/method-stages/{methodStageId}/chemical/{stageChemicalId}
 function EditChemicalModal({
-  methodId, stageId, stageChemicalId, currentChemicalId,
-  onClose, onSuccess,
+  methodId, stageId, stageChemicalId, currentChemicalId, onClose, onSuccess,
 }: {
   methodId: number; stageId: number; stageChemicalId: string; currentChemicalId: number;
   onClose: () => void; onSuccess: () => void;
@@ -152,34 +160,34 @@ function EditChemicalModal({
   const handleSave = async () => {
     setSaving(true); setError("");
     try {
-      await axiosInstance.put(
-        `/api/methods/${methodId}/method-stages/${stageId}/chemical/${stageChemicalId}`,
-        { chemicalId }
-      );
+      await axiosInstance.put(`/api/methods/${methodId}/method-stages/${stageId}/chemical/${stageChemicalId}`, { chemicalId });
       onSuccess(); onClose();
     } catch (err) { console.error(err); setError("Cập nhật thất bại."); }
     finally { setSaving(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4" initial={{ opacity: 0, scale: 0.92, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 20 }} transition={{ duration: 0.22 }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <motion.div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.2 }}>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-slate-50/50">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Cập nhật hoá chất</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Stage Chemical ID: <span className="font-mono text-gray-700">{stageChemicalId}</span></p>
+            <h2 className="text-base font-bold text-slate-800">Cập nhật Hoá chất</h2>
+            <p className="text-xs text-slate-500 mt-1">ID: <span className="font-mono text-slate-600">{stageChemicalId}</span></p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-        <div className="px-6 py-5">
-          {error && <p className="mb-3 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Chemical ID <span className="text-red-500">*</span></label>
-          <input type="number" min={0} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" value={chemicalId} onChange={(e) => setChemicalId(Number(e.target.value))} />
+        <div className="px-6 py-6">
+          {error && <p className="mb-4 text-sm text-rose-600 bg-rose-50 px-4 py-2.5 rounded-xl border border-rose-100">{error}</p>}
+          <label className="block text-sm font-semibold text-slate-700 mb-2">Chemical ID mới <span className="text-rose-500">*</span></label>
+          <input type="number" min={0} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
+            value={chemicalId} onChange={(e) => setChemicalId(Number(e.target.value))} />
         </div>
-        <div className="flex gap-3 px-6 pb-5">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
-          <motion.button type="button" onClick={() => void handleSave()} disabled={saving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-60 transition-colors" whileHover={{ scale: saving ? 1 : 1.02 }} whileTap={{ scale: saving ? 1 : 0.98 }}>
-            {saving ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Đang lưu...</> : "Lưu"}
+        <div className="flex gap-3 px-6 pb-6">
+          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Hủy</button>
+          <motion.button type="button" onClick={() => void handleSave()} disabled={saving} 
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm shadow-blue-200 disabled:opacity-60 transition-colors" 
+            whileHover={{ scale: saving ? 1 : 1.02 }} whileTap={{ scale: saving ? 1 : 0.98 }}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Đang lưu...</> : "Lưu thay đổi"}
           </motion.button>
         </div>
       </motion.div>
@@ -188,27 +196,21 @@ function EditChemicalModal({
 }
 
 // ─── Stage Card ────────────────────────────────────────────────────────────────
-function StageCard({
-  stage,
-  methodId,
-  onRefresh,
-}: {
-  stage: MethodStage;
-  methodId: number;
-  onRefresh: () => void;
-}) {
+function StageCard({ stage, methodId, onRefresh }: { stage: MethodStage; methodId: number; onRefresh: () => void; }) {
   const [editMaterial, setEditMaterial] = useState<StageMaterial | null>(null);
   const [editChemical, setEditChemical] = useState<StageChemical | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "material" | "chemical"; id: string; label: string } | null>(null);
 
+  // Bảo hiểm
+  const safeMaterials = stage.materials ?? [];
+  const safeChemicals = stage.chemicals ?? [];
+
   const handleDeleteMaterial = async (materialId: string) => {
-    // DELETE /api/methods/{methodId}/method-stages/{methodStageId}/material/{materialId}
     await axiosInstance.delete(`/api/methods/${methodId}/method-stages/${stage.methodStageId}/material/${materialId}`);
     onRefresh();
   };
 
   const handleDeleteChemical = async (chemicalsId: string) => {
-    // DELETE /api/methods/{methodId}/method-stages/{methodStageId}/chemicals/{chemicalsId}
     await axiosInstance.delete(`/api/methods/${methodId}/method-stages/${stage.methodStageId}/chemicals/${chemicalsId}`);
     onRefresh();
   };
@@ -216,30 +218,12 @@ function StageCard({
   return (
     <>
       <AnimatePresence>
-        {editMaterial && (
-          <EditMaterialModal
-            methodId={methodId}
-            stageId={stage.methodStageId}
-            stageMaterialId={editMaterial.stageMaterialId}
-            currentMaterialId={editMaterial.materialId}
-            onClose={() => setEditMaterial(null)}
-            onSuccess={onRefresh}
-          />
-        )}
-        {editChemical && (
-          <EditChemicalModal
-            methodId={methodId}
-            stageId={stage.methodStageId}
-            stageChemicalId={editChemical.stageChemicalId}
-            currentChemicalId={editChemical.chemicalId}
-            onClose={() => setEditChemical(null)}
-            onSuccess={onRefresh}
-          />
-        )}
+        {editMaterial && <EditMaterialModal methodId={methodId} stageId={stage.methodStageId} stageMaterialId={editMaterial.stageMaterialId} currentMaterialId={editMaterial.materialId} onClose={() => setEditMaterial(null)} onSuccess={onRefresh} />}
+        {editChemical && <EditChemicalModal methodId={methodId} stageId={stage.methodStageId} stageChemicalId={editChemical.stageChemicalId} currentChemicalId={editChemical.chemicalId} onClose={() => setEditChemical(null)} onSuccess={onRefresh} />}
         {deleteTarget && (
           <ConfirmDeleteModal
-            title={`Xóa ${deleteTarget.type === "material" ? "vật liệu" : "hoá chất"}?`}
-            description={`ID: ${deleteTarget.label}`}
+            title={`Xóa ${deleteTarget.type === "material" ? "Vật liệu" : "Hoá chất"}?`}
+            description={`Bạn sắp xóa ${deleteTarget.type === "material" ? "vật liệu" : "hoá chất"} mang ID: ${deleteTarget.label}`}
             onClose={() => setDeleteTarget(null)}
             onConfirm={async () => {
               if (deleteTarget.type === "material") await handleDeleteMaterial(deleteTarget.id);
@@ -250,69 +234,58 @@ function StageCard({
       </AnimatePresence>
 
       <motion.div
-        className="bg-white border border-gray-200 rounded-xl overflow-hidden"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
+        className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
       >
         {/* Stage Header */}
-        <div className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-green-700">{stage.order}</span>
+        <div className="flex items-center gap-4 px-6 py-4 bg-slate-50/50 border-b border-slate-100">
+          <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+            <span className="text-sm font-bold text-white">{stage.order}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-base font-bold text-slate-900">
               {stage.stageDefinitionName ?? `Giai đoạn ${stage.order}`}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Stage ID: {stage.methodStageId}</p>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Stage ID: <span className="font-mono">{stage.methodStageId}</span></p>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg">
-            <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span className="text-xs font-medium text-blue-700">{stage.durationDays} ngày</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 border border-rose-100/50 rounded-lg">
+            <Info className="w-3.5 h-3.5 text-rose-600" />
+            <span className="text-xs font-bold text-rose-700">{stage.durationDays} ngày</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-          {/* Materials */}
-          <div className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-orange-100 rounded-md flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+        <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 bg-white">
+          {/* Materials (Vật tư - Theme Xanh Ngọc/Emerald) */}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center border border-emerald-100/50">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold text-slate-800">Vật tư</span>
               </div>
-              <span className="text-sm font-semibold text-gray-700">Vật liệu ({stage.materials.length})</span>
+              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{safeMaterials.length} mục</span>
             </div>
 
-            {stage.materials.length === 0 ? (
-              <p className="text-xs text-gray-400 italic py-2">Chưa có vật liệu nào.</p>
+            {safeMaterials.length === 0 ? (
+              <div className="text-center py-6 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
+                <p className="text-xs font-medium text-slate-400">Trống</p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {stage.materials.map((mat) => (
-                  <div key={mat.stageMaterialId} className="flex items-center justify-between gap-2 px-3 py-2 bg-orange-50/60 rounded-lg border border-orange-100">
+              <div className="space-y-2.5">
+                {safeMaterials.map((mat) => (
+                  <div key={mat.stageMaterialId} className="group flex items-center justify-between gap-3 px-4 py-3 bg-white hover:bg-emerald-50/30 rounded-xl border border-slate-200 hover:border-emerald-200 transition-all">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{mat.materialName ?? `Material #${mat.materialId}`}</p>
-                      <p className="text-xs text-gray-400 font-mono">ID: {mat.stageMaterialId}</p>
+                      <p className="text-sm font-semibold text-slate-700 truncate">{mat.materialName ?? `Material #${mat.materialId}`}</p>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {mat.stageMaterialId}</p>
                     </div>
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      {/* PUT material */}
-                      <motion.button
-                        type="button"
-                        title="Cập nhật vật liệu"
-                        className="p-1.5 rounded-md text-orange-600 bg-orange-100 hover:bg-orange-200 transition-colors"
-                        onClick={() => setEditMaterial(mat)}
-                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </motion.button>
-                      {/* DELETE material */}
-                      <motion.button
-                        type="button"
-                        title="Xóa vật liệu"
-                        className="p-1.5 rounded-md text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                        onClick={() => setDeleteTarget({ type: "material", id: mat.stageMaterialId, label: mat.stageMaterialId })}
-                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </motion.button>
+                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button type="button" title="Sửa" onClick={() => setEditMaterial(mat)} className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button type="button" title="Xóa" onClick={() => setDeleteTarget({ type: "material", id: mat.stageMaterialId, label: mat.stageMaterialId })} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -320,46 +293,37 @@ function StageCard({
             )}
           </div>
 
-          {/* Chemicals */}
-          <div className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 bg-purple-100 rounded-md flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+          {/* Chemicals (Hoá chất - Theme Xanh Dương/Blue) */}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100/50">
+                  <TestTube2 className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold text-slate-800">Hoá chất</span>
               </div>
-              <span className="text-sm font-semibold text-gray-700">Hoá chất ({stage.chemicals.length})</span>
+              <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{safeChemicals.length} mục</span>
             </div>
 
-            {stage.chemicals.length === 0 ? (
-              <p className="text-xs text-gray-400 italic py-2">Chưa có hoá chất nào.</p>
+            {safeChemicals.length === 0 ? (
+              <div className="text-center py-6 bg-slate-50/50 rounded-xl border border-slate-100 border-dashed">
+                <p className="text-xs font-medium text-slate-400">Trống</p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {stage.chemicals.map((chem) => (
-                  <div key={chem.stageChemicalId} className="flex items-center justify-between gap-2 px-3 py-2 bg-purple-50/60 rounded-lg border border-purple-100">
+              <div className="space-y-2.5">
+                {safeChemicals.map((chem) => (
+                  <div key={chem.stageChemicalId} className="group flex items-center justify-between gap-3 px-4 py-3 bg-white hover:bg-blue-50/30 rounded-xl border border-slate-200 hover:border-blue-200 transition-all">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{chem.chemicalName ?? `Chemical #${chem.chemicalId}`}</p>
-                      <p className="text-xs text-gray-400 font-mono">ID: {chem.stageChemicalId}</p>
+                      <p className="text-sm font-semibold text-slate-700 truncate">{chem.chemicalName ?? `Chemical #${chem.chemicalId}`}</p>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {chem.stageChemicalId}</p>
                     </div>
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      {/* PUT chemical */}
-                      <motion.button
-                        type="button"
-                        title="Cập nhật hoá chất"
-                        className="p-1.5 rounded-md text-purple-600 bg-purple-100 hover:bg-purple-200 transition-colors"
-                        onClick={() => setEditChemical(chem)}
-                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </motion.button>
-                      {/* DELETE chemical */}
-                      <motion.button
-                        type="button"
-                        title="Xóa hoá chất"
-                        className="p-1.5 rounded-md text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                        onClick={() => setDeleteTarget({ type: "chemical", id: chem.stageChemicalId, label: chem.stageChemicalId })}
-                        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </motion.button>
+                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button type="button" title="Sửa" onClick={() => setEditChemical(chem)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button type="button" title="Xóa" onClick={() => setDeleteTarget({ type: "chemical", id: chem.stageChemicalId, label: chem.stageChemicalId })} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -375,7 +339,7 @@ function StageCard({
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function AdminMethodDetail() {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();
+  const { methodId: id } = useParams<{ methodId: string }>(); // BẢO HIỂM ROUTE
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const backPage = searchParams.get("page") ?? "1";
@@ -385,12 +349,15 @@ export default function AdminMethodDetail() {
   const [error, setError] = useState("");
 
   const fetchMethod = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      setError("Không tìm thấy ID phương pháp. Vui lòng kiểm tra lại URL.");
+      return;
+    }
     setLoading(true); setError("");
     try {
       const res = await axiosInstance.get(`/api/methods/${id}`);
       const json = res.data;
-      // Handle wrapped or direct response
       const data = json?.value ?? json?.data ?? json;
       setMethod(data);
     } catch (err) {
@@ -405,11 +372,12 @@ export default function AdminMethodDetail() {
 
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-5xl mx-auto space-y-4 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-8" />
-          <div className="h-32 bg-gray-200 rounded-xl" />
-          {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-gray-200 rounded-xl" />)}
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8">
+        <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
+          <div className="h-6 bg-rose-50 rounded w-48 mb-8" />
+          <div className="h-24 bg-rose-50 rounded-2xl" />
+          <div className="h-32 bg-white border border-rose-50 rounded-2xl" />
+          {[1, 2].map((i) => <div key={i} className="h-64 bg-white border border-rose-50 rounded-2xl" />)}
         </div>
       </main>
     );
@@ -417,11 +385,13 @@ export default function AdminMethodDetail() {
 
   if (error || !method) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8 flex items-center justify-center">
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8 flex items-center justify-center">
         <div className="text-center">
-          <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <p className="text-gray-500 font-medium">{error || "Không tìm thấy phương pháp."}</p>
-          <button type="button" onClick={() => navigate(`/admin/method?page=${backPage}`)} className="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">Quay lại</button>
+          <AlertCircle className="w-16 h-16 text-rose-300 mx-auto mb-4" />
+          <p className="text-slate-600 font-semibold mb-6">{error || "Không tìm thấy phương pháp."}</p>
+          <button type="button" onClick={() => navigate(`/admin/method?page=${backPage}`)} className="px-6 py-2.5 font-semibold text-white bg-[#9f1239] rounded-xl hover:bg-[#be123c] transition-colors shadow-sm">
+            Quay lại danh sách
+          </button>
         </div>
       </main>
     );
@@ -430,70 +400,88 @@ export default function AdminMethodDetail() {
   const stages = method.methodStages ?? [];
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8">
       <div className="max-w-5xl mx-auto">
 
         {/* Back + Header */}
-        <motion.div className="mb-8" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <motion.div className="mb-10" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <button
             type="button"
             onClick={() => navigate(`/admin/method?page=${backPage}`)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-4 transition-colors group"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-[#9f1239] mb-6 transition-colors group"
           >
-            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            Quay lại danh sách
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Danh sách phương pháp
           </button>
 
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">{method.name}</h1>
-              {method.description && <p className="text-gray-500 text-sm max-w-2xl">{method.description}</p>}
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-extrabold text-[#9f1239] tracking-tight">{method.name}</h1>
+                <span className="px-2.5 py-1 bg-rose-50 text-rose-700 text-xs font-bold rounded-md border border-rose-100">ID: {method.id}</span>
+              </div>
+              {method.description && <p className="text-slate-500 text-sm max-w-2xl leading-relaxed">{method.description}</p>}
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl flex-shrink-0">
-              <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span className="text-sm font-semibold text-blue-700">{method.totalDurationDays} ngày</span>
+            <div className="flex items-center gap-2.5 px-5 py-3 bg-white border border-rose-100 rounded-2xl shadow-sm flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center">
+                <Info className="w-4 h-4 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 font-medium">Tổng thời gian</p>
+                <p className="text-sm font-bold text-slate-800">{method.totalDurationDays} ngày</p>
+              </div>
             </div>
           </div>
         </motion.div>
 
         {/* Summary bar */}
-        <motion.div className="grid grid-cols-3 gap-4 mb-8" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }}>
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }}>
           {[
-            { label: "Số giai đoạn", value: stages.length, color: "text-green-700", bg: "bg-green-50 border-green-100" },
-            { label: "Tổng vật liệu", value: stages.reduce((s, st) => s + st.materials.length, 0), color: "text-orange-700", bg: "bg-orange-50 border-orange-100" },
-            { label: "Tổng hoá chất", value: stages.reduce((s, st) => s + st.chemicals.length, 0), color: "text-purple-700", bg: "bg-purple-50 border-purple-100" },
-          ].map((stat, i) => (
-            <motion.div key={i} className={`border rounded-xl px-5 py-4 ${stat.bg}`} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + i * 0.07 }}>
-              <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
-              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-            </motion.div>
-          ))}
+            { label: "Giai đoạn nuôi cấy", value: stages.length, icon: FlaskConical, color: "text-[#9f1239]" },
+            { label: "Tổng vật tư sử dụng", value: stages.reduce((s, st) => s + (st.materials?.length ?? 0), 0), icon: Layers, color: "text-emerald-600" },
+            { label: "Tổng hoá chất sử dụng", value: stages.reduce((s, st) => s + (st.chemicals?.length ?? 0), 0), icon: TestTube2, color: "text-blue-600" },
+          ].map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_2px_10px_rgb(0,0,0,0.02)]" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + i * 0.07 }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <Icon className={`w-5 h-5 ${stat.color} opacity-80`} />
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                </div>
+                <p className={`text-3xl font-extrabold ${stat.color}`}>{stat.value}</p>
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         {/* Stages */}
-        <div className="space-y-4">
-          <motion.div className="flex items-center gap-2 mb-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-            <h2 className="text-lg font-bold text-gray-800">Các giai đoạn</h2>
-            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{stages.length}</span>
+        <div className="space-y-5">
+          <motion.div className="flex items-center gap-3 mb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <h2 className="text-xl font-bold text-slate-800">Quy trình thực hiện</h2>
+            <span className="flex items-center justify-center text-xs font-bold text-white bg-slate-800 w-6 h-6 rounded-full shadow-sm">{stages.length}</span>
           </motion.div>
 
           {stages.length === 0 ? (
-            <div className="text-center py-16 bg-white border border-gray-200 rounded-xl">
-              <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-              <p className="text-sm text-gray-400 font-medium">{t("common.noData")}</p>
+            <div className="text-center py-16 bg-white border border-slate-200 border-dashed rounded-2xl">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FlaskConical className="w-8 h-8 text-slate-300" />
+              </div>
+              <p className="text-sm text-slate-500 font-medium">{t("common.noData") || "Chưa có dữ liệu giai đoạn."}</p>
             </div>
           ) : (
-            stages
-              .slice()
-              .sort((a, b) => a.order - b.order)
-              .map((stage) => (
-                <StageCard
-                  key={stage.methodStageId}
-                  stage={stage}
-                  methodId={method.id}
-                  onRefresh={() => void fetchMethod()}
-                />
-              ))
+            <div className="flex flex-col gap-6">
+              {stages
+                .slice()
+                .sort((a, b) => a.order - b.order)
+                .map((stage) => (
+                  <StageCard
+                    key={stage.methodStageId}
+                    stage={stage}
+                    methodId={method.id}
+                    onRefresh={() => void fetchMethod()}
+                  />
+                ))}
+            </div>
           )}
         </div>
       </div>

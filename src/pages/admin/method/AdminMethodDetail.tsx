@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
+import { 
+  ChevronLeft, AlertCircle, Info, Layers, TestTube2, 
+  FlaskConical, CheckCircle2, XCircle, Beaker, Box
+} from "lucide-react";
 
 interface Chemical {
   id: number;
@@ -61,6 +66,7 @@ export default function AdminMethodDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const page = searchParams.get("page") ?? "1";
+  
   const [method, setMethod] = useState<Method | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +74,7 @@ export default function AdminMethodDetail() {
   useEffect(() => {
     const fetchMethodDetail = async () => {
       if (!id) {
-        setError("No method ID provided");
+        setError("Không tìm thấy ID phương pháp trên URL.");
         setLoading(false);
         return;
       }
@@ -77,13 +83,9 @@ export default function AdminMethodDetail() {
       setError(null);
       
       try {
-        console.log("Fetching method:", id);
         const response = await axiosInstance.get(`/api/methods/${id}`);
-        console.log("Response:", response.data);
         
-        // Handle different response structures
         let methodData: Method | null = null;
-        
         if (response.data?.value) {
           methodData = response.data.value;
         } else if (response.data) {
@@ -91,14 +93,13 @@ export default function AdminMethodDetail() {
         }
         
         if (methodData) {
-          console.log("Method data:", methodData);
           setMethod(methodData);
         } else {
-          setError("Invalid response format");
+          setError("Định dạng dữ liệu không hợp lệ.");
         }
       } catch (err) {
         console.error("Error loading method:", err);
-        setError("Failed to load method details");
+        setError("Không thể tải thông tin phương pháp.");
       } finally {
         setLoading(false);
       }
@@ -107,67 +108,48 @@ export default function AdminMethodDetail() {
     void fetchMethodDetail();
   }, [id]);
 
+  // --- SKELETON LOADING STATE ---
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-10 bg-gray-200 rounded w-32" />
-            <div className="bg-white rounded-xl p-8 space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-full" />
-              <div className="h-4 bg-gray-200 rounded w-2/3" />
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                <div className="h-20 bg-gray-200 rounded" />
-                <div className="h-20 bg-gray-200 rounded" />
-                <div className="h-20 bg-gray-200 rounded" />
-              </div>
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8">
+        <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+          <div className="h-10 bg-rose-50 rounded-xl w-32" />
+          <div className="bg-white border border-rose-100 rounded-3xl p-8 space-y-4 shadow-sm">
+            <div className="h-8 bg-rose-50 rounded-xl w-3/4" />
+            <div className="h-4 bg-rose-50 rounded-xl w-full" />
+            <div className="h-4 bg-rose-50 rounded-xl w-2/3" />
+            <div className="grid grid-cols-3 gap-4 mt-8">
+              <div className="h-24 bg-rose-50 rounded-2xl" />
+              <div className="h-24 bg-rose-50 rounded-2xl" />
+              <div className="h-24 bg-rose-50 rounded-2xl" />
             </div>
-            <div className="space-y-4">
-              <div className="h-64 bg-gray-200 rounded-xl" />
-              <div className="h-64 bg-gray-200 rounded-xl" />
-            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="h-72 bg-white border border-rose-100 rounded-3xl" />
+            <div className="h-72 bg-white border border-rose-100 rounded-3xl" />
           </div>
         </div>
       </main>
     );
   }
 
+  // --- ERROR STATE ---
   if (error || !method) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-rose-300 mx-auto mb-4" />
+          <p className="text-slate-600 font-semibold text-lg mb-2">
+            {error ?? t("common.noData")}
+          </p>
+          <p className="text-slate-400 text-sm mb-6">Vui lòng kiểm tra lại URL hoặc kết nối mạng.</p>
           <button
             type="button"
-            className="inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2.5 font-semibold text-white bg-[#9f1239] rounded-xl hover:bg-[#be123c] transition-colors shadow-sm"
             onClick={() => void navigate(`/admin/method?page=${page}`)}
           >
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            {t("common.back")}
+            Quay lại danh sách
           </button>
-          <div className="bg-white rounded-xl p-16 text-center border border-gray-200">
-            <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-gray-500 font-medium text-lg mb-2">
-              {error ?? t("common.noData")}
-            </p>
-            <p className="text-gray-400 text-sm">
-              Không thể tải thông tin phương pháp
-            </p>
-          </div>
         </div>
       </main>
     );
@@ -176,248 +158,243 @@ export default function AdminMethodDetail() {
   const sortedStages = [...method.methodStages].sort((a, b) => a.order - b.order);
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-8">
       <div className="max-w-6xl mx-auto">
+        
         {/* Back Button */}
-        <div className="mb-6">
+        <motion.div className="mb-6" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
           <button
             type="button"
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-[#9f1239] transition-colors group"
             onClick={() => void navigate(`/admin/method?page=${page}`)}
           >
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            {t("common.back")}
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            {t("common.back") || "Quay lại danh sách"}
           </button>
-        </div>
+        </motion.div>
 
-        <div className="space-y-6">
+        <motion.div className="space-y-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+          
           {/* Header Card */}
-          <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
-            <div className="flex items-start justify-between mb-4">
+          <div className="bg-white border border-rose-100 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+            {/* Hiệu ứng trang trí góc */}
+            <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-gradient-to-br from-rose-50 to-transparent rounded-full opacity-50 blur-3xl pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                  {method.name}
-                </h1>
-                <p className="text-gray-600 text-lg leading-relaxed">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="p-3 bg-rose-50 rounded-xl border border-rose-100/50 shadow-sm flex-shrink-0">
+                    <FlaskConical className="w-8 h-8 text-[#9f1239]" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-[#9f1239] tracking-tight">
+                      {method.name}
+                    </h1>
+                    <p className="text-xs font-mono text-slate-400 mt-1">ID: {method.id}</p>
+                  </div>
+                </div>
+                <p className="text-slate-600 text-base leading-relaxed max-w-4xl ml-1">
                   {method.description}
                 </p>
               </div>
+              
+              {/* Status Badge */}
               {method.status !== undefined && (
-                <div>
+                <div className="flex-shrink-0">
                   {method.status ? (
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2" />
-                      {t("status.active")}
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {t("status.active") || "Hoạt động"}
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full mr-2" />
-                      {t("status.inactive")}
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-slate-100 text-slate-600 border border-slate-200 shadow-sm">
+                      <XCircle className="w-4 h-4 mr-2" />
+                      {t("status.inactive") || "Không hoạt động"}
                     </span>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-rose-50">
+              
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-blue-200 hover:shadow-sm transition-all group">
+                <div className="w-12 h-12 bg-blue-50/80 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                  <Info className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Tổng thời gian</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {method.totalDurationDays} ngày
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng thời gian</p>
+                  <p className="text-2xl font-black text-slate-800">
+                    {method.totalDurationDays} <span className="text-base font-semibold text-slate-400 normal-case">ngày</span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-purple-200 hover:shadow-sm transition-all group">
+                <div className="w-12 h-12 bg-purple-50/80 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
+                  <Layers className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Số giai đoạn</p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Số giai đoạn</p>
+                  <p className="text-2xl font-black text-slate-800">
                     {method.methodStages.length}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              <div className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-100 hover:border-emerald-200 hover:shadow-sm transition-all group">
+                <div className="w-12 h-12 bg-emerald-50/80 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Trạng thái</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {method.status ? "Hoạt động" : "Không hoạt động"}
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái</p>
+                  <p className="text-lg font-bold text-slate-800">
+                    {method.status ? "Đang áp dụng" : "Tạm ngưng"}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stages */}
+          {/* Stages Sequence */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Các giai đoạn thực hiện
-            </h2>
-            <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-6 ml-2">
+              <h2 className="text-2xl font-bold text-slate-800">
+                Các giai đoạn thực hiện
+              </h2>
+              <span className="flex items-center justify-center w-7 h-7 bg-slate-800 text-white text-xs font-bold rounded-full shadow-sm">
+                {sortedStages.length}
+              </span>
+            </div>
+            
+            <div className="space-y-6">
               {sortedStages.map((stage) => (
-                <div
+                <motion.div
                   key={stage.id}
-                  className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="bg-white border border-rose-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
                 >
                   {/* Stage Header */}
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b border-gray-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-green-600 text-white rounded-lg flex items-center justify-center font-bold text-lg flex-shrink-0">
-                          {stage.order}
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-2">
-                            {stage.stageDefinition.name}
-                          </h3>
-                          <p className="text-gray-600">
-                            {stage.stageDefinition.description}
-                          </p>
-                        </div>
+                  <div className="bg-slate-50/50 p-6 border-b border-rose-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-slate-800 text-white rounded-2xl flex items-center justify-center font-black text-xl flex-shrink-0 shadow-md">
+                        {stage.order}
                       </div>
-                      <div className="text-right flex-shrink-0 ml-4">
-                        <div className="inline-flex items-center px-4 py-2 bg-white rounded-lg border border-gray-300">
-                          <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-semibold text-gray-900">
-                            {stage.durationsDays} ngày
-                          </span>
-                        </div>
+                      <div>
+                        <h3 className="text-xl font-extrabold text-slate-800 mb-1">
+                          {stage.stageDefinition.name}
+                        </h3>
+                        <p className="text-sm text-slate-500 font-medium">
+                          {stage.stageDefinition.description}
+                        </p>
                       </div>
+                    </div>
+                    <div className="inline-flex items-center px-5 py-2.5 bg-white rounded-xl border border-rose-100 shadow-sm flex-shrink-0">
+                      <Info className="w-5 h-5 text-rose-600 mr-2.5" />
+                      <span className="font-bold text-slate-800">
+                        {stage.durationsDays} <span className="text-slate-500 font-medium">ngày</span>
+                      </span>
                     </div>
                   </div>
 
-                  {/* Stage Content */}
+                  {/* Stage Content (Materials & Chemicals) */}
                   <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Materials */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      
+                      {/* Materials (Vật tư - Theme Emerald) */}
                       <div>
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100/50">
+                            <Box className="w-5 h-5 text-emerald-600" />
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">
-                            Vật liệu ({stage.stageMaterials.length})
+                          <h4 className="text-lg font-bold text-slate-800">
+                            Vật liệu <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md text-sm ml-2">{stage.stageMaterials.length}</span>
                           </h4>
                         </div>
+                        
                         {stage.stageMaterials.length > 0 ? (
                           <div className="space-y-3">
                             {stage.stageMaterials.map((sm) => (
-                              <div
-                                key={sm.id}
-                                className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-orange-200 hover:bg-orange-50/30 transition-colors"
-                              >
+                              <div key={sm.id} className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-emerald-200 hover:shadow-sm transition-all group">
                                 <div className="flex items-start justify-between mb-2">
-                                  <h5 className="font-medium text-gray-900">
+                                  <h5 className="font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
                                     {sm.material.name}
                                   </h5>
-                                  <span className="text-xs font-medium px-2 py-1 bg-orange-100 text-orange-700 rounded flex-shrink-0 ml-2">
+                                  <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md flex-shrink-0 ml-3">
                                     {sm.material.category}
                                   </span>
                                 </div>
                                 {sm.material.description && (
-                                  <p className="text-sm text-gray-600 mb-2">
+                                  <p className="text-sm text-slate-500 mb-3 leading-relaxed">
                                     {sm.material.description}
                                   </p>
                                 )}
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                                  </svg>
-                                  Đơn vị: {sm.material.unit}
+                                <div className="flex items-center text-xs font-semibold text-slate-400 bg-slate-50 inline-flex px-3 py-1.5 rounded-lg border border-slate-100">
+                                  Đơn vị: <span className="text-slate-700 ml-1">{sm.material.unit}</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="bg-gray-50 rounded-lg p-6 text-center border border-gray-200">
-                            <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                            </svg>
-                            <p className="text-gray-400 text-sm">Không có vật liệu</p>
+                          <div className="bg-slate-50/50 rounded-2xl p-8 text-center border border-slate-200 border-dashed">
+                            <Box className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-400 font-medium">Không yêu cầu vật liệu</p>
                           </div>
                         )}
                       </div>
 
-                      {/* Chemicals */}
+                      {/* Chemicals (Hoá chất - Theme Blue) */}
                       <div>
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100/50">
+                            <Beaker className="w-5 h-5 text-blue-600" />
                           </div>
-                          <h4 className="text-lg font-semibold text-gray-900">
-                            Hóa chất ({stage.stageChemicals.length})
+                          <h4 className="text-lg font-bold text-slate-800">
+                            Hóa chất <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md text-sm ml-2">{stage.stageChemicals.length}</span>
                           </h4>
                         </div>
+                        
                         {stage.stageChemicals.length > 0 ? (
                           <div className="space-y-3">
                             {stage.stageChemicals.map((sc) => (
-                              <div
-                                key={sc.id}
-                                className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-pink-200 hover:bg-pink-50/30 transition-colors"
-                              >
+                              <div key={sc.id} className="bg-white rounded-2xl p-4 border border-slate-200 hover:border-blue-200 hover:shadow-sm transition-all group">
                                 <div className="flex items-start justify-between mb-2">
-                                  <h5 className="font-medium text-gray-900">
+                                  <h5 className="font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
                                     {sc.chemical.name}
                                   </h5>
-                                  <span className="text-xs font-medium px-2 py-1 bg-pink-100 text-pink-700 rounded flex-shrink-0 ml-2">
+                                  <span className="text-xs font-bold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md flex-shrink-0 ml-3">
                                     {sc.chemical.category}
                                   </span>
                                 </div>
                                 {sc.chemical.description && (
-                                  <p className="text-sm text-gray-600 mb-2">
+                                  <p className="text-sm text-slate-500 mb-3 leading-relaxed">
                                     {sc.chemical.description}
                                   </p>
                                 )}
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                  </svg>
-                                  Nồng độ: {sc.chemical.concentrationUnit}
+                                <div className="flex items-center text-xs font-semibold text-slate-400 bg-slate-50 inline-flex px-3 py-1.5 rounded-lg border border-slate-100">
+                                  Nồng độ: <span className="text-slate-700 ml-1">{sc.chemical.concentrationUnit}</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="bg-gray-50 rounded-lg p-6 text-center border border-gray-200">
-                            <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                            <p className="text-gray-400 text-sm">Không có hóa chất</p>
+                          <div className="bg-slate-50/50 rounded-2xl p-8 text-center border border-slate-200 border-dashed">
+                            <Beaker className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-400 font-medium">Không yêu cầu hóa chất</p>
                           </div>
                         )}
                       </div>
+                      
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </main>
   );
