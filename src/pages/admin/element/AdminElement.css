@@ -1,6 +1,5 @@
 /* ==========================================================================
    Admin Element Page Styles (Scoped)
-   Bảo vệ không bị ảnh hưởng bởi Global CSS
    ========================================================================== */
 
 /* ─── Light Mode Defaults ─── */
@@ -9,20 +8,112 @@
   transition: background-color 0.3s ease;
 }
 
-/* Ghi đè các thẻ p, h1, h2, h3 bên trong component nếu bị global đè */
 .admin-element-page h1,
 .admin-element-page h2,
 .admin-element-page h3,
 .admin-element-page p,
 .admin-element-page span,
 .admin-element-page div {
-  margin: 0; /* Reset margin rác từ global nếu có */
+  margin: 0;
   box-sizing: border-box;
 }
 
 /* ==========================================================================
-   Dark Mode Support (Orchid / Ruby Theme)
-   Áp dụng khi thẻ <html> hoặc <body> có class "dark" hoặc data-theme="dark"
+   TABLE OVERRIDE — Đổi màu xanh → đỏ chủ đạo (Rose/Ruby)
+   ========================================================================== */
+
+/* Header của bảng */
+.admin-element-page table thead,
+.admin-element-page table thead tr {
+  background-color: #fff1f2 !important; /* rose-50 */
+}
+
+.admin-element-page table thead th {
+  color: #9f1239 !important;            /* rose-800 */
+  border-bottom: 2px solid #fecdd3 !important; /* rose-200 */
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+/* Các hàng body */
+.admin-element-page table tbody tr {
+  border-bottom: 1px solid #ffe4e6 !important; /* rose-100 */
+}
+
+.admin-element-page table tbody tr:hover {
+  background-color: #fff1f2 !important; /* rose-50 */
+}
+
+/* Footer tổng số (ô màu xanh lá ở góc dưới trái) */
+.admin-element-page [class*="bg-green"],
+.admin-element-page [class*="text-green"] {
+  background-color: #fff1f2 !important;
+  color: #9f1239 !important;
+  border-color: #fecdd3 !important;
+}
+
+/* Nút "Thêm mới" — giữ nổi bật */
+.admin-element-page button[class*="bg-green"] {
+  background-color: #9f1239 !important;
+  color: #ffffff !important;
+}
+
+.admin-element-page button[class*="bg-green"]:hover {
+  background-color: #881337 !important;
+}
+
+/* ==========================================================================
+   SPACING — Tăng khoảng cách giữa các khu vực
+   ========================================================================== */
+
+/* Khoảng cách nội dung bên trong card bảng */
+.admin-element-page .p-6 {
+  padding: 28px 28px !important;
+}
+
+/* Tăng khoảng cách giữa header và tabs */
+.admin-element-page .mb-8 {
+  margin-bottom: 36px !important;
+}
+
+/* Tăng khoảng cách giữa tabs và bảng */
+.admin-element-page .mb-6 {
+  margin-bottom: 20px !important;
+}
+
+/* Padding cho từng ô trong bảng */
+.admin-element-page table td,
+.admin-element-page table th {
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+/* Thanh tìm kiếm — thêm khoảng thở */
+.admin-element-page input[type="text"],
+.admin-element-page input[type="search"] {
+  margin-bottom: 16px !important;
+  border-color: #fecdd3 !important;   /* rose-200 */
+  outline-color: #f43f5e !important;
+}
+
+.admin-element-page input[type="text"]:focus,
+.admin-element-page input[type="search"]:focus {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12) !important;
+}
+
+/* Pagination — active page */
+.admin-element-page [class*="pagination"] button.active,
+.admin-element-page [class*="bg-green"][class*="rounded"] {
+  background-color: #9f1239 !important;
+  color: #fff !important;
+  border-color: #9f1239 !important;
+}
+
+/* ==========================================================================
+   Dark Mode Support
    ========================================================================== */
 
 .dark .admin-element-page,
@@ -31,15 +122,13 @@
     linear-gradient(180deg, #120a0f 0%, #1a0f14 100%) !important;
 }
 
-/* Background kính mờ cho các hộp chứa */
 .dark .admin-element-page .bg-white\/80,
 :root[data-theme='dark'] .admin-element-page .bg-white\/80 {
   background-color: rgba(28, 15, 20, 0.92) !important;
-  border-color: rgba(244, 63, 94, 0.15) !important; 
+  border-color: rgba(244, 63, 94, 0.15) !important;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Khung viền và nền của Icon / Active Tab */
 .dark .admin-element-page .bg-rose-50,
 :root[data-theme='dark'] .admin-element-page .bg-rose-50 {
   background-color: rgba(159, 18, 57, 0.25) !important;
@@ -51,7 +140,6 @@
   border-color: rgba(244, 63, 94, 0.15) !important;
 }
 
-/* Text Colors in Dark Mode */
 .dark .admin-element-page .text-slate-500,
 :root[data-theme='dark'] .admin-element-page .text-slate-500 {
   color: rgba(203, 213, 225, 0.7) !important;
@@ -62,16 +150,9 @@
   color: rgba(226, 232, 240, 0.9) !important;
 }
 
-/* Primary Accent (Màu Đỏ Ruby) trong Dark Mode cần sáng hơn chút để nổi bật */
 .dark .admin-element-page .text-\[\#9f1239\],
 :root[data-theme='dark'] .admin-element-page .text-\[\#9f1239\] {
-  color: #fda4af !important; /* Rose-300 */
-}
-
-/* Trạng thái Hover của các nút Tab chưa active */
-.dark .admin-element-page button:hover.text-slate-700,
-:root[data-theme='dark'] .admin-element-page button:hover.text-slate-700 {
-  color: #f1f5f9 !important;
+  color: #fda4af !important;
 }
 
 .dark .admin-element-page .hover\:bg-rose-50\/50:hover,
@@ -79,28 +160,23 @@
   background-color: rgba(159, 18, 57, 0.15) !important;
 }
 
-/* Table styling (Bảo hiểm trong trường hợp ChemicalList/MaterialList dùng table mặc định) */
-.dark .admin-element-page table {
-  background-color: transparent !important;
-}
-
-.dark .admin-element-page thead {
+.dark .admin-element-page table thead {
   background-color: rgba(28, 15, 20, 0.95) !important;
 }
 
-.dark .admin-element-page thead th {
-  color: #e2e8f0 !important;
-  border-color: rgba(244, 63, 94, 0.15) !important;
+.dark .admin-element-page table thead th {
+  color: #fda4af !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
 }
 
-.dark .admin-element-page tbody tr {
+.dark .admin-element-page table tbody tr {
   border-color: rgba(244, 63, 94, 0.08) !important;
 }
 
-.dark .admin-element-page tbody tr:hover {
+.dark .admin-element-page table tbody tr:hover {
   background-color: rgba(244, 63, 94, 0.08) !important;
 }
 
-.dark .admin-element-page tbody td {
+.dark .admin-element-page table tbody td {
   color: #cbd5e1 !important;
 }
