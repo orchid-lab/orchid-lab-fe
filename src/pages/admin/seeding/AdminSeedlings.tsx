@@ -1,4 +1,3 @@
-/* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-floating-promises */
@@ -7,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Sprout, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
@@ -19,7 +18,7 @@ import "./AdminSeedlings.css";
 const PAGE_SIZE = 5;
 type SearchCategory = "localName" | "scientificName";
 
-/* ─── Animation variants (đồng bộ toàn hệ thống) ────────── */
+/* ─── Animation variants ──────────────────────────────── */
 type CubicBezier = [number, number, number, number];
 const EASE_OUT: CubicBezier = [0.22, 1, 0.36, 1];
 
@@ -42,7 +41,7 @@ const tableRow: Variants = {
 
 export default function AdminSeedlings() {
   const navigate = useNavigate();
-  useTranslation();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const initialPage = Number(searchParams.get("page")) || 1;
 
@@ -51,7 +50,7 @@ export default function AdminSeedlings() {
   const [allSeedlings, setAllSeedlings] = useState<Seedling[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchCategory, setSearchCategory] = useState<SearchCategory>("localName");
-  const [creatorFilter, setCreatorFilter] = useState<string>("Tất cả");
+  const [creatorFilter, setCreatorFilter] = useState<string>("all");
   const [allCreators, setAllCreators] = useState<string[]>([]);
 
   /* ── GSAP progress bar ── */
@@ -102,8 +101,8 @@ export default function AdminSeedlings() {
 
   /* ── Filter logic ── */
   const filteredSeedlings = allSeedlings.filter((s) => {
-    if (creatorFilter !== "Tất cả") {
-      if (creatorFilter === "System" ? s.createdBy !== "System" : s.createdBy !== creatorFilter)
+    if (creatorFilter !== "all") {
+      if (creatorFilter === "system" ? s.createdBy !== "System" : s.createdBy !== creatorFilter)
         return false;
     }
     if (searchTerm.trim()) {
@@ -118,7 +117,7 @@ export default function AdminSeedlings() {
   const totalPages = Math.ceil(filteredSeedlings.length / PAGE_SIZE);
   const startIndex = (page - 1) * PAGE_SIZE;
   const currentSeedlings = filteredSeedlings.slice(startIndex, startIndex + PAGE_SIZE);
-  const hasActiveFilter = searchTerm.trim() || creatorFilter !== "Tất cả";
+  const hasActiveFilter = searchTerm.trim() || creatorFilter !== "all";
 
   useEffect(() => {
     setPage(1);
@@ -135,14 +134,21 @@ export default function AdminSeedlings() {
   };
 
   const handlePageChange = (p: number) => { setPage(p); navigate(`?page=${p}`); };
+  const clearFilters = () => { setSearchTerm(""); setSearchCategory("localName"); setCreatorFilter("all"); };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSearchCategory("localName");
-    setCreatorFilter("Tất cả");
-  };
+  const tableHeaders = [
+    t("sample.number"),
+    t("seedling.localNameLabel"),
+    t("seedling.scientificNameLabel"),
+    t("seedling.seedlingLocalNameOfHybrid"),
+    t("seedling.seedlingScientificNameOfHybrid"),
+    t("seedling.createdDate"),
+    t("seedling.createdBy"),
+  ];
 
-  const tableHeaders = ["STT", "Tên địa phương", "Tên khoa học", "Tên ĐP cây lai", "Tên KH cây lai", "Ngày tạo", "Người tạo"];
+  const searchCategoryLabel = searchCategory === "localName"
+    ? t("seedling.localNameLabel")
+    : t("seedling.scientificNameLabel");
 
   return (
     <main className="admin-seedlings-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] text-slate-900">
@@ -161,19 +167,12 @@ export default function AdminSeedlings() {
           variants={fadeUp} initial="hidden" animate="visible" custom={0}
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-rose-50 rounded-xl border border-rose-100 shadow-sm">
-              <Sprout className="w-6 h-6 text-[#9f1239]" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
-                Quản lý Giống Cây
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Theo dõi và quản lý các giống cây lai tạo trong hệ thống
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
+            {t("seedling.seedlingManagement")}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {t("seedling.seedlingManagementDesc")}
+          </p>
         </motion.div>
 
         {/* ── Filter card ── */}
@@ -181,7 +180,9 @@ export default function AdminSeedlings() {
           variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
         >
-          <h2 className="text-base font-semibold text-[#9f1239] mb-4">Bộ lọc &amp; Tìm kiếm</h2>
+          <h2 className="text-base font-semibold text-[#9f1239] mb-4">
+            {t("seedling.filterAndSearch")}
+          </h2>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Search category */}
@@ -190,8 +191,8 @@ export default function AdminSeedlings() {
               onChange={(e) => setSearchCategory(e.target.value as SearchCategory)}
               className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
             >
-              <option value="localName">Tên địa phương</option>
-              <option value="scientificName">Tên khoa học</option>
+              <option value="localName">{t("seedling.localNameLabel")}</option>
+              <option value="scientificName">{t("seedling.scientificNameLabel")}</option>
             </select>
 
             {/* Search input */}
@@ -199,7 +200,7 @@ export default function AdminSeedlings() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder={`Tìm kiếm theo ${searchCategory === "localName" ? "tên địa phương" : "tên khoa học"}...`}
+                placeholder={`${t("common.search")} ${searchCategoryLabel.toLowerCase()}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-rose-100 bg-white rounded-xl pl-10 pr-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
@@ -208,13 +209,15 @@ export default function AdminSeedlings() {
 
             {/* Creator filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500 font-medium whitespace-nowrap">Người tạo:</span>
+              <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
+                {t("seedling.creatorLabel")}
+              </span>
               <select
                 value={creatorFilter}
                 onChange={(e) => setCreatorFilter(e.target.value)}
                 className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
               >
-                <option value="Tất cả">Tất cả</option>
+                <option value="all">{t("common.all")}</option>
                 {allCreators.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -231,7 +234,7 @@ export default function AdminSeedlings() {
                 className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-600 border border-rose-100 rounded-xl hover:bg-rose-50 hover:text-[#9f1239] transition-colors shadow-sm"
               >
                 <X className="w-3.5 h-3.5" />
-                Xóa bộ lọc
+                {t("common.clearFilters")}
               </motion.button>
             )}
           </div>
@@ -245,15 +248,15 @@ export default function AdminSeedlings() {
                 exit={{ opacity: 0, height: 0 }}
                 className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-rose-50"
               >
-                <span className="text-xs text-slate-400">Đang lọc:</span>
+                <span className="text-xs text-slate-400">{t("seedling.appliedFilters")}</span>
                 {searchTerm.trim() && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
-                    {searchCategory === "localName" ? "Tên ĐP" : "Tên KH"}: "{searchTerm}"
+                    {searchCategoryLabel}: "{searchTerm}"
                   </span>
                 )}
-                {creatorFilter !== "Tất cả" && (
+                {creatorFilter !== "all" && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
-                    Người tạo: {creatorFilter}
+                    {t("seedling.creatorLabel")} {creatorFilter}
                   </span>
                 )}
               </motion.div>
@@ -299,7 +302,7 @@ export default function AdminSeedlings() {
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <td colSpan={7} className="text-center p-12 text-gray-500">
                       <div className="text-6xl mb-4">🌱</div>
-                      <div className="text-lg font-medium">Không có dữ liệu</div>
+                      <div className="text-lg font-medium">{t("common.noData")}</div>
                     </td>
                   </motion.tr>
                 ) : (
@@ -309,9 +312,7 @@ export default function AdminSeedlings() {
                         key={s.id}
                         custom={idx}
                         variants={tableRow}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
+                        initial="hidden" animate="visible" exit="exit"
                         layout
                         whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
                         className="border-b border-rose-50 cursor-pointer"
@@ -345,7 +346,7 @@ export default function AdminSeedlings() {
                 className="flex justify-between items-center text-sm text-slate-600 p-6 bg-white/70 border-t border-rose-100"
               >
                 <span className="font-medium">
-                  Hiển thị {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredSeedlings.length)} của {filteredSeedlings.length}
+                  {t("common.showing")} {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredSeedlings.length)} {t("common.of")} {filteredSeedlings.length}
                 </span>
                 {totalPages > 1 && (
                   <div className="flex gap-2">
