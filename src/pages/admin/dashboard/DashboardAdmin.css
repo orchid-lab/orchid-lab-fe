@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Admin Users (DashboardAdmin) — Scoped styles (Rose / Ruby theme)
+   Đồng bộ với AdminSeedlings.css & AdminMethod.css
+   ========================================================================== */
+
+.admin-users-page {
+  font-family: inherit;
+  transition: background-color 0.3s ease;
+}
+
+/* ==========================================================================
+   TABLE
+   ========================================================================== */
+
+.admin-users-page table thead tr {
+  background: linear-gradient(to right, #fff1f2, #fffbfb) !important;
+}
+
+.admin-users-page table thead th {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #fecdd3 !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+.admin-users-page table tbody tr {
+  border-bottom: 1px solid #fff1f2 !important;
+  background-color: transparent !important;
+  transition: background-color 0.15s ease;
+}
+
+.admin-users-page table tbody tr:hover {
+  background-color: rgba(255, 241, 242, 0.7) !important;
+}
+
+.admin-users-page table tbody td {
+  background-color: transparent !important;
+}
+
+/* ==========================================================================
+   INPUTS & SELECTS
+   ========================================================================== */
+
+.admin-users-page input[type="text"],
+.admin-users-page input[type="search"],
+.admin-users-page select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-users-page input:focus,
+.admin-users-page select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12) !important;
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+
+.dark .admin-users-page,
+:root[data-theme='dark'] .admin-users-page {
+  background: radial-gradient(circle at top left, rgba(159, 18, 57, 0.12), transparent 30%),
+    linear-gradient(180deg, #120a0f 0%, #1a0f14 100%) !important;
+}
+
+/* ── Cards ── */
+.dark .admin-users-page .bg-white\/80,
+:root[data-theme='dark'] .admin-users-page .bg-white\/80 {
+  background-color: rgba(28, 15, 20, 0.92) !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .admin-users-page .bg-white\/70,
+:root[data-theme='dark'] .admin-users-page .bg-white\/70 {
+  background-color: rgba(36, 18, 25, 0.9) !important;
+  border-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+/* ── Stat cards ── */
+.dark .admin-users-page .bg-rose-50,
+:root[data-theme='dark'] .admin-users-page .bg-rose-50 {
+  background-color: rgba(159, 18, 57, 0.2) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+.dark .admin-users-page .bg-purple-50,
+:root[data-theme='dark'] .admin-users-page .bg-purple-50 {
+  background-color: rgba(126, 34, 206, 0.15) !important;
+  border-color: rgba(167, 139, 250, 0.2) !important;
+}
+.dark .admin-users-page .bg-blue-50,
+:root[data-theme='dark'] .admin-users-page .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+.dark .admin-users-page .bg-emerald-50,
+:root[data-theme='dark'] .admin-users-page .bg-emerald-50 {
+  background-color: rgba(5, 150, 105, 0.15) !important;
+  border-color: rgba(52, 211, 153, 0.2) !important;
+}
+
+/* ── Stat text ── */
+.dark .admin-users-page .text-purple-700,
+:root[data-theme='dark'] .admin-users-page .text-purple-700 { color: #c4b5fd !important; }
+.dark .admin-users-page .text-purple-600,
+:root[data-theme='dark'] .admin-users-page .text-purple-600 { color: #a78bfa !important; }
+.dark .admin-users-page .text-blue-700,
+:root[data-theme='dark'] .admin-users-page .text-blue-700 { color: #93c5fd !important; }
+.dark .admin-users-page .text-blue-600,
+:root[data-theme='dark'] .admin-users-page .text-blue-600 { color: #60a5fa !important; }
+.dark .admin-users-page .text-emerald-700,
+:root[data-theme='dark'] .admin-users-page .text-emerald-700 { color: #6ee7b7 !important; }
+.dark .admin-users-page .text-emerald-600,
+:root[data-theme='dark'] .admin-users-page .text-emerald-600 { color: #34d399 !important; }
+
+/* ── Role badges dark ── */
+.dark .admin-users-page .border-purple-100,
+:root[data-theme='dark'] .admin-users-page .border-purple-100 { border-color: rgba(167, 139, 250, 0.2) !important; }
+.dark .admin-users-page .border-blue-100,
+:root[data-theme='dark'] .admin-users-page .border-blue-100 { border-color: rgba(96, 165, 250, 0.2) !important; }
+.dark .admin-users-page .border-emerald-100,
+:root[data-theme='dark'] .admin-users-page .border-emerald-100 { border-color: rgba(52, 211, 153, 0.2) !important; }
+.dark .admin-users-page .border-rose-100,
+:root[data-theme='dark'] .admin-users-page .border-rose-100 { border-color: rgba(244, 63, 94, 0.15) !important; }
+.dark .admin-users-page .border-rose-50,
+:root[data-theme='dark'] .admin-users-page .border-rose-50 { border-color: rgba(244, 63, 94, 0.08) !important; }
+
+/* ── Action buttons dark ── */
+.dark .admin-users-page .bg-blue-50.text-blue-600,
+:root[data-theme='dark'] .admin-users-page .bg-blue-50.text-blue-600 {
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+  color: #93c5fd !important;
+}
+.dark .admin-users-page .bg-rose-50.text-rose-600,
+:root[data-theme='dark'] .admin-users-page .bg-rose-50.text-rose-600 {
+  background-color: rgba(159, 18, 57, 0.2) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+  color: #fda4af !important;
+}
+
+/* ── Typography ── */
+.dark .admin-users-page .text-slate-900,
+:root[data-theme='dark'] .admin-users-page .text-slate-900 { color: #f8fafc !important; }
+.dark .admin-users-page .text-slate-500,
+:root[data-theme='dark'] .admin-users-page .text-slate-500 { color: rgba(203, 213, 225, 0.7) !important; }
+.dark .admin-users-page .text-gray-900,
+:root[data-theme='dark'] .admin-users-page .text-gray-900 { color: #f1f5f9 !important; }
+.dark .admin-users-page .text-gray-600,
+:root[data-theme='dark'] .admin-users-page .text-gray-600 { color: #94a3b8 !important; }
+.dark .admin-users-page .text-gray-500,
+:root[data-theme='dark'] .admin-users-page .text-gray-500 { color: rgba(148, 163, 184, 0.8) !important; }
+.dark .admin-users-page .text-\[\#9f1239\],
+:root[data-theme='dark'] .admin-users-page .text-\[\#9f1239\] { color: #fda4af !important; }
+
+/* ── White bg inputs ── */
+.dark .admin-users-page .bg-white,
+:root[data-theme='dark'] .admin-users-page .bg-white {
+  background-color: rgba(28, 15, 20, 0.85) !important;
+}
+.dark .admin-users-page input,
+:root[data-theme='dark'] .admin-users-page input,
+.dark .admin-users-page select,
+:root[data-theme='dark'] .admin-users-page select {
+  background-color: rgba(28, 15, 20, 0.8) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+/* ── Table header dark ── */
+.dark .admin-users-page table thead tr,
+:root[data-theme='dark'] .admin-users-page table thead tr {
+  background: rgba(28, 15, 20, 0.95) !important;
+}
+.dark .admin-users-page table thead th,
+:root[data-theme='dark'] .admin-users-page table thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+  background-image: none !important;
+}
+.dark .admin-users-page .from-\[\#fff1f2\],
+:root[data-theme='dark'] .admin-users-page .from-\[\#fff1f2\] { --tw-gradient-from: transparent !important; }
+.dark .admin-users-page .to-\[\#fffbfb\],
+:root[data-theme='dark'] .admin-users-page .to-\[\#fffbfb\] { --tw-gradient-to: transparent !important; }
+
+/* ── Table body dark ── */
+.dark .admin-users-page table tbody tr,
+:root[data-theme='dark'] .admin-users-page table tbody tr {
+  border-color: rgba(244, 63, 94, 0.08) !important;
+  background-color: transparent !important;
+}
+.dark .admin-users-page table tbody tr:hover,
+:root[data-theme='dark'] .admin-users-page table tbody tr:hover {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+}
+.dark .admin-users-page table tbody td,
+:root[data-theme='dark'] .admin-users-page table tbody td {
+  color: #cbd5e1 !important;
+  background-color: transparent !important;
+}
+
+/* ── Pagination active ── */
+.dark .admin-users-page .bg-\[\#9f1239\],
+:root[data-theme='dark'] .admin-users-page .bg-\[\#9f1239\] {
+  background-color: #be123c !important;
+  color: #ffffff !important;
+}
+
+/* ── Clear filter button ── */
+.dark .admin-users-page button[class*="border-rose"],
+:root[data-theme='dark'] .admin-users-page button[class*="border-rose"] {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  color: #fda4af !important;
+}
+
+/* ── Skeleton dark ── */
+.dark .admin-users-page .bg-rose-100,
+:root[data-theme='dark'] .admin-users-page .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+}
