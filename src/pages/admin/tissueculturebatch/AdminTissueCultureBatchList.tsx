@@ -1,3 +1,4 @@
+/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
@@ -54,7 +55,7 @@ const tableRow: Variants = {
 
 /* ─── Status badge ────────────────────────────────────── */
 function StatusBadge({ item, t }: { item: TissueCultureBatch; t: (k: string) => string }) {
-  const isActive = item.status || item.isBatching;
+  const isActive = item.status ?? item.isBatching;
   const label = typeof item.status === "string"
     ? item.status
     : (isActive ? t("tissueCultureBatch.operating") : t("tissueCultureBatch.notOperating"));
@@ -115,7 +116,7 @@ const AdminTissueCultureBatchList = () => {
       .finally(() => setLoading(false));
   }, [t]);
 
-  const activeCount = items.filter((i) => i.status || i.isBatching).length;
+  const activeCount = items.filter((i) => i.status ?? i.isBatching).length;
   const inactiveCount = items.length - activeCount;
 
   const tableHeaders = [

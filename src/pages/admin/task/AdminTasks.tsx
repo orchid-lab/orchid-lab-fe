@@ -1,8 +1,10 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  Search, X, ClipboardList, CheckCircle2, Clock,
+  Search, X, ClipboardList, CheckCircle2, 
   XCircle, AlertTriangle, PlayCircle, Circle,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
