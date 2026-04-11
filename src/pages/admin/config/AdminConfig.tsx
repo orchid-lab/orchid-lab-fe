@@ -2,14 +2,20 @@
 /* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  Search, X, Plus, Eye, Trash2, Settings,
+  FileCode2, Hash, AlertCircle, Loader2,
+} from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
+import gsap from "gsap";
+import "./AdminConfig.css";
 
 const PAGE_SIZE = 10;
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+/* ─── Types ───────────────────────────────────────────── */
 interface Config {
   id: string;
   configName: string;
@@ -23,8 +29,31 @@ interface CreateConfigPayload {
   value: number;
 }
 
-// ─── Modal: Tạo config mới ─────────────────────────────────────────────────────
-function CreateConfigModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+/* ─── Animation variants ──────────────────────────────── */
+type CubicBezier = [number, number, number, number];
+const EASE_OUT: CubicBezier = [0.22, 1, 0.36, 1];
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.5, delay: (i as number) * 0.08, ease: EASE_OUT },
+  }),
+};
+
+const tableRow: Variants = {
+  hidden: { opacity: 0, x: -14 },
+  visible: (i = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.32, delay: (i as number) * 0.045, ease: EASE_OUT },
+  }),
+  exit: { opacity: 0, x: 14, transition: { duration: 0.18 } },
+};
+
+/* ─── Create Config Modal ─────────────────────────────── */
+function CreateConfigModal({
+  onClose, onSuccess,
+}: { onClose: () => void; onSuccess: () => void }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<CreateConfigPayload>({ configName: "", key: "", value: 0 });
   const [submitting, setSubmitting] = useState(false);
@@ -37,63 +66,80 @@ function CreateConfigModal({ onClose, onSuccess }: { onClose: () => void; onSucc
     try {
       await axiosInstance.post("/api/config", form);
       onSuccess(); onClose();
-    } catch (err) {
-      console.error(err);
+    } catch {
       setError(t("config.createFailed"));
     } finally { setSubmitting(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ minHeight: "100vh" }}>
       <motion.div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 24 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">{t("config.createNewTitle")}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{t("config.apiPost")}</p>
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 bg-slate-50/50">
+          <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center border border-rose-100">
+            <Plus className="w-4 h-4 text-[#9f1239]" />
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">{t("config.createNewTitle")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">POST /api/config</p>
+          </div>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-6 space-y-4">
           {error && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div className="flex items-center gap-2 px-4 py-3 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t("config.configName")} <span className="text-red-500">*</span></label>
-            <input type="text" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Nhập config name..." value={form.configName} onChange={(e) => setForm((p) => ({ ...p, configName: e.target.value }))} />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {t("config.configName")} <span className="text-rose-500">*</span>
+            </label>
+            <input type="text"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+              placeholder="Nhập config name..."
+              value={form.configName}
+              onChange={(e) => setForm((p) => ({ ...p, configName: e.target.value }))} />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t("config.key")} <span className="text-red-500">*</span></label>
-            <input type="text" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono" placeholder="Nhập key..." value={form.key} onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))} />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {t("config.key")} <span className="text-rose-500">*</span>
+            </label>
+            <input type="text"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+              placeholder="Nhập key..."
+              value={form.key}
+              onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))} />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t("config.value")} <span className="text-red-500">*</span></label>
-            <input type="number" className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="0" value={form.value} onChange={(e) => setForm((p) => ({ ...p, value: Number(e.target.value) }))} />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {t("config.value")} <span className="text-rose-500">*</span>
+            </label>
+            <input type="number"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+              placeholder="0"
+              value={form.value}
+              onChange={(e) => setForm((p) => ({ ...p, value: Number(e.target.value) }))} />
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{t("common.cancel")}</button>
-          <motion.button type="button" onClick={() => void handleSubmit()} disabled={submitting} className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors" whileHover={{ scale: submitting ? 1 : 1.02 }} whileTap={{ scale: submitting ? 1 : 0.98 }}>
-            {submitting ? (
-              <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("config.creating")}</>
-            ) : (
-              <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>{t("config.createNew")}</>
-            )}
+        <div className="flex gap-3 px-6 pb-6">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            {t("common.cancel")}
+          </button>
+          <motion.button type="button" onClick={() => void handleSubmit()} disabled={submitting}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#9f1239] rounded-xl hover:bg-[#be123c] shadow-sm disabled:opacity-60 transition-colors"
+            whileHover={{ scale: submitting ? 1 : 1.02 }} whileTap={{ scale: submitting ? 1 : 0.98 }}>
+            {submitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" />{t("config.creating")}</>
+              : <><Plus className="w-4 h-4" />{t("config.createNew")}</>}
           </motion.button>
         </div>
       </motion.div>
@@ -101,15 +147,17 @@ function CreateConfigModal({ onClose, onSuccess }: { onClose: () => void; onSucc
   );
 }
 
-// ─── Modal: Xem chi tiết config ────────────────────────────────────────────────
-function ViewConfigModal({ configId, onClose }: { configId: string; onClose: () => void }) {
+/* ─── View Config Modal ───────────────────────────────── */
+function ViewConfigModal({
+  configId, onClose,
+}: { configId: string; onClose: () => void }) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<Config | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetch = async () => {
+    const load = async () => {
       try {
         const res = await axiosInstance.get(`/api/config/${configId}`);
         const json = res.data;
@@ -117,56 +165,69 @@ function ViewConfigModal({ configId, onClose }: { configId: string; onClose: () 
       } catch { setError(t("config.cannotLoadDetails")); }
       finally { setLoading(false); }
     };
-    void fetch();
+    void load();
   }, [configId, t]);
 
+  const rows = config ? [
+    { label: t("config.id"), value: config.id, mono: true },
+    { label: t("config.configName"), value: config.configName, mono: false },
+    { label: t("config.key"), value: config.key, mono: true },
+    { label: t("config.value"), value: String(config.value), mono: false },
+  ] : [];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" initial={{ opacity: 0, scale: 0.92, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 24 }} transition={{ duration: 0.25 }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">{t("config.details")}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{t("config.apiGetById")}/{configId}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ minHeight: "100vh" }}>
+      <motion.div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 bg-slate-50/50">
+          <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center border border-sky-100">
+            <Eye className="w-4 h-4 text-sky-600" />
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">{t("config.details")}</h2>
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">GET /api/config/{configId.slice(0, 8)}…</p>
+          </div>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-6 py-6">
           {loading ? (
             <div className="space-y-3 animate-pulse">
-              {[1, 2, 3, 4].map((i) => <div key={i} className="h-10 bg-gray-100 rounded-lg" />)}
+              {[1, 2, 3, 4].map((i) => <div key={i} className="h-12 bg-rose-50 rounded-xl" />)}
             </div>
           ) : error ? (
-            <p className="text-sm text-red-500 text-center py-4">{error}</p>
-          ) : config ? (
+            <p className="text-sm text-rose-500 text-center py-4">{error}</p>
+          ) : (
             <div className="space-y-3">
-              {[
-                { label: t("config.id"), value: config.id, mono: true },
-                { label: t("config.configName"), value: config.configName, mono: false },
-                { label: t("config.key"), value: config.key, mono: true },
-                { label: t("config.value"), value: String(config.value), mono: false },
-              ].map((row) => (
-                <div key={row.label} className="flex items-start gap-4 px-4 py-3 bg-gray-50 rounded-lg">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider w-24 flex-shrink-0 pt-0.5">{row.label}</span>
-                  <span className={`text-sm text-gray-800 break-all ${row.mono ? "font-mono" : "font-medium"}`}>{row.value}</span>
+              {rows.map((row) => (
+                <div key={row.label} className="flex items-start gap-4 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider w-24 flex-shrink-0 pt-0.5">{row.label}</span>
+                  <span className={`text-sm text-slate-800 break-all ${row.mono ? "font-mono" : "font-medium"}`}>{row.value}</span>
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-          <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{t("common.close")}</button>
+        <div className="flex justify-end px-6 pb-6">
+          <button type="button" onClick={onClose}
+            className="px-6 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            {t("common.close")}
+          </button>
         </div>
       </motion.div>
     </div>
   );
 }
 
-// ─── Modal: Xác nhận xóa ───────────────────────────────────────────────────────
-function DeleteConfirmModal({ config, onClose, onSuccess }: { config: Config; onClose: () => void; onSuccess: () => void }) {
+/* ─── Delete Confirm Modal ────────────────────────────── */
+function DeleteConfirmModal({
+  config, onClose, onSuccess,
+}: { config: Config; onClose: () => void; onSuccess: () => void }) {
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -181,25 +242,51 @@ function DeleteConfirmModal({ config, onClose, onSuccess }: { config: Config; on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" initial={{ opacity: 0, scale: 0.92, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.92, y: 24 }} transition={{ duration: 0.25 }}>
-        <div className="px-6 pt-6 pb-4 text-center">
-          <motion.div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}>
-            <svg className="w-7 h-7 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ minHeight: "100vh" }}>
+      <motion.div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="px-6 pt-8 pb-6 text-center">
+          <motion.div
+            className="bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5 w-16 h-16"
+            initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", delay: 0.1 }}
+          >
+            <AlertCircle className="w-8 h-8 text-rose-600" />
           </motion.div>
-          <h2 className="text-lg font-bold text-gray-900 mb-1">{t("config.deleteQuestion")}</h2>
-          <p className="text-sm text-gray-500 mb-2">{t("config.deletingText")}</p>
-          <div className="bg-gray-50 rounded-lg px-4 py-3 mb-2 text-left space-y-1">
-            <p className="text-xs text-gray-500">{t("config.configName")}: <span className="font-semibold text-gray-800">{config.configName}</span></p>
-            <p className="text-xs text-gray-500">{t("config.key")}: <span className="font-mono font-semibold text-gray-800">{config.key}</span></p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t("config.deleteQuestion")}</h2>
+          <p className="text-sm text-gray-500 mb-3">{t("config.deletingText")}</p>
+          <div className="bg-slate-50 rounded-xl px-4 py-3 text-left space-y-2 border border-slate-100 mb-3">
+            <p className="text-xs text-slate-500">
+              {t("config.configName")}:{" "}
+              <span className="font-semibold text-slate-800">{config.configName}</span>
+            </p>
+            <p className="text-xs text-slate-500">
+              {t("config.key")}:{" "}
+              <span className="font-mono font-semibold text-slate-800">{config.key}</span>
+            </p>
           </div>
-          <p className="text-xs text-red-500">{t("config.cannotUndo")}</p>
-          {error && <p className="mt-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+          <p className="text-xs font-medium text-rose-500 bg-rose-50 inline-block px-3 py-1 rounded-full">
+            {t("config.cannotUndo")}
+          </p>
+          {error && (
+            <p className="mt-3 text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-xl border border-rose-100">{error}</p>
+          )}
         </div>
-        <div className="flex gap-3 px-6 pb-6">
-          <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{t("common.cancel")}</button>
-          <motion.button type="button" onClick={() => void handleDelete()} disabled={deleting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors" whileHover={{ scale: deleting ? 1 : 1.02 }} whileTap={{ scale: deleting ? 1 : 0.98 }}>
-            {deleting ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>{t("config.deleting")}</> : t("config.delete")}
+        <div className="flex gap-3 px-6 pb-6 pt-4 border-t border-gray-100 bg-gray-50/50">
+          <button type="button" onClick={onClose}
+            className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+            {t("common.cancel")}
+          </button>
+          <motion.button type="button" onClick={() => void handleDelete()} disabled={deleting}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 shadow-sm disabled:opacity-60 transition-colors"
+            whileHover={{ scale: deleting ? 1 : 1.02 }} whileTap={{ scale: deleting ? 1 : 0.98 }}>
+            {deleting
+              ? <><Loader2 className="w-4 h-4 animate-spin" />{t("config.deleting")}</>
+              : t("config.delete")}
           </motion.button>
         </div>
       </motion.div>
@@ -207,7 +294,7 @@ function DeleteConfirmModal({ config, onClose, onSuccess }: { config: Config; on
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+/* ─── Main Page ───────────────────────────────────────── */
 export default function AdminConfig() {
   const { t } = useTranslation();
 
@@ -223,7 +310,18 @@ export default function AdminConfig() {
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Config | null>(null);
 
-  // Debounce search
+  /* ── GSAP progress bar ── */
+  const progressRef = useRef<HTMLDivElement>(null);
+  const runProgress = () => {
+    if (!progressRef.current) return;
+    gsap.set(progressRef.current, { scaleX: 0, opacity: 1 });
+    gsap.to(progressRef.current, { scaleX: 1, duration: 0.9, ease: "power3.out" });
+    gsap.to(progressRef.current, { opacity: 0, duration: 0.4, delay: 1.1 });
+  };
+
+  useEffect(() => { runProgress(); }, []);
+
+  /* ── Debounce search ── */
   useEffect(() => {
     const timer = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 400);
     return () => clearTimeout(timer);
@@ -231,10 +329,10 @@ export default function AdminConfig() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    runProgress();
     try {
       const params: Record<string, string | number> = { pageNo: page, pageSize: PAGE_SIZE };
       if (debouncedSearch) params.searchTerm = debouncedSearch;
-
       const res = await axiosInstance.get("/api/config", { params });
       const json = res.data;
 
@@ -251,19 +349,27 @@ export default function AdminConfig() {
       }
 
       setData(items); setTotal(totalCount); setTotalPages(pageCount);
-    } catch (err) {
-      console.error("Error loading configs:", err);
+    } catch {
       setData([]); setTotal(0); setTotalPages(1);
     } finally { setLoading(false); }
   }, [page, debouncedSearch]);
 
   useEffect(() => { void fetchData(); }, [fetchData]);
 
-  const rowVariants = {
-    hidden: { opacity: 0, x: -16 },
-    visible: (i: number) => ({ opacity: 1, x: 0, transition: { delay: i * 0.04, duration: 0.35 } }),
-    exit: { opacity: 0, x: 16, transition: { duration: 0.25 } },
-  };
+  const stats = [
+    { label: t("config.stat1"), value: total, icon: Settings, bg: "bg-rose-50", border: "border-rose-100", iconColor: "text-[#9f1239]", valColor: "text-[#9f1239]" },
+    { label: t("config.stat2"), value: page, icon: Hash, bg: "bg-sky-50", border: "border-sky-100", iconColor: "text-sky-600", valColor: "text-sky-700" },
+    { label: t("config.stat3"), value: data.length, icon: FileCode2, bg: "bg-emerald-50", border: "border-emerald-100", iconColor: "text-emerald-600", valColor: "text-emerald-700" },
+  ];
+
+  const tableHeaders = [
+    "#",
+    t("config.configName"),
+    t("config.key"),
+    t("config.value"),
+    t("config.id"),
+    t("common.action"),
+  ];
 
   return (
     <>
@@ -273,179 +379,218 @@ export default function AdminConfig() {
         {deleteTarget && <DeleteConfirmModal config={deleteTarget} onClose={() => setDeleteTarget(null)} onSuccess={() => void fetchData()} />}
       </AnimatePresence>
 
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
+      <main className="admin-config-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] text-slate-900">
+
+        {/* Progress bar */}
+        <div
+          ref={progressRef}
+          className="fixed top-16 left-64 right-0 h-[3px] bg-gradient-to-r from-[#9f1239] to-[#f43f5e] z-50 origin-left"
+          style={{ transform: "scaleX(0)", opacity: 0 }}
+        />
+
+        <div className="p-6 space-y-6">
 
           {/* ── Header ── */}
-          <motion.div className="mb-8 flex items-start justify-between" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1.5">{t("config.title")}</h1>
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={0}
+            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-rose-50 border border-rose-100">
+                <Settings className="w-5 h-5 text-[#9f1239]" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
+                  {t("config.title")}
+                </h1>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Quản lý cấu hình hệ thống
+                </p>
+              </div>
             </div>
             <motion.button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-colors"
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#9f1239] text-white text-sm font-semibold rounded-xl hover:bg-[#be123c] transition-colors shadow-sm self-start md:self-auto"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              <Plus className="w-4 h-4" />
               {t("config.createNew")}
             </motion.button>
           </motion.div>
 
           {/* ── Stats ── */}
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8"
-            initial="hidden"
-            animate="visible"
-            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+            variants={fadeUp} initial="hidden" animate="visible" custom={1}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
           >
-            {[
-              { label: t("config.stat1"), value: total, color: "text-indigo-700", bg: "bg-indigo-50 border-indigo-100", iconPath: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z", iconColor: "text-indigo-600" },
-              { label: t("config.stat2"), value: page, color: "text-sky-700", bg: "bg-sky-50 border-sky-100", iconPath: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z", iconColor: "text-sky-600" },
-              { label: t("config.stat3"), value: data.length, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100", iconPath: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", iconColor: "text-emerald-600" },
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                className={`border rounded-xl px-5 py-4 ${stat.bg}`}
-                variants={{ hidden: { opacity: 0, scale: 0.88 }, visible: { opacity: 1, scale: 1, transition: { duration: 0.45 } } }}
-                whileHover={{ scale: 1.02, transition: { duration: 0.18 } }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">{stat.label}</p>
-                    <motion.p className={`text-3xl font-bold ${stat.color}`} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1, type: "spring" }}>
-                      {stat.value}
-                    </motion.p>
+            {stats.map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.15 + i * 0.07 }}
+                  className={`${s.bg} border ${s.border} rounded-2xl p-5 shadow-sm`}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon className={`w-4 h-4 ${s.iconColor}`} />
+                    <p className="text-xs font-semibold text-slate-500">{s.label}</p>
                   </div>
-                  <motion.div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center" whileHover={{ rotate: 20 }} transition={{ duration: 0.3 }}>
-                    <svg className={`w-5 h-5 ${stat.iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.iconPath} /></svg>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
+                  <p className={`text-3xl font-extrabold ${s.valColor}`}>{s.value}</p>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
-          {/* ── Search ── */}
-          <motion.div className="bg-white border border-gray-200 rounded-xl p-5 mb-5" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.15 }}>
-            <div className="relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input
-                type="text"
-                className="w-full pl-11 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                placeholder={t("config.searchPlaceholder")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button type="button" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              )}
+          {/* ── Filter card ── */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={2}
+            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
+          >
+            <h2 className="text-base font-semibold text-[#9f1239] mb-4">
+              {t("seedling.filterAndSearch") || "Lọc & Tìm kiếm"}
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[260px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder={t("config.searchPlaceholder")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full border border-rose-100 bg-white rounded-xl pl-10 pr-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
+                />
+                {search && (
+                  <button type="button" onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
+
+            <AnimatePresence>
+              {search.trim() && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-rose-50"
+                >
+                  <span className="text-xs text-slate-400">{t("seedling.appliedFilters") || "Bộ lọc đang áp dụng"}</span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
+                    {t("common.search")}: "{search}"
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
-          {/* ── Table ── */}
-          <motion.div className="bg-white border border-gray-200 rounded-xl overflow-hidden" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.2 }}>
+          {/* ── Table card ── */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={3}
+            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm overflow-hidden"
+          >
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-[#fff1f2] to-[#fffbfb] border-b border-rose-100">
                   <tr>
-                    <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-10">#</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{t("config.configName")}</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{t("config.key")}</th>
-                    <th className="px-5 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{t("config.value")}</th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{t("config.id")}</th>
-                    <th className="px-5 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{t("common.action")}</th>
+                    {tableHeaders.map((h, i) => (
+                      <motion.th
+                        key={i}
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
+                        className="text-center p-4 font-semibold text-gray-900 whitespace-nowrap"
+                      >
+                        {h}
+                      </motion.th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   <AnimatePresence mode="wait">
                     {loading ? (
                       Array.from({ length: 6 }).map((_, idx) => (
-                        <motion.tr key={`sk-${idx}`} className="animate-pulse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: idx * 0.04 }}>
-                          <td className="px-4 py-3.5"><div className="h-4 bg-gray-200 rounded w-6" /></td>
-                          <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-40" /></td>
-                          <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-36 font-mono" /></td>
-                          <td className="px-5 py-3.5"><div className="h-6 bg-gray-200 rounded-full w-16 mx-auto" /></td>
-                          <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-48" /></td>
-                          <td className="px-5 py-3.5"><div className="h-8 bg-gray-200 rounded-lg w-32 mx-auto" /></td>
+                        <motion.tr key={`sk-${idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          transition={{ delay: idx * 0.04 }} className="border-b border-rose-50 animate-pulse">
+                          {Array.from({ length: 6 }).map((__, ci) => (
+                            <td key={ci} className="p-4">
+                              <div className="h-4 bg-rose-100 rounded w-full" />
+                            </td>
+                          ))}
                         </motion.tr>
                       ))
                     ) : data.length === 0 ? (
-                      <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <td colSpan={6} className="px-5 py-16 text-center">
-                          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                          </div>
-                          <p className="text-sm font-medium text-gray-500">{t("common.noData")}</p>
-                          <p className="text-xs text-gray-400 mt-1">{t("config.noData")}</p>
+                      <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <td colSpan={6} className="text-center p-12 text-gray-500">
+                          <div className="text-6xl mb-4">⚙️</div>
+                          <div className="text-lg font-medium">{t("common.noData")}</div>
+                          <p className="text-sm text-slate-400 mt-1">{t("config.noData")}</p>
                         </td>
                       </motion.tr>
                     ) : (
                       data.map((cfg, idx) => (
                         <motion.tr
                           key={cfg.id}
-                          className="hover:bg-gray-50/80 transition-colors"
                           custom={idx}
-                          variants={rowVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
+                          variants={tableRow}
+                          initial="hidden" animate="visible" exit="exit"
+                          layout
+                          whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
+                          className="border-b border-rose-50"
                         >
-                          {/* STT */}
-                          <td className="px-4 py-3.5">
-                            <span className="text-xs text-gray-400 font-medium">{(page - 1) * PAGE_SIZE + idx + 1}</span>
+                          {/* # */}
+                          <td className="p-4 text-center text-gray-500 text-sm">
+                            {(page - 1) * PAGE_SIZE + idx + 1}
                           </td>
 
                           {/* Config Name */}
-                          <td className="px-5 py-3.5">
-                            <span className="text-sm font-semibold text-gray-900">{cfg.configName}</span>
+                          <td className="p-4 text-center font-medium text-gray-900 whitespace-nowrap">
+                            {cfg.configName}
                           </td>
 
                           {/* Key */}
-                          <td className="px-5 py-3.5">
-                            <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-mono">
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-mono border border-slate-200">
                               {cfg.key}
                             </span>
                           </td>
 
                           {/* Value */}
-                          <td className="px-5 py-3.5 text-center">
-                            <span className="inline-flex items-center justify-center min-w-[48px] px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-bold">
+                          <td className="p-4 text-center">
+                            <span className="inline-flex items-center justify-center min-w-[40px] px-3 py-1 bg-rose-50 text-[#9f1239] rounded-full text-sm font-bold border border-rose-100">
                               {cfg.value}
                             </span>
                           </td>
 
                           {/* ID */}
-                          <td className="px-5 py-3.5">
-                            <span className="text-xs text-gray-400 font-mono truncate max-w-[160px] block" title={cfg.id}>{cfg.id}</span>
+                          <td className="p-4 text-center">
+                            <span className="text-xs text-slate-400 font-mono" title={cfg.id}>
+                              {cfg.id.slice(0, 8)}…
+                            </span>
                           </td>
 
                           {/* Actions */}
-                          <td className="px-5 py-3.5">
+                          <td className="p-4 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {/* Xem chi tiết — GET /api/config/{id} */}
                               <motion.button
-                                type="button"
-                                title={t("config.viewDetails")}
-                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-sky-700 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition-colors"
+                                type="button" title={t("config.viewDetails")}
                                 onClick={() => setViewTarget(cfg.id)}
-                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                className="p-2 rounded-lg bg-sky-50 text-sky-600 border border-sky-100 hover:bg-sky-100 transition-colors"
                               >
-                                <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                {t("config.view")}
+                                <Eye className="w-3.5 h-3.5" />
                               </motion.button>
-
-                              {/* Xóa — DELETE /api/config/{id} */}
                               <motion.button
-                                type="button"
-                                title={t("config.delete")}
-                                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                                type="button" title={t("config.delete")}
                                 onClick={() => setDeleteTarget(cfg)}
-                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                className="p-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 transition-colors"
                               >
-                                <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                {t("config.delete")}
+                                <Trash2 className="w-3.5 h-3.5" />
                               </motion.button>
                             </div>
                           </td>
@@ -456,34 +601,56 @@ export default function AdminConfig() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            <AnimatePresence>
+              {!loading && total > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.3 }}
+                  className="flex justify-between items-center text-sm text-slate-600 p-6 bg-white/70 border-t border-rose-100"
+                >
+                  <span className="font-medium">
+                    {t("common.page") || "Trang"}{" "}
+                    <span className="font-bold text-slate-800">{page}</span> / {totalPages} —{" "}
+                    <span className="font-bold text-slate-800">{total}</span>{" "}
+                    {t("navigation.config")?.toLowerCase() || "cấu hình"}
+                  </span>
+                  {totalPages > 1 && (
+                    <div className="flex gap-2">
+                      <motion.button type="button"
+                        onClick={() => setPage(page - 1)} disabled={page === 1}
+                        whileHover={{ scale: page === 1 ? 1 : 1.08 }} whileTap={{ scale: page === 1 ? 1 : 0.93 }}
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium shadow-sm">
+                        ←
+                      </motion.button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pn: number;
+                        if (totalPages <= 5) pn = i + 1;
+                        else if (page <= 3) pn = i + 1;
+                        else if (page >= totalPages - 2) pn = totalPages - 4 + i;
+                        else pn = page - 2 + i;
+                        return (
+                          <motion.button key={pn} type="button"
+                            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => setPage(pn)}
+                            className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
+                              page === pn ? "bg-[#9f1239] text-white" : "bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300"
+                            }`}>{pn}</motion.button>
+                        );
+                      })}
+                      <motion.button type="button"
+                        onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                        whileHover={{ scale: page === totalPages ? 1 : 1.08 }} whileTap={{ scale: page === totalPages ? 1 : 0.93 }}
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium shadow-sm">
+                        →
+                      </motion.button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
-
-          {/* ── Pagination ── */}
-          {totalPages > 1 && (
-            <motion.div className="mt-5 flex items-center justify-between" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.45 }}>
-              <p className="text-sm text-gray-500">
-                {t("common.page")} <span className="font-semibold text-gray-800">{page}</span> / {totalPages} — <span className="font-semibold text-gray-800">{total}</span> {t("navigation.config").toLowerCase()}
-              </p>
-              <div className="flex items-center gap-2">
-                <motion.button type="button" onClick={() => setPage(page - 1)} disabled={page === 1} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" whileHover={{ scale: page === 1 ? 1 : 1.04 }} whileTap={{ scale: page === 1 ? 1 : 0.96 }}>{t("config.previous")}</motion.button>
-
-                <div className="flex gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) pageNum = i + 1;
-                    else if (page <= 3) pageNum = i + 1;
-                    else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
-                    else pageNum = page - 2 + i;
-                    return (
-                      <motion.button key={pageNum} type="button" onClick={() => setPage(pageNum)} className={`w-9 h-9 text-sm font-medium rounded-lg transition-colors ${page === pageNum ? "bg-indigo-600 text-white" : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"}`} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>{pageNum}</motion.button>
-                    );
-                  })}
-                </div>
-
-                <motion.button type="button" onClick={() => setPage(page + 1)} disabled={page === totalPages} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" whileHover={{ scale: page === totalPages ? 1 : 1.04 }} whileTap={{ scale: page === totalPages ? 1 : 0.96 }}>{t("config.next")}</motion.button>
-              </div>
-            </motion.div>
-          )}
 
         </div>
       </main>
