@@ -18,8 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
+import './SidebarAdmin.css';
 
-// Chuyển màu các badge chức vụ sang tông đỏ/hồng để phân biệt
 function getRoleBadgeColor(role: string | undefined) {
   switch (role?.toLowerCase()) {
     case "admin":
@@ -27,7 +27,7 @@ function getRoleBadgeColor(role: string | undefined) {
     case "researcher":
       return "bg-red-400";
     case "technician":
-      return "bg-orange-500"; // Giữ màu cam hoặc đỏ nhạt cho kỹ thuật viên
+      return "bg-orange-500";
     default:
       return "bg-gray-500";
   }
@@ -81,7 +81,6 @@ export default function SidebarAdmin() {
       {/* Header */}
       <div className="sidebar-header h-16 flex items-center justify-between px-4 border-b border-red-50 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          {/* Logo background đổi sang Red */}
           <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-200 dark:shadow-none">
             <GiMicroscope className="text-white text-lg" />
           </div>
@@ -133,16 +132,20 @@ export default function SidebarAdmin() {
               to={item.path}
               className={({ isActive }) =>
                 `sidebar-nav-item flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mb-1 group relative ${
-                  isActive 
-                    ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 shadow-sm" 
-                    : "text-gray-600 dark:text-gray-400 hover:bg-red-50/50 dark:hover:bg-gray-800 hover:text-red-600"
+                  isActive
+                    ? "active text-red-700 dark:text-red-400"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-gray-800 hover:text-red-600"
                 } ${isCollapsed ? "justify-center" : ""}`
               }
               title={isCollapsed ? t(item.labelKey) : undefined}
             >
               {({ isActive }) => (
                 <>
-                  <span className={`sidebar-nav-icon text-lg transition-colors ${isActive ? "text-red-600" : "group-hover:text-red-500"}`}>
+                  <span
+                    className={`sidebar-nav-icon text-lg transition-colors ${
+                      isActive ? "text-red-600" : "group-hover:text-red-500"
+                    }`}
+                  >
                     <Icon />
                   </span>
                   {!isCollapsed && (
@@ -150,7 +153,9 @@ export default function SidebarAdmin() {
                       <span className="sidebar-nav-text text-sm font-medium flex-1">
                         {t(item.labelKey)}
                       </span>
-                      {isActive && <span className="absolute right-2 w-1.5 h-1.5 bg-red-600 rounded-full"></span>}
+                      {isActive && (
+                        <span className="absolute right-2 w-1.5 h-1.5 bg-red-600 rounded-full"></span>
+                      )}
                     </>
                   )}
                 </>
@@ -170,24 +175,26 @@ export default function SidebarAdmin() {
           </div>
         )}
 
-        {/* User Profile */}
+        {/* User Profile — không có nền, chỉ padding */}
         <div className={`sidebar-profile px-3 py-3 ${isCollapsed ? "flex justify-center" : ""}`}>
-          <div className="flex items-center gap-3 p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex items-center gap-3 p-2 rounded-xl">
             <div className="relative flex-shrink-0">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt="Avatar"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-red-100 dark:border-gray-700 shadow-sm"
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                   {user?.name?.charAt(0).toUpperCase() ?? "U"}
                 </div>
               )}
-              <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-900 shadow-sm`}></div>
+              <div
+                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 ${getRoleBadgeColor(user?.role)} rounded-full border-2 border-white dark:border-gray-900 shadow-sm`}
+              ></div>
             </div>
-            
+
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
@@ -198,7 +205,7 @@ export default function SidebarAdmin() {
                 </p>
               </div>
             )}
-            
+
             {!isCollapsed && (
               <button
                 type="button"
