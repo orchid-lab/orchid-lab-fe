@@ -4,8 +4,9 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  Search, X, Plus, Edit2, Trash2, Users,
-  ShieldCheck, FlaskConical, Wrench, AlertCircle, Loader2,
+  Search, X, Plus, Trash2, Users,
+  ShieldCheck, FlaskConical, Wrench, AlertCircle, Loader2, Eye,
+  Mail, Phone, Calendar, UserCircle2, BadgeCheck,
 } from "lucide-react";
 import type { User, UserApiResponse } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
@@ -82,6 +83,134 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
+/* ─── View User Modal (read-only, larger) ─────────────── */
+function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }) {
+  const { t } = useTranslation();
+  const role = getUserRoleName(u);
+
+  const fields: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
+    {
+      icon: <Mail className="w-4 h-4 text-rose-400" />,
+      label: t("common.email"),
+      value: <span className="font-mono text-sm">{u.email ?? "—"}</span>,
+    },
+    {
+      icon: <Phone className="w-4 h-4 text-rose-400" />,
+      label: t("common.phone"),
+      value: u.phoneNumber
+        ? <span className="text-sm">{u.phoneNumber}</span>
+        : <span className="italic text-slate-400 text-xs">{t("common.noPhoneNumber") || "Chưa cập nhật"}</span>,
+    },
+    {
+      icon: <BadgeCheck className="w-4 h-4 text-rose-400" />,
+      label: t("common.role"),
+      value: <RoleBadge role={role} />,
+    },
+    {
+      icon: <Calendar className="w-4 h-4 text-rose-400" />,
+      label: t("common.createdAt"),
+      value: (
+        <span className="text-sm">
+          {u.createdDate
+            ? new Date(u.createdDate).toLocaleDateString("vi-VN", {
+                day: "2-digit", month: "2-digit", year: "numeric",
+              })
+            : "—"}
+        </span>
+      ),
+    },
+  ];
+
+  /* avatar placeholder with initials */
+  const initials = (u.name ?? "?")
+    .split(" ")
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      style={{ minHeight: "100vh" }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.93, y: 28 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.93, y: 28 }}
+        transition={{ duration: 0.25, ease: EASE_OUT }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── Header banner ── */}
+        <div className="relative bg-gradient-to-br from-[#9f1239] via-[#be123c] to-[#e11d48] px-8 pt-10 pb-16">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-4">
+            {u.avatarUrl ? (
+              <img
+                src={u.avatarUrl}
+                alt={u.name}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-white/40 shadow-lg"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center shadow-lg">
+                <span className="text-2xl font-bold text-white">{initials}</span>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-1">
+                {t("user.userDetail") || "Chi tiết người dùng"}
+              </p>
+              <h2 className="text-2xl font-bold text-white leading-tight">{u.name}</h2>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Info card overlapping banner ── */}
+        <div className="relative -mt-8 mx-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-rose-100 overflow-hidden">
+            {fields.map((f, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-4 px-6 py-4 ${
+                  i < fields.length - 1 ? "border-b border-rose-50" : ""
+                }`}
+              >
+                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center flex-shrink-0">
+                  {f.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+                    {f.label}
+                  </p>
+                  <div className="text-slate-800 truncate">{f.value}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="px-6 pb-6 pt-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full px-4 py-3 text-sm font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+          >
+            {t("common.close") || "Đóng"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 /* ─── Confirm Delete Modal ────────────────────────────── */
 function ConfirmDeleteModal({
   name, onClose, onConfirm,
@@ -131,100 +260,6 @@ function ConfirmDeleteModal({
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 shadow-sm disabled:opacity-60 transition-colors"
             whileHover={{ scale: deleting ? 1 : 1.02 }} whileTap={{ scale: deleting ? 1 : 0.98 }}>
             {deleting ? <><Loader2 className="w-4 h-4 animate-spin" />Đang xóa...</> : t("common.delete")}
-          </motion.button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-/* ─── Edit User Modal ─────────────────────────────────── */
-function EditUserModal({
-  user: editUser, onClose, onSuccess,
-}: {
-  user: User; onClose: () => void; onSuccess: () => void;
-}) {
-  const { t } = useTranslation();
-  const { enqueueSnackbar } = useSnackbar();
-  const [data, setData] = useState<User>(editUser);
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (!data.name.trim()) {
-      enqueueSnackbar(t("user.nameRequired") || "Name is required", { variant: "error", autoHideDuration: 3000 });
-      return;
-    }
-    setSaving(true);
-    try {
-      const { email, avatarUrl, ...payload } = data;
-      await axiosInstance.put("/api/user", payload);
-      onSuccess();
-      onClose();
-      enqueueSnackbar(t("user.userUpdated"), { variant: "success", autoHideDuration: 3000, preventDuplicate: true });
-    } catch (error) {
-      const e = error as { response?: { data?: string }; message?: string };
-      enqueueSnackbar(e.response?.data ?? e.message ?? t("user.userUpdateFailed"), { variant: "error", autoHideDuration: 5000 });
-    } finally { setSaving(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-      style={{ minHeight: "100vh" }}>
-      <motion.div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 bg-slate-50/50">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-            <Edit2 className="w-4 h-4 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-800">{t("user.editUser")}</h2>
-            <p className="text-xs text-slate-500 mt-0.5 font-mono">{editUser.email}</p>
-          </div>
-        </div>
-        <div className="px-6 py-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              {t("common.name")} <span className="text-rose-500">*</span>
-            </label>
-            <input type="text"
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
-              value={data.name}
-              onChange={(e) => setData((d) => ({ ...d, name: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("common.phone")}</label>
-            <input type="text"
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
-              value={data.phoneNumber ?? ""}
-              onChange={(e) => setData((d) => ({ ...d, phoneNumber: e.target.value }))} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              {t("common.role")} <span className="text-rose-500">*</span>
-            </label>
-            <select
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
-              value={data.roleId}
-              onChange={(e) => setData((d) => ({ ...d, roleId: parseInt(e.target.value) }))}>
-              <option value={2}>{t("roles.researcher")}</option>
-              <option value={3}>{t("roles.technician")}</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-3 px-6 pb-6">
-          <button type="button" onClick={onClose}
-            className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            {t("common.cancel")}
-          </button>
-          <motion.button type="button" onClick={() => void handleSave()} disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#9f1239] rounded-xl hover:bg-[#be123c] shadow-sm disabled:opacity-60 transition-colors"
-            whileHover={{ scale: saving ? 1 : 1.02 }} whileTap={{ scale: saving ? 1 : 0.98 }}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Đang lưu...</> : t("common.save")}
           </motion.button>
         </div>
       </motion.div>
@@ -334,7 +369,7 @@ export default function DashboardAdmin() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const [editTarget, setEditTarget] = useState<User | null>(null);
+  const [viewTarget, setViewTarget] = useState<User | null>(null);   // ← view-only
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -477,7 +512,6 @@ export default function DashboardAdmin() {
             {t("seedling.filterAndSearch") || "Lọc & Tìm kiếm"}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
-            {/* Role filter */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -488,7 +522,6 @@ export default function DashboardAdmin() {
               ))}
             </select>
 
-            {/* Search */}
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
@@ -500,7 +533,6 @@ export default function DashboardAdmin() {
               />
             </div>
 
-            {/* Clear */}
             {hasFilter && (
               <motion.button
                 type="button"
@@ -591,8 +623,9 @@ export default function DashboardAdmin() {
                         variants={tableRow}
                         initial="hidden" animate="visible" exit="exit"
                         layout
+                        onClick={() => setViewTarget(u)}
                         whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
-                        className="border-b border-rose-50"
+                        className="border-b border-rose-50 cursor-pointer"
                       >
                         {/* Name */}
                         <td className="p-4 text-center font-medium text-gray-900 whitespace-nowrap">
@@ -623,17 +656,19 @@ export default function DashboardAdmin() {
                         {/* Actions */}
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
+                            {/* View */}
                             <motion.button
-                              type="button" title={t("common.edit")}
-                              onClick={() => setEditTarget(u)}
+                              type="button" title={t("common.view") || "Xem"}
+                              onClick={(e) => { e.stopPropagation(); setViewTarget(u); }}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              className="p-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-colors"
+                              className="p-2 rounded-lg bg-slate-50 text-slate-500 border border-slate-200 hover:bg-rose-50 hover:text-[#9f1239] hover:border-rose-100 transition-colors"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Eye className="w-3.5 h-3.5" />
                             </motion.button>
+                            {/* Delete */}
                             <motion.button
                               type="button" title={t("common.delete")}
-                              onClick={() => setDeleteTarget({ id: u.id, name: u.name })}
+                              onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: u.id, name: u.name }); }}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                               className="p-2 rounded-lg bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 transition-colors"
                             >
@@ -697,11 +732,10 @@ export default function DashboardAdmin() {
 
       {/* ── Modals ── */}
       <AnimatePresence>
-        {editTarget && (
-          <EditUserModal
-            user={editTarget}
-            onClose={() => setEditTarget(null)}
-            onSuccess={() => { void fetchUsers(); setPage(1); }}
+        {viewTarget && (
+          <ViewUserModal
+            user={viewTarget}
+            onClose={() => setViewTarget(null)}
           />
         )}
         {showAdd && (
