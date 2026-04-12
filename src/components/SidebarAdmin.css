@@ -39,12 +39,15 @@
   background-color: rgba(255, 241, 242, 0.85) !important;
 }
 
-/* Icon on hover */
-.sidebar-nav-item:hover .sidebar-nav-icon {
+/* Icon on hover — target cả wrapper lẫn svg trực tiếp */
+.sidebar-nav-item:hover .sidebar-nav-icon,
+.sidebar-nav-item:hover .sidebar-nav-icon svg,
+.sidebar-nav-item:hover svg {
   color: #f43f5e !important;
+  fill: currentColor !important;
 }
 
-/* Ghi đè cứng nếu có global CSS set màu green trên a:hover */
+/* Ghi đè cứng nếu có global CSS set màu trên a:hover */
 aside a:hover,
 aside a.active {
   color: #be123c !important;
@@ -55,9 +58,35 @@ aside a.active {
 }
 
 aside a:hover svg,
+aside a:hover svg *,
 aside a:hover .sidebar-nav-icon,
+aside a:hover .sidebar-nav-icon svg,
 aside a.active svg,
 aside a.active .sidebar-nav-icon {
+  color: #f43f5e !important;
+  fill: currentColor !important;
+}
+
+/* ─── Override global CSS (a:hover svg → blue #2563eb) ── */
+/* Global CSS dùng :root[data-theme='light'] a:hover svg → color: #2563eb !important */
+/* Cần selector cụ thể hơn để thắng */
+:root[data-theme='light'] aside.sidebar-modern a:hover svg,
+:root[data-theme='light'] aside.sidebar-modern a:hover svg *,
+:root[data-theme='light'] aside.sidebar-modern a:hover .sidebar-nav-icon,
+:root[data-theme='light'] aside.sidebar-modern a:hover .sidebar-nav-icon svg {
+  color: #f43f5e !important;
+  fill: currentColor !important;
+}
+
+:root[data-theme='light'] aside.sidebar-modern a.active svg,
+:root[data-theme='light'] aside.sidebar-modern a.active .sidebar-nav-icon,
+:root[data-theme='light'] aside.sidebar-modern a.active svg * {
+  color: #f43f5e !important;
+  fill: currentColor !important;
+}
+
+/* Logout & toggle button trong sidebar */
+:root[data-theme='light'] aside.sidebar-modern button:hover svg {
   color: #f43f5e !important;
 }
 
