@@ -1,0 +1,137 @@
+/* ==========================================================================
+   SidebarAdmin — Rose / Ruby theme
+   Ghi đè toàn bộ màu xanh lá (green) còn sót lại từ global CSS
+   ========================================================================== */
+
+/* ─── Layout ──────────────────────────────────────────── */
+.sidebar-expanded  { width: 256px; }
+.sidebar-collapsed { width: 72px;  }
+
+/* ─── Scrollbar ───────────────────────────────────────── */
+.sidebar-scrollbar::-webkit-scrollbar { width: 4px; }
+.sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.sidebar-scrollbar::-webkit-scrollbar-thumb { background: #fecdd3; border-radius: 4px; }
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #f43f5e; }
+
+/* ─── Search input ────────────────────────────────────── */
+.sidebar-search-input::placeholder { color: #f87171; opacity: 0.6; }
+
+.sidebar-search-input:focus {
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.25) !important;
+  background-color: rgba(255, 241, 242, 0.8) !important;
+}
+
+/* ─── Nav items: ghi đè tất cả trạng thái green ──────── */
+
+/* Hover state */
+.sidebar-nav-item:hover {
+  background-color: rgba(255, 241, 242, 0.7) !important;
+  color: #be123c !important;
+}
+
+/* Active state */
+.sidebar-nav-item.active,
+.sidebar-nav-item[class*="bg-red-50"] {
+  background-color: #fff1f2 !important;
+  color: #9f1239 !important;
+}
+
+/* Icon on hover */
+.sidebar-nav-item:hover .sidebar-nav-icon {
+  color: #f43f5e !important;
+}
+
+/* Ghi đè cứng nếu có global CSS set màu green trên a:hover */
+aside a:hover,
+aside a.active {
+  color: #be123c !important;
+}
+
+aside a:hover svg,
+aside a:hover .sidebar-nav-icon,
+aside a.active svg,
+aside a.active .sidebar-nav-icon {
+  color: #f43f5e !important;
+}
+
+/* Focus ring cho nav links */
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid #f43f5e !important;
+  outline-offset: 2px;
+}
+
+/* ─── Toggle button ───────────────────────────────────── */
+.sidebar-toggle:hover {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+/* ─── Logout button ───────────────────────────────────── */
+.sidebar-bottom button:hover {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+/* ─── Active indicator dot ────────────────────────────── */
+.sidebar-nav-item span[class*="bg-red-600"] {
+  background-color: #9f1239 !important;
+}
+
+/* ─── Dark mode ───────────────────────────────────────── */
+.dark .sidebar-nav-item:hover,
+:root[data-theme='dark'] .sidebar-nav-item:hover {
+  background-color: rgba(159, 18, 57, 0.15) !important;
+  color: #fda4af !important;
+}
+
+.dark .sidebar-nav-item.active,
+.dark .sidebar-nav-item[class*="bg-red"],
+:root[data-theme='dark'] .sidebar-nav-item.active,
+:root[data-theme='dark'] .sidebar-nav-item[class*="bg-red"] {
+  background-color: rgba(159, 18, 57, 0.2) !important;
+  color: #fda4af !important;
+}
+
+.dark aside a:hover,
+.dark aside a.active,
+:root[data-theme='dark'] aside a:hover,
+:root[data-theme='dark'] aside a.active {
+  color: #fda4af !important;
+}
+
+.dark aside a:hover svg,
+.dark aside a:hover .sidebar-nav-icon,
+.dark aside a.active svg,
+.dark aside a.active .sidebar-nav-icon,
+:root[data-theme='dark'] aside a:hover svg,
+:root[data-theme='dark'] aside a.active svg {
+  color: #fb7185 !important;
+}
+
+.dark .sidebar-toggle:hover,
+:root[data-theme='dark'] .sidebar-toggle:hover {
+  background-color: rgba(159, 18, 57, 0.15) !important;
+  color: #fda4af !important;
+}
+
+.dark .sidebar-bottom button:hover,
+:root[data-theme='dark'] .sidebar-bottom button:hover {
+  background-color: rgba(159, 18, 57, 0.15) !important;
+  color: #fda4af !important;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb,
+:root[data-theme='dark'] .sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(244, 63, 94, 0.3);
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover,
+:root[data-theme='dark'] .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(244, 63, 94, 0.55);
+}
+
+.dark .sidebar-search-input:focus,
+:root[data-theme='dark'] .sidebar-search-input:focus {
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3) !important;
+  background-color: rgba(159, 18, 57, 0.1) !important;
+}
