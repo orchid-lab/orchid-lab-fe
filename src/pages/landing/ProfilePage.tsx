@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-dom/no-missing-button-type */
@@ -82,11 +83,13 @@ export default function ProfilePage() {
       if (avatarFile) {
         const formData = new FormData();
         formData.append("image", avatarFile);
-        const imageResponse = await axiosInstance.post("/user", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+
+        // Bước 1: Upload ảnh → nhận về URL
+        const imageResponse = await axiosInstance.post("/api/images/user", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
         });
-        
-        newAvatarUrl = imageResponse.data;
+        newAvatarUrl = imageResponse.data.value; 
+
       }
 
       const infoChanged =
@@ -96,6 +99,7 @@ export default function ProfilePage() {
         newAvatarUrl !== user?.avatarUrl;
 
       if (infoChanged) {
+        // Bước 2: Gắn avatarUrl vào body và gọi PUT /api/user
         await axiosInstance.put("/api/user", {
           ...editUser,
           avatarUrl: newAvatarUrl,
