@@ -183,31 +183,18 @@ function Avatar({ user, isEditing, previewUrl, onFileChange, t }: AvatarProps) {
 
   const handleMouseEnter = () => {
     if (!isEditing) return;
-    gsap.to(avatarRef.current, {
-      scale: 1.06,
-      duration: 0.35,
-      ease: "back.out(1.7)",
-    });
+    gsap.to(avatarRef.current, { scale: 1.06, duration: 0.35, ease: "back.out(1.7)" });
   };
 
   const handleMouseLeave = () => {
-    gsap.to(avatarRef.current, {
-      scale: 1,
-      duration: 0.3,
-      ease: "power2.out",
-    });
+    gsap.to(avatarRef.current, { scale: 1, duration: 0.3, ease: "power2.out" });
   };
 
   const imgSrc = previewUrl ?? user.avatarUrl ?? null;
   const initial = user.name?.charAt(0).toUpperCase() || "U";
 
   return (
-    <div
-      className="ol-avatar-wrap"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* spinning ruby ring */}
+    <div className="ol-avatar-wrap" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div className={`ol-avatar-ring${isEditing ? " ol-avatar-ring--active" : ""}`} />
 
       <div className="ol-avatar" ref={avatarRef}>
@@ -226,7 +213,6 @@ function Avatar({ user, isEditing, previewUrl, onFileChange, t }: AvatarProps) {
             type="file"
             accept="image/*"
             onChange={onFileChange}
-            className="hidden"
             style={{ display: "none" }}
           />
         </label>
@@ -243,20 +229,13 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editUser, setEditUser] = useState({
-    id: "",
-    name: "",
-    email: "",
-    phoneNumber: "",
-  });
+  const [editUser, setEditUser] = useState({ id: "", name: "", email: "", phoneNumber: "" });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
-  // GSAP refs for page-load reveal
-  const coverRef  = useRef<HTMLDivElement>(null);
-  const heroRef   = useRef<HTMLDivElement>(null);
-  const gridRef   = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   // ── Page-load GSAP reveal ──────────────────────────────────────────────
   useEffect(() => {
@@ -264,14 +243,9 @@ export default function ProfilePage() {
 
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-    tl.fromTo(coverRef.current,
-      { opacity: 0, scaleX: 0.96, transformOrigin: "center" },
-      { opacity: 1, scaleX: 1, duration: 0.55 }
-    )
-    .fromTo(heroRef.current,
+    tl.fromTo(heroRef.current,
       { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.45 },
-      "-=0.25"
+      { opacity: 1, y: 0, duration: 0.45 }
     )
     .fromTo(
       gridRef.current ? Array.from(gridRef.current.children) : [],
@@ -283,13 +257,10 @@ export default function ProfilePage() {
     return () => { tl.kill(); };
   }, [isLoading, user]);
 
-  // ── Data fetching (original logic) ────────────────────────────────────
+  // ── Data fetching ─────────────────────────────────────────────────────
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!authUser?.id) {
-        setIsLoading(false);
-        return;
-      }
+      if (!authUser?.id) { setIsLoading(false); return; }
 
       try {
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
@@ -301,10 +272,7 @@ export default function ProfilePage() {
           phoneNumber: response.data.phoneNumber ?? "",
         });
       } catch {
-        enqueueSnackbar(t("profile.cannotLoadUserInfo"), {
-          variant: "error",
-          autoHideDuration: 3000,
-        });
+        enqueueSnackbar(t("profile.cannotLoadUserInfo"), { variant: "error", autoHideDuration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -313,7 +281,7 @@ export default function ProfilePage() {
     if (isAuthReady) fetchUserData();
   }, [authUser?.id, isAuthReady, enqueueSnackbar, t]);
 
-  // ── Handlers (original logic) ─────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
@@ -350,7 +318,7 @@ export default function ProfilePage() {
         await axiosInstance.put("/api/user", { ...editUser, avatarUrl: newAvatarUrl });
       }
 
-      const userRes    = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
+      const userRes     = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
       const updatedUser = userRes.data;
       setUser(updatedUser);
       updateUser(updatedUser);
@@ -358,15 +326,10 @@ export default function ProfilePage() {
       setAvatarFile(null);
       setPreviewUrl(null);
 
-      enqueueSnackbar(t("profile.updateSuccess"), {
-        variant: "success",
-        preventDuplicate: true,
-        autoHideDuration: 2000,
-      });
+      enqueueSnackbar(t("profile.updateSuccess"), { variant: "success", preventDuplicate: true, autoHideDuration: 2000 });
     } catch (error) {
       const apiError = error as { response?: { data?: string; status?: number }; message?: string };
-      const backendMessage =
-        apiError.response?.data ?? apiError.message ?? t("profile.updateFailed");
+      const backendMessage = apiError.response?.data ?? apiError.message ?? t("profile.updateFailed");
       enqueueSnackbar(backendMessage, { variant: "error", autoHideDuration: 5000, preventDuplicate: true });
     }
   };
@@ -422,18 +385,9 @@ export default function ProfilePage() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <main className="ml-64 mt-16 ol-profile-root">
-
-      {/* ── Cover photo band ── */}
-      <div ref={coverRef} style={{ opacity: 0 }}>
-        <div className="ol-cover">
-          <div className="ol-cover__canvas" />
-          <span className="ol-cover__label">Orchid Lab</span>
-        </div>
-      </div>
-
       <div className="ol-page">
 
-        {/* ── Hero strip ── */}
+        {/* ── Hero card ── */}
         <div className="ol-hero" ref={heroRef} style={{ opacity: 0 }}>
           <Avatar
             user={user}
@@ -443,7 +397,7 @@ export default function ProfilePage() {
             t={t}
           />
 
-          <div className="ol-hero-text" style={{ flex: 1 }}>
+          <div className="ol-hero-text">
             <h1 className="ol-hero-text__name">{user.name || t("profile.noName")}</h1>
             <p className="ol-hero-text__email">{user.email || t("profile.noEmail")}</p>
             <div className="ol-role-badge">
@@ -452,7 +406,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Edit button when not editing */}
           <AnimatePresence>
             {!isEditing && (
               <motion.button
@@ -472,68 +425,21 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Info cards grid ── */}
-        <motion.div
-          ref={gridRef}
-          className="ol-cards-grid"
-          layout
-        >
+        <motion.div ref={gridRef} className="ol-cards-grid" layout>
 
-          {/* Card 1 — Basic Info */}
-          <Card
-            icon={<IconUser />}
-            title={t("profile.fullName")}
-            index={0}
-          >
-            <Field
-              label={t("profile.fullName")}
-              value={editUser.name}
-              name="name"
-              isEditing={isEditing}
-              onChange={handleChange}
-            />
+          <Card icon={<IconUser />} title={t("profile.fullName")} index={0}>
+            <Field label={t("profile.fullName")} value={editUser.name} name="name" isEditing={isEditing} onChange={handleChange} />
           </Card>
 
-          {/* Card 2 — Contact */}
-          <Card
-            icon={<IconPhone />}
-            title={t("profile.phoneNumber")}
-            index={1}
-          >
-            <Field
-              label={t("profile.phoneNumber")}
-              value={editUser.phoneNumber}
-              name="phoneNumber"
-              isEditing={isEditing}
-              onChange={handleChange}
-            />
+          <Card icon={<IconPhone />} title={t("profile.phoneNumber")} index={1}>
+            <Field label={t("profile.phoneNumber")} value={editUser.phoneNumber} name="phoneNumber" isEditing={isEditing} onChange={handleChange} />
           </Card>
 
-          {/* Card 3 — Email (full-width, always readonly) */}
-          <Card
-            icon={<IconShield />}
-            title={t("profile.emailAddress")}
-            index={2}
-            full
-          >
-            <Field
-              label={t("profile.emailAddress")}
-              value={editUser.email}
-              name="email"
-              type="email"
-              isEditing={isEditing}
-              readonly
-              note={t("profile.emailNote")}
-              onChange={handleChange}
-            />
+          <Card icon={<IconShield />} title={t("profile.emailAddress")} index={2} full>
+            <Field label={t("profile.emailAddress")} value={editUser.email} name="email" type="email" isEditing={isEditing} readonly note={t("profile.emailNote")} onChange={handleChange} />
           </Card>
 
-          {/* Card 4 — Account (full-width) */}
-          <Card
-            icon={<IconShield />}
-            title={t("profile.detailedInfo")}
-            index={3}
-            full
-          >
+          <Card icon={<IconShield />} title={t("profile.detailedInfo")} index={3} full>
             <div className="ol-account-row">
               <span className="ol-account-row__key">{t("profile.fullName")}</span>
               <span className="ol-account-row__val">{user.name || "—"}</span>
@@ -550,7 +456,6 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          {/* Action bar — only when editing */}
           <AnimatePresence>
             {isEditing && (
               <motion.div
@@ -564,11 +469,7 @@ export default function ProfilePage() {
                   <IconX />
                   {t("profile.cancelEdit")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { void handleSave(); }}
-                  className="ol-btn ol-btn--primary"
-                >
+                <button type="button" onClick={() => { void handleSave(); }} className="ol-btn ol-btn--primary">
                   <IconSave />
                   {t("profile.saveChanges")}
                 </button>
