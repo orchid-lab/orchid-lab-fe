@@ -180,6 +180,7 @@
     "taskCancelledSummary": "Cancelled task"
   },
   "user": {
+    "userDetail": "User Detail",
     "userManagement": "User Management",
     "addUser": "Add User",
     "editUser": "Edit User",

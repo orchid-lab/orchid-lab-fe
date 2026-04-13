@@ -54,6 +54,37 @@ const tableRow: Variants = {
   exit: { opacity: 0, x: 14, transition: { duration: 0.18 } },
 };
 
+/* ─── Avatar helper ───────────────────────────────────── */
+function UserAvatar({ user: u, size = "md" }: { user: User; size?: "sm" | "md" | "lg" }) {
+  const initials = (u.name ?? "?")
+    .split(" ")
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  const sizeMap = {
+    sm: "w-8 h-8 text-xs rounded-lg",
+    md: "w-10 h-10 text-sm rounded-xl",
+    lg: "w-24 h-24 text-3xl rounded-3xl",
+  };
+
+  if (u.avatarUrl) {
+    return (
+      <img
+        src={u.avatarUrl}
+        alt={u.name}
+        className={`${sizeMap[size]} object-cover border-2 border-white shadow-sm flex-shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeMap[size]} bg-gradient-to-br from-rose-100 to-rose-200 border-2 border-white shadow-sm flex items-center justify-center flex-shrink-0`}>
+      <span className="font-bold text-[#9f1239]">{initials}</span>
+    </div>
+  );
+}
+
 /* ─── Role badge ──────────────────────────────────────── */
 function RoleBadge({ role }: { role: string }) {
   const normalized = role.toLowerCase();
@@ -82,10 +113,16 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-/* ─── View User Modal (read-only, larger) ─────────────── */
+/* ─── View User Modal ─────────────────────────────────── */
 function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }) {
   const { t } = useTranslation();
   const role = getUserRoleName(u);
+
+  const initials = (u.name ?? "?")
+    .split(" ")
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 
   const fields: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
     {
@@ -120,13 +157,6 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
     },
   ];
 
-  /* avatar placeholder with initials */
-  const initials = (u.name ?? "?")
-    .split(" ")
-    .slice(-2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -134,7 +164,7 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
       onClick={onClose}
     >
       <motion.div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-xl mx-4 overflow-hidden"
         initial={{ opacity: 0, scale: 0.93, y: 28 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.93, y: 28 }}
@@ -142,7 +172,7 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header banner ── */}
-        <div className="relative bg-gradient-to-br from-[#9f1239] via-[#be123c] to-[#e11d48] px-8 pt-10 pb-16">
+        <div className="relative bg-gradient-to-br from-[#9f1239] via-[#be123c] to-[#e11d48] px-8 pt-10 pb-20">
           <button
             type="button"
             onClick={onClose}
@@ -150,30 +180,29 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
           >
             <X className="w-4 h-4" />
           </button>
-          <div className="flex items-center gap-4">
+          <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-6">
+            {t("user.userDetail") || "Chi tiết người dùng"}
+          </p>
+        </div>
+
+        {/* ── Avatar overlapping banner ── */}
+        <div className="relative -mt-12 px-8 mb-4 flex items-end gap-5">
+          <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
             {u.avatarUrl ? (
-              <img
-                src={u.avatarUrl}
-                alt={u.name}
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-white/40 shadow-lg"
-              />
+              <img src={u.avatarUrl} alt={u.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-bold text-white">{initials}</span>
-              </div>
+              <span className="text-3xl font-bold text-[#9f1239]">{initials}</span>
             )}
-            <div>
-              <p className="text-xs font-semibold text-rose-200 uppercase tracking-widest mb-1">
-                {t("user.userDetail") || "Chi tiết người dùng"}
-              </p>
-              <h2 className="text-2xl font-bold text-white leading-tight">{u.name}</h2>
-            </div>
+          </div>
+          <div className="pb-1">
+            <h2 className="text-2xl font-bold text-slate-800 leading-tight">{u.name}</h2>
+            <p className="text-sm text-slate-400 mt-0.5">{u.email}</p>
           </div>
         </div>
 
-        {/* ── Info card overlapping banner ── */}
-        <div className="relative -mt-8 mx-6 mb-6">
-          <div className="bg-white rounded-2xl shadow-lg border border-rose-100 overflow-hidden">
+        {/* ── Info card ── */}
+        <div className="mx-6 mb-6">
+          <div className="bg-slate-50 rounded-2xl border border-rose-100 overflow-hidden">
             {fields.map((f, i) => (
               <div
                 key={i}
@@ -181,7 +210,7 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
                   i < fields.length - 1 ? "border-b border-rose-50" : ""
                 }`}
               >
-                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-white border border-rose-100 flex items-center justify-center flex-shrink-0 shadow-sm">
                   {f.icon}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -368,7 +397,7 @@ export default function DashboardAdmin() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
-  const [viewTarget, setViewTarget] = useState<User | null>(null);   // ← view-only
+  const [viewTarget, setViewTarget] = useState<User | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -623,9 +652,12 @@ export default function DashboardAdmin() {
                         whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
                         className="border-b border-rose-50 cursor-pointer"
                       >
-                        {/* Name */}
-                        <td className="p-4 text-center font-medium text-gray-900 whitespace-nowrap">
-                          {u.name}
+                        {/* Name + Avatar */}
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar user={u} size="sm" />
+                            <span className="font-medium text-gray-900 whitespace-nowrap">{u.name}</span>
+                          </div>
                         </td>
                         {/* Email */}
                         <td className="p-4 text-center text-gray-600 text-sm">
@@ -652,7 +684,6 @@ export default function DashboardAdmin() {
                         {/* Actions */}
                         <td className="p-4 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {/* View */}
                             <motion.button
                               type="button" title={t("common.view") || "Xem"}
                               onClick={(e) => { e.stopPropagation(); setViewTarget(u); }}
@@ -661,7 +692,6 @@ export default function DashboardAdmin() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </motion.button>
-                            {/* Delete */}
                             <motion.button
                               type="button" title={t("common.delete")}
                               onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: u.id, name: u.name }); }}
