@@ -127,7 +127,8 @@
     "totalDurationLabel": "Total Duration",
     "stagesLabel": "Stages",
     "materialsLabel": "Materials",
-    "mechicalCountLabel": "Mechanical Count"
+    "mechicalCountLabel": "Mechanical Count",
+    "methodManagementDesc": "Create and manage propagation methods for orchid cultivation"
   },
   "auth": {
     "username": "Username",

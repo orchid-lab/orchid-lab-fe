@@ -456,9 +456,10 @@
     "nameLabel": "Tên",
     "descriptionLabel": "Mô tả",
     "totalDurationLabel": "Tổng thời gian",
-    "stagesLabel": "Giai đoạn",
-    "materialsLabel": "Nguyên vật liệu",
-    "mechicalCountLabel": "Số lượng cơ học"
+    "stageCountLabel": "Số lượng giai đoạn",
+    "materialCountLabel": "Số lượng nguyên vật liệu",
+    "chemicalCountLabel": "Số lượng hóa chất",
+    "methodManagementDesc": "Theo dõi và quản lý các phương pháp lai tạo cây giống, bao gồm cả phương pháp vô tính và hữu tính"
   },
   "seedling": {
     "seedlingManagement": "Quản lý cây giống",
