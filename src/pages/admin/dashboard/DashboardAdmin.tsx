@@ -187,7 +187,7 @@ function ViewUserModal({ user: u, onClose }: { user: User; onClose: () => void }
 
         {/* ── Avatar overlapping banner ── */}
         <div className="relative -mt-12 px-8 mb-4 flex items-end gap-5">
-          <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
+          <div className="w-48 h-48 rounded-3xl overflow-hidden border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center">
             {u.avatarUrl ? (
               <img src={u.avatarUrl} alt={u.name} className="w-full h-full object-cover" />
             ) : (
