@@ -3,13 +3,11 @@
    Uses project default fonts
 ───────────────────────────────────────────── */
 
-/* ── CSS CUSTOM PROPERTIES ── */
 :root {
   --ruby:          #C0182A;
   --ruby-deep:     #8B0E1C;
   --ruby-soft:     #E8455A;
   --ruby-mist:     #FDF0F2;
-  --ruby-glow:     rgba(192, 24, 42, 0.18);
 
   --ink:           #0E0C0C;
   --ink-light:     #3D3535;
@@ -20,14 +18,12 @@
   --parchment:     #EDE6DF;
 
   --surface:       #FFFFFF;
-  --surface-raised: #FEFCFB;
 
   --border:        #E8E0DA;
   --border-hover:  #D4C8C0;
 
   --shadow-sm:     0 1px 4px rgba(14, 12, 12, 0.06), 0 1px 2px rgba(14, 12, 12, 0.04);
   --shadow-md:     0 4px 16px rgba(14, 12, 12, 0.08), 0 2px 6px rgba(14, 12, 12, 0.05);
-  --shadow-lg:     0 12px 40px rgba(14, 12, 12, 0.1), 0 4px 12px rgba(14, 12, 12, 0.06);
   --shadow-ruby:   0 8px 32px rgba(192, 24, 42, 0.22), 0 2px 8px rgba(192, 24, 42, 0.14);
 
   --radius-sm:     6px;
@@ -38,7 +34,6 @@
 
   --ease-silk:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-sharp:    cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── BASE ── */
@@ -48,57 +43,29 @@
   min-height: calc(100vh - 64px);
 }
 
-/* ── COVER BAND ── */
-.ol-cover {
-  position: relative;
-  height: 180px;
-  overflow: hidden;
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-  background: var(--parchment);
-  border-bottom: 1px solid var(--border);
-}
-
-.ol-cover__canvas {
-  width: 100%;
-  height: 100%;
-}
-
-.ol-cover__canvas::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(to bottom, transparent, var(--cream));
-}
-
-.ol-cover__label {
-  position: absolute;
-  bottom: 14px;
-  right: 28px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.25);
-}
-
 /* ── MAIN WRAPPER ── */
 .ol-page {
   max-width: 860px;
   margin: 0 auto;
-  padding: 0 24px 48px;
+  padding: 32px 24px 48px;
 }
 
-/* ── HERO STRIP (avatar + name + role badge) ── */
+/* ── HERO STRIP — now a self-contained card ── */
 .ol-hero {
   display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  margin-top: -64px;
-  margin-bottom: 32px;
-  padding: 0 4px;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 24px;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.25s var(--ease-silk);
+}
+
+.ol-hero:hover {
+  box-shadow: var(--shadow-md);
 }
 
 /* ── AVATAR ── */
@@ -109,8 +76,8 @@
 }
 
 .ol-avatar {
-  width: 128px;
-  height: 128px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
   border: 4px solid var(--surface);
   box-shadow: var(--shadow-ruby);
@@ -131,14 +98,14 @@
 }
 
 .ol-avatar__initials {
-  font-size: 48px;
+  font-size: 60px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.92);
   line-height: 1;
   user-select: none;
 }
 
-/* Ruby glow ring — animated on hover/edit */
+/* Spinning ruby ring */
 .ol-avatar-ring {
   position: absolute;
   inset: -6px;
@@ -153,8 +120,7 @@
     var(--ruby) 360deg
   );
   opacity: 0;
-  transition: opacity 0.4s var(--ease-silk), transform 0.8s linear;
-  animation: none;
+  transition: opacity 0.4s var(--ease-silk);
   z-index: 0;
 }
 
@@ -168,7 +134,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Edit overlay on avatar */
+/* Edit overlay */
 .ol-avatar__edit-overlay {
   position: absolute;
   inset: 0;
@@ -190,8 +156,8 @@
 }
 
 .ol-avatar__edit-overlay svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   color: white;
 }
 
@@ -205,7 +171,6 @@
 
 /* ── HERO TEXT ── */
 .ol-hero-text {
-  padding-bottom: 8px;
   flex: 1;
   min-width: 0;
 }
@@ -222,17 +187,16 @@
 }
 
 .ol-hero-text__email {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-faint);
-  margin-top: 3px;
-  letter-spacing: 0.01em;
+  margin-top: 4px;
 }
 
 .ol-role-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 12px;
   padding: 4px 12px 4px 8px;
   background: var(--ruby-mist);
   border: 1px solid rgba(192, 24, 42, 0.15);
@@ -253,10 +217,10 @@
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
 }
 
-/* ── EDIT BUTTON (hero area) ── */
+/* ── EDIT BUTTON ── */
 .ol-edit-btn {
   display: inline-flex;
   align-items: center;
@@ -268,11 +232,10 @@
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.02em;
   cursor: pointer;
   transition: background 0.2s var(--ease-silk), transform 0.2s var(--ease-bounce), box-shadow 0.2s;
   white-space: nowrap;
-  margin-bottom: 8px;
+  flex-shrink: 0;
   box-shadow: var(--shadow-sm);
 }
 
@@ -285,7 +248,6 @@
 .ol-edit-btn svg {
   width: 14px;
   height: 14px;
-  flex-shrink: 0;
 }
 
 /* ── CARDS GRID ── */
@@ -311,28 +273,19 @@
   border-color: var(--border-hover);
 }
 
-/* Accent line on top edge per card */
 .ol-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 24px;
-  right: 24px;
+  top: 0; left: 24px; right: 24px;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--ruby), transparent);
   opacity: 0;
   transition: opacity 0.3s var(--ease-silk);
-  border-radius: 0 0 2px 2px;
 }
 
-.ol-card:hover::before {
-  opacity: 0.6;
-}
+.ol-card:hover::before { opacity: 0.6; }
 
-/* Full-width card */
-.ol-card--full {
-  grid-column: 1 / -1;
-}
+.ol-card--full { grid-column: 1 / -1; }
 
 /* ── CARD HEADER ── */
 .ol-card__header {
@@ -363,7 +316,6 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: 0.01em;
 }
 
 /* ── FIELD ROWS ── */
@@ -374,9 +326,7 @@
   margin-bottom: 16px;
 }
 
-.ol-field:last-child {
-  margin-bottom: 0;
-}
+.ol-field:last-child { margin-bottom: 0; }
 
 .ol-field__label {
   font-size: 11px;
@@ -386,17 +336,14 @@
   color: var(--ink-faint);
 }
 
-/* Static value display */
 .ol-field__value {
   font-size: 14px;
   color: var(--ink);
-  font-weight: 400;
   padding: 9px 0;
   border-bottom: 1px solid var(--border);
   min-height: 38px;
   display: flex;
   align-items: center;
-  transition: color 0.2s;
 }
 
 .ol-field__value--empty {
@@ -404,7 +351,6 @@
   font-style: italic;
 }
 
-/* Editable input */
 .ol-input {
   font-size: 14px;
   color: var(--ink);
@@ -424,27 +370,11 @@
   box-shadow: 0 0 0 3px rgba(192, 24, 42, 0.08);
 }
 
-.ol-input:disabled,
-.ol-input--readonly {
-  background: var(--cream);
-  color: var(--ink-faint);
-  border-color: var(--border);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .ol-field__note {
   font-size: 11px;
   color: var(--ink-faint);
   line-height: 1.5;
   margin-top: 2px;
-}
-
-/* ── DIVIDER ── */
-.ol-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 20px 0;
 }
 
 /* ── ACTION BAR ── */
@@ -466,17 +396,12 @@
   border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 500;
-  letter-spacing: 0.02em;
   cursor: pointer;
   border: none;
   transition: all 0.2s var(--ease-silk);
 }
 
-.ol-btn svg {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-}
+.ol-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
 .ol-btn--ghost {
   background: transparent;
@@ -502,7 +427,7 @@
 }
 
 .ol-btn--primary:active {
-  transform: translateY(0);
+  transform: none;
   box-shadow: 0 2px 8px rgba(192, 24, 42, 0.3);
 }
 
@@ -515,9 +440,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.ol-account-row:last-child {
-  border-bottom: none;
-}
+.ol-account-row:last-child { border-bottom: none; }
 
 .ol-account-row__key {
   font-size: 12px;
@@ -529,10 +452,9 @@
 .ol-account-row__val {
   font-size: 13px;
   color: var(--ink);
-  font-weight: 400;
 }
 
-/* ── LOADING STATE ── */
+/* ── LOADING ── */
 .ol-loading {
   display: flex;
   align-items: center;
@@ -550,14 +472,11 @@
   animation: spin 0.85s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .ol-loading__text {
   font-size: 13px;
   color: var(--ink-faint);
-  letter-spacing: 0.05em;
 }
 
 /* ── EMPTY STATE ── */
@@ -571,50 +490,23 @@
   text-align: center;
 }
 
-.ol-empty__icon {
-  width: 52px;
-  height: 52px;
-  color: var(--parchment);
-}
-
-.ol-empty__title {
-  font-size: 20px;
-  color: var(--ink-light);
-}
-
-.ol-empty__sub {
-  font-size: 13px;
-  color: var(--ink-faint);
-}
+.ol-empty__icon { width: 52px; height: 52px; color: var(--parchment); }
+.ol-empty__title { font-size: 20px; color: var(--ink-light); }
+.ol-empty__sub { font-size: 13px; color: var(--ink-faint); }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 640px) {
-  .ol-cards-grid {
-    grid-template-columns: 1fr;
-  }
+  .ol-cards-grid { grid-template-columns: 1fr; }
 
   .ol-hero {
     flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
   }
 
-  .ol-hero-text__name {
-    font-size: 22px;
-  }
+  .ol-hero-text { text-align: center; }
+  .ol-hero-text__name { font-size: 22px; }
 
-  .ol-cover {
-    height: 120px;
-  }
-
-  .ol-avatar {
-    width: 96px;
-    height: 96px;
-  }
-
-  .ol-avatar__initials {
-    font-size: 36px;
-  }
-
-  .ol-hero {
-    margin-top: -44px;
-  }
+  .ol-avatar { width: 120px; height: 120px; }
+  .ol-avatar__initials { font-size: 44px; }
 }
