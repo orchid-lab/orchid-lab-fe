@@ -1,0 +1,620 @@
+/* ─────────────────────────────────────────────
+   ORCHID LAB — ProfilePage Stylesheet
+   Uses project default fonts
+───────────────────────────────────────────── */
+
+/* ── CSS CUSTOM PROPERTIES ── */
+:root {
+  --ruby:          #C0182A;
+  --ruby-deep:     #8B0E1C;
+  --ruby-soft:     #E8455A;
+  --ruby-mist:     #FDF0F2;
+  --ruby-glow:     rgba(192, 24, 42, 0.18);
+
+  --ink:           #0E0C0C;
+  --ink-light:     #3D3535;
+  --ink-faint:     #7A6F6F;
+
+  --cream:         #FAF8F6;
+  --cream-warm:    #F3EDE8;
+  --parchment:     #EDE6DF;
+
+  --surface:       #FFFFFF;
+  --surface-raised: #FEFCFB;
+
+  --border:        #E8E0DA;
+  --border-hover:  #D4C8C0;
+
+  --shadow-sm:     0 1px 4px rgba(14, 12, 12, 0.06), 0 1px 2px rgba(14, 12, 12, 0.04);
+  --shadow-md:     0 4px 16px rgba(14, 12, 12, 0.08), 0 2px 6px rgba(14, 12, 12, 0.05);
+  --shadow-lg:     0 12px 40px rgba(14, 12, 12, 0.1), 0 4px 12px rgba(14, 12, 12, 0.06);
+  --shadow-ruby:   0 8px 32px rgba(192, 24, 42, 0.22), 0 2px 8px rgba(192, 24, 42, 0.14);
+
+  --radius-sm:     6px;
+  --radius-md:     12px;
+  --radius-lg:     18px;
+  --radius-xl:     24px;
+  --radius-full:   9999px;
+
+  --ease-silk:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-bounce:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-sharp:    cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── BASE ── */
+.ol-profile-root {
+  color: var(--ink);
+  background: var(--cream);
+  min-height: calc(100vh - 64px);
+}
+
+/* ── COVER BAND ── */
+.ol-cover {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  background: var(--parchment);
+  border-bottom: 1px solid var(--border);
+}
+
+.ol-cover__canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.ol-cover__canvas::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--cream));
+}
+
+.ol-cover__label {
+  position: absolute;
+  bottom: 14px;
+  right: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.25);
+}
+
+/* ── MAIN WRAPPER ── */
+.ol-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* ── HERO STRIP (avatar + name + role badge) ── */
+.ol-hero {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: -64px;
+  margin-bottom: 32px;
+  padding: 0 4px;
+}
+
+/* ── AVATAR ── */
+.ol-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ol-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  border: 4px solid var(--surface);
+  box-shadow: var(--shadow-ruby);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--ruby-deep), var(--ruby));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s var(--ease-silk);
+  position: relative;
+  z-index: 1;
+}
+
+.ol-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ol-avatar__initials {
+  font-size: 48px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1;
+  user-select: none;
+}
+
+/* Ruby glow ring — animated on hover/edit */
+.ol-avatar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--ruby) 0deg,
+    var(--ruby-soft) 60deg,
+    transparent 120deg,
+    transparent 240deg,
+    var(--ruby-deep) 300deg,
+    var(--ruby) 360deg
+  );
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-silk), transform 0.8s linear;
+  animation: none;
+  z-index: 0;
+}
+
+.ol-avatar-wrap:hover .ol-avatar-ring,
+.ol-avatar-ring--active {
+  opacity: 1;
+  animation: ring-spin 4s linear infinite;
+}
+
+@keyframes ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Edit overlay on avatar */
+.ol-avatar__edit-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(10, 3, 4, 0.52);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-silk);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ol-avatar-wrap:hover .ol-avatar__edit-overlay {
+  opacity: 1;
+}
+
+.ol-avatar__edit-overlay svg {
+  width: 22px;
+  height: 22px;
+  color: white;
+}
+
+.ol-avatar__edit-overlay span {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── HERO TEXT ── */
+.ol-hero-text {
+  padding-bottom: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ol-hero-text__name {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-hero-text__email {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+
+.ol-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 4px 12px 4px 8px;
+  background: var(--ruby-mist);
+  border: 1px solid rgba(192, 24, 42, 0.15);
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ruby-deep);
+  letter-spacing: 0.03em;
+}
+
+.ol-role-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ruby);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── EDIT BUTTON (hero area) ── */
+.ol-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-silk), transform 0.2s var(--ease-bounce), box-shadow 0.2s;
+  white-space: nowrap;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ol-edit-btn:hover {
+  background: var(--ink-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.ol-edit-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── CARDS GRID ── */
+.ol-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ol-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.25s var(--ease-silk), border-color 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.ol-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-hover);
+}
+
+/* Accent line on top edge per card */
+.ol-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ruby), transparent);
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-silk);
+  border-radius: 0 0 2px 2px;
+}
+
+.ol-card:hover::before {
+  opacity: 0.6;
+}
+
+/* Full-width card */
+.ol-card--full {
+  grid-column: 1 / -1;
+}
+
+/* ── CARD HEADER ── */
+.ol-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.ol-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--ruby-mist);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ol-card__icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--ruby);
+}
+
+.ol-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+/* ── FIELD ROWS ── */
+.ol-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.ol-field:last-child {
+  margin-bottom: 0;
+}
+
+.ol-field__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Static value display */
+.ol-field__value {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 400;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.ol-field__value--empty {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* Editable input */
+.ol-input {
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--cream-warm);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s var(--ease-silk), background 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.ol-input:focus {
+  border-color: var(--ruby);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(192, 24, 42, 0.08);
+}
+
+.ol-input:disabled,
+.ol-input--readonly {
+  background: var(--cream);
+  color: var(--ink-faint);
+  border-color: var(--border);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ol-field__note {
+  font-size: 11px;
+  color: var(--ink-faint);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* ── DIVIDER ── */
+.ol-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ── ACTION BAR ── */
+.ol-action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  grid-column: 1 / -1;
+}
+
+.ol-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 22px;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s var(--ease-silk);
+}
+
+.ol-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.ol-btn--ghost {
+  background: transparent;
+  color: var(--ink-faint);
+  border: 1.5px solid var(--border);
+}
+
+.ol-btn--ghost:hover {
+  color: var(--ink);
+  border-color: var(--ink-light);
+  background: var(--cream-warm);
+}
+
+.ol-btn--primary {
+  background: linear-gradient(135deg, var(--ruby), var(--ruby-deep));
+  color: white;
+  box-shadow: 0 4px 14px rgba(192, 24, 42, 0.35);
+}
+
+.ol-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(192, 24, 42, 0.42);
+}
+
+.ol-btn--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(192, 24, 42, 0.3);
+}
+
+/* ── ACCOUNT INFO CARD ── */
+.ol-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ol-account-row:last-child {
+  border-bottom: none;
+}
+
+.ol-account-row__key {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+
+.ol-account-row__val {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+/* ── LOADING STATE ── */
+.ol-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px;
+}
+
+.ol-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2.5px solid var(--parchment);
+  border-top-color: var(--ruby);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ol-loading__text {
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+/* ── EMPTY STATE ── */
+.ol-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px;
+  text-align: center;
+}
+
+.ol-empty__icon {
+  width: 52px;
+  height: 52px;
+  color: var(--parchment);
+}
+
+.ol-empty__title {
+  font-size: 20px;
+  color: var(--ink-light);
+}
+
+.ol-empty__sub {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .ol-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ol-hero {
+    flex-wrap: wrap;
+  }
+
+  .ol-hero-text__name {
+    font-size: 22px;
+  }
+
+  .ol-cover {
+    height: 120px;
+  }
+
+  .ol-avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  .ol-avatar__initials {
+    font-size: 36px;
+  }
+
+  .ol-hero {
+    margin-top: -44px;
+  }
+}
