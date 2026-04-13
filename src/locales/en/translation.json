@@ -121,7 +121,13 @@
     "batch": "Batch",
     "sample": "Sample",
     "element": "Element",
-    "config": "Configuration"
+    "config": "Configuration",
+    "nameLabel": "Name",
+    "descriptionLabel": "Description",
+    "totalDurationLabel": "Total Duration",
+    "stagesLabel": "Stages",
+    "materialsLabel": "Materials",
+    "mechicalCountLabel": "Mechanical Count"
   },
   "auth": {
     "username": "Username",
