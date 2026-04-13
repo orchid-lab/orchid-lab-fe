@@ -452,7 +452,13 @@
     "methods": "phương pháp",
     "fetchFailed": "Không thể tải danh sách phương pháp",
     "methodsManagement": "Quản lý phương pháp",
-    "methodSubtitle": "Theo dõi và quản lý các phương pháp lai tạo cây giống"
+    "methodSubtitle": "Theo dõi và quản lý các phương pháp lai tạo cây giống",
+    "nameLabel": "Tên",
+    "descriptionLabel": "Mô tả",
+    "totalDurationLabel": "Tổng thời gian",
+    "stagesLabel": "Giai đoạn",
+    "materialsLabel": "Nguyên vật liệu",
+    "mechicalCountLabel": "Số lượng cơ học"
   },
   "seedling": {
     "seedlingManagement": "Quản lý cây giống",
