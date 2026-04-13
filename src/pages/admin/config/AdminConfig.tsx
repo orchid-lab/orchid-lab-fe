@@ -86,7 +86,6 @@ function CreateConfigModal({
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-800">{t("config.createNewTitle")}</h2>
-            <p className="text-xs text-slate-500 mt-0.5 font-mono">POST /api/config</p>
           </div>
         </div>
 
@@ -190,7 +189,7 @@ function ViewConfigModal({
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-800">{t("config.details")}</h2>
-            <p className="text-xs text-slate-500 mt-0.5 font-mono">GET /api/config/{configId.slice(0, 8)}…</p>
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">{configId.slice(0, 100)}…</p>
           </div>
         </div>
 

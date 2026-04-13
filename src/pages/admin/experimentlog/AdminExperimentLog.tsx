@@ -598,7 +598,7 @@ const ExperimentLog = () => {
                         layout
                         whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
                         className="border-b border-rose-50 cursor-pointer"
-                        onClick={() => void navigate(`/researcher/experiment-log/${log.id}`)}
+                        onClick={() => void navigate(`/admin/experiment-log/${log.id}`)}
                       >
                         <td className="p-4 font-medium text-gray-900">{log.name}</td>
                         <td className="p-4 text-gray-700">{log.methodName}</td>

@@ -57,9 +57,6 @@ import AdminTasks from "./pages/admin/task/AdminTasks";
 import AdminTaskDetail from "./pages/admin/task/AdminTaskDetail";
 import AdminExperimentLog from "./pages/admin/experimentlog/AdminExperimentLog";
 import AdminExperimentLogDetail from "./pages/admin/experimentlog/AdminExperimentLogDetail";
-// import AdminLabRoomList from "./pages/admin/labroom/AdminLabRoomList";
-// import AdminLabRoomCreate from "./pages/admin/labroom/AdminLabRoomCreate";
-// import AdminLabRoomDetail from "./pages/admin/labroom/AdminLabRoomDetail";
 import AdminSeedlings from "./pages/admin/seeding/AdminSeedlings";
 import AdminSeedlingDetail from "./pages/admin/seeding/AdminSeedlingDetail";
 import AdminMethodDetail from "./pages/admin/method/AdminMethodDetail";
@@ -75,6 +72,9 @@ import TechnicianExperimentLogDetail from "./pages/technician/experimentlog/Tech
 import TechnicianExperimentLog from "./pages/technician/experimentlog/TechnicianExperimentLog";
 import TechnicianBatchList from "./pages/technician/batch/TechnicianBatchList";
 import TechnicianBatchDetail from "./pages/technician/batch/TechnicianBatchDetail";
+import { NotificationProvider } from "./context/NotificationContext";
+import Sidebar from "./components/Sidebar";
+import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
 
 function getUserRole(user: any): string {
   const roleValue = user?.role ?? user?.Role;
@@ -582,9 +582,7 @@ function AppLayout() {
   );
 }
 
-import { NotificationProvider } from "./context/NotificationContext";
-import Sidebar from "./components/Sidebar";
-import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
+
 
 function App() {
   return (
