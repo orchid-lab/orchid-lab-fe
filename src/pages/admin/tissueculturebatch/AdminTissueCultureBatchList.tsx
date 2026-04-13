@@ -148,9 +148,6 @@ const AdminTissueCultureBatchList = () => {
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-rose-50 border border-rose-100">
-              <FlaskConical className="w-5 h-5 text-[#9f1239]" />
-            </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
                 {t("tissueCultureBatch.tissueCultureBatchList")}

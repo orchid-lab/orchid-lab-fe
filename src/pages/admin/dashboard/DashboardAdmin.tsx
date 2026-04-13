@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState, useRef } from "react";
@@ -6,7 +5,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Search, X, Plus, Trash2, Users,
   ShieldCheck, FlaskConical, Wrench, AlertCircle, Loader2, Eye,
-  Mail, Phone, Calendar, UserCircle2, BadgeCheck,
+  Mail, Phone, Calendar, BadgeCheck,
 } from "lucide-react";
 import type { User, UserApiResponse } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
@@ -455,9 +454,6 @@ export default function DashboardAdmin() {
           className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-rose-50 border border-rose-100">
-              <Users className="w-5 h-5 text-[#9f1239]" />
-            </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
                 {t("user.userManagement")}
