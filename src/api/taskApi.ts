@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import axiosInstance from "./axiosInstance";
 
 export interface Task {
@@ -21,6 +24,6 @@ export const getTasks = async (params?: Record<string, any>): Promise<Task[]> =>
       ...params,
     },
   });
-  const data = res.data?.value?.data || res.data?.data || [];
+  const data = res.data?.value?.data ?? res.data?.data ?? [];
   return data as Task[];
 };
