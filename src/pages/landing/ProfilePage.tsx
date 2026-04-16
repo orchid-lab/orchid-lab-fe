@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axiosInstance";
@@ -14,7 +14,7 @@ import "./ProfilePage.css";
 
 // ─── Animation Variants ────────────────────────────────────────────────────
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden:  { opacity: 0, y: 18 },
   visible: (i: number) => ({
     opacity: 1,
@@ -23,7 +23,7 @@ const cardVariants = {
   }),
 };
 
-const fieldVariants = {
+const fieldVariants: Variants = {
   hidden:  { opacity: 0, x: -8 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.28, ease: "easeOut" } },
   exit:    { opacity: 0, x: 8,  transition: { duration: 0.18, ease: "easeIn"  } },
