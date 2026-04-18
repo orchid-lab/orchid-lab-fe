@@ -1,3 +1,7 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable no-empty-pattern */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Chart, ArcElement, Tooltip, Legend } from "chart.js";

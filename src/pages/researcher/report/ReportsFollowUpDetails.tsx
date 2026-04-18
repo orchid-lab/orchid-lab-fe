@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import "./ReportsFollowUpDetails.css";
 import type { MonitoringLogDetail } from "../../../types/MonitoringLogDetail";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -145,7 +146,7 @@ export default function ReportFollowUpDetails() {
 
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
+      <main className="reports-follow-up-details-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-lg text-gray-500">{t("common.loadingData")}</div>
       </main>
     );
@@ -153,14 +154,14 @@ export default function ReportFollowUpDetails() {
 
   if (!log) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
+      <main className="reports-follow-up-details-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-lg text-gray-500">{t("common.noData")}</div>
       </main>
     );
   }
 
   return (
-    <main className="ml-64 mt-10 min-h-[calc(100vh-64px)] bg-gray-100">
+    <main className="reports-follow-up-details-page ml-64 mt-10 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="max-w-5xl mx-auto py-8 px-4">
         {/* Back button */}
         <button

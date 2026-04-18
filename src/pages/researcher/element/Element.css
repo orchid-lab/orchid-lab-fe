@@ -1,0 +1,84 @@
+/* Page-specific styles for the researcher Element page */
+
+.dark .element-page,
+:root[data-theme='dark'] .element-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .element-page .bg-white,
+:root[data-theme='dark'] .element-page .bg-white {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.dark .element-page .border,
+:root[data-theme='dark'] .element-page .border {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .element-page .text-\[\#005792\],
+:root[data-theme='dark'] .element-page .text-\[\#005792\] {
+  color: #7dd3fc !important;
+}
+
+.dark .element-page .text-gray-600,
+:root[data-theme='dark'] .element-page .text-gray-600 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .element-page .bg-gray-100,
+:root[data-theme='dark'] .element-page .bg-gray-100 {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.dark .element-page .bg-gray-50,
+:root[data-theme='dark'] .element-page .bg-gray-50 {
+  background-color: rgba(20, 28, 50, 0.85) !important;
+}
+
+.dark .element-page .text-gray-700,
+:root[data-theme='dark'] .element-page .text-gray-700 {
+  color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.dark .element-page .text-gray-800,
+:root[data-theme='dark'] .element-page .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .element-page .text-slate-800,
+:root[data-theme='dark'] .element-page .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .element-page .text-slate-700,
+:root[data-theme='dark'] .element-page .text-slate-700 {
+  color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .element-page .border-gray-200,
+:root[data-theme='dark'] .element-page .border-gray-200 {
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark .element-page .border-gray-300,
+:root[data-theme='dark'] .element-page .border-gray-300 {
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .element-page input,
+:root[data-theme='dark'] .element-page input,
+.dark .element-page select,
+:root[data-theme='dark'] .element-page select {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .element-page .shadow-lg,
+:root[data-theme='dark'] .element-page .shadow-lg {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+}

@@ -1,0 +1,217 @@
+/* Page-specific styles for the researcher ExperimentLog page */
+
+.dark .experiment-log-page,
+:root[data-theme='dark'] .experiment-log-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .experiment-log-page .bg-white\/80,
+:root[data-theme='dark'] .experiment-log-page .bg-white\/80 {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .experiment-log-page .bg-white\/70,
+:root[data-theme='dark'] .experiment-log-page .bg-white\/70 {
+  background-color: rgba(20, 28, 50, 0.92) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .experiment-log-page .border-blue-100,
+:root[data-theme='dark'] .experiment-log-page .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .experiment-log-page .border-blue-50,
+:root[data-theme='dark'] .experiment-log-page .border-blue-50 {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .experiment-log-page .text-slate-900,
+:root[data-theme='dark'] .experiment-log-page .text-slate-900 {
+  color: #e2e8f0 !important;
+}
+
+.dark .experiment-log-page .text-slate-500,
+:root[data-theme='dark'] .experiment-log-page .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
+}
+
+.dark .experiment-log-page .text-blue-900,
+:root[data-theme='dark'] .experiment-log-page .text-blue-900 {
+  color: rgba(219, 234, 254, 0.9) !important;
+}
+
+.dark .experiment-log-page .text-\[\#005792\],
+:root[data-theme='dark'] .experiment-log-page .text-\[\#005792\] {
+  color: #7dd3fc !important;
+}
+
+.dark .experiment-log-page .text-gray-600,
+:root[data-theme='dark'] .experiment-log-page .text-gray-600 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .experiment-log-page .bg-gray-100,
+:root[data-theme='dark'] .experiment-log-page .bg-gray-100 {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.dark .experiment-log-page .bg-gray-50,
+:root[data-theme='dark'] .experiment-log-page .bg-gray-50 {
+  background-color: rgba(20, 28, 50, 0.85) !important;
+}
+
+.dark .experiment-log-page .text-gray-700,
+:root[data-theme='dark'] .experiment-log-page .text-gray-700 {
+  color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .experiment-log-page .text-gray-800,
+:root[data-theme='dark'] .experiment-log-page .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .experiment-log-page .text-slate-800,
+:root[data-theme='dark'] .experiment-log-page .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .experiment-log-page .text-slate-700,
+:root[data-theme='dark'] .experiment-log-page .text-slate-700 {
+  color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .experiment-log-page .text-blue-950,
+:root[data-theme='dark'] .experiment-log-page .text-blue-950 {
+  color: #e2e8f0 !important;
+}
+
+.dark .experiment-log-page .border-gray-200,
+:root[data-theme='dark'] .experiment-log-page .border-gray-200 {
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark .experiment-log-page .border-gray-300,
+:root[data-theme='dark'] .experiment-log-page .border-gray-300 {
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .experiment-log-page input,
+:root[data-theme='dark'] .experiment-log-page input,
+.dark .experiment-log-page select,
+:root[data-theme='dark'] .experiment-log-page select {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .experiment-log-page .shadow-lg,
+:root[data-theme='dark'] .experiment-log-page .shadow-lg {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Status badge colors in dark mode */
+.dark .experiment-log-page .bg-\[#E6F1FF\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#E6F1FF\] {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+  color: #7dd3fc !important;
+}
+
+.dark .experiment-log-page .bg-\[#FFF2F0\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#FFF2F0\] {
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .bg-\[#E0F7FA\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#E0F7FA\] {
+  background-color: rgba(34, 197, 94, 0.2) !important;
+  color: #86efac !important;
+}
+
+.dark .experiment-log-page .bg-\[#FFECEA\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#FFECEA\] {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .text-\[#D1433C\],
+:root[data-theme='dark'] .experiment-log-page .text-\[#D1433C\] {
+  color: #fca5a5 !important;
+}
+
+.dark .experiment-log-page .text-\[#006D73\],
+:root[data-theme='dark'] .experiment-log-page .text-\[#006D73\] {
+  color: #86efac !important;
+}
+
+.dark .experiment-log-page .bg-\[#005792\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[#005792\] {
+  background-color: rgba(59, 130, 246, 0.8) !important;
+  color: #ffffff !important;
+}
+
+.dark .experiment-log-page .bg-\[#005792\]:hover,
+:root[data-theme='dark'] .experiment-log-page .bg-\[#005792\]:hover {
+  background-color: rgba(59, 130, 246, 1) !important;
+}
+
+/* Backdrop blur effect */
+.dark .experiment-log-page .backdrop-blur-sm,
+:root[data-theme='dark'] .experiment-log-page .backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Table styling */
+.dark .experiment-log-page table,
+:root[data-theme='dark'] .experiment-log-page table {
+  background-color: rgba(10, 20, 42, 0.6) !important;
+}
+
+.dark .experiment-log-page thead,
+:root[data-theme='dark'] .experiment-log-page thead {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.dark .experiment-log-page thead th,
+:root[data-theme='dark'] .experiment-log-page thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(96, 165, 250, 0.15) !important;
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  background-image: none !important;
+}
+
+.dark .experiment-log-page .from-\[#E6F1FF\],
+:root[data-theme='dark'] .experiment-log-page .from-\[#E6F1FF\] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-stops: transparent !important;
+}
+
+.dark .experiment-log-page .to-\[#F0F8FF\],
+:root[data-theme='dark'] .experiment-log-page .to-\[#F0F8FF\] {
+  --tw-gradient-to: transparent !important;
+}
+
+.dark .experiment-log-page .bg-gradient-to-r,
+:root[data-theme='dark'] .experiment-log-page .bg-gradient-to-r {
+  background-image: none !important;
+}
+
+.dark .experiment-log-page tbody tr,
+:root[data-theme='dark'] .experiment-log-page tbody tr {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .experiment-log-page tbody tr:hover,
+:root[data-theme='dark'] .experiment-log-page tbody tr:hover {
+  background-color: rgba(20, 28, 50, 0.6) !important;
+}
+
+.dark .experiment-log-page tbody td,
+:root[data-theme='dark'] .experiment-log-page tbody td {
+  color: rgba(219, 234, 254, 0.85) !important;
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}

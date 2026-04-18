@@ -8,6 +8,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import "./SuccessRateAnalysis.css";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../../../api/axiosInstance";
 import {
@@ -146,7 +147,7 @@ export default function SuccessRateAnalysis() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="success-rate-page space-y-6">
       {/* ── Header ── */}
       <motion.div
         variants={fadeUp}

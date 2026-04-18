@@ -1,0 +1,281 @@
+/* ==========================================================================
+   Admin Element Page — Scoped styles (Rose / Ruby theme)
+   Đồng bộ với AdminExperimentLog.css
+   ========================================================================== */
+
+/* ─── Base ────────────────────────────────────────────── */
+.admin-element-page {
+  font-family: inherit;
+  transition: background-color 0.3s ease;
+}
+
+/* ==========================================================================
+   TABLE — Override màu xanh → Rose/Ruby, KHÔNG tô nền mặc định
+   ========================================================================== */
+
+.admin-element-page table thead tr {
+  background: linear-gradient(to right, #fff1f2, #fffbfb) !important;
+}
+
+.admin-element-page table thead th {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #fecdd3 !important;
+  padding: 14px 16px !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+/* Body rows — KHÔNG tô nền, chỉ hover nhẹ */
+.admin-element-page table tbody tr {
+  border-bottom: 1px solid #fff1f2 !important;
+  background-color: transparent !important;
+  transition: background-color 0.15s ease;
+}
+
+.admin-element-page table tbody tr:hover {
+  background-color: rgba(255, 241, 242, 0.7) !important;
+}
+
+.admin-element-page table tbody td {
+  padding: 14px 16px !important;
+  color: #374151 !important;
+  background-color: transparent !important;
+}
+
+/* ==========================================================================
+   BUTTONS — Chỉ target <button> và <a> có bg-green, không bắt div/box
+   ========================================================================== */
+
+.admin-element-page button[class*="bg-green"],
+.admin-element-page a[class*="bg-green"] {
+  background-color: #9f1239 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.admin-element-page button[class*="bg-green"]:hover,
+.admin-element-page a[class*="bg-green"]:hover {
+  background-color: #881337 !important;
+}
+
+/* ==========================================================================
+   TOTAL COUNT BOX — Chỉ bắt div/span không phải button/a
+   Dùng :not(button):not(a) để không ảnh hưởng nút Thêm mới
+   ========================================================================== */
+
+.admin-element-page div[class*="bg-green"]:not(button):not(a),
+.admin-element-page span[class*="bg-green"]:not(button):not(a) {
+  background-color: #ffffff !important;
+  color: #9f1239 !important;
+  border: 1.5px solid #f43f5e !important;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+}
+
+.admin-element-page div[class*="bg-green"]:not(button):not(a) *,
+.admin-element-page span[class*="bg-green"]:not(button):not(a) * {
+  color: #9f1239 !important;
+}
+
+/* ── "Quản lý hóa chất / vật tư" heading trong ChemicalList / MaterialList ── */
+.admin-element-page h2[class*="text-green"],
+.admin-element-page h3[class*="text-green"],
+.admin-element-page [class*="text-green-7"],
+.admin-element-page [class*="text-green-8"],
+.admin-element-page [class*="text-green-9"] {
+  color: #9f1239 !important;
+}
+
+/* ==========================================================================
+   PAGINATION — Active page → rose, border thường → rose nhạt
+   ========================================================================== */
+
+.admin-element-page [class*="bg-green"][class*="text-white"] {
+  background-color: #9f1239 !important;
+  color: #ffffff !important;
+  border-color: #9f1239 !important;
+}
+
+.admin-element-page [class*="border-green"] {
+  border-color: #fecdd3 !important;
+}
+
+/* ==========================================================================
+   INPUTS & SEARCH
+   ========================================================================== */
+
+.admin-element-page input[type="text"],
+.admin-element-page input[type="search"],
+.admin-element-page input:not([type="checkbox"]):not([type="radio"]):not([type="number"]) {
+  border-color: #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-element-page input[type="text"]:focus,
+.admin-element-page input[type="search"]:focus,
+.admin-element-page input:not([type="checkbox"]):not([type="radio"]):not([type="number"]):focus {
+  border-color: #f43f5e !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12) !important;
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+
+.dark .admin-element-page,
+:root[data-theme='dark'] .admin-element-page {
+  background: radial-gradient(circle at top left, rgba(159, 18, 57, 0.12), transparent 30%),
+    linear-gradient(180deg, #120a0f 0%, #1a0f14 100%) !important;
+}
+
+/* ── Cards ── */
+.dark .admin-element-page .bg-white\/80,
+:root[data-theme='dark'] .admin-element-page .bg-white\/80 {
+  background-color: rgba(28, 15, 20, 0.92) !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ── Borders ── */
+.dark .admin-element-page .border-rose-100,
+:root[data-theme='dark'] .admin-element-page .border-rose-100 {
+  border-color: rgba(244, 63, 94, 0.15) !important;
+}
+
+/* ── Icon wrapper ── */
+.dark .admin-element-page .bg-rose-50,
+:root[data-theme='dark'] .admin-element-page .bg-rose-50 {
+  background-color: rgba(159, 18, 57, 0.25) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+.dark .admin-element-page .bg-rose-50\/60,
+:root[data-theme='dark'] .admin-element-page .bg-rose-50\/60 {
+  background-color: rgba(159, 18, 57, 0.15) !important;
+}
+
+/* ── Typography ── */
+.dark .admin-element-page .text-slate-900,
+:root[data-theme='dark'] .admin-element-page .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .admin-element-page .text-slate-500,
+:root[data-theme='dark'] .admin-element-page .text-slate-500 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .admin-element-page .text-slate-700,
+:root[data-theme='dark'] .admin-element-page .text-slate-700 {
+  color: rgba(226, 232, 240, 0.9) !important;
+}
+
+.dark .admin-element-page .text-\[\#9f1239\],
+:root[data-theme='dark'] .admin-element-page .text-\[\#9f1239\] {
+  color: #fda4af !important;
+}
+
+/* ── Tab active pill (white → dark surface) ── */
+.dark .admin-element-page .bg-white,
+:root[data-theme='dark'] .admin-element-page .bg-white {
+  background-color: rgba(40, 20, 28, 0.95) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+/* ── Inputs / selects ── */
+.dark .admin-element-page input,
+:root[data-theme='dark'] .admin-element-page input,
+.dark .admin-element-page select,
+:root[data-theme='dark'] .admin-element-page select {
+  background-color: rgba(28, 15, 20, 0.8) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+.dark .admin-element-page input:focus,
+:root[data-theme='dark'] .admin-element-page input:focus,
+.dark .admin-element-page select:focus,
+:root[data-theme='dark'] .admin-element-page select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3) !important;
+}
+
+/* ── Table header ── */
+.dark .admin-element-page table thead tr,
+:root[data-theme='dark'] .admin-element-page table thead tr {
+  background: rgba(28, 15, 20, 0.95) !important;
+}
+
+.dark .admin-element-page table thead th,
+:root[data-theme='dark'] .admin-element-page table thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+  background-image: none !important;
+}
+
+/* ── Table body ── */
+.dark .admin-element-page table tbody tr,
+:root[data-theme='dark'] .admin-element-page table tbody tr {
+  border-color: rgba(244, 63, 94, 0.08) !important;
+  background-color: transparent !important;
+}
+
+.dark .admin-element-page table tbody tr:hover,
+:root[data-theme='dark'] .admin-element-page table tbody tr:hover {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+}
+
+.dark .admin-element-page table tbody td,
+:root[data-theme='dark'] .admin-element-page table tbody td {
+  color: #cbd5e1 !important;
+  background-color: transparent !important;
+}
+
+/* ── Total count box in dark ── */
+.dark .admin-element-page div[class*="bg-green"]:not(button):not(a),
+:root[data-theme='dark'] .admin-element-page div[class*="bg-green"]:not(button):not(a),
+.dark .admin-element-page span[class*="bg-green"]:not(button):not(a),
+:root[data-theme='dark'] .admin-element-page span[class*="bg-green"]:not(button):not(a) {
+  background-color: rgba(28, 15, 20, 0.9) !important;
+  border: 1.5px solid #f43f5e !important;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+}
+
+.dark .admin-element-page div[class*="bg-green"]:not(button):not(a) *,
+:root[data-theme='dark'] .admin-element-page div[class*="bg-green"]:not(button):not(a) *,
+.dark .admin-element-page span[class*="bg-green"]:not(button):not(a) *,
+:root[data-theme='dark'] .admin-element-page span[class*="bg-green"]:not(button):not(a) * {
+  color: #fda4af !important;
+}
+
+/* ── Buttons in dark ── */
+.dark .admin-element-page button[class*="bg-green"],
+:root[data-theme='dark'] .admin-element-page button[class*="bg-green"],
+.dark .admin-element-page a[class*="bg-green"],
+:root[data-theme='dark'] .admin-element-page a[class*="bg-green"] {
+  background-color: #be123c !important;
+  color: #ffffff !important;
+}
+
+.dark .admin-element-page button[class*="bg-green"]:hover,
+:root[data-theme='dark'] .admin-element-page button[class*="bg-green"]:hover {
+  background-color: #e11d48 !important;
+}
+
+/* ── Pagination active in dark ── */
+.dark .admin-element-page [class*="bg-green"][class*="text-white"],
+:root[data-theme='dark'] .admin-element-page [class*="bg-green"][class*="text-white"] {
+  background-color: #be123c !important;
+  color: #ffffff !important;
+}
+
+/* ── Backdrop blur ── */
+.dark .admin-element-page .backdrop-blur-sm,
+:root[data-theme='dark'] .admin-element-page .backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+}

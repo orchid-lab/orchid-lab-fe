@@ -121,7 +121,14 @@
     "batch": "Batch",
     "sample": "Sample",
     "element": "Element",
-    "config": "Configuration"
+    "config": "Configuration",
+    "nameLabel": "Name",
+    "descriptionLabel": "Description",
+    "totalDurationLabel": "Total Duration",
+    "stagesLabel": "Stages",
+    "materialsLabel": "Materials",
+    "mechicalCountLabel": "Mechanical Count",
+    "methodManagementDesc": "Create and manage propagation methods for orchid cultivation"
   },
   "auth": {
     "username": "Username",
@@ -173,6 +180,7 @@
     "taskCancelledSummary": "Cancelled task"
   },
   "user": {
+    "userDetail": "User Detail",
     "userManagement": "User Management",
     "addUser": "Add User",
     "editUser": "Edit User",
@@ -541,7 +549,10 @@
     "highestSuccessRateCombination": "Highest Success Rate Combination",
     "totalCombinations": "Total Combinations",
     "averageSuccessRate": "Average Success Rate",
-    "averageSurvivalRateOverall": "Average Survival Rate"
+    "averageSurvivalRateOverall": "Average Survival Rate",
+    "filterAndSearch": "Filters & Search",
+    "seedlingLocalNameOfHybrid": "Local Name of Hybrid",
+    "seedlingScientificNameOfHybrid": "Scientific Name of Hybrid"
   },
   "report": {
     "reportManagement": "Report Management",
@@ -852,7 +863,8 @@
     "elementsOutOf": "elements out of",
     "elements": "elements",
     "chemical": "Chemical",
-    "material": "Material"
+    "material": "Material",
+    "elementManagementDescription": "Manage chemicals and consumable materials in the system"
   },
   "notification": {
     "title": "Notifications",

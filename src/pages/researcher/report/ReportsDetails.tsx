@@ -5,6 +5,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useAuth } from "../../../context/AuthContext";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import "./ReportsDetails.css";
 
 interface Sample {
   id: string;
@@ -189,14 +190,14 @@ export default function ReportsDetails() {
 
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
+      <main className="reports-details-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-lg text-gray-500">{t("common.loadingData")}</div>
       </main>
     );
   }
 
   return (
-    <main className="ml-64 mt-10 min-h-[calc(100vh-64px)] bg-gray-100">
+    <main className="reports-details-page ml-64 mt-10 min-h-[calc(100vh-64px)] bg-gray-100">
       <div className="max-w-5xl mx-auto py-8">
         <button
           type="button"

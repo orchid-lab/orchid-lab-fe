@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import "./MethodCreate.css";
 import axiosInstance from "../../../api/axiosInstance";
 import type { Element } from "../../../types/Element";
 import { Select } from "antd";
@@ -280,7 +281,7 @@ export default function MethodCreate() {
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#E7F5FF] p-6">
+    <main className="method-create-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#E7F5FF] p-6">
       <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm shadow-sm border border-blue-100 rounded-2xl p-6 md:p-8">
         <div className="flex items-center justify-between mb-5">
           <button

@@ -8,6 +8,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import "./SampleDetail.css";
 import { useAuth } from "../../../context/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError";
 import type {
@@ -471,7 +472,7 @@ export default function SampleDetail() {
   }
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
+    <main className="sample-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
       <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 interface RefreshTokenResponse {

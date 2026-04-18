@@ -1,0 +1,161 @@
+/* Page-specific styles for the researcher ExperimentLog page (Orchid Theme) */
+
+.dark .experiment-log-page,
+:root[data-theme='dark'] .experiment-log-page {
+  /* Chuyển gradient ánh xanh sang ánh đỏ trầm (Ruby) */
+  background: radial-gradient(circle at top left, rgba(159, 18, 57, 0.12), transparent 30%),
+    linear-gradient(180deg, #120a0f 0%, #1a0f14 100%) !important;
+}
+
+.dark .experiment-log-page .bg-white\/80,
+:root[data-theme='dark'] .experiment-log-page .bg-white\/80 {
+  background-color: rgba(28, 15, 20, 0.92) !important;
+  border-color: rgba(244, 63, 94, 0.15) !important; /* Rose border */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .experiment-log-page .bg-white\/70,
+:root[data-theme='dark'] .experiment-log-page .bg-white\/70 {
+  background-color: rgba(36, 18, 25, 0.9) !important;
+  border-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+.dark .experiment-log-page .border-rose-100,
+:root[data-theme='dark'] .experiment-log-page .border-rose-100 {
+  border-color: rgba(244, 63, 94, 0.15) !important;
+}
+
+.dark .experiment-log-page .border-rose-50,
+:root[data-theme='dark'] .experiment-log-page .border-rose-50 {
+  border-color: rgba(244, 63, 94, 0.08) !important;
+}
+
+.dark .experiment-log-page .text-slate-900,
+:root[data-theme='dark'] .experiment-log-page .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .experiment-log-page .text-slate-500,
+:root[data-theme='dark'] .experiment-log-page .text-slate-500 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+/* Đổi highlight text sang tone Ruby / Rose */
+.dark .experiment-log-page .text-\[\#9f1239\],
+:root[data-theme='dark'] .experiment-log-page .text-\[\#9f1239\] {
+  color: #fda4af !important; /* Rose-300 sáng lên trong dark mode */
+}
+
+.dark .experiment-log-page .text-\[\#f43f5e\],
+:root[data-theme='dark'] .experiment-log-page .text-\[\#f43f5e\] {
+  color: #fecdd3 !important; /* Rose-200 */
+}
+
+.dark .experiment-log-page input,
+:root[data-theme='dark'] .experiment-log-page input,
+.dark .experiment-log-page select,
+:root[data-theme='dark'] .experiment-log-page select {
+  background-color: rgba(28, 15, 20, 0.8) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+.dark .experiment-log-page input:focus,
+:root[data-theme='dark'] .experiment-log-page input:focus,
+.dark .experiment-log-page select:focus,
+:root[data-theme='dark'] .experiment-log-page select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Status badge colors trong Dark Mode được tinh chỉnh nhẹ lại */
+.dark .experiment-log-page .bg-slate-100,
+:root[data-theme='dark'] .experiment-log-page .bg-slate-100 {
+  background-color: rgba(100, 116, 139, 0.25) !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .experiment-log-page .bg-amber-50,
+:root[data-theme='dark'] .experiment-log-page .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fcd34d !important;
+}
+
+.dark .experiment-log-page .bg-rose-50,
+:root[data-theme='dark'] .experiment-log-page .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.25) !important;
+  color: #fda4af !important;
+}
+
+.dark .experiment-log-page .bg-emerald-50,
+:root[data-theme='dark'] .experiment-log-page .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+}
+
+.dark .experiment-log-page .bg-zinc-100,
+:root[data-theme='dark'] .experiment-log-page .bg-zinc-100 {
+  background-color: rgba(113, 113, 122, 0.2) !important;
+  color: #d4d4d8 !important;
+}
+
+/* Button & Action Colors in Dark Mode */
+.dark .experiment-log-page .bg-\[\#9f1239\],
+:root[data-theme='dark'] .experiment-log-page .bg-\[\#9f1239\] {
+  background-color: #be123c !important; /* Rose-700 */
+  color: #ffffff !important;
+}
+
+.dark .experiment-log-page .bg-\[\#9f1239\]:hover,
+:root[data-theme='dark'] .experiment-log-page .bg-\[\#9f1239\]:hover {
+  background-color: #e11d48 !important; /* Rose-600 */
+}
+
+/* Backdrop blur effect */
+.dark .experiment-log-page .backdrop-blur-sm,
+:root[data-theme='dark'] .experiment-log-page .backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Table styling in Dark Mode */
+.dark .experiment-log-page table,
+:root[data-theme='dark'] .experiment-log-page table {
+  background-color: transparent !important;
+}
+
+.dark .experiment-log-page thead,
+:root[data-theme='dark'] .experiment-log-page thead {
+  background-color: rgba(28, 15, 20, 0.95) !important;
+}
+
+.dark .experiment-log-page thead th,
+:root[data-theme='dark'] .experiment-log-page thead th {
+  color: #e2e8f0 !important;
+  border-color: rgba(244, 63, 94, 0.15) !important;
+  background-image: none !important;
+}
+
+.dark .experiment-log-page .from-\[\#fff1f2\],
+:root[data-theme='dark'] .experiment-log-page .from-\[\#fff1f2\] {
+  --tw-gradient-from: transparent !important;
+}
+
+.dark .experiment-log-page .to-\[\#fffbfb\],
+:root[data-theme='dark'] .experiment-log-page .to-\[\#fffbfb\] {
+  --tw-gradient-to: transparent !important;
+}
+
+.dark .experiment-log-page tbody tr,
+:root[data-theme='dark'] .experiment-log-page tbody tr {
+  border-color: rgba(244, 63, 94, 0.08) !important;
+}
+
+.dark .experiment-log-page tbody tr:hover,
+:root[data-theme='dark'] .experiment-log-page tbody tr:hover {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+}
+
+.dark .experiment-log-page tbody td,
+:root[data-theme='dark'] .experiment-log-page tbody td {
+  color: #cbd5e1 !important;
+}

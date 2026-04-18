@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import "./TaskDetailPage.css";
 
 interface TaskAttribute {
   chemicalName: string | null;
@@ -527,7 +528,7 @@ const TaskDetailPage: React.FC = () => {
       .sort((a, b) => a.order - b.order) ?? [];
 
   return (
-              <main className="ml-64 mt-8 w-[calc(95vw-16rem)] min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4 overflow-x-hidden">
+              <main className="task-detail-page ml-64 mt-8 w-[calc(95vw-16rem)] min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4 overflow-x-hidden">
                 {loading ? (
                   <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
                     <div className="text-center">

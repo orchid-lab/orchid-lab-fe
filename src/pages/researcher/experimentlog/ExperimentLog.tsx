@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import "./ExperimentLog.css";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
@@ -389,7 +390,7 @@ const ExperimentLog = () => {
   ];
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-slate-900">
+    <main className="experiment-log-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-slate-900">
 
       {/* ── GSAP progress bar ── */}
       <div

@@ -1,0 +1,149 @@
+/* Page-specific styles for the researcher Reports page */
+
+.dark .reports-page,
+:root[data-theme='dark'] .reports-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .reports-page .bg-white\/80,
+:root[data-theme='dark'] .reports-page .bg-white\/80 {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .reports-page .bg-white\/60,
+:root[data-theme='dark'] .reports-page .bg-white\/60 {
+  background-color: rgba(10, 20, 42, 0.84) !important;
+}
+
+.dark .reports-page .bg-white\/70,
+:root[data-theme='dark'] .reports-page .bg-white\/70 {
+  background-color: rgba(20, 28, 50, 0.92) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .reports-page .border-blue-100,
+:root[data-theme='dark'] .reports-page .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .reports-page .border-blue-50,
+:root[data-theme='dark'] .reports-page .border-blue-50 {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .reports-page .bg-gray-100,
+:root[data-theme='dark'] .reports-page .bg-gray-100 {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.dark .reports-page .bg-gray-50,
+:root[data-theme='dark'] .reports-page .bg-gray-50 {
+  background-color: rgba(20, 28, 50, 0.85) !important;
+}
+
+.dark .reports-page .text-gray-700,
+:root[data-theme='dark'] .reports-page .text-gray-700 {
+  color: rgba(203, 213, 225, 0.9) !important;
+}
+
+.dark .reports-page .text-gray-800,
+:root[data-theme='dark'] .reports-page .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .reports-page .text-gray-600,
+:root[data-theme='dark'] .reports-page .text-gray-600 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .reports-page .text-slate-800,
+:root[data-theme='dark'] .reports-page .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .reports-page .text-slate-700,
+:root[data-theme='dark'] .reports-page .text-slate-700 {
+  color: rgba(219, 234, 254, 0.85) !important;
+}
+
+.dark .reports-page .text-slate-500,
+:root[data-theme='dark'] .reports-page .text-slate-500 {
+  color: rgba(148, 163, 184, 0.8) !important;
+}
+
+.dark .reports-page .text-blue-950,
+:root[data-theme='dark'] .reports-page .text-blue-950 {
+  color: #e2e8f0 !important;
+}
+
+.dark .reports-page .border-gray-200,
+:root[data-theme='dark'] .reports-page .border-gray-200 {
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+.dark .reports-page .border-gray-300,
+:root[data-theme='dark'] .reports-page .border-gray-300 {
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .reports-page input,
+:root[data-theme='dark'] .reports-page input,
+.dark .reports-page select,
+:root[data-theme='dark'] .reports-page select {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .reports-page .shadow-lg,
+:root[data-theme='dark'] .reports-page .shadow-lg {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .reports-page .text-blue-950,
+:root[data-theme='dark'] .reports-page .text-blue-950 {
+  color: #e2e8f0 !important;
+}
+
+.dark .reports-page .text-blue-900,
+:root[data-theme='dark'] .reports-page .text-blue-900 {
+  color: rgba(219, 234, 254, 0.9) !important;
+}
+
+.dark .reports-page .text-blue-900\/70,
+:root[data-theme='dark'] .reports-page .text-blue-900\/70 {
+  color: #cbd5e1 !important;
+}
+
+.dark .reports-page .text-\[\#005792\],
+:root[data-theme='dark'] .reports-page .text-\[\#005792\] {
+  color: #7dd3fc !important;
+}
+
+.dark .reports-page .text-slate-700,
+:root[data-theme='dark'] .reports-page .text-slate-700 {
+  color: rgba(219, 234, 254, 0.7) !important;
+}
+
+.dark .reports-page .text-gray-600,
+:root[data-theme='dark'] .reports-page .text-gray-600 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .reports-page .text-gray-500,
+:root[data-theme='dark'] .reports-page .text-gray-500 {
+  color: rgba(148, 163, 184, 0.6) !important;
+}
+
+.dark .reports-page .hover\:bg-gray-100:hover,
+:root[data-theme='dark'] .reports-page .hover\:bg-gray-100:hover {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+.dark .reports-page button:hover,
+:root[data-theme='dark'] .reports-page button:hover {
+  background-color: rgba(0, 87, 146, 0.9) !important;
+}
