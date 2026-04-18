@@ -974,7 +974,7 @@ const ExperimentLogDetail = () => {
                 {exportError}
               </span>
             )}
-            {normalizeStatus(log.status) === "Completed" && (
+            {["Completed", "Destroyed", "ExecutedBecauseOfDisease"].includes(normalizeStatus(log.status)) && (
               <>
                 <button
                   type="button"

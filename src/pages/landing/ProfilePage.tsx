@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useAuth } from "../../context/AuthContext";
 import axiosInstance from "../../api/axiosInstance";
@@ -14,8 +14,8 @@ import "./ProfilePage.css";
 
 // ─── Animation Variants ────────────────────────────────────────────────────
 
-const cardVariants = {
-  hidden:  { opacity: 0, y: 18 },
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 18 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
@@ -23,10 +23,10 @@ const cardVariants = {
   }),
 };
 
-const fieldVariants = {
-  hidden:  { opacity: 0, x: -8 },
+const fieldVariants: Variants = {
+  hidden: { opacity: 0, x: -8 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.28, ease: "easeOut" } },
-  exit:    { opacity: 0, x: 8,  transition: { duration: 0.18, ease: "easeIn"  } },
+  exit: { opacity: 0, x: 8, transition: { duration: 0.18, ease: "easeIn" } },
 };
 
 // ─── Sub-components ────────────────────────────────────────────────────────
@@ -53,6 +53,7 @@ function Field({
   onChange,
 }: FieldProps) {
   const editable = isEditing && !readonly;
+
 
   return (
     <div className="ol-field">
@@ -247,12 +248,12 @@ export default function ProfilePage() {
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.45 }
     )
-    .fromTo(
-      gridRef.current ? Array.from(gridRef.current.children) : [],
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.08 },
-      "-=0.2"
-    );
+      .fromTo(
+        gridRef.current ? Array.from(gridRef.current.children) : [],
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.08 },
+        "-=0.2"
+      );
 
     return () => { tl.kill(); };
   }, [isLoading, user]);
@@ -266,9 +267,9 @@ export default function ProfilePage() {
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
         setUser(response.data);
         setEditUser({
-          id:          response.data.id ?? "",
-          name:        response.data.name ?? "",
-          email:       response.data.email ?? "",
+          id: response.data.id ?? "",
+          name: response.data.name ?? "",
+          email: response.data.email ?? "",
           phoneNumber: response.data.phoneNumber ?? "",
         });
       } catch {
@@ -309,16 +310,16 @@ export default function ProfilePage() {
       }
 
       const infoChanged =
-        editUser.name        !== user?.name ||
-        editUser.email       !== user?.email ||
+        editUser.name !== user?.name ||
+        editUser.email !== user?.email ||
         editUser.phoneNumber !== user?.phoneNumber ||
-        newAvatarUrl         !== user?.avatarUrl;
+        newAvatarUrl !== user?.avatarUrl;
 
       if (infoChanged) {
         await axiosInstance.put("/api/user", { ...editUser, avatarUrl: newAvatarUrl });
       }
 
-      const userRes     = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
+      const userRes = await axiosInstance.get<User>(`/api/user/${editUser.id}`);
       const updatedUser = userRes.data;
       setUser(updatedUser);
       updateUser(updatedUser);
@@ -339,9 +340,9 @@ export default function ProfilePage() {
     setAvatarFile(null);
     setPreviewUrl(null);
     setEditUser({
-      id:          user?.id ?? "",
-      name:        user?.name ?? "",
-      email:       user?.email ?? "",
+      id: user?.id ?? "",
+      name: user?.name ?? "",
+      email: user?.email ?? "",
       phoneNumber: user?.phoneNumber ?? "",
     });
   };
