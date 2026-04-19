@@ -47,16 +47,18 @@ const TechnicianExperimentLog = () => {
       year: "numeric",
     });
   };
-  
+
   // --- GSAP REF ---
   const containerRef = useRef<HTMLElement>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">(
+    "all",
+  );
   const [methodFilter, setMethodFilter] = useState<string>("");
-  const [stageFilter, setStageFilter] = useState<
-    "all" | "1" | "2" | "3" | "4"
-  >("all");
+  const [stageFilter, setStageFilter] = useState<"all" | "1" | "2" | "3" | "4">(
+    "all",
+  );
   const [logs, setLogs] = useState<ExperimentLogEntryList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,51 +81,68 @@ const TechnicianExperimentLog = () => {
     WaitingForChangeStage: 0,
   });
 
-
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 5;
 
   // --- GSAP ANIMATIONS ---
 
   // 1. Animation cho cấu trúc trang khi mới load (Header, Stats, Filter)
-  useGSAP(() => {
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+  useGSAP(
+    () => {
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
 
-    // Header animation
-    tl.from(".gsap-header", {
-      y: -30,
-      opacity: 0,
-      duration: 0.6,
-      stagger: 0.1
-    })
-    // Chart & Stats cards
-    .from(".gsap-chart", {
-      scale: 0.9,
-      opacity: 0,
-      duration: 0.5
-    }, "-=0.3")
-    .from(".gsap-stat-card", {
-      y: 20,
-      opacity: 0,
-      duration: 0.5,
-      stagger: 0.1
-    }, "-=0.3")
-    // Summary card
-    .from(".gsap-summary", {
-      y: 20,
-      opacity: 0,
-      duration: 0.5
-    }, "-=0.2")
-    // Filter bar
-    .from(".gsap-filter", {
-      y: 10,
-      opacity: 0,
-      duration: 0.4
-    }, "-=0.2");
+      // Header animation
+      tl.from(".gsap-header", {
+        y: -30,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.1,
+      })
+        // Chart & Stats cards
+        .from(
+          ".gsap-chart",
+          {
+            scale: 0.9,
+            opacity: 0,
+            duration: 0.5,
+          },
+          "-=0.3",
+        )
+        .from(
+          ".gsap-stat-card",
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.5,
+            stagger: 0.1,
+          },
+          "-=0.3",
+        )
+        // Summary card
+        .from(
+          ".gsap-summary",
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.5,
+          },
+          "-=0.2",
+        )
+        // Filter bar
+        .from(
+          ".gsap-filter",
+          {
+            y: 10,
+            opacity: 0,
+            duration: 0.4,
+          },
+          "-=0.2",
+        );
+    },
+    { scope: containerRef },
+  );
 
-  }, { scope: containerRef });
-
-    const normalizeStatus = (status?: number | string) => {
+  const normalizeStatus = (status?: number | string) => {
     const statusStr = String(status ?? "");
     switch (statusStr) {
       case "1":
@@ -140,6 +159,8 @@ const TechnicianExperimentLog = () => {
         return "Done";
       case "4":
       case "Cancel":
+      case "Cancelled":
+      case "Destroyed":
         return "Cancel";
       default:
         return statusStr;
@@ -163,9 +184,8 @@ const TechnicianExperimentLog = () => {
     }
   };
 
-
   const parseApiResponse = (
-    data: unknown
+    data: unknown,
   ): { logs: ExperimentLogEntryList[]; totalCount: number } => {
     if (
       typeof data === "object" &&
@@ -182,7 +202,10 @@ const TechnicianExperimentLog = () => {
       }
     }
     if (Array.isArray(data)) {
-      return { logs: data as ExperimentLogEntryList[], totalCount: data.length };
+      return {
+        logs: data as ExperimentLogEntryList[],
+        totalCount: data.length,
+      };
     }
     return { logs: [], totalCount: 0 };
   };
@@ -190,7 +213,7 @@ const TechnicianExperimentLog = () => {
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
       const response = await axiosInstance.get(
-        `/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`
+        `/api/samples?pageNo=1&pageSize=1000&experimentLogId=${experimentLogId}`,
       );
       const data = response.data;
 
@@ -217,19 +240,24 @@ const TechnicianExperimentLog = () => {
       await Promise.all(promises);
       setSampleCounts(counts);
     },
-    []
+    [],
   );
 
   useEffect(() => {
     const fetchMethods = async () => {
       try {
         const res = await axiosInstance.get(
-          "/api/methods?PageNumber=1&PageSize=1000"
+          "/api/methods?PageNumber=1&PageSize=1000",
         );
         const raw = res.data;
-        
+
         // API returns: { totalCount, pageCount, pageSize, pageNumber, data: [...] }
-        if (typeof raw === "object" && raw !== null && "data" in raw && Array.isArray(raw.data)) {
+        if (
+          typeof raw === "object" &&
+          raw !== null &&
+          "data" in raw &&
+          Array.isArray(raw.data)
+        ) {
           const arr = raw.data as any[];
           setMethods(arr.map((m) => ({ id: String(m.id), name: m.name })));
         } else {
@@ -244,38 +272,44 @@ const TechnicianExperimentLog = () => {
   }, []);
 
   const fetchStatsOnly = useCallback(async () => {
-  try {
-    const res = await axiosInstance.get(
-      "/api/experiment-logs?PageNo=1&PageSize=1000"
-    );
-    const { logs: allLogs } = parseApiResponse(res.data);
+    try {
+      const res = await axiosInstance.get(
+        "/api/experiment-logs?PageNo=1&PageSize=1000",
+      );
+      const { logs: allLogs } = parseApiResponse(res.data);
 
-    const counts = {
-      Created: 0,
-      InProcess: 0,
-      Done: 0,
-      Cancel: 0,
-      WaitingForChangeStage: 0,
-    };
+      const counts = {
+        Created: 0,
+        InProcess: 0,
+        Done: 0,
+        Cancel: 0,
+        WaitingForChangeStage: 0,
+      };
 
-    allLogs.forEach((log) => {
-      const normalized = normalizeStatus(log.status);
-      // Kiểm tra chính xác các key đã khởi tạo ở trên
-      if (normalized === "Created") counts.Created++;
-      else if (normalized === "InProcess") counts.InProcess++;
-      else if (normalized === "Done") counts.Done++;
-      else if (normalized === "Cancel") counts.Cancel++;
-      else if (normalized === "WaitingForChangeStage") counts.WaitingForChangeStage++;
-    });
+      allLogs.forEach((log) => {
+        const normalized = normalizeStatus(log.status);
+        // Kiểm tra chính xác các key đã khởi tạo ở trên
+        if (normalized === "Created") counts.Created++;
+        else if (normalized === "InProcess") counts.InProcess++;
+        else if (normalized === "Done") counts.Done++;
+        else if (normalized === "Cancel") counts.Cancel++;
+        else if (normalized === "WaitingForChangeStage")
+          counts.WaitingForChangeStage++;
+      });
 
-    setStats({
-      total: counts.Created + counts.InProcess + counts.Done + counts.Cancel + counts.WaitingForChangeStage,
-      ...counts,
-    });
-  } catch (err) {
-    console.error("Error fetching stats:", err);
-  }
-}, []);
+      setStats({
+        total:
+          counts.Created +
+          counts.InProcess +
+          counts.Done +
+          counts.Cancel +
+          counts.WaitingForChangeStage,
+        ...counts,
+      });
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -294,13 +328,14 @@ const TechnicianExperimentLog = () => {
 
       try {
         const res = await axiosInstance.get(
-          `/api/experiment-logs?${params.toString()}`
+          `/api/experiment-logs?${params.toString()}`,
         );
         const { logs: arr, totalCount: total } = parseApiResponse(res.data);
 
         const normalizedLogs = arr.map((log) => ({
           ...log,
-          tissueCultureBatchName: log.tissueCultureBatchName ?? (log as any).batcheName ?? "",
+          tissueCultureBatchName:
+            log.tissueCultureBatchName ?? (log as any).batcheName ?? "",
           status: normalizeStatus(log.status),
         }));
 
@@ -375,8 +410,9 @@ const TechnicianExperimentLog = () => {
         .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "all" || 
-      (statusFilter === "WaitingForChangeStage" && normalizeStatus(log.status) === "WaitingForChangeStage") ||
+      statusFilter === "all" ||
+      (statusFilter === "WaitingForChangeStage" &&
+        normalizeStatus(log.status) === "WaitingForChangeStage") ||
       normalizeStatus(log.status) === statusFilter;
 
     let matchesStage = true;
@@ -398,12 +434,13 @@ const TechnicianExperimentLog = () => {
   });
 
   const totalPages = Math.ceil(totalCount / logsPerPage);
-  const completedPercent = stats.total > 0 ? Math.round((stats.Done / stats.total) * 100) : 0;
+  const completedPercent =
+    stats.total > 0 ? Math.round((stats.Done / stats.total) * 100) : 0;
 
   return (
-    <main 
+    <main
       id="technician-experimentlog-page"
-      ref={containerRef} 
+      ref={containerRef}
       className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8"
     >
       <div className="max-w-[1400px] mx-auto space-y-6">
@@ -428,22 +465,36 @@ const TechnicianExperimentLog = () => {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
                 <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
-                  {t("technicianTask.overallTaskDistribution", { defaultValue: "Tổng quan tiến độ" })}
+                  {t("technicianTask.overallTaskDistribution", {
+                    defaultValue: "Tổng quan tiến độ",
+                  })}
                 </h3>
                 <p className="text-sm text-[#4B6C54]">
-                  {t("technicianTask.overallTaskSummary", { defaultValue: "Xem nhanh tiến độ các thí nghiệm" })}
+                  {t("technicianTask.overallTaskSummary", {
+                    defaultValue: "Xem nhanh tiến độ các thí nghiệm",
+                  })}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-[#2D5A27]">{stats.total}</div>
-                <div className="text-xs text-[#4B6C54] mt-1">{t("experimentLog.experiments")}</div>
+                <div className="text-3xl font-bold text-[#2D5A27]">
+                  {stats.total}
+                </div>
+                <div className="text-xs text-[#4B6C54] mt-1">
+                  {t("experimentLog.experiments")}
+                </div>
               </div>
             </div>
 
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
-                <span>{t("technicianTask.completedRate", { defaultValue: "Hoàn thành" })}</span>
-                <span className="font-semibold text-[#2D5A27]">{completedPercent}%</span>
+                <span>
+                  {t("technicianTask.completedRate", {
+                    defaultValue: "Hoàn thành",
+                  })}
+                </span>
+                <span className="font-semibold text-[#2D5A27]">
+                  {completedPercent}%
+                </span>
               </div>
               <div className="h-2 w-full rounded-full bg-[#E4F0E8] overflow-hidden">
                 <div
@@ -463,13 +514,19 @@ const TechnicianExperimentLog = () => {
                     <Clock className="w-5 h-5" />
                   </span>
                   <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("experimentLog.inProgress", { defaultValue: "Đang thực hiện" })}
+                    {t("experimentLog.inProgress", {
+                      defaultValue: "Đang thực hiện",
+                    })}
                   </span>
                 </div>
-                <span className="text-2xl font-semibold text-[#2D5A27]">{stats.InProcess}</span>
+                <span className="text-2xl font-semibold text-[#2D5A27]">
+                  {stats.InProcess}
+                </span>
               </div>
               <p className="text-xs text-[#4B6C54]">
-                {t("experimentLog.inProgressHelp", { defaultValue: "Các thí nghiệm đang tiến hành" })}
+                {t("experimentLog.inProgressHelp", {
+                  defaultValue: "Các thí nghiệm đang tiến hành",
+                })}
               </p>
             </div>
 
@@ -480,13 +537,19 @@ const TechnicianExperimentLog = () => {
                     <AlertCircle className="w-5 h-5" />
                   </span>
                   <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("experimentLog.waitingForStageChange", { defaultValue: "Chờ chuyển giai đoạn" })}
+                    {t("experimentLog.waitingForStageChange", {
+                      defaultValue: "Chờ chuyển giai đoạn",
+                    })}
                   </span>
                 </div>
-                <span className="text-2xl font-semibold text-[#D97706]">{stats.WaitingForChangeStage}</span>
+                <span className="text-2xl font-semibold text-[#D97706]">
+                  {stats.WaitingForChangeStage}
+                </span>
               </div>
               <p className="text-xs text-[#4B6C54]">
-                {t("experimentLog.waitingHelp", { defaultValue: "Chờ chuyển giai đoạn" })}
+                {t("experimentLog.waitingHelp", {
+                  defaultValue: "Chờ chuyển giai đoạn",
+                })}
               </p>
             </div>
 
@@ -497,13 +560,19 @@ const TechnicianExperimentLog = () => {
                     <CheckCircle2 className="w-5 h-5" />
                   </span>
                   <span className="text-sm font-medium text-[#2D5A27]">
-                    {t("experimentLog.completed", { defaultValue: "Hoàn thành" })}
+                    {t("experimentLog.completed", {
+                      defaultValue: "Hoàn thành",
+                    })}
                   </span>
                 </div>
-                <span className="text-2xl font-semibold text-[#2D5A27]">{stats.Done}</span>
+                <span className="text-2xl font-semibold text-[#2D5A27]">
+                  {stats.Done}
+                </span>
               </div>
               <p className="text-xs text-[#4B6C54]">
-                {t("experimentLog.completedHelp", { defaultValue: "Các thí nghiệm đã hoàn thành" })}
+                {t("experimentLog.completedHelp", {
+                  defaultValue: "Các thí nghiệm đã hoàn thành",
+                })}
               </p>
             </div>
 
@@ -517,10 +586,14 @@ const TechnicianExperimentLog = () => {
                     {t("experimentLog.cancelled", { defaultValue: "Đã hủy" })}
                   </span>
                 </div>
-                <span className="text-2xl font-semibold text-[#B91C1C]">{stats.Cancel}</span>
+                <span className="text-2xl font-semibold text-[#B91C1C]">
+                  {stats.Cancel}
+                </span>
               </div>
               <p className="text-xs text-[#4B6C54]">
-                {t("experimentLog.cancelledHelp", { defaultValue: "Các thí nghiệm đã hủy" })}
+                {t("experimentLog.cancelledHelp", {
+                  defaultValue: "Các thí nghiệm đã hủy",
+                })}
               </p>
             </div>
           </div>
@@ -548,7 +621,9 @@ const TechnicianExperimentLog = () => {
                 <option value="all">{t("experimentLog.allStatuses")}</option>
                 <option value="Created">{t("status.created")}</option>
                 <option value="InProcess">{t("status.inProgress")}</option>
-                <option value="WaitingForChangeStage">{t("experimentLog.waitingForStageChange")}</option>
+                <option value="WaitingForChangeStage">
+                  {t("experimentLog.waitingForStageChange")}
+                </option>
                 <option value="Done">{t("status.completed")}</option>
                 <option value="Cancel">{t("status.cancelled")}</option>
               </select>
@@ -571,21 +646,22 @@ const TechnicianExperimentLog = () => {
               className="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent bg-white"
               value={stageFilter}
               onChange={(e) =>
-                setStageFilter(
-                  e.target.value as
-                    | "all"
-                      | "1"
-                      | "2"
-                      | "3"
-                      | "4"
-                )
+                setStageFilter(e.target.value as "all" | "1" | "2" | "3" | "4")
               }
             >
               <option value="all">{t("experimentLog.allStages")}</option>
-              <option value="1">{t("experimentLog.stageNumber", { number: 1 })}</option>
-              <option value="2">{t("experimentLog.stageNumber", { number: 2 })}</option>
-              <option value="3">{t("experimentLog.stageNumber", { number: 3 })}</option>
-              <option value="4">{t("experimentLog.stageNumber", { number: 4 })}</option>
+              <option value="1">
+                {t("experimentLog.stageNumber", { number: 1 })}
+              </option>
+              <option value="2">
+                {t("experimentLog.stageNumber", { number: 2 })}
+              </option>
+              <option value="3">
+                {t("experimentLog.stageNumber", { number: 3 })}
+              </option>
+              <option value="4">
+                {t("experimentLog.stageNumber", { number: 4 })}
+              </option>
             </select>
 
             <div className="flex-1 min-w-[300px] relative">
@@ -617,7 +693,9 @@ const TechnicianExperimentLog = () => {
         {/* Experiments Table */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="text-gray-500">{t("experimentLog.loadingExperiments")}</div>
+            <div className="text-gray-500">
+              {t("experimentLog.loadingExperiments")}
+            </div>
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-12">{error}</div>
@@ -686,7 +764,7 @@ const TechnicianExperimentLog = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${getStatusColor(
-                            log.status
+                            log.status,
                           )}`}
                         >
                           {getStatusIcon(log.status)}
@@ -701,7 +779,9 @@ const TechnicianExperimentLog = () => {
                               {log.expectedSampleCount ?? 0}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">{t("experimentLog.samples")}</span>
+                          <span className="text-xs text-gray-500">
+                            {t("experimentLog.samples")}
+                          </span>
                         </div>
                       </td>
                       {/* Current Sample Count */}
@@ -712,7 +792,9 @@ const TechnicianExperimentLog = () => {
                               {sampleCounts[log.id] ?? 0}
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">{t("experimentLog.samples")}</span>
+                          <span className="text-xs text-gray-500">
+                            {t("experimentLog.samples")}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -753,7 +835,7 @@ const TechnicianExperimentLog = () => {
                       >
                         {number}
                       </button>
-                    )
+                    ),
                   )}
 
                   {currentPage < totalPages && (
