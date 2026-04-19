@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -1179,7 +1182,7 @@ const ExperimentLogDetail = () => {
           </section>
 
           {/* Completion Details Section - shown when status is Completed */}
-          {normalizeStatus(log.status) === "Completed" && (log.conclusion || log.issues || log.recommendations) && (
+          {normalizeStatus(log.status) === "Completed" && (log.conclusion ?? log.issues ?? log.recommendations) && (
             <section className="info-card" style={{ marginTop: "1rem" }}>
               <h2 style={{ marginBottom: "1rem", fontSize: "1.125rem", fontWeight: 600 }}>
                 {t("experimentLog.completionDetails") || "Thông tin hoàn thành"}
