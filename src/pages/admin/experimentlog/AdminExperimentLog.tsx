@@ -18,17 +18,41 @@ import axiosInstance from "../../../api/axiosInstance";
 type ExperimentStatus = "Created" | "Waiting" | "InProcess" | "Done" | "Cancel";
 
 interface Stage {
-  id: string; name: string; description?: string;
-  dateOfProcessing?: number; step: number; status: boolean; elementDTO?: unknown[];
+  id: string;
+  name: string;
+  description?: string;
+  dateOfProcessing?: number;
+  step: number;
+  status: boolean;
+  elementDTO?: unknown[];
 }
-interface Sample { id: string; name: string; description?: string; dob?: string; status?: boolean; }
+interface Sample {
+  id: string;
+  name: string;
+  description?: string;
+  dob?: string;
+  status?: boolean;
+}
 interface ExperimentLogEntry {
-  id: string; name: string; methodName: string; description?: string;
-  tissueCultureBatchName: string; createdDate?: string;
-  status?: number | string; samples?: Sample[]; stages?: Stage[]; currentStageName?: string;
+  id: string;
+  name: string;
+  methodName: string;
+  description?: string;
+  tissueCultureBatchName: string;
+  createdDate?: string;
+  status?: number | string;
+  samples?: Sample[];
+  stages?: Stage[];
+  currentStageName?: string;
 }
-interface ExperimentLogApiResponse { value: ExperimentLogEntry[]; totalCount?: number; }
-interface MethodOption { id: string; name: string; }
+interface ExperimentLogApiResponse {
+  value: ExperimentLogEntry[];
+  totalCount?: number;
+}
+interface MethodOption {
+  id: string;
+  name: string;
+}
 
 /* ─── Animation variants ─────────────────────────────────── */
 type CubicBezier = [number, number, number, number];
@@ -37,7 +61,8 @@ const EASE_OUT: CubicBezier = [0.22, 1, 0.36, 1];
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i = 0) => ({
-    opacity: 1, y: 0,
+    opacity: 1,
+    y: 0,
     transition: { duration: 0.5, delay: (i as number) * 0.08, ease: EASE_OUT },
   }),
 };
@@ -45,87 +70,143 @@ const fadeUp: Variants = {
 const statCard: Variants = {
   hidden: { opacity: 0, y: 24, scale: 0.95 },
   visible: (i = 0) => ({
-    opacity: 1, y: 0, scale: 1,
-    transition: { duration: 0.45, delay: 0.1 + (i as number) * 0.08, ease: EASE_OUT },
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.45,
+      delay: 0.1 + (i as number) * 0.08,
+      ease: EASE_OUT,
+    },
   }),
 };
 
 const tableRow: Variants = {
   hidden: { opacity: 0, x: -14 },
   visible: (i = 0) => ({
-    opacity: 1, x: 0,
-    transition: { duration: 0.32, delay: (i as number) * 0.045, ease: EASE_OUT },
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.32,
+      delay: (i as number) * 0.045,
+      ease: EASE_OUT,
+    },
   }),
   exit: { opacity: 0, x: 14, transition: { duration: 0.18 } },
 };
 
 /* ─── Animated Counter (GSAP) ────────────────────────────── */
-function AnimatedCounter({ value, className }: { value: number; className?: string }) {
+function AnimatedCounter({
+  value,
+  className,
+}: {
+  value: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   const obj = useRef({ val: 0 });
   useEffect(() => {
     obj.current.val = 0;
     const ctx = gsap.context(() => {
       gsap.to(obj.current, {
-        val: value, duration: 1, ease: "power2.out", delay: 0.3,
-        onUpdate: () => { if (ref.current) ref.current.textContent = Math.round(obj.current.val).toString(); },
+        val: value,
+        duration: 1,
+        ease: "power2.out",
+        delay: 0.3,
+        onUpdate: () => {
+          if (ref.current)
+            ref.current.textContent = Math.round(obj.current.val).toString();
+        },
       });
     });
     return () => ctx.revert();
   }, [value]);
-  return <span ref={ref} className={className}>0</span>;
+  return (
+    <span ref={ref} className={className}>
+      0
+    </span>
+  );
 }
 
 /* ─── Helpers (Tone màu Orchid Lab) ───────────────────── */
 function normalizeStatus(status?: number | string): ExperimentStatus | string {
   const s = String(status ?? "");
   switch (s) {
-    case "Created": return "Created";
-    case "WaitingForChangeStage": return "Waiting";
-    case "Completed": return "Done";
-    case "InProgress": return "InProcess";
-    case "Cancelled": case "Destroyed": return "Cancel";
-    default: return s;
+    case "Created":
+      return "Created";
+    case "WaitingForChangeStage":
+      return "Waiting";
+    case "Completed":
+      return "Done";
+    case "InProgress":
+      return "InProcess";
+    case "Cancelled":
+    case "Destroyed":
+      return "Cancel";
+    default:
+      return s;
   }
 }
 
 function getStatusColor(status?: number | string): string {
   switch (normalizeStatus(status)) {
-    case "Created": return "bg-slate-100 text-slate-700";
-    case "Waiting": return "bg-amber-50 text-amber-700";
-    case "InProcess": return "bg-rose-50 text-[#9f1239]"; // Ruby Red cho Active state
-    case "Done": return "bg-emerald-50 text-emerald-700";
-    case "Cancel": return "bg-zinc-100 text-zinc-500"; // Muted cho Cancel
-    default: return "bg-gray-100 text-gray-800";
+    case "Created":
+      return "bg-slate-100 text-slate-700";
+    case "Waiting":
+      return "bg-amber-50 text-amber-700";
+    case "InProcess":
+      return "bg-rose-50 text-[#9f1239]"; // Ruby Red cho Active state
+    case "Done":
+      return "bg-emerald-50 text-emerald-700";
+    case "Cancel":
+      return "bg-zinc-100 text-zinc-500"; // Muted cho Cancel
+    default:
+      return "bg-gray-100 text-gray-800";
   }
 }
 
-function hasValueWithData<T>(obj: unknown, itemGuard: (item: unknown) => item is T): obj is { value: { data: T[] } } {
-  return typeof obj === "object" && obj !== null && "value" in obj &&
+function hasValueWithData<T>(
+  obj: unknown,
+  itemGuard: (item: unknown) => item is T,
+): obj is { value: { data: T[] } } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "value" in obj &&
     typeof (obj as { value: unknown }).value === "object" &&
     (obj as { value: { data?: unknown[] } }).value !== null &&
     "data" in (obj as { value: { data?: unknown[] } }).value &&
     Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
-    (obj as { value: { data: unknown[] } }).value.data.every(itemGuard);
+    (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
+  );
 }
 
 function isExperimentLogEntry(obj: unknown): obj is ExperimentLogEntry {
   if (typeof obj !== "object" || obj === null) return false;
   const o = obj as Record<string, unknown>;
-  return typeof o.id === "string" && typeof o.name === "string" && typeof o.methodName === "string" &&
+  return (
+    typeof o.id === "string" &&
+    typeof o.name === "string" &&
+    typeof o.methodName === "string" &&
     (typeof o.tissueCultureBatchName === "string" ||
-      typeof (o as any).batcheName === "string" || typeof (o as any).batchName === "string");
+      typeof (o as any).batcheName === "string" ||
+      typeof (o as any).batchName === "string")
+  );
 }
 
 function normalizeRawLog(obj: any): ExperimentLogEntry | null {
   if (!obj?.id || !obj.name) return null;
   return {
-    id: String(obj.id), name: String(obj.name),
+    id: String(obj.id),
+    name: String(obj.name),
     methodName: obj.methodName ?? obj.method ?? "",
     description: obj.description ?? "",
-    tissueCultureBatchName: obj.tissueCultureBatchName ?? obj.batcheName ?? obj.batchName ?? "",
+    tissueCultureBatchName:
+      obj.tissueCultureBatchName ?? obj.batcheName ?? obj.batchName ?? "",
     createdDate: obj.createdDate ?? obj.createdDateString ?? "",
-    status: obj.status, samples: obj.samples, stages: obj.stages,
+    status: obj.status,
+    samples: obj.samples,
+    stages: obj.stages,
     currentStageName: obj.currentStageName ?? "",
   };
 }
@@ -135,7 +216,9 @@ const ExperimentLog = () => {
   const { t } = useTranslation();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">(
+    "all",
+  );
   const [methodFilter, setMethodFilter] = useState<string>("");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,21 +226,37 @@ const ExperimentLog = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [sampleCounts, setSampleCounts] = useState<Record<string, number>>({});
   const [methods, setMethods] = useState<MethodOption[]>([]);
-  const [stats, setStats] = useState({ total: 0, Created: 0, Waiting: 0, InProcess: 0, Done: 0, Cancel: 0 });
+  const [stats, setStats] = useState({
+    total: 0,
+    Created: 0,
+    Waiting: 0,
+    InProcess: 0,
+    Done: 0,
+    Cancel: 0,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 5;
   const navigate = useNavigate();
 
-  const statusToLabel = useCallback((status?: number | string): string => {
-    switch (normalizeStatus(status)) {
-      case "Created":   return t("status.created");
-      case "Waiting":   return t("experimentLog.waitingForStageChange");
-      case "InProcess": return t("status.inProgress");
-      case "Done":      return t("status.completed");
-      case "Cancel":    return t("status.cancelled");
-      default:          return t("status.unknown", "—");
-    }
-  }, [t]);
+  const statusToLabel = useCallback(
+    (status?: number | string): string => {
+      switch (normalizeStatus(status)) {
+        case "Created":
+          return t("status.created");
+        case "Waiting":
+          return t("experimentLog.waitingForStageChange");
+        case "InProcess":
+          return t("status.inProgress");
+        case "Done":
+          return t("status.completed");
+        case "Cancel":
+          return t("status.cancelled");
+        default:
+          return t("status.unknown", "—");
+      }
+    },
+    [t],
+  );
 
   /* GSAP progress bar */
   const progressRef = useRef<HTMLDivElement>(null);
@@ -167,7 +266,7 @@ const ExperimentLog = () => {
       gsap.fromTo(
         progressRef.current,
         { scaleX: 0, opacity: 1 },
-        { scaleX: 1, duration: 1, ease: "power3.out" }
+        { scaleX: 1, duration: 1, ease: "power3.out" },
       );
       gsap.to(progressRef.current, { opacity: 0, duration: 0.5, delay: 1.2 });
     });
@@ -177,60 +276,93 @@ const ExperimentLog = () => {
   useEffect(() => {
     if (loading && progressRef.current) {
       gsap.set(progressRef.current, { scaleX: 0, opacity: 1 });
-      gsap.to(progressRef.current, { scaleX: 1, duration: 0.9, ease: "power3.out" });
+      gsap.to(progressRef.current, {
+        scaleX: 1,
+        duration: 0.9,
+        ease: "power3.out",
+      });
       gsap.to(progressRef.current, { opacity: 0, duration: 0.4, delay: 1.1 });
     }
   }, [loading]);
 
   const activeExperiments = stats.Created + stats.Waiting + stats.InProcess;
   const completedOrFailed = stats.Done + stats.Cancel;
-  const successRate = completedOrFailed > 0 ? Math.round((stats.Done / completedOrFailed) * 100) : 0;
+  const successRate =
+    completedOrFailed > 0
+      ? Math.round((stats.Done / completedOrFailed) * 100)
+      : 0;
   const bottlenecksCount = stats.Waiting;
 
-  const approachingDeadlineCount = logs.filter((log) => {
-    const now = Date.now(); const in7Days = now + 7 * 24 * 60 * 60 * 1000;
-    return Boolean(log.stages?.some((stage) => {
-      if (!stage.dateOfProcessing) return false;
-      let ts = stage.dateOfProcessing;
-      if (ts < 1e12) ts = ts * 1000;
-      return ts >= now && ts <= in7Days;
-    }));
-  }).length;
+  // const approachingDeadlineCount = logs.filter((log) => {
+  //   const now = Date.now();
+  //   const in7Days = now + 7 * 24 * 60 * 60 * 1000;
+  //   return Boolean(
+  //     log.stages?.some((stage) => {
+  //       if (!stage.dateOfProcessing) return false;
+  //       let ts = stage.dateOfProcessing;
+  //       if (ts < 1e12) ts = ts * 1000;
+  //       return ts >= now && ts <= in7Days;
+  //     }),
+  //   );
+  // }).length;
 
   const fetchSampleCount = async (experimentLogId: string): Promise<number> => {
     try {
-      const resp = await axiosInstance.get("/api/samples", { params: { pageNo: 1, pageSize: 1000, experimentLogId } });
+      const resp = await axiosInstance.get("/api/samples", {
+        params: { pageNo: 1, pageSize: 1000, experimentLogId },
+      });
       const data: unknown = resp.data;
       if (typeof data === "object" && data !== null && "value" in data) {
         const value = (data as { value?: unknown }).value;
         if (Array.isArray(value)) return value.length;
-        if (value && typeof value === "object" && "data" in (value as { data?: unknown[] })) {
+        if (
+          value &&
+          typeof value === "object" &&
+          "data" in (value as { data?: unknown[] })
+        ) {
           const inner = (value as { data?: unknown[] }).data;
           return Array.isArray(inner) ? inner.length : 0;
         }
       }
       return Array.isArray(data) ? data.length : 0;
-    } catch { return 0; }
+    } catch {
+      return 0;
+    }
   };
 
-  const fetchAllSampleCounts = useCallback(async (experimentLogs: ExperimentLogEntry[]) => {
-    const counts: Record<string, number> = {};
-    await Promise.all(experimentLogs.map(async (log) => { counts[log.id] = await fetchSampleCount(log.id); }));
-    setSampleCounts(counts);
-  }, []);
+  const fetchAllSampleCounts = useCallback(
+    async (experimentLogs: ExperimentLogEntry[]) => {
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        experimentLogs.map(async (log) => {
+          counts[log.id] = await fetchSampleCount(log.id);
+        }),
+      );
+      setSampleCounts(counts);
+    },
+    [],
+  );
 
   useEffect(() => {
     const fetchMethods = async () => {
       try {
-        const res = await axiosInstance.get("/api/methods", { params: { PageNumber: 1, PageSize: 100 } });
+        const res = await axiosInstance.get("/api/methods", {
+          params: { PageNumber: 1, PageSize: 100 },
+        });
         const raw: any = res.data;
         let arr: { id: any; name: string }[] = [];
         if (Array.isArray(raw?.value?.data)) arr = raw.value.data;
         else if (Array.isArray(raw?.value)) arr = raw.value;
         else if (Array.isArray(raw?.data)) arr = raw.data;
         else if (Array.isArray(raw)) arr = raw;
-        setMethods(arr.filter((m) => m?.id != null && m?.name).map((m) => ({ id: String(m.id), name: String(m.name) })));
-      } catch { setMethods([]); }
+        setMethods(
+          arr
+            .filter((m) => m?.id != null && m?.name)
+            .map((m) => ({ id: String(m.id), name: String(m.name) })),
+        );
+      } catch {
+        setMethods([]);
+      }
     };
     void fetchMethods();
   }, []);
@@ -239,11 +371,14 @@ const ExperimentLog = () => {
     try {
       let data: unknown;
       try {
-        const res = await axiosInstance.get("/api/experiment-logs", { params: { pageNo: 1, pageSize: 1000 } });
+        const res = await axiosInstance.get("/api/experiment-logs", {
+          params: { pageNo: 1, pageSize: 1000 },
+        });
         data = res.data;
       } catch (err) {
         const apiErr = err as any;
-        const detail = apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
+        const detail =
+          apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
         if (typeof detail === "string" && detail.includes("OFFSET")) {
           const retryRes = await axiosInstance.get("/api/experiment-logs");
           data = retryRes.data;
@@ -251,99 +386,196 @@ const ExperimentLog = () => {
       }
 
       let allLogs: ExperimentLogEntry[] = [];
-      if (typeof data === "object" && data !== null && "data" in (data as Record<string, unknown>) && Array.isArray((data as any).data)) {
-        allLogs = (data as any).data.map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
-      } else if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-        allLogs = (data.value.data ?? []).map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "data" in (data as Record<string, unknown>) &&
+        Array.isArray((data as any).data)
+      ) {
+        allLogs = (data as any).data
+          .map(normalizeRawLog)
+          .filter((x: any): x is ExperimentLogEntry => x !== null);
+      } else if (
+        hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
+      ) {
+        allLogs = (data.value.data ?? [])
+          .map(normalizeRawLog)
+          .filter((x: any): x is ExperimentLogEntry => x !== null);
       } else if (typeof data === "object" && data !== null && "value" in data) {
-        allLogs = ((data as ExperimentLogApiResponse).value ?? []).map(normalizeRawLog).filter((x): x is ExperimentLogEntry => x !== null);
+        allLogs = ((data as ExperimentLogApiResponse).value ?? [])
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
       } else if (Array.isArray(data)) {
-        allLogs = data.map(normalizeRawLog).filter((x): x is ExperimentLogEntry => x !== null);
+        allLogs = data
+          .map(normalizeRawLog)
+          .filter((x): x is ExperimentLogEntry => x !== null);
       }
 
-      const counts = { Created: 0, Waiting: 0, InProcess: 0, Done: 0, Cancel: 0 };
+      const counts = {
+        Created: 0,
+        Waiting: 0,
+        InProcess: 0,
+        Done: 0,
+        Cancel: 0,
+      };
       allLogs.forEach((log) => {
         const s = normalizeStatus(log.status);
         if (s in counts) counts[s as keyof typeof counts]++;
       });
-      setStats({ total: counts.Created + counts.InProcess + counts.Done + counts.Cancel, ...counts });
-    } catch { setStats({ total: 0, Created: 0, Waiting: 0, InProcess: 0, Done: 0, Cancel: 0 }); }
+      setStats({
+        total: counts.Created + counts.InProcess + counts.Done + counts.Cancel,
+        ...counts,
+      });
+    } catch {
+      setStats({
+        total: 0,
+        Created: 0,
+        Waiting: 0,
+        InProcess: 0,
+        Done: 0,
+        Cancel: 0,
+      });
+    }
   }, [t]);
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true); setError(null);
+      setLoading(true);
+      setError(null);
       const selectedMethod = methods.find((m) => m.id === methodFilter);
       const methodName = selectedMethod ? selectedMethod.name : methodFilter;
       try {
-        const paramsObj: Record<string, unknown> = { pageNo: currentPage, pageSize: logsPerPage };
-        if (methodName) { paramsObj.methodNameSearchTerm = methodName; paramsObj.MethodNameSearchTerm = methodName; }
+        const paramsObj: Record<string, unknown> = {
+          pageNo: currentPage,
+          pageSize: logsPerPage,
+        };
+        if (methodName) {
+          paramsObj.methodNameSearchTerm = methodName;
+          paramsObj.MethodNameSearchTerm = methodName;
+        }
 
         let data: unknown;
         try {
-          const res = await axiosInstance.get("/api/experiment-logs", { params: paramsObj });
+          const res = await axiosInstance.get("/api/experiment-logs", {
+            params: paramsObj,
+          });
           data = res.data;
         } catch (err) {
           const apiErr = err as any;
-          const detail = apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
+          const detail =
+            apiErr?.response?.data?.detail ?? apiErr?.response?.data?.message;
           if (typeof detail === "string" && detail.includes("OFFSET")) {
             const retryRes = await axiosInstance.get("/api/experiment-logs");
             data = retryRes.data;
           } else throw new Error(t("common.errorLoading"));
         }
 
-        let arr: ExperimentLogEntry[] = []; let total = 0;
-        if (typeof data === "object" && data !== null && "data" in (data as Record<string, unknown>) && Array.isArray((data as any).data)) {
-          arr = (data as any).data.map(normalizeRawLog).filter((x: any): x is ExperimentLogEntry => x !== null);
+        let arr: ExperimentLogEntry[] = [];
+        let total = 0;
+        if (
+          typeof data === "object" &&
+          data !== null &&
+          "data" in (data as Record<string, unknown>) &&
+          Array.isArray((data as any).data)
+        ) {
+          arr = (data as any).data
+            .map(normalizeRawLog)
+            .filter((x: any): x is ExperimentLogEntry => x !== null);
           total = Number((data as any).totalCount ?? arr.length);
-        } else if (hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)) {
-          arr = (data.value.data ?? []).map(normalizeRawLog).filter((x): x is ExperimentLogEntry => x !== null);
-          total = Number((data as { value: { totalCount?: unknown } })?.value?.totalCount ?? arr.length);
-        } else if (typeof data === "object" && data !== null && "value" in data) {
-          arr = ((data as ExperimentLogApiResponse).value ?? []).map(normalizeRawLog).filter((x): x is ExperimentLogEntry => x !== null);
+        } else if (
+          hasValueWithData<ExperimentLogEntry>(data, isExperimentLogEntry)
+        ) {
+          arr = (data.value.data ?? [])
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
+          total = Number(
+            (data as { value: { totalCount?: unknown } })?.value?.totalCount ??
+              arr.length,
+          );
+        } else if (
+          typeof data === "object" &&
+          data !== null &&
+          "value" in data
+        ) {
+          arr = ((data as ExperimentLogApiResponse).value ?? [])
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
           total = (data as ExperimentLogApiResponse).totalCount ?? arr.length;
         } else if (Array.isArray(data)) {
-          arr = data.map(normalizeRawLog).filter((x): x is ExperimentLogEntry => x !== null);
+          arr = data
+            .map(normalizeRawLog)
+            .filter((x): x is ExperimentLogEntry => x !== null);
           total = arr.length;
         }
 
-        arr = arr.map((log) => ({ ...log, status: normalizeStatus(log.status) }));
-        setLogs(arr); setTotalCount(total);
+        arr = arr.map((log) => ({
+          ...log,
+          status: normalizeStatus(log.status),
+        }));
+        setLogs(arr);
+        setTotalCount(total);
         if (arr.length > 0) await fetchAllSampleCounts(arr);
       } catch {
-        setError(t("common.errorLoading")); setLogs([]); setTotalCount(0);
-      } finally { setLoading(false); }
+        setError(t("common.errorLoading"));
+        setLogs([]);
+        setTotalCount(0);
+      } finally {
+        setLoading(false);
+      }
     };
 
     void fetchData();
     void fetchStatsOnly();
-  }, [currentPage, logsPerPage, methodFilter, fetchAllSampleCounts, fetchStatsOnly, t]);
+  }, [
+    currentPage,
+    logsPerPage,
+    methodFilter,
+    fetchAllSampleCounts,
+    fetchStatsOnly,
+    t,
+  ]);
 
   /* ─── Donut chart data (Orchid Palette) ──────────────── */
   const statusDistribution = [
-    { label: t("status.created"),   value: stats.Created,   color: "#64748b" }, // Slate
-    { label: t("experimentLog.waiting"), value: stats.Waiting,   color: "#f59e0b" }, // Amber
+    { label: t("status.created"), value: stats.Created, color: "#64748b" }, // Slate
+    {
+      label: t("experimentLog.waiting"),
+      value: stats.Waiting,
+      color: "#f59e0b",
+    }, // Amber
     { label: t("status.inProgress"), value: stats.InProcess, color: "#9f1239" }, // Ruby Red
-    { label: t("status.completed"), value: stats.Done,      color: "#10b981" }, // Emerald
-    { label: t("status.cancelled"), value: stats.Cancel,    color: "#71717a" }, // Zinc
+    { label: t("status.completed"), value: stats.Done, color: "#10b981" }, // Emerald
+    { label: t("status.cancelled"), value: stats.Cancel, color: "#71717a" }, // Zinc
   ];
-  const totalDistribution = statusDistribution.reduce((sum, item) => sum + item.value, 0);
+  const totalDistribution = statusDistribution.reduce(
+    (sum, item) => sum + item.value,
+    0,
+  );
   const donutRadius = 38;
   const donutCircumference = 2 * Math.PI * donutRadius;
   let cumulativeOffset = 0;
-  const donutSlices = statusDistribution.filter((item) => item.value > 0).map((item) => {
-    const dash = totalDistribution > 0 ? (item.value / totalDistribution) * donutCircumference : 0;
-    const slice = { ...item, dash, offset: cumulativeOffset };
-    cumulativeOffset += dash;
-    return slice;
-  });
+  const donutSlices = statusDistribution
+    .filter((item) => item.value > 0)
+    .map((item) => {
+      const dash =
+        totalDistribution > 0
+          ? (item.value / totalDistribution) * donutCircumference
+          : 0;
+      const slice = { ...item, dash, offset: cumulativeOffset };
+      cumulativeOffset += dash;
+      return slice;
+    });
 
   /* ─── Filtered logs ──────────────────────────────────── */
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = !searchTerm ||
+    const matchesSearch =
+      !searchTerm ||
       log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.tissueCultureBatchName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
+      log.tissueCultureBatchName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -379,7 +611,7 @@ const ExperimentLog = () => {
     },
     {
       label: t("experimentLog.completed"),
-      value: approachingDeadlineCount,
+      value: stats.Done,
       valueClass: "text-[#10b981]", // Emerald
       sub: t("experimentLog.completedHelp"),
     },
@@ -387,7 +619,6 @@ const ExperimentLog = () => {
 
   return (
     <main className="experiment-log-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] text-slate-900">
-
       {/* ── GSAP progress bar ── */}
       <div
         ref={progressRef}
@@ -397,7 +628,10 @@ const ExperimentLog = () => {
 
       {/* ── Header + stat cards ── */}
       <motion.div
-        variants={fadeUp} initial="hidden" animate="visible" custom={0}
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={0}
         className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -409,12 +643,20 @@ const ExperimentLog = () => {
               {t("experimentLog.manageAndTrack")}
             </p>
           </div>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 350, damping: 22 }}>
+          <motion.div
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 350, damping: 22 }}
+          >
             <Link
               to="/researcher/experiment-log/create"
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#9f1239] text-white font-semibold shadow-sm hover:bg-[#881337] transition"
             >
-              <motion.span whileHover={{ rotate: 90 }} transition={{ duration: 0.25 }} className="flex">
+              <motion.span
+                whileHover={{ rotate: 90 }}
+                transition={{ duration: 0.25 }}
+                className="flex"
+              >
                 <Plus className="w-4 h-4" />
               </motion.span>
               {t("experimentLog.createExperimentLog")}
@@ -431,14 +673,29 @@ const ExperimentLog = () => {
               variants={statCard}
               initial="hidden"
               animate="visible"
-              whileHover={{ y: -5, boxShadow: "0 12px 28px -6px rgba(159, 18, 57, 0.1)", transition: { duration: 0.2 } }}
+              whileHover={{
+                y: -5,
+                boxShadow: "0 12px 28px -6px rgba(159, 18, 57, 0.1)",
+                transition: { duration: 0.2 },
+              }}
               className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl p-5 shadow-sm"
             >
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                {item.label}
+              </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <AnimatedCounter value={item.value} className={`text-3xl font-semibold ${item.valueClass}`} />
-                {item.suffix && <span className={`text-3xl font-semibold ${item.valueClass}`}>{item.suffix}</span>}
-                {item.sub && <span className="text-xs text-slate-500">{item.sub}</span>}
+                <AnimatedCounter
+                  value={item.value}
+                  className={`text-3xl font-semibold ${item.valueClass}`}
+                />
+                {item.suffix && (
+                  <span className={`text-3xl font-semibold ${item.valueClass}`}>
+                    {item.suffix}
+                  </span>
+                )}
+                {item.sub && (
+                  <span className="text-xs text-slate-500">{item.sub}</span>
+                )}
               </div>
             </motion.div>
           ))}
@@ -447,25 +704,44 @@ const ExperimentLog = () => {
 
       {/* ── Middle row (Bố cục mới: Biểu đồ & Bộ lọc tỷ lệ 2:1) ── */}
       <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
         {/* Donut chart (Chiếm 2 phần) */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1}
-          className="xl:col-span-2 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col justify-center">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={1}
+          className="xl:col-span-2 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col justify-center"
+        >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-center gap-12 w-full">
             <div className="text-center lg:text-left">
-              <h2 className="text-lg font-semibold text-[#9f1239]">{t("experimentLog.latestStatusChart")}</h2>
-              <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
+              <h2 className="text-lg font-semibold text-[#9f1239]">
+                {t("experimentLog.latestStatusChart")}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {t("experimentLog.manageAndTrack")}
+              </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-center gap-8">
               <div className="relative">
                 <svg width="140" height="140" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="38" fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="38"
+                    fill="transparent"
+                    stroke="#f1f5f9"
+                    strokeWidth="12"
+                  />
                   {donutSlices.map((slice, i) => (
                     <motion.circle
                       key={slice.label}
-                      cx="60" cy="60" r="38" fill="transparent"
-                      stroke={slice.color} strokeWidth="12"
+                      cx="60"
+                      cy="60"
+                      r="38"
+                      fill="transparent"
+                      stroke={slice.color}
+                      strokeWidth="12"
                       strokeDasharray={`${slice.dash} ${donutCircumference}`}
                       strokeDashoffset={-slice.offset}
                       strokeLinecap="round"
@@ -475,44 +751,78 @@ const ExperimentLog = () => {
                       transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
                     />
                   ))}
-                  <text x="60" y="60" textAnchor="middle" dominantBaseline="central" className="text-lg font-semibold" fill="#0f172a">
+                  <text
+                    x="60"
+                    y="60"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="text-lg font-semibold"
+                    fill="#0f172a"
+                  >
                     {totalDistribution}
                   </text>
                 </svg>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-3">
-                {statusDistribution.filter((item) => item.value > 0).map((item, i) => (
-                  <motion.div key={item.label}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.08, duration: 0.3, ease: EASE_OUT }}
-                    className="flex items-center justify-between gap-4 text-sm min-w-[120px]"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-slate-700 font-medium">{item.label}</span>
-                    </div>
-                    <span className="text-sm font-semibold text-slate-900">{item.value}</span>
-                  </motion.div>
-                ))}
+                {statusDistribution
+                  .filter((item) => item.value > 0)
+                  .map((item, i) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{
+                        delay: 0.4 + i * 0.08,
+                        duration: 0.3,
+                        ease: EASE_OUT,
+                      }}
+                      className="flex items-center justify-between gap-4 text-sm min-w-[120px]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-slate-700 font-medium">
+                          {item.label}
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {item.value}
+                      </span>
+                    </motion.div>
+                  ))}
               </div>
             </div>
           </div>
         </motion.div>
 
         {/* Filter panel (Chiếm 1 phần) */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2}
-          className="xl:col-span-1 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-[#9f1239]">{t("common.filter")}</h2>
-          <p className="mt-1 text-sm text-slate-500">{t("experimentLog.manageAndTrack")}</p>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={2}
+          className="xl:col-span-1 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
+        >
+          <h2 className="text-lg font-semibold text-[#9f1239]">
+            {t("common.filter")}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {t("experimentLog.manageAndTrack")}
+          </p>
           <div className="mt-5 space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.status")}</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">
+                {t("common.status")}
+              </label>
               <select
                 className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as ExperimentStatus | "all")}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as ExperimentStatus | "all")
+                }
               >
                 <option value="all">{t("experimentLog.allStatuses")}</option>
                 <option value="Created">{t("status.created")}</option>
@@ -522,18 +832,26 @@ const ExperimentLog = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("experimentLog.method")}</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">
+                {t("experimentLog.method")}
+              </label>
               <select
                 className="w-full border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
               >
                 <option value="">{t("experimentLog.allMethods")}</option>
-                {methods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                {methods.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-2">{t("common.search")}</label>
+              <label className="block text-xs font-semibold text-slate-500 mb-2">
+                {t("common.search")}
+              </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
@@ -550,7 +868,13 @@ const ExperimentLog = () => {
       </div>
 
       {/* ── Table ── */}
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3} className="mt-6">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        animate="visible"
+        custom={3}
+        className="mt-6"
+      >
         <div className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -561,7 +885,11 @@ const ExperimentLog = () => {
                       key={i}
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
+                      transition={{
+                        delay: 0.3 + i * 0.05,
+                        duration: 0.3,
+                        ease: EASE_OUT,
+                      }}
                       className="text-left p-4 font-semibold text-gray-900"
                     >
                       {header}
@@ -572,18 +900,30 @@ const ExperimentLog = () => {
               <tbody>
                 {loading ? (
                   Array.from({ length: 5 }).map((_, idx) => (
-                    <motion.tr key={`sk-${idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      transition={{ delay: idx * 0.05 }} className="border-b border-rose-50 animate-pulse">
+                    <motion.tr
+                      key={`sk-${idx}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="border-b border-rose-50 animate-pulse"
+                    >
                       {Array.from({ length: 6 }).map((__, ci) => (
                         <td key={ci} className="p-4">
-                          <div className={`h-4 bg-rose-100 rounded ${ci === 4 ? "w-24" : ci === 5 ? "w-12" : "w-full"}`} />
+                          <div
+                            className={`h-4 bg-rose-100 rounded ${ci === 4 ? "w-24" : ci === 5 ? "w-12" : "w-full"}`}
+                          />
                         </td>
                       ))}
                     </motion.tr>
                   ))
                 ) : error ? (
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <td colSpan={6} className="text-center py-10 text-red-500 text-lg font-medium">{error}</td>
+                    <td
+                      colSpan={6}
+                      className="text-center py-10 text-red-500 text-lg font-medium"
+                    >
+                      {error}
+                    </td>
                   </motion.tr>
                 ) : filteredLogs.length > 0 ? (
                   <AnimatePresence mode="popLayout">
@@ -596,21 +936,36 @@ const ExperimentLog = () => {
                         animate="visible"
                         exit="exit"
                         layout
-                        whileHover={{ backgroundColor: "rgba(255,241,242,0.85)", transition: { duration: 0.15 } }}
+                        whileHover={{
+                          backgroundColor: "rgba(255,241,242,0.85)",
+                          transition: { duration: 0.15 },
+                        }}
                         className="border-b border-rose-50 cursor-pointer"
-                        onClick={() => void navigate(`/admin/experiment-log/${log.id}`)}
+                        onClick={() =>
+                          void navigate(`/admin/experiment-log/${log.id}`)
+                        }
                       >
-                        <td className="p-4 font-medium text-gray-900">{log.name}</td>
+                        <td className="p-4 font-medium text-gray-900">
+                          {log.name}
+                        </td>
                         <td className="p-4 text-gray-700">{log.methodName}</td>
-                        <td className="p-4 text-gray-700">{log.tissueCultureBatchName}</td>
                         <td className="p-4 text-gray-700">
-                          {log.createdDate ? new Date(log.createdDate).toLocaleDateString() : ""}
+                          {log.tissueCultureBatchName}
+                        </td>
+                        <td className="p-4 text-gray-700">
+                          {log.createdDate
+                            ? new Date(log.createdDate).toLocaleDateString()
+                            : ""}
                         </td>
                         <td className="p-4">
                           <motion.span
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: idx * 0.045 + 0.1, duration: 0.28, ease: EASE_OUT }}
+                            transition={{
+                              delay: idx * 0.045 + 0.1,
+                              duration: 0.28,
+                              ease: EASE_OUT,
+                            }}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(log.status)}`}
                           >
                             {statusToLabel(log.status)}
@@ -618,8 +973,12 @@ const ExperimentLog = () => {
                         </td>
                         <td className="p-4 text-sm text-gray-500">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-[#9f1239]">{sampleCounts[log.id] ?? 0}</span>
-                            <span className="text-xs text-gray-400">{t("experimentLog.samples")}</span>
+                            <span className="font-semibold text-[#9f1239]">
+                              {sampleCounts[log.id] ?? 0}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {t("experimentLog.samples")}
+                            </span>
                           </div>
                         </td>
                       </motion.tr>
@@ -629,7 +988,9 @@ const ExperimentLog = () => {
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <td colSpan={6} className="text-center p-12 text-gray-500">
                       <div className="text-6xl mb-4">📋</div>
-                      <div className="text-lg font-medium">{t("common.noData")}</div>
+                      <div className="text-lg font-medium">
+                        {t("common.noData")}
+                      </div>
                     </td>
                   </motion.tr>
                 )}
@@ -641,46 +1002,72 @@ const ExperimentLog = () => {
           <AnimatePresence>
             {totalCount > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.3 }}
                 className="flex justify-between items-center text-sm text-slate-600 p-6 bg-white/70 border-t border-rose-100"
               >
                 <span className="font-medium">
-                  {t("common.showing")} {Math.min((currentPage - 1) * logsPerPage + 1, totalCount)}–
-                  {Math.min(currentPage * logsPerPage, totalCount)} {t("common.of")} {totalCount}
+                  {t("common.showing")}{" "}
+                  {Math.min((currentPage - 1) * logsPerPage + 1, totalCount)}–
+                  {Math.min(currentPage * logsPerPage, totalCount)}{" "}
+                  {t("common.of")} {totalCount}
                 </span>
                 {totalCount > logsPerPage && (
                   <div className="flex gap-2">
                     {currentPage > 1 && (
-                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage - 1)}
-                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 transition-all font-medium shadow-sm">
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 transition-all font-medium shadow-sm"
+                      >
                         ←
                       </motion.button>
                     )}
-                    {Array.from({ length: Math.min(Math.ceil(totalCount / logsPerPage), 5) }, (_, i) => {
-                      const totalPages = Math.ceil(totalCount / logsPerPage);
-                      let pageNum: number;
-                      if (totalPages <= 5) pageNum = i + 1;
-                      else if (currentPage <= 3) pageNum = i + 1;
-                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                      else pageNum = currentPage - 2 + i;
-                      return (
-                        <motion.button key={pageNum} type="button"
-                          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
-                            currentPage === pageNum
-                              ? "bg-[#9f1239] text-white"
-                              : "bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300"
-                          }`}
-                        >{pageNum}</motion.button>
-                      );
-                    })}
+                    {Array.from(
+                      {
+                        length: Math.min(
+                          Math.ceil(totalCount / logsPerPage),
+                          5,
+                        ),
+                      },
+                      (_, i) => {
+                        const totalPages = Math.ceil(totalCount / logsPerPage);
+                        let pageNum: number;
+                        if (totalPages <= 5) pageNum = i + 1;
+                        else if (currentPage <= 3) pageNum = i + 1;
+                        else if (currentPage >= totalPages - 2)
+                          pageNum = totalPages - 4 + i;
+                        else pageNum = currentPage - 2 + i;
+                        return (
+                          <motion.button
+                            key={pageNum}
+                            type="button"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
+                              currentPage === pageNum
+                                ? "bg-[#9f1239] text-white"
+                                : "bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300"
+                            }`}
+                          >
+                            {pageNum}
+                          </motion.button>
+                        );
+                      },
+                    )}
                     {Math.ceil(totalCount / logsPerPage) > currentPage && (
-                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.93 }}
                         onClick={() => setCurrentPage(currentPage + 1)}
-                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 transition-all font-medium shadow-sm">
+                        className="px-4 py-2 rounded-lg bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 transition-all font-medium shadow-sm"
+                      >
                         →
                       </motion.button>
                     )}
