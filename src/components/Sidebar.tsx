@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable react-dom/no-missing-button-type */
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTasks, FaBook, FaSeedling, FaChartBar, FaSignOutAlt } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../api/axiosInstance";
+import type { User } from "../types/Auth"; 
 
 const tabs = [
   { nameKey: "navigation.method", path: "/researcher/method", icon: PiBlueprintFill },
@@ -17,7 +21,26 @@ const tabs = [
 
 export default function Sidebar() {
   const { t } = useTranslation();
-  const { logout, user } = useAuth();
+  const { logout, user: authUser } = useAuth();
+  
+  // Thêm state để lưu full thông tin user giống Topbar
+  const [fullUser, setFullUser] = useState<User | null>(null);
+
+  // Gọi API lấy dữ liệu chi tiết của user
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authUser?.id) return;
+      try {
+        const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
+        setFullUser(response.data);
+      } catch (error) {
+        console.error("Error fetching user data in Sidebar:", error);
+        setFullUser(authUser as User); 
+      }
+    };
+
+    void fetchUserData();
+  }, [authUser]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -27,14 +50,17 @@ export default function Sidebar() {
 
   const filteredTabs = tabs;
 
-  const userInitials = user?.name
-    ? user.name
+  // Dùng fullUser để render UI thay vì authUser
+  const displayUser = fullUser || authUser;
+
+  const userInitials = displayUser?.name
+    ? displayUser.name
         .split(" ")
         .map((namePart) => namePart[0]?.toUpperCase() ?? "")
         .slice(0, 2)
         .join("")
     : "UL";
-  const userRole = user?.role ? user.role : "Quản trị viên";
+  const userRole = displayUser?.role ? displayUser.role : "Quản trị viên";
 
   return (
     <aside className="w-full md:w-64 h-screen fixed top-0 left-0 z-30 flex flex-col bg-[#003456] text-white overflow-hidden">
@@ -81,12 +107,28 @@ export default function Sidebar() {
       {/* User Profile + Logout */}
       <div className="mt-auto px-4 py-4 border-t border-[#00CED1]/20">
         <div className="mb-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#00CED1]/20 flex items-center justify-center text-[#00CED1] font-bold">
+          {/* Avatar hiển thị ở đây */}
+          {displayUser?.avatarUrl ? (
+            <img
+              src={displayUser.avatarUrl}
+              alt={displayUser?.name || "User Avatar"}
+              className="w-10 h-10 rounded-full object-cover border border-[#00CED1]/30"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          
+          <div 
+            className={`w-10 h-10 rounded-full bg-[#00CED1]/20 flex items-center justify-center text-[#00CED1] font-bold ${displayUser?.avatarUrl ? 'hidden' : ''}`}
+          >
             {userInitials}
           </div>
+
           <div>
-            <p className="text-white text-sm font-semibold leading-tight">
-              {user?.name ?? "Nguyễn Văn A"}
+            <p className="text-white text-sm font-semibold leading-tight line-clamp-1">
+              {displayUser?.name || t("common.loading")}
             </p>
             <p className="text-blue-100 text-xs">{userRole}</p>
           </div>
