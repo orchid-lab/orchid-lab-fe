@@ -75,6 +75,7 @@ import TechnicianBatchDetail from "./pages/technician/batch/TechnicianBatchDetai
 import { NotificationProvider } from "./context/NotificationContext";
 import Sidebar from "./components/Sidebar";
 import MonitoringLogDetail from "./pages/technician/report/MonitoringLogDetail";
+import ReportCreate from "./pages/researcher/report/ReportCreate";
 
 function getUserRole(user: any): string {
   const roleValue = user?.role ?? user?.Role;
@@ -269,6 +270,14 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Researcher">
                   <ReportList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/researcher/reports-create"
+              element={
+                <ProtectedRoute requiredRole="Researcher">
+                  <ReportCreate />
                 </ProtectedRoute>
               }
             />
@@ -487,30 +496,6 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-            {/* <Route
-              path="/admin/labroom"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/labroom/new"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomCreate />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/labroom/:id"
-              element={
-                <ProtectedRoute requiredRole="Admin">
-                  <AdminLabRoomDetail />
-                </ProtectedRoute>
-              }
-            /> */}
             <Route
               path="/admin/seedling"
               element={

@@ -452,7 +452,7 @@ export default function ReportsTechnician() {
             type="button"
             whileHover={{ scale: 1.04, boxShadow: "0 8px 24px rgba(0,87,146,0.25)" }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => void navigate("/reports/new")}
+            onClick={() => void navigate("/researcher/reports-create")}
             className="inline-flex items-center gap-2 bg-[#005792] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#004d73] transition-colors shadow-[0_4px_14px_rgba(0,87,146,0.3)]"
           >
             <Plus className="w-5 h-5" />

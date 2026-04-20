@@ -4,9 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./MethodCreate.css";
 import axiosInstance from "../../../api/axiosInstance";
-import type { Element } from "../../../types/Element";
 import { Select } from "antd";
-import type { Referent } from "../../../types/Referent";
 import { useSnackbar } from "notistack";
 
 const methodTypes = [
@@ -14,25 +12,35 @@ const methodTypes = [
   { label: "Nhân giống hữu tính", value: 1 },
 ];
 
-interface ReferentForCreate {
+interface Material {
+  id: number | string;
   name: string;
-  unit: string;
-  valueFrom: number;
-  valueTo: number;
+  unit?: string;
+  category?: string;
+}
+
+interface Chemical {
+  id: number | string;
+  name: string;
+  concentrationUnit?: string;
+  category?: string;
 }
 
 interface StageForm {
   title: string;
   content: string;
   dateOfProcessing: number;
-  elementInStages: string[];
-  referents: ReferentForCreate[];
+  createMaterial: (number | string)[];
+  createChemical: (number | string)[];
 }
 
 export default function MethodCreate() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [elements, setElements] = useState<Element[]>([]);
+
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [chemicals, setChemicals] = useState<Chemical[]>([]);
+
   const [form, setForm] = useState<{
     name: string;
     type: string;
@@ -47,29 +55,36 @@ export default function MethodCreate() {
         title: "",
         content: "",
         dateOfProcessing: 1,
-        elementInStages: [],
-        referents: [],
+        createMaterial: [],
+        createChemical: [],
       },
     ],
   });
+
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
+  // Fetch materials and chemicals in parallel
   useEffect(() => {
-    const fetchElements = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axiosInstance.get<{
-          value?: { data?: Element[] };
-        }>(
-          "https://net-api.orchid-lab.systems/api/element?pageNumber=1&pageSize=12"
-        );
-        setElements(res.data?.value?.data ?? []);
+        const [materialRes, chemicalRes] = await Promise.all([
+          axiosInstance.get<{ value?: { data?: Material[] } }>(
+            "/api/material?pageNumber=1&pageSize=100"
+          ),
+          axiosInstance.get<{ value?: { data?: Chemical[] } }>(
+            "/api/chemical?pageNumber=1&pageSize=100"
+          ),
+        ]);
+        setMaterials(materialRes.data?.value?.data ?? []);
+        setChemicals(chemicalRes.data?.value?.data ?? []);
       } catch {
-        setElements([]);
+        setMaterials([]);
+        setChemicals([]);
       }
     };
-    void fetchElements();
+    void fetchData();
   }, []);
 
   const handleChange = (
@@ -78,70 +93,17 @@ export default function MethodCreate() {
     >
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleStageChange = (
     idx: number,
     field: keyof StageForm,
-    value: string | string[] | number | Referent[]
+    value: string | number | (number | string)[]
   ) => {
     setForm((prev) => {
       const stages = [...prev.stages];
       stages[idx] = { ...stages[idx], [field]: value };
-      return { ...prev, stages };
-    });
-  };
-
-  const handleElementChange = (stageIdx: number, selectedIds: string[]) => {
-    handleStageChange(stageIdx, "elementInStages", selectedIds);
-  };
-
-  const handleReferentChange = (
-    stageIdx: number,
-    referentIdx: number,
-    field: keyof ReferentForCreate,
-    value: string | number
-  ) => {
-    setForm((prev) => {
-      const stages = [...prev.stages];
-      const referents = [...stages[stageIdx].referents];
-      referents[referentIdx] = { ...referents[referentIdx], [field]: value };
-      stages[stageIdx].referents = referents;
-      return { ...prev, stages };
-    });
-  };
-
-  const handleAddReferent = (stageIdx: number) => {
-    setForm((prev) => {
-      const stages = prev.stages.map((stage, idx) =>
-        idx === stageIdx
-          ? {
-              ...stage,
-              referents: [
-                ...stage.referents,
-                { name: "", unit: "", valueFrom: 0, valueTo: 0 },
-              ],
-            }
-          : stage
-      );
-      return { ...prev, stages };
-    });
-  };
-
-  const handleRemoveReferent = (stageIdx: number, referentIdx: number) => {
-    setForm((prev) => {
-      const stages = prev.stages.map((stage, idx) =>
-        idx === stageIdx
-          ? {
-              ...stage,
-              referents: stage.referents.filter((_, i) => i !== referentIdx),
-            }
-          : stage
-      );
       return { ...prev, stages };
     });
   };
@@ -155,8 +117,8 @@ export default function MethodCreate() {
           title: "",
           content: "",
           dateOfProcessing: 1,
-          elementInStages: [],
-          referents: [],
+          createMaterial: [],
+          createChemical: [],
         },
       ],
     }));
@@ -171,17 +133,20 @@ export default function MethodCreate() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
 
-    if (!form.name) {
+    if (!form.name.trim()) {
       setLoading(false);
       setError("Tên phương pháp không được trống");
       return;
-    } else if (!form.type) {
+    }
+    if (!form.type) {
       setLoading(false);
       setError("Loại phương pháp không được trống");
       return;
-    } else if (!form.description) {
+    }
+    if (!form.description.trim()) {
       setLoading(false);
       setError("Mô tả không được trống");
       return;
@@ -203,53 +168,27 @@ export default function MethodCreate() {
         setError("Số ngày xử lý phải lớn hơn 0");
         return;
       }
-
-      // Validate referents - chỉ validate nếu có referents
-      if (stage.referents.length > 0) {
-        for (const ref of stage.referents) {
-          if (!ref.name.trim()) {
-            setLoading(false);
-            setError("Tên thông tin tham chiếu không được để trống");
-            return;
-          }
-          if (!ref.unit.trim()) {
-            setLoading(false);
-            setError("Đơn vị thông tin tham chiếu không được để trống");
-            return;
-          }
-          if (ref.valueTo <= ref.valueFrom) {
-            setLoading(false);
-            setError(
-              "Giá trị 'Đến' phải lớn hơn 'Từ' trong thông tin tham chiếu"
-            );
-            return;
-          }
-        }
-      }
     }
-    // Payload - chỉ gửi referents nếu có data
+
+    // Build payload matching POST /api/methods schema
     const payload = {
       name: form.name,
       description: form.description,
       type: parseInt(form.type),
-      stages: form.stages.map((stage, idx) => ({
-        name: stage.title,
-        description: stage.content,
-        dateOfProcessing: stage.dateOfProcessing,
-        step: idx + 1,
-        elementInStages: stage.elementInStages,
-        // Chỉ gửi referents nếu có data
-        ...(stage.referents.length > 0 && { referents: stage.referents }),
+      createMethodDtos: form.stages.map((stage, idx) => ({
+        stageDefinitionId: 0, // placeholder – adjust if you have real stage definition IDs
+        order: idx + 1,
+        durationDays: stage.dateOfProcessing,
+        createMaterial: stage.createMaterial,
+        createChemical: stage.createChemical,
       })),
     };
 
     console.log("Payload being sent:", JSON.stringify(payload, null, 2));
 
     try {
-      await axiosInstance.post(
-        "https://net-api.orchid-lab.systems/api/method",
-        payload
-      );
+      // Sử dụng đường dẫn tương đối
+      await axiosInstance.post("/api/methods", payload);
       setLoading(false);
       void navigate("/researcher/method");
       enqueueSnackbar("Tạo phương pháp thành công!", {
@@ -257,32 +196,30 @@ export default function MethodCreate() {
         autoHideDuration: 3000,
         preventDuplicate: true,
       });
-    } catch (error) {
+    } catch (err) {
       setLoading(false);
-      const apiError = error as {
-        response?: {
-          data?: string;
-          status?: number;
-        };
+      const apiError = err as {
+        response?: { data?: string; status?: number };
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ??
-        apiError.message ??
-        "Tạo phương pháp thất bại!";
-
+        apiError.response?.data ?? apiError.message ?? "Tạo phương pháp thất bại!";
       enqueueSnackbar(backendMessage, {
         variant: "error",
         autoHideDuration: 5000,
         preventDuplicate: true,
       });
-      console.error("Error creating method:", error);
+      console.error("Error creating method:", err);
     }
   };
+
+  const inputClass =
+    "w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]";
 
   return (
     <main className="method-create-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#E7F5FF] p-6">
       <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm shadow-sm border border-blue-100 rounded-2xl p-6 md:p-8">
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <button
             type="button"
@@ -295,12 +232,12 @@ export default function MethodCreate() {
             {t("method.createMethodTitle")}
           </h2>
         </div>
+
         <form
-          onSubmit={(e) => {
-            void handleSubmit(e);
-          }}
+          onSubmit={(e) => { void handleSubmit(e); }}
           className="space-y-4"
         >
+          {/* Method name */}
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
               {t("method.methodName")}
@@ -309,13 +246,14 @@ export default function MethodCreate() {
               type="text"
               name="name"
               required
-              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+              className={inputClass}
               value={form.name}
               onChange={handleChange}
               placeholder={t("method.methodName") + "..."}
             />
-            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
+
+          {/* Method type */}
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
               {t("method.methodType")}
@@ -323,19 +261,20 @@ export default function MethodCreate() {
             <select
               name="type"
               required
-              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+              className={inputClass}
               value={form.type}
               onChange={handleChange}
             >
               <option value="">-- {t("common.select")} --</option>
-              {methodTypes.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {methodTypes.map((mt) => (
+                <option key={mt.value} value={mt.value}>
+                  {mt.label}
                 </option>
               ))}
             </select>
-            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
+
+          {/* Description */}
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
               {t("method.methodDescription")}
@@ -343,24 +282,29 @@ export default function MethodCreate() {
             <textarea
               name="description"
               rows={3}
-              className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+              className={inputClass}
               value={form.description}
               onChange={handleChange}
               placeholder={t("method.methodDescription") + "..."}
             />
-            {error && <p className="text-red-500 mt-1">{error}</p>}
           </div>
-          {/* Quy trình chi tiết */}
+
+          {/* Global error */}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {/* Stages */}
           <div>
             <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
               {t("method.stage")}
             </label>
+
             {form.stages.map((stage, stageIdx) => (
               <div
                 key={stageIdx}
-                className="mb-5 bg-[#F0F8FF]/60 border border-blue-100 rounded-xl p-5"
+                className="mb-5 bg-[#F0F8FF]/60 border border-blue-100 rounded-xl p-5 space-y-3"
               >
-                <div className="flex justify-between items-center mb-3">
+                {/* Stage header */}
+                <div className="flex justify-between items-center">
                   <span className="text-base font-semibold text-[#005792]">
                     Giai đoạn {stageIdx + 1}
                   </span>
@@ -374,6 +318,8 @@ export default function MethodCreate() {
                     </button>
                   )}
                 </div>
+
+                {/* Stage name */}
                 <input
                   value={stage.title}
                   onChange={(e) =>
@@ -381,9 +327,10 @@ export default function MethodCreate() {
                   }
                   placeholder={t("method.stageName")}
                   required
-                  className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+                  className={inputClass}
                 />
-                {error && <p className="text-red-500 mt-1">{error}</p>}
+
+                {/* Stage description */}
                 <textarea
                   value={stage.content}
                   onChange={(e) =>
@@ -391,10 +338,12 @@ export default function MethodCreate() {
                   }
                   placeholder={t("method.stageDescription")}
                   required
-                  className="mb-2 w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+                  rows={2}
+                  className={inputClass}
                 />
-                {error && <p className="text-red-500 mt-1">{error}</p>}
-                <div className="mb-2">
+
+                {/* Processing days */}
+                <div>
                   <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
                     {t("method.processingDays")}
                   </label>
@@ -411,121 +360,65 @@ export default function MethodCreate() {
                     }
                     placeholder="Số ngày"
                     required
-                    className="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-blue-950 placeholder-blue-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-[#005792]/20 focus:border-[#005792]"
+                    className={inputClass}
                   />
-                  {error && <p className="text-red-500 mt-1">{error}</p>}
                 </div>
-                <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-                  {t("method.materialSelection")}
-                </label>
-                <Select
-                  mode="multiple"
-                  allowClear
-                  style={{ width: "100%", marginBottom: 8 }}
-                  placeholder="Chọn nguyên vật liệu"
-                  value={stage.elementInStages}
-                  onChange={(values) => handleElementChange(stageIdx, values)}
-                  options={elements.map((el) => ({
-                    label: el.name,
-                    value: el.id,
-                  }))}
-                />
-                {error && <p className="text-red-500 mt-1">{error}</p>}
+
+                {/* Materials (createMaterial) */}
                 <div>
                   <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
-                    {t("method.referentInfo")}
-                    <span className="text-blue-500 font-normal text-sm ml-2">
-                      ({t("common.optional") ?? "Optional"})
-                    </span>
+                    {t("method.materialSelection") ?? "Nguyên vật liệu"}
                   </label>
+                  <Select
+                    mode="multiple"
+                    allowClear
+                    style={{ width: "100%" }}
+                    placeholder="Chọn nguyên vật liệu"
+                    value={stage.createMaterial}
+                    onChange={(values: (number | string)[]) =>
+                      handleStageChange(stageIdx, "createMaterial", values)
+                    }
+                    options={materials.map((m) => ({
+                      label: m.name,
+                      value: m.id,
+                    }))}
+                    filterOption={(input, option) =>
+                      String(option?.label ?? "")
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  />
+                </div>
 
-                  {/* Chỉ hiển thị referents nếu có */}
-                  {stage.referents.length > 0 && (
-                    <div className="space-y-2 mb-2">
-                      {stage.referents.map((ref, refIdx) => (
-                        <div key={refIdx} className="flex gap-2 items-center">
-                          <input
-                            value={ref.name}
-                            onChange={(e) =>
-                              handleReferentChange(
-                                stageIdx,
-                                refIdx,
-                                "name",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Tên"
-                            className="border px-2 py-1 rounded"
-                          />
-                          <input
-                            type="text"
-                            value={ref.unit}
-                            onChange={(e) =>
-                              handleReferentChange(
-                                stageIdx,
-                                refIdx,
-                                "unit",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Đơn vị"
-                            className="border px-2 py-1 rounded w-20"
-                          />
-                          <label className="text-sm">Từ:</label>
-                          <input
-                            type="number"
-                            value={ref.valueFrom}
-                            onChange={(e) =>
-                              handleReferentChange(
-                                stageIdx,
-                                refIdx,
-                                "valueFrom",
-                                Number(e.target.value)
-                              )
-                            }
-                            placeholder="Min"
-                            className="border px-2 py-1 rounded w-20"
-                          />
-                          <label className="text-sm">Đến:</label>
-                          <input
-                            type="number"
-                            value={ref.valueTo}
-                            onChange={(e) =>
-                              handleReferentChange(
-                                stageIdx,
-                                refIdx,
-                                "valueTo",
-                                Number(e.target.value)
-                              )
-                            }
-                            placeholder="Max"
-                            className="border px-2 py-1 rounded w-20"
-                          />
-                          <button
-                            type="button"
-                            className="text-red-600 hover:underline"
-                            onClick={() =>
-                              handleRemoveReferent(stageIdx, refIdx)
-                            }
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Nút thêm thông tin tham chiếu */}
-                  <button
-                    type="button"
-                    className="text-[#005792] text-sm font-medium hover:text-[#00CED1] transition-colors mt-2 inline-block"
-                    onClick={() => handleAddReferent(stageIdx)}
-                  >
-                    + {t("method.addReferent")}
-                  </button>
+                {/* Chemicals (createChemical) */}
+                <div>
+                  <label className="text-sm font-semibold text-blue-900 mb-1.5 block">
+                    Hóa chất
+                  </label>
+                  <Select
+                    mode="multiple"
+                    allowClear
+                    style={{ width: "100%" }}
+                    placeholder="Chọn hóa chất"
+                    value={stage.createChemical}
+                    onChange={(values: (number | string)[]) =>
+                      handleStageChange(stageIdx, "createChemical", values)
+                    }
+                    options={chemicals.map((c) => ({
+                      label: c.name,
+                      value: c.id,
+                    }))}
+                    filterOption={(input, option) =>
+                      String(option?.label ?? "")
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  />
                 </div>
               </div>
             ))}
+
+            {/* Add stage */}
             <button
               type="button"
               className="w-full border-2 border-dashed border-[#00CED1] text-[#005792] bg-cyan-50/30 hover:bg-cyan-50 rounded-xl py-3 font-medium transition-colors flex items-center justify-center mt-4"
@@ -533,11 +426,13 @@ export default function MethodCreate() {
             >
               + {t("method.addStage")}
             </button>
+
+            {/* Submit */}
             <div className="flex justify-end mt-5">
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-[#005792] text-white px-8 py-3 rounded-xl font-semibold shadow-md shadow-blue-900/20 hover:bg-[#004370] hover:shadow-lg transition-all"
+                className="bg-[#005792] text-white px-8 py-3 rounded-xl font-semibold shadow-md shadow-blue-900/20 hover:bg-[#004370] hover:shadow-lg transition-all disabled:opacity-60"
               >
                 {loading ? t("common.saving") : t("method.saveMethod")}
               </button>
