@@ -84,7 +84,8 @@
     "searchPlaceholder": "Tìm kiếm theo tên công việc, trạng thái...",
     "active": "Hoạt động",
     "reason": "Lý do",
-    "allStatus": "Tất cả trạng thái"
+    "allStatus": "Tất cả trạng thái",
+    "continue": "Tiếp tục"
   },
   "diseases": {
     "anthracnose": "Thán thư",
@@ -766,7 +767,28 @@
     "issuesPlaceholder": "Nhập các vấn đề gặp phải (tùy chọn)",
     "recommendations": "Đề xuất",
     "recommendationsPlaceholder": "Nhập các đề xuất (tùy chọn)",
-    "completed": "Hoàn thành thí nghiệm"
+    "completed": "Hoàn thành thí nghiệm",
+    "batchAvailable": "Lô này có sẵn để sử dụng",
+    "batchNotReady": "Lô này không có sẵn (trạng thái: {{status}})",
+    "batchInUse": "Lô cấy mô này đã được sử dụng",
+    "createTitle": "Tạo nhật ký thí nghiệm",
+    "step1Subtitle": "Nhập thông tin cơ bản để bắt đầu thí nghiệm",
+    "name": "Tên nhật ký thí nghiệm",
+    "namePlaceholder": "Nhập tên nhật ký thí nghiệm...",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "batch": "Lô nuôi cấy mô",
+    "selectBatch": "Chọn lô nuôi cấy mô",
+    "batchLoading": "Đang tải danh sách lô...",
+    "batchLoadError": "Không thể tải danh sách lô",
+    "selectMethod": "Chọn phương pháp",
+    "objective": "Mục tiêu thí nghiệm",
+    "objectivePlaceholder": "Nhập mục tiêu thí nghiệm...",
+    "methodDetail": "Chi tiết phương pháp",
+    "description": "Mô tả",
+    "noStageInfo": "Không có thông tin giai đoạn",
+    "technician": "Kỹ thuật viên",
+    "selectTechnician": "Chọn kỹ thuật viên"
   },
   "labRoom": {
     "labRoomManagement": "Quản lý phòng thí nghiệm",

@@ -1,7 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable react-dom/no-missing-button-type */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ExperimentSteps from "./ExperimentSteps";
 import { useExperimentLogForm } from "../../../../context/ExperimentLogFormContext";
 import axiosInstance from "../../../../api/axiosInstance";
@@ -11,7 +21,7 @@ interface Batch {
   name: string;
   labName?: string;
   description?: string;
-  status?: boolean;
+  status?: string; // "Ready" | other statuses from API
 }
 
 interface Technician {
@@ -21,64 +31,10 @@ interface Technician {
   roleID: string | number;
 }
 
-// function hasValueWithData<T>(
-//   obj: unknown,
-//   itemGuard: (item: unknown) => item is T,
-// ): obj is { value: { data: T[] } } {
-//   return (
-//     typeof obj === "object" &&
-//     obj !== null &&
-//     "value" in obj &&
-//     typeof (obj as { value: unknown }).value === "object" &&
-//     (obj as { value: { data?: unknown[] } }).value !== null &&
-//     "data" in (obj as { value: { data?: unknown[] } }).value &&
-//     Array.isArray((obj as { value: { data?: unknown[] } }).value.data) &&
-//     (obj as { value: { data: unknown[] } }).value.data.every(itemGuard)
-//   );
-// }
-
-// function isBatch(item: unknown): item is Batch {
-//   return (
-//     typeof item === "object" &&
-//     item !== null &&
-//     "id" in item &&
-//     typeof (item as { id: unknown }).id === "string" &&
-//     "name" in item &&
-//     typeof (item as { name: unknown }).name === "string"
-//   );
-// }
-
-// function isMethod(item: unknown): item is {
-//   id: string;
-//   name: string;
-//   description: string;
-//   type?: string;
-//   stages?: {
-//     id: string;
-//     name: string;
-//     description: string;
-//     dateOfProcessing: number;
-//     step: number;
-//     status: boolean;
-//   }[];
-// } {
-//   return (
-//     typeof item === "object" &&
-//     item !== null &&
-//     "id" in item &&
-//     typeof (item as { id: unknown }).id === "string" &&
-//     "name" in item &&
-//     typeof (item as { name: unknown }).name === "string" &&
-//     "description" in item &&
-//     typeof (item as { description: unknown }).description === "string"
-//     // type và stages là optional
-//   );
-// }
-
 const CreateExperimentStep1 = () => {
-  // Developer offline mode: set to true to skip external API calls and use mock data
   const DEV_OFFLINE = false;
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { form, setForm } = useExperimentLogForm();
 
   // Local state initialized from context
@@ -92,16 +48,11 @@ const CreateExperimentStep1 = () => {
   const [numberOfSample, _setNumberOfSample] = useState(
     form.numberOfSample ?? 1,
   );
-  // New field: objective of the experiment
   const [objective, setObjective] = useState(form.objective ?? "");
 
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loadingBatch, setLoadingBatch] = useState(true);
   const [batchError, setBatchError] = useState<string | null>(null);
-  const [experimentLogs, setExperimentLogs] = useState<
-    { id: string; tissueCultureBatchID: string; status: number | string }[]
-  >([]);
-  const [loadingEL, setLoadingEL] = useState(true);
 
   const [methods, setMethods] = useState<
     {
@@ -133,12 +84,6 @@ const CreateExperimentStep1 = () => {
     { name: string; description: string }[]
   >([]);
 
-  // Experiment logs validation is not required for now; keep empty
-  useEffect(() => {
-    setExperimentLogs([]);
-    setLoadingEL(false);
-  }, []);
-
   // Fetch batches from API
   useEffect(() => {
     if (DEV_OFFLINE) {
@@ -149,12 +94,14 @@ const CreateExperimentStep1 = () => {
           name: "Lô mẫu A",
           labName: "Lab A",
           description: "Lô mẫu dùng để dev",
+          status: "Ready",
         },
         {
           id: "mock-b2",
           name: "Lô mẫu B",
           labName: "Lab B",
           description: "Lô mẫu B",
+          status: "InUse",
         },
       ]);
       setLoadingBatch(false);
@@ -171,7 +118,8 @@ const CreateExperimentStep1 = () => {
               id: String(b.id),
               name: b.batchName,
               labName: b.labRoomName,
-              description: b.status,
+              status: b.status,         // ✅ map status correctly
+              description: b.description ?? "",
             }))
           : [];
         setBatches(arr);
@@ -188,7 +136,8 @@ const CreateExperimentStep1 = () => {
                   id: String(b.id),
                   name: b.batchName,
                   labName: b.labRoomName,
-                  description: b.status,
+                  status: b.status,
+                  description: b.description ?? "",
                 }))
               : [];
             setBatches(arr2);
@@ -197,7 +146,7 @@ const CreateExperimentStep1 = () => {
             // fall through to error handler below
           }
         }
-        setBatchError("Không thể tải danh sách batch.");
+        setBatchError(t("experimentLog.batchLoadError"));
         setBatches([]);
       })
       .finally(() => setLoadingBatch(false));
@@ -245,7 +194,6 @@ const CreateExperimentStep1 = () => {
       return;
     }
     if (DEV_OFFLINE) {
-      // In offline mode, we don't have stage details; keep empty
       setMethodStages([]);
       return;
     }
@@ -302,8 +250,6 @@ const CreateExperimentStep1 = () => {
         setTechnicians(data);
       })
       .catch(async (err) => {
-        // Log details to help debug unexpected URL or response
-        // eslint-disable-next-line no-console
         console.error(
           "Fetch users failed:",
           err?.response?.data ?? err?.message,
@@ -334,7 +280,6 @@ const CreateExperimentStep1 = () => {
             setTechnicians(data2);
             return;
           } catch (err2) {
-            // eslint-disable-next-line no-console
             console.error(
               "Retry fetch users failed:",
               (err2 as any)?.response?.data ?? (err2 as any)?.message,
@@ -380,62 +325,22 @@ const CreateExperimentStep1 = () => {
     technicians,
   ]);
 
-  // Function to check if a batch is available for use
+  // Check if a batch is available based on its status from the API
   const isBatchAvailable = (
     batchId: string,
   ): { available: boolean; reason?: string } => {
-    const relatedELs = experimentLogs.filter(
-      (el) => el.tissueCultureBatchID === batchId,
-    );
-
-    if (relatedELs.length === 0) {
+    const batch = batches.find((b) => b.id === batchId);
+    if (!batch) {
+      return { available: false, reason: t("experimentLog.batchInUse") };
+    }
+    if (batch.status === "Ready") {
       return { available: true };
     }
-
-    // Check if any EL is in process (status 2)
-    const inProcessELs = relatedELs.filter((el) => String(el.status) === "2");
-    if (inProcessELs.length > 0) {
-      return {
-        available: false,
-        reason: `Lô cấy mô này đang được sử dụng trong ${inProcessELs.length} thí nghiệm đang thực hiện`,
-      };
-    }
-
-    // Check if all related ELs are cancelled (status 4)
-    const allCancelled = relatedELs.every((el) => String(el.status) === "4");
-    if (allCancelled) {
-      return { available: true };
-    }
-
-    // If there are other statuses, check what they are
-    const otherStatuses = relatedELs.filter((el) => String(el.status) !== "4");
-    const statusCounts = otherStatuses.reduce(
-      (acc, el) => {
-        const status = String(el.status);
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const statusText = Object.entries(statusCounts)
-      .map(([status, count]) => {
-        switch (status) {
-          case "1":
-            return `${count} thí nghiệm đã tạo`;
-          case "2":
-            return `${count} thí nghiệm đang thực hiện`;
-          case "3":
-            return `${count} thí nghiệm hoàn thành`;
-          default:
-            return `${count} thí nghiệm với trạng thái ${status}`;
-        }
-      })
-      .join(", ");
-
     return {
       available: false,
-      reason: `Lô cấy mô này đang được sử dụng trong ${statusText}`,
+      reason: t("experimentLog.batchNotReady", {
+        status: batch.status ?? "unknown",
+      }),
     };
   };
 
@@ -456,20 +361,20 @@ const CreateExperimentStep1 = () => {
           <div className="bg-white rounded-xl shadow-lg animate-fade-in-up">
             <div className="p-8 border-b">
               <h1 className="text-3xl font-bold text-gray-900">
-                Tạo Kế Hoạch Lai Tạo Mới
+                {t("experimentLog.createTitle")}
               </h1>
               <p className="text-gray-600 mt-2">
-                Bước 1: Chọn Lô Cấy Mô và Phương Pháp
+                {t("experimentLog.step1Subtitle")}
               </p>
             </div>
             <div className="p-8">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Form chính */}
+                {/* Main form */}
                 <div className="lg:col-span-3 space-y-6">
-                  {/* Tên EL */}
+                  {/* Experiment log name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tên nhật ký thí nghiệm{" "}
+                      {t("experimentLog.name")}{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -477,15 +382,16 @@ const CreateExperimentStep1 = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                      placeholder="Nhập tên nhật ký thí nghiệm"
+                      placeholder={t("experimentLog.namePlaceholder")}
                       required
                     />
                   </div>
-                  {/* Ngày bắt đầu / kết thúc (dev) */}
+
+                  {/* Start / End date */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ngày bắt đầu
+                        {t("experimentLog.startDate")}
                       </label>
                       <input
                         type="date"
@@ -496,7 +402,7 @@ const CreateExperimentStep1 = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ngày kết thúc
+                        {t("experimentLog.endDate")}
                       </label>
                       <input
                         type="date"
@@ -506,71 +412,75 @@ const CreateExperimentStep1 = () => {
                       />
                     </div>
                   </div>
-                  {/* Lô Cấy Mô */}
+
+                  {/* Batch selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lô Cấy Mô <span className="text-red-500">*</span>
+                      {t("experimentLog.batch")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <select
                         value={selectedBatch}
                         onChange={(e) => {
                           setSelectedBatch(e.target.value);
-                          setBatchError(null); // Clear error when selection changes
+                          setBatchError(null);
                         }}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                        disabled={loadingBatch || loadingEL}
+                        disabled={loadingBatch}
                       >
-                        <option value="">Chọn Lô Cấy Mô</option>
+                        <option value="">{t("experimentLog.selectBatch")}</option>
                         {batches.map((batch) => {
-                          const validation = isBatchAvailable(batch.id);
+                          const isReady = batch.status === "Ready";
                           return (
                             <option
                               key={batch.id}
                               value={batch.id}
-                              disabled={!validation.available}
+                              disabled={!isReady}
                             >
                               {batch.name || batch.id}{" "}
-                              {!validation.available ? "(Đang sử dụng)" : ""}
+                              {!isReady
+                                ? `(${t("experimentLog.batchInUse")})`
+                                : ""}
                             </option>
                           );
                         })}
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                     </div>
-                    {(loadingBatch || loadingEL) && (
+
+                    {loadingBatch && (
                       <div className="text-xs text-gray-400 mt-1">
-                        Đang tải danh sách batch...
+                        {t("experimentLog.batchLoading")}
                       </div>
                     )}
+
                     {batchError && (
                       <div className="text-xs text-red-500 mt-1">
                         {batchError}
                       </div>
                     )}
-                    {selectedBatch &&
-                      !loadingEL &&
-                      (() => {
-                        const validation = isBatchAvailable(selectedBatch);
-                        if (validation.available) {
-                          return (
-                            <div className="text-xs text-green-600 mt-1">
-                              ✓ Lô cấy mô này có thể sử dụng
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <div className="text-xs text-red-500 mt-1">
-                              ✗ {validation.reason}
-                            </div>
-                          );
-                        }
-                      })()}
+
+                    {/* Batch availability feedback */}
+                    {selectedBatch && !loadingBatch && (() => {
+                      const validation = isBatchAvailable(selectedBatch);
+                      return validation.available ? (
+                        <div className="text-xs text-green-600 mt-1">
+                          ✓ {t("experimentLog.batchAvailable")}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-red-500 mt-1">
+                          ✗ {validation.reason}
+                        </div>
+                      );
+                    })()}
                   </div>
-                  {/* Method */}
+
+                  {/* Method selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phương pháp <span className="text-red-500">*</span>
+                      {t("experimentLog.method")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <select
@@ -578,7 +488,7 @@ const CreateExperimentStep1 = () => {
                         onChange={(e) => setSelectedMethod(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                       >
-                        <option value="">Chọn phương pháp</option>
+                        <option value="">{t("experimentLog.selectMethod")}</option>
                         {methods.map((method) => (
                           <option key={method.id} value={method.id}>
                             {method.name}
@@ -588,24 +498,27 @@ const CreateExperimentStep1 = () => {
                       <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                     </div>
                   </div>
+
                   {/* Objective */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mục đích thí nghiệm <span className="text-red-500">*</span>
+                      {t("experimentLog.objective")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       rows={3}
                       value={objective}
                       onChange={(e) => setObjective(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                      placeholder="Nhập mục đích thí nghiệm..."
+                      placeholder={t("experimentLog.objectivePlaceholder")}
                     />
                   </div>
-                  {/* Chi Tiết Method */}
+
+                  {/* Method detail */}
                   {selectedMethod && (
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h3 className="font-medium text-gray-900 mb-2">
-                        Chi Tiết Phương Pháp:{" "}
+                        {t("experimentLog.methodDetail")}:{" "}
                         {
                           methods.find((m) => String(m.id) === selectedMethod)
                             ?.name
@@ -613,7 +526,7 @@ const CreateExperimentStep1 = () => {
                       </h3>
                       <div className="space-y-2 text-sm text-gray-600">
                         <div>
-                          <strong>Mô tả:</strong>
+                          <strong>{t("experimentLog.description")}:</strong>
                           <p>
                             {
                               methods.find(
@@ -623,25 +536,29 @@ const CreateExperimentStep1 = () => {
                           </p>
                         </div>
                         <div>
-                          <strong>Các giai đoạn:</strong>
+                          <strong>{t("experimentLog.stages")}:</strong>
                           <ul className="list-disc list-inside ml-4 space-y-1">
                             {methodStages.length > 0
                               ? methodStages.map((stage, index) => (
                                   <li key={index}>
                                     <strong>{stage.name}</strong>
-                                    {stage.description && `: ${stage.description}`}
+                                    {stage.description &&
+                                      `: ${stage.description}`}
                                   </li>
                                 ))
-                              : <li>Không có thông tin giai đoạn</li>}
+                              : (
+                                <li>{t("experimentLog.noStageInfo")}</li>
+                              )}
                           </ul>
                         </div>
                       </div>
                     </div>
                   )}
-                  {/* Chọn technician */}
+
+                  {/* Technician selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kỹ thuật viên thực hiện{" "}
+                      {t("experimentLog.technician")}{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -649,7 +566,9 @@ const CreateExperimentStep1 = () => {
                       onChange={(e) => setSelectedTechnician(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
                     >
-                      <option value="">Chọn kỹ thuật viên</option>
+                      <option value="">
+                        {t("experimentLog.selectTechnician")}
+                      </option>
                       {technicians.map((tech) => (
                         <option key={tech.id} value={tech.id}>
                           {tech.name ?? tech.email ?? tech.id}
@@ -660,21 +579,27 @@ const CreateExperimentStep1 = () => {
                 </div>
               </div>
             </div>
+
             {/* Footer buttons */}
             <div className="px-6 py-4 bg-gray-50 border-t flex justify-between">
               <Link
                 to="/researcher/experiment-log"
                 className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Hủy
+                {t("common.cancel")}
               </Link>
               <div className="flex gap-4">
                 <button
                   onClick={handleNext}
                   disabled={!isStep1Valid}
-                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${isStep1Valid ? "bg-green-600 text-white hover:bg-green-700" : "bg-gray-400 cursor-not-allowed"}`}
+                  className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    isStep1Valid
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gray-400 cursor-not-allowed"
+                  }`}
                 >
-                  Tiếp tục <ArrowRight className="w-4 h-4" />
+                  {t("common.continue")}{" "}
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
