@@ -83,7 +83,8 @@
     "duration": "Duration",
     "active": "Active",
     "reason": "Reason",
-    "allStatus": "All statuses"
+    "allStatus": "All statuses",
+    "continue": "Continue"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
@@ -765,7 +766,28 @@
     "issues": "Issues Encountered",
     "issuesPlaceholder": "Enter issues encountered (optional)",
     "recommendations": "Recommendations",
-    "recommendationsPlaceholder": "Enter recommendations (optional)"
+    "recommendationsPlaceholder": "Enter recommendations (optional)",
+    "batchAvailable": "This batch is available for use",
+    "batchNotReady": "This batch is not available (status: {{status}})",
+    "batchInUse": "This batch is already in use",
+    "createTitle": "Create Experiment Log",
+    "step1Subtitle": "Enter basic information to start the experiment",
+    "name": "Experiment Log Name",
+    "namePlaceholder": "Enter experiment log name...",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "batch": "Tissue Culture Batch",
+    "selectBatch": "Select tissue culture batch",
+    "batchLoading": "Loading batches...",
+    "batchLoadError": "Failed to load batch list",
+    "selectMethod": "Select method",
+    "objective": "Objective",
+    "objectivePlaceholder": "Enter experiment objective...",
+    "methodDetail": "Method Detail",
+    "description": "Description",
+    "noStageInfo": "No stage information available",
+    "technician": "Technician",
+    "selectTechnician": "Select technician"
   },
   "labRoom": {
     "labRoomManagement": "Lab Room Management",
