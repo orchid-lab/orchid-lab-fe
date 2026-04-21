@@ -1,181 +1,69 @@
-/* ==========================================================================
-   SidebarAdmin — Rose / Ruby theme
-   ========================================================================== */
-
-/* ─── Layout ──────────────────────────────────────────── */
-.sidebar-expanded  { width: 256px; }
-.sidebar-collapsed { width: 72px;  }
-
-/* ─── Scrollbar ───────────────────────────────────────── */
-.sidebar-scrollbar::-webkit-scrollbar { width: 4px; }
-.sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.sidebar-scrollbar::-webkit-scrollbar-thumb { background: #fecdd3; border-radius: 4px; }
-.sidebar-scrollbar::-webkit-scrollbar-thumb:hover { background: #f43f5e; }
-
-/* ─── Search input ────────────────────────────────────── */
-.sidebar-search-input::placeholder { color: #f87171; opacity: 0.6; }
-
-.sidebar-search-input:focus {
-  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.25) !important;
-  background-color: rgba(255, 241, 242, 0.8) !important;
-}
-
-/* ─── Nav items ───────────────────────────────────────── */
-
-/* Active state: KHÔNG có nền, chỉ đổi màu chữ */
-.sidebar-nav-item.active {
-  background-color: transparent !important;
-  color: #9f1239 !important;
-}
-
-/* Hover state: mới hiện nền đỏ nhạt */
-.sidebar-nav-item:hover {
-  background-color: rgba(255, 241, 242, 0.85) !important;
+/* Thay tất cả "aside a:hover" thành: */
+aside:not(.sidebar-researcher) a:hover,
+aside:not(.sidebar-researcher) a.active {
   color: #be123c !important;
 }
 
-/* Active item vẫn có nền khi hover (giữ nhất quán) */
-.sidebar-nav-item.active:hover {
-  background-color: rgba(255, 241, 242, 0.85) !important;
+aside:not(.sidebar-researcher) a.active {
+  background-color: transparent !important;
 }
 
-/* Icon on hover — target cả wrapper lẫn svg trực tiếp */
-.sidebar-nav-item:hover .sidebar-nav-icon,
-.sidebar-nav-item:hover .sidebar-nav-icon svg,
-.sidebar-nav-item:hover svg {
+aside:not(.sidebar-researcher) a:hover svg,
+aside:not(.sidebar-researcher) a:hover svg *,
+aside:not(.sidebar-researcher) a:hover .sidebar-nav-icon,
+aside:not(.sidebar-researcher) a:hover .sidebar-nav-icon svg,
+aside:not(.sidebar-researcher) a.active svg,
+aside:not(.sidebar-researcher) a.active .sidebar-nav-icon {
   color: #f43f5e !important;
   fill: currentColor !important;
 }
 
-/* Ghi đè cứng nếu có global CSS set màu trên a:hover */
-aside a:hover,
-aside a.active {
-  color: #be123c !important;
-}
-
-aside a.active {
-  background-color: transparent !important;
-}
-
-aside a:hover svg,
-aside a:hover svg *,
-aside a:hover .sidebar-nav-icon,
-aside a:hover .sidebar-nav-icon svg,
-aside a.active svg,
-aside a.active .sidebar-nav-icon {
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a:hover svg,
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a:hover svg *,
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a:hover .sidebar-nav-icon,
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a:hover .sidebar-nav-icon svg {
   color: #f43f5e !important;
   fill: currentColor !important;
 }
 
-/* ─── Override global CSS (a:hover svg → blue #2563eb) ── */
-/* Global CSS dùng :root[data-theme='light'] a:hover svg → color: #2563eb !important */
-/* Cần selector cụ thể hơn để thắng */
-:root[data-theme='light'] aside.sidebar-modern a:hover svg,
-:root[data-theme='light'] aside.sidebar-modern a:hover svg *,
-:root[data-theme='light'] aside.sidebar-modern a:hover .sidebar-nav-icon,
-:root[data-theme='light'] aside.sidebar-modern a:hover .sidebar-nav-icon svg {
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a.active svg,
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) a.active .sidebar-nav-icon {
   color: #f43f5e !important;
   fill: currentColor !important;
 }
 
-:root[data-theme='light'] aside.sidebar-modern a.active svg,
-:root[data-theme='light'] aside.sidebar-modern a.active .sidebar-nav-icon,
-:root[data-theme='light'] aside.sidebar-modern a.active svg * {
-  color: #f43f5e !important;
-  fill: currentColor !important;
-}
-
-/* Logout & toggle button trong sidebar */
-:root[data-theme='light'] aside.sidebar-modern button:hover svg {
+:root[data-theme='light'] aside.sidebar-modern:not(.sidebar-researcher) button:hover svg {
   color: #f43f5e !important;
 }
 
-/* Focus ring cho nav links */
-.sidebar-nav-item:focus-visible {
-  outline: 2px solid #f43f5e !important;
-  outline-offset: 2px;
-}
-
-/* ─── Toggle button ───────────────────────────────────── */
-.sidebar-toggle:hover {
-  background-color: #fff1f2 !important;
-  color: #be123c !important;
-}
-
-/* ─── Logout button ───────────────────────────────────── */
-.sidebar-bottom button:hover {
-  background-color: #fff1f2 !important;
-  color: #be123c !important;
-}
-
-/* ─── Active indicator dot ────────────────────────────── */
-.sidebar-nav-item span[class*="bg-red-600"] {
-  background-color: #9f1239 !important;
-}
-
-/* ─── User profile: bỏ nền xám ───────────────────────── */
-.sidebar-profile .flex.items-center {
-  background-color: transparent !important;
-}
-
-/* ─── Dark mode ───────────────────────────────────────── */
-.dark .sidebar-nav-item.active,
-:root[data-theme='dark'] .sidebar-nav-item.active {
-  background-color: transparent !important;
+/* Dark mode */
+.dark aside:not(.sidebar-researcher) a:hover,
+.dark aside:not(.sidebar-researcher) a.active,
+:root[data-theme='dark'] aside:not(.sidebar-researcher) a:hover,
+:root[data-theme='dark'] aside:not(.sidebar-researcher) a.active {
   color: #fda4af !important;
 }
 
-.dark .sidebar-nav-item:hover,
-:root[data-theme='dark'] .sidebar-nav-item:hover {
-  background-color: rgba(159, 18, 57, 0.15) !important;
-  color: #fda4af !important;
-}
-
-.dark aside a:hover,
-.dark aside a.active,
-:root[data-theme='dark'] aside a:hover,
-:root[data-theme='dark'] aside a.active {
-  color: #fda4af !important;
-}
-
-.dark aside a.active,
-:root[data-theme='dark'] aside a.active {
-  background-color: transparent !important;
-}
-
-.dark aside a:hover svg,
-.dark aside a:hover .sidebar-nav-icon,
-.dark aside a.active svg,
-.dark aside a.active .sidebar-nav-icon,
-:root[data-theme='dark'] aside a:hover svg,
-:root[data-theme='dark'] aside a.active svg {
+.dark aside:not(.sidebar-researcher) a:hover svg,
+.dark aside:not(.sidebar-researcher) a.active svg,
+:root[data-theme='dark'] aside:not(.sidebar-researcher) a:hover svg,
+:root[data-theme='dark'] aside:not(.sidebar-researcher) a.active svg {
   color: #fb7185 !important;
 }
 
-.dark .sidebar-toggle:hover,
-:root[data-theme='dark'] .sidebar-toggle:hover {
-  background-color: rgba(159, 18, 57, 0.15) !important;
-  color: #fda4af !important;
+/* ==================== ADMIN THEME VARIABLES ==================== */
+.sidebar-admin {
+  --nav-hover-bg: rgba(255, 241, 242, 0.85);
+  --nav-active-bg: transparent;
+  --accent-color: #f43f5e;
+  --logout-hover-bg: #fff1f2;
+  --logout-hover-color: #be123c;
 }
 
-.dark .sidebar-bottom button:hover,
-:root[data-theme='dark'] .sidebar-bottom button:hover {
-  background-color: rgba(159, 18, 57, 0.15) !important;
-  color: #fda4af !important;
-}
-
-.dark .sidebar-scrollbar::-webkit-scrollbar-thumb,
-:root[data-theme='dark'] .sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(244, 63, 94, 0.3);
-}
-
-.dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover,
-:root[data-theme='dark'] .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(244, 63, 94, 0.55);
-}
-
-.dark .sidebar-search-input:focus,
-:root[data-theme='dark'] .sidebar-search-input:focus {
-  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3) !important;
-  background-color: rgba(159, 18, 57, 0.1) !important;
+:root[data-theme='dark'] .sidebar-admin {
+  --nav-hover-bg: rgba(159, 18, 57, 0.15);
+  --nav-active-bg: transparent;
+  --accent-color: #fb7185;
+  --logout-hover-bg: rgba(159, 18, 57, 0.15);
+  --logout-hover-color: #fda4af;
 }
