@@ -14,6 +14,16 @@ interface Chemical {
   status?: boolean;
 }
 
+const CHEMICAL_CATEGORIES = [
+  "Khoáng đa lượng",
+  "Khoáng vi lượng",
+  "Chất hữu cơ",
+  "Chất khử trùng",
+  "Dung môi",
+  "Chất điều hòa sinh trưởng",
+];
+
+const CHEMICAL_UNITS = ["cái", "mg/L"];
 
 const PAGE_SIZE = 5;
 
@@ -52,34 +62,23 @@ export default function ChemicalList({ t }: ChemicalListProps) {
         params: {
           PageNo: 1,
           PageSize: 1000,
-          // CategoryName: "" // optional filter
         },
       });
       const json = res.data;
-
       setData(json.data || []);
       setTotal(json.totalCount || 0);
     } catch (error: unknown) {
       console.error("Error fetching chemicals:", error);
       const errorObj = error as { response?: { status?: number; data?: unknown }; message?: string };
-      console.error("Error details:", {
-        status: errorObj.response?.status,
-        data: errorObj.response?.data,
-        message: errorObj.message,
-      });
       setData([]);
       setTotal(0);
-      
-      const errorMsg = (errorObj.response?.data as { message?: string } | undefined)?.message ?? 
-                       (errorObj.response as { statusText?: string } | undefined)?.statusText ?? 
-                       errorObj.message ?? 
-                       t("chemical.fetchFailed") ?? 
-                       "Failed to fetch chemicals";
-      
-      enqueueSnackbar(`Error: ${errorMsg}`, {
-        variant: "error",
-        autoHideDuration: 5000,
-      });
+      const errorMsg =
+        (errorObj.response?.data as { message?: string } | undefined)?.message ??
+        (errorObj.response as { statusText?: string } | undefined)?.statusText ??
+        errorObj.message ??
+        t("chemical.fetchFailed") ??
+        "Failed to fetch chemicals";
+      enqueueSnackbar(`Error: ${errorMsg}`, { variant: "error", autoHideDuration: 5000 });
     } finally {
       setLoading(false);
     }
@@ -102,11 +101,7 @@ export default function ChemicalList({ t }: ChemicalListProps) {
   const filteredData = data.filter((el) =>
     el.name.toLowerCase().includes(search.toLowerCase())
   );
-
-  const pagedData = filteredData.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const pagedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleAddChemical = async () => {
     setAddLoading(true);
@@ -124,21 +119,10 @@ export default function ChemicalList({ t }: ChemicalListProps) {
       reload();
     } catch (error) {
       console.error(error);
-      const apiError = error as {
-        response?: { data?: string; status?: number };
-        message?: string;
-      };
+      const apiError = error as { response?: { data?: string; status?: number }; message?: string };
       const backendMessage =
-        apiError.response?.data ??
-        apiError.message ??
-        t("chemical.addFailed") ??
-        "Failed to add chemical";
-
-      enqueueSnackbar(backendMessage, {
-        variant: "error",
-        autoHideDuration: 5000,
-        preventDuplicate: true,
-      });
+        apiError.response?.data ?? apiError.message ?? t("chemical.addFailed") ?? "Failed to add chemical";
+      enqueueSnackbar(backendMessage, { variant: "error", autoHideDuration: 5000, preventDuplicate: true });
     } finally {
       setAddLoading(false);
     }
@@ -165,21 +149,10 @@ export default function ChemicalList({ t }: ChemicalListProps) {
       reload();
     } catch (error) {
       console.error(error);
-      const apiError = error as {
-        response?: { data?: string; status?: number };
-        message?: string;
-      };
+      const apiError = error as { response?: { data?: string; status?: number }; message?: string };
       const backendMessage =
-        apiError.response?.data ??
-        apiError.message ??
-        t("chemical.updateFailed") ??
-        "Failed to update chemical";
-
-      enqueueSnackbar(backendMessage, {
-        variant: "error",
-        autoHideDuration: 5000,
-        preventDuplicate: true,
-      });
+        apiError.response?.data ?? apiError.message ?? t("chemical.updateFailed") ?? "Failed to update chemical";
+      enqueueSnackbar(backendMessage, { variant: "error", autoHideDuration: 5000, preventDuplicate: true });
     } finally {
       setEditLoading(false);
     }
@@ -201,21 +174,10 @@ export default function ChemicalList({ t }: ChemicalListProps) {
       reload();
     } catch (error) {
       console.error(error);
-      const apiError = error as {
-        response?: { data?: string; status?: number };
-        message?: string;
-      };
+      const apiError = error as { response?: { data?: string; status?: number }; message?: string };
       const backendMessage =
-        apiError.response?.data ??
-        apiError.message ??
-        t("chemical.deleteFailed") ??
-        "Failed to delete chemical";
-
-      enqueueSnackbar(backendMessage, {
-        variant: "error",
-        autoHideDuration: 5000,
-        preventDuplicate: true,
-      });
+        apiError.response?.data ?? apiError.message ?? t("chemical.deleteFailed") ?? "Failed to delete chemical";
+      enqueueSnackbar(backendMessage, { variant: "error", autoHideDuration: 5000, preventDuplicate: true });
     } finally {
       setDeleteLoading(false);
     }
@@ -235,6 +197,7 @@ export default function ChemicalList({ t }: ChemicalListProps) {
           {t("common.addNew") || "Add New"}
         </button>
       </div>
+
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex-1">
           <div className="relative">
@@ -250,16 +213,13 @@ export default function ChemicalList({ t }: ChemicalListProps) {
             />
             <span className="absolute left-3 top-2.5 text-gray-400">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                <path
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
-                />
+                <path stroke="currentColor" strokeWidth="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z" />
               </svg>
             </span>
           </div>
         </div>
       </div>
+
       <div className="bg-white rounded shadow p-0 overflow-x-auto">
         <table className="w-full text-left table-fixed">
           <thead>
@@ -319,14 +279,14 @@ export default function ChemicalList({ t }: ChemicalListProps) {
           </tbody>
         </table>
       </div>
+
       <div className="flex gap-4 mt-6 mb-2">
         <div className="bg-green-100 rounded p-4 w-1/4">
-          <div className="font-semibold text-green-800">
-            {t("chemical.total") || "Total Chemicals"}
-          </div>
+          <div className="font-semibold text-green-800">{t("chemical.total") || "Total Chemicals"}</div>
           <div className="text-2xl font-bold text-green-800">{total}</div>
         </div>
       </div>
+
       {totalPages > 1 && (
         <div className="flex justify-between items-center text-sm text-gray-600 mt-4">
           <span>
@@ -336,90 +296,82 @@ export default function ChemicalList({ t }: ChemicalListProps) {
           </span>
           <div className="flex gap-2">
             {page > 1 && (
-              <button
-                type="button"
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-              >
+              <button type="button" onClick={() => setPage(page - 1)} className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300">
                 ←
               </button>
             )}
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (page <= 3) {
-                pageNum = i + 1;
-              } else if (page >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = page - 2 + i;
-              }
+              if (totalPages <= 5) pageNum = i + 1;
+              else if (page <= 3) pageNum = i + 1;
+              else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+              else pageNum = page - 2 + i;
               return (
                 <button
                   key={pageNum}
                   type="button"
                   onClick={() => setPage(pageNum)}
-                  className={`px-3 py-1 rounded-lg ${
-                    page === pageNum
-                      ? "bg-green-700 text-white"
-                      : "bg-gray-200 hover:bg-gray-300"
-                  }`}
+                  className={`px-3 py-1 rounded-lg ${page === pageNum ? "bg-green-700 text-white" : "bg-gray-200 hover:bg-gray-300"}`}
                 >
                   {pageNum}
                 </button>
               );
             })}
             {page < totalPages && (
-              <button
-                type="button"
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-              >
+              <button type="button" onClick={() => setPage(page + 1)} className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300">
                 →
               </button>
             )}
           </div>
         </div>
       )}
+
+      {/* ── ADD MODAL ── */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
             <h2 className="font-bold mb-4 text-green-800">
               {t("chemical.add") || "Add Chemical"}
             </h2>
+
             <input
               className="border rounded px-2 py-1 w-full mb-3"
               placeholder={t("common.name") || "Name"}
               value={newChemical.name}
-              onChange={(e) =>
-                setNewChemical({ ...newChemical, name: e.target.value })
-              }
+              onChange={(e) => setNewChemical({ ...newChemical, name: e.target.value })}
             />
-            <input
-              className="border rounded px-2 py-1 w-full mb-3"
-              placeholder={t("common.category") || "Category"}
+
+            {/* Category dropdown */}
+            <select
+              className="border rounded px-2 py-1 w-full mb-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700"
               value={newChemical.category}
-              onChange={(e) =>
-                setNewChemical({ ...newChemical, category: e.target.value })
-              }
-            />
+              onChange={(e) => setNewChemical({ ...newChemical, category: e.target.value })}
+            >
+              <option value="">{t("common.selectCategory") || "-- Select category --"}</option>
+              {CHEMICAL_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
             <input
               className="border rounded px-2 py-1 w-full mb-3"
               placeholder={t("common.description") || "Description"}
               value={newChemical.description}
-              onChange={(e) =>
-                setNewChemical({ ...newChemical, description: e.target.value })
-              }
+              onChange={(e) => setNewChemical({ ...newChemical, description: e.target.value })}
             />
-            <input
-              className="border rounded px-2 py-1 w-full mb-3"
-              placeholder={t("chemical.unit") || "Unit"}
+
+            {/* Unit dropdown */}
+            <select
+              className="border rounded px-2 py-1 w-full mb-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700"
               value={newChemical.unit}
-              onChange={(e) =>
-                setNewChemical({ ...newChemical, unit: e.target.value })
-              }
-            />
+              onChange={(e) => setNewChemical({ ...newChemical, unit: e.target.value })}
+            >
+              <option value="">{t("common.selectUnit") || "-- Select unit --"}</option>
+              {CHEMICAL_UNITS.map((unit) => (
+                <option key={unit} value={unit}>{unit}</option>
+              ))}
+            </select>
+
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
@@ -439,71 +391,69 @@ export default function ChemicalList({ t }: ChemicalListProps) {
                     !newChemical.description.trim() ||
                     !newChemical.unit.trim()
                   ) {
-                    enqueueSnackbar(
-                      t("chemical.fillAllFields") || "Please fill all fields",
-                      {
-                        variant: "error",
-                        preventDuplicate: true,
-                        autoHideDuration: 2000,
-                      }
-                    );
+                    enqueueSnackbar(t("chemical.fillAllFields") || "Please fill all fields", {
+                      variant: "error",
+                      preventDuplicate: true,
+                      autoHideDuration: 2000,
+                    });
                     return;
                   }
                   void handleAddChemical();
                 }}
               >
-                {addLoading
-                  ? t("common.saving") || "Saving..."
-                  : t("common.save") || "Save"}
+                {addLoading ? t("common.saving") || "Saving..." : t("common.save") || "Save"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── EDIT MODAL ── */}
       {editChemical && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
             <h2 className="font-bold mb-4 text-green-800">
               {t("chemical.edit") || "Edit Chemical"}
             </h2>
+
             <input
               className="border rounded px-2 py-1 w-full mb-3"
               placeholder={t("common.name") || "Name"}
               value={editChemical.name}
-              onChange={(e) =>
-                setEditChemical({ ...editChemical, name: e.target.value })
-              }
+              onChange={(e) => setEditChemical({ ...editChemical, name: e.target.value })}
             />
-            <input
-              className="border rounded px-2 py-1 w-full mb-3"
-              placeholder={t("common.category") || "Category"}
+
+            {/* Category dropdown */}
+            <select
+              className="border rounded px-2 py-1 w-full mb-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700"
               value={editChemical.category}
-              onChange={(e) =>
-                setEditChemical({ ...editChemical, category: e.target.value })
-              }
-            />
+              onChange={(e) => setEditChemical({ ...editChemical, category: e.target.value })}
+            >
+              <option value="">{t("common.selectCategory") || "-- Select category --"}</option>
+              {CHEMICAL_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
             <input
               className="border rounded px-2 py-1 w-full mb-3"
               placeholder={t("common.description") || "Description"}
               value={editChemical.description}
-              onChange={(e) =>
-                setEditChemical({
-                  ...editChemical,
-                  description: e.target.value,
-                })
-              }
+              onChange={(e) => setEditChemical({ ...editChemical, description: e.target.value })}
             />
-            <input
-              className="border rounded px-2 py-1 w-full mb-3"
-              placeholder={t("chemical.unit") || "Unit"}
+
+            {/* Unit dropdown */}
+            <select
+              className="border rounded px-2 py-1 w-full mb-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-700"
               value={editChemical.concentrationUnit}
-              onChange={(e) =>
-                setEditChemical({
-                  ...editChemical,
-                  concentrationUnit: e.target.value,
-                })
-              }
-            />
+              onChange={(e) => setEditChemical({ ...editChemical, concentrationUnit: e.target.value })}
+            >
+              <option value="">{t("common.selectUnit") || "-- Select unit --"}</option>
+              {CHEMICAL_UNITS.map((unit) => (
+                <option key={unit} value={unit}>{unit}</option>
+              ))}
+            </select>
+
             <div className="flex gap-2 justify-end">
               <button
                 type="button"
@@ -516,28 +466,23 @@ export default function ChemicalList({ t }: ChemicalListProps) {
                 type="button"
                 className="px-4 py-2 rounded bg-green-700 text-white"
                 disabled={editLoading}
-                onClick={() => {
-                  void handleEditChemical();
-                }}
+                onClick={() => { void handleEditChemical(); }}
               >
-                {editLoading
-                  ? t("common.saving") || "Saving..."
-                  : t("common.save") || "Save"}
+                {editLoading ? t("common.saving") || "Saving..." : t("common.save") || "Save"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ── DELETE MODAL ── */}
       {deleteId && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-96">
             <h2 className="font-bold mb-4 text-red-700">
               {t("common.confirm") || "Confirm"}
             </h2>
-            <p>
-              {t("chemical.deleteConfirm") ||
-                "Are you sure you want to delete this chemical?"}
-            </p>
+            <p>{t("chemical.deleteConfirm") || "Are you sure you want to delete this chemical?"}</p>
             <div className="flex gap-2 justify-end mt-4">
               <button
                 type="button"
@@ -550,13 +495,9 @@ export default function ChemicalList({ t }: ChemicalListProps) {
                 type="button"
                 className="px-4 py-2 rounded bg-red-700 text-white"
                 disabled={deleteLoading}
-                onClick={() => {
-                  void handleDeleteChemical();
-                }}
+                onClick={() => { void handleDeleteChemical(); }}
               >
-                {deleteLoading
-                  ? t("common.deleting") || "Deleting..."
-                  : t("common.delete") || "Delete"}
+                {deleteLoading ? t("common.deleting") || "Deleting..." : t("common.delete") || "Delete"}
               </button>
             </div>
           </div>

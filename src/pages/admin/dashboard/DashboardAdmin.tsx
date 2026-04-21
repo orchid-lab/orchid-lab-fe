@@ -299,12 +299,16 @@ function ConfirmDeleteModal({
 function AddUserModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const [data, setData] = useState({ name: "", phoneNumber: "", roleId: 2 });
+  const [data, setData] = useState({ name: "", email: "", phoneNumber: "", roleId: 2 });
   const [saving, setSaving] = useState(false);
 
   const handleAdd = async () => {
     if (!data.name.trim()) {
       enqueueSnackbar(t("user.nameRequired") || "Name is required", { variant: "error", autoHideDuration: 3000 });
+      return;
+    }
+    if (!data.email.trim()) {
+      enqueueSnackbar(t("user.emailRequired") || "Email is required", { variant: "error", autoHideDuration: 3000 });
       return;
     }
     setSaving(true);
@@ -345,6 +349,18 @@ function AddUserModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
               placeholder={t("common.name")}
               value={data.name}
               onChange={(e) => setData((d) => ({ ...d, name: e.target.value }))} />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              {t("common.email")} <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="email"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#f43f5e]/20 focus:border-[#f43f5e] transition-all"
+              placeholder={t("common.email")}
+              value={data.email}
+              onChange={(e) => setData((d) => ({ ...d, email: e.target.value }))}
+            />
           </div>
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t("common.phone")}</label>

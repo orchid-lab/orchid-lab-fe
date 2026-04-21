@@ -83,7 +83,8 @@
     "duration": "Thời lượng",
     "searchPlaceholder": "Tìm kiếm theo tên công việc, trạng thái...",
     "active": "Hoạt động",
-    "reason": "Lý do"
+    "reason": "Lý do",
+    "allStatus": "Tất cả trạng thái"
   },
   "diseases": {
     "anthracnose": "Thán thư",

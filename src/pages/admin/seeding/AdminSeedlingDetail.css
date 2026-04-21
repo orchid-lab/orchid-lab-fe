@@ -1,0 +1,354 @@
+/* =============================================================================
+   ADMIN SEEDLING DETAIL PAGE STYLES — RED THEME
+============================================================================= */
+
+.admin-seedling-detail {
+  margin-left: 260px;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(to bottom right, #fef2f2, #fff1f2);
+  padding: 2rem;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+body[data-sidebar-collapsed="true"] .admin-seedling-detail {
+  margin-left: 72px;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail {
+  background: linear-gradient(to bottom right, #1c0a0a, #1a0a12);
+}
+
+/* =============================================================================
+   BACK BUTTON
+============================================================================= */
+
+.admin-seedling-detail .back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.admin-seedling-detail .back-button:hover {
+  background-color: #fef2f2;
+  border-color: #b91c1c;
+  transform: translateX(-2px);
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .back-button {
+  border-color: #f87171;
+  color: #fca5a5;
+  background: #1f2937;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .back-button:hover {
+  background-color: #3b1010;
+  border-color: #fca5a5;
+}
+
+/* =============================================================================
+   HEADER
+============================================================================= */
+
+.admin-seedling-detail .detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.admin-seedling-detail .detail-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #991b1b;
+  line-height: 1.2;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .detail-title {
+  color: #f87171;
+}
+
+.admin-seedling-detail .detail-subtitle {
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .detail-subtitle {
+  color: #d1d5db;
+}
+
+/* =============================================================================
+   CARDS
+============================================================================= */
+
+.admin-seedling-detail .info-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.admin-seedling-detail .info-card:hover {
+  box-shadow: 0 8px 24px rgba(185, 28, 28, 0.08);
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .bg-white {
+  background: #1f2937 !important;
+  color: #f3f4f6;
+}
+
+/* =============================================================================
+   SECTION ICONS
+============================================================================= */
+
+.admin-seedling-detail .section-icon--info {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-seedling-detail .section-icon--meta {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+
+.admin-seedling-detail .section-icon--traits {
+  background-color: #ffe4e6;
+  color: #be123c;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .section-icon--info {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .section-icon--meta {
+  background-color: #7c2d12;
+  color: #fdba74;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .section-icon--traits {
+  background-color: #881337;
+  color: #fda4af;
+}
+
+/* =============================================================================
+   INFO ROWS
+============================================================================= */
+
+.admin-seedling-detail .info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #fecaca;
+}
+
+.admin-seedling-detail .info-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .info-row {
+  border-bottom-color: #3b1212;
+}
+
+.admin-seedling-detail .info-label {
+  color: #991b1b;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .info-label {
+  color: #fca5a5;
+}
+
+.admin-seedling-detail .info-value {
+  color: #1f2937;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .info-value {
+  color: #f3f4f6;
+}
+
+/* =============================================================================
+   METADATA
+============================================================================= */
+
+.admin-seedling-detail .metadata-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #fed7aa;
+}
+
+.admin-seedling-detail .metadata-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .metadata-item {
+  border-bottom-color: #431407;
+}
+
+.admin-seedling-detail .metadata-label {
+  color: #c2410c;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .metadata-label {
+  color: #fdba74;
+}
+
+.admin-seedling-detail .metadata-value {
+  color: #1f2937;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .metadata-value {
+  color: #f3f4f6;
+}
+
+/* =============================================================================
+   TRAIT CARDS
+============================================================================= */
+
+.admin-seedling-detail .trait-card {
+  background: linear-gradient(135deg, #fff1f2, #fff7ed);
+  border-color: #fecdd3;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.admin-seedling-detail .trait-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(190, 18, 60, 0.12);
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-card {
+  background: linear-gradient(135deg, #3b0a0a, #431407) !important;
+  border-color: #7f1d1d !important;
+}
+
+.admin-seedling-detail .trait-label {
+  color: #be123c;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-label {
+  color: #fda4af;
+}
+
+.admin-seedling-detail .trait-value {
+  color: #1f2937;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-value {
+  color: #f3f4f6;
+}
+
+.admin-seedling-detail .trait-rgb {
+  color: #6b7280;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-rgb {
+  color: #d1d5db;
+}
+
+.admin-seedling-detail .trait-unit {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-unit {
+  color: #6b7280;
+}
+
+.admin-seedling-detail .trait-empty {
+  color: #9ca3af;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .trait-empty {
+  color: #6b7280;
+}
+
+/* =============================================================================
+   GENERAL DARK MODE OVERRIDES
+============================================================================= */
+
+:root[data-theme='dark'] .admin-seedling-detail .text-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .text-gray-700 {
+  color: #e5e7eb !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .text-gray-600 {
+  color: #d1d5db !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .text-gray-500 {
+  color: #9ca3af !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .border-gray-200 {
+  border-color: #3b1212 !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .bg-gray-50 {
+  background-color: rgba(28, 10, 10, 0.85) !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail .bg-gray-200 {
+  background-color: #374151 !important;
+}
+
+:root[data-theme='dark'] .admin-seedling-detail input,
+:root[data-theme='dark'] .admin-seedling-detail select,
+:root[data-theme='dark'] .admin-seedling-detail textarea {
+  background-color: rgba(30, 10, 10, 0.9) !important;
+  color: rgba(252, 165, 165, 0.9) !important;
+  border-color: rgba(248, 113, 113, 0.2) !important;
+}
+
+/* =============================================================================
+   RESPONSIVE
+============================================================================= */
+
+@media (max-width: 768px) {
+  .admin-seedling-detail {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  body[data-sidebar-collapsed="true"] .admin-seedling-detail {
+    margin-left: 0;
+  }
+
+  .admin-seedling-detail .detail-title {
+    font-size: 1.5rem;
+  }
+
+  .admin-seedling-detail .detail-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-seedling-detail {
+    padding: 0.75rem;
+  }
+
+  .admin-seedling-detail .detail-title {
+    font-size: 1.25rem;
+  }
+
+  .admin-seedling-detail .back-button {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+}

@@ -458,7 +458,7 @@ export default function AdminReport() {
                           </td>
                           <td className="px-6 py-4">
                             <motion.button type="button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                              onClick={() => void navigate(`/admin/monitoring-log/${log.id}`)}
+                              onClick={() => void navigate(`/admin/report/${log.id}`)}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[#991B1B] text-[#991B1B] hover:bg-[#991B1B] hover:text-white transition-colors"
                             >
                               <Eye className="w-3.5 h-3.5" />

@@ -1,0 +1,151 @@
+/* Page-specific styles for the Report Create page */
+
+.dark .report-create-page,
+:root[data-theme='dark'] .report-create-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .report-create-page .bg-white\/80,
+:root[data-theme='dark'] .report-create-page .bg-white\/80 {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .report-create-page .border-blue-100,
+:root[data-theme='dark'] .report-create-page .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .report-create-page .border-blue-50,
+:root[data-theme='dark'] .report-create-page .border-blue-50 {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .report-create-page .text-\[\#005792\],
+:root[data-theme='dark'] .report-create-page .text-\[\#005792\] {
+  color: #7dd3fc !important;
+}
+
+.dark .report-create-page .text-blue-900,
+:root[data-theme='dark'] .report-create-page .text-blue-900 {
+  color: rgba(219, 234, 254, 0.9) !important;
+}
+
+.dark .report-create-page .text-blue-950,
+:root[data-theme='dark'] .report-create-page .text-blue-950 {
+  color: rgba(219, 234, 254, 0.95) !important;
+}
+
+.dark .report-create-page .bg-\[\#E0F2FE\],
+:root[data-theme='dark'] .report-create-page .bg-\[\#E0F2FE\] {
+  background-color: rgba(14, 42, 71, 0.8) !important;
+}
+
+.dark .report-create-page .bg-\[\#F0F8FF\]\/60,
+:root[data-theme='dark'] .report-create-page .bg-\[\#F0F8FF\]\/60 {
+  background-color: rgba(10, 25, 50, 0.7) !important;
+}
+
+.dark .report-create-page input,
+:root[data-theme='dark'] .report-create-page input,
+.dark .report-create-page select,
+:root[data-theme='dark'] .report-create-page select,
+.dark .report-create-page textarea,
+:root[data-theme='dark'] .report-create-page textarea {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+
+.dark .report-create-page input::placeholder,
+:root[data-theme='dark'] .report-create-page input::placeholder,
+.dark .report-create-page textarea::placeholder,
+:root[data-theme='dark'] .report-create-page textarea::placeholder {
+  color: rgba(96, 165, 250, 0.3) !important;
+}
+
+.dark .report-create-page input:focus,
+:root[data-theme='dark'] .report-create-page input:focus,
+.dark .report-create-page select:focus,
+:root[data-theme='dark'] .report-create-page select:focus,
+.dark .report-create-page textarea:focus,
+:root[data-theme='dark'] .report-create-page textarea:focus {
+  border-color: #7dd3fc !important;
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2) !important;
+}
+
+.dark .report-create-page .border-t,
+:root[data-theme='dark'] .report-create-page .border-t {
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+/* Save draft button in dark mode */
+.dark .report-create-page .border-\[\#005792\],
+:root[data-theme='dark'] .report-create-page .border-\[\#005792\] {
+  border-color: #7dd3fc !important;
+  color: #7dd3fc !important;
+}
+
+.dark .report-create-page .border-\[\#005792\]:hover,
+:root[data-theme='dark'] .report-create-page .border-\[\#005792\]:hover {
+  background-color: rgba(14, 42, 71, 0.8) !important;
+}
+
+/* Submit button dark mode */
+.dark .report-create-page .bg-\[\#005792\],
+:root[data-theme='dark'] .report-create-page .bg-\[\#005792\] {
+  background-color: #1d6fa5 !important;
+}
+
+.dark .report-create-page .bg-\[\#005792\]:hover,
+:root[data-theme='dark'] .report-create-page .bg-\[\#005792\]:hover {
+  background-color: #2b84bc !important;
+}
+
+/* Dashed add button dark mode */
+.dark .report-create-page .border-\[\#00CED1\],
+:root[data-theme='dark'] .report-create-page .border-\[\#00CED1\] {
+  border-color: rgba(0, 206, 209, 0.45) !important;
+}
+
+.dark .report-create-page .bg-cyan-50\/30,
+:root[data-theme='dark'] .report-create-page .bg-cyan-50\/30 {
+  background-color: rgba(0, 206, 209, 0.05) !important;
+}
+
+.dark .report-create-page .bg-cyan-50\/30:hover,
+:root[data-theme='dark'] .report-create-page .bg-cyan-50\/30:hover {
+  background-color: rgba(0, 206, 209, 0.1) !important;
+}
+
+/* Error box dark mode */
+.dark .report-create-page .bg-red-50,
+:root[data-theme='dark'] .report-create-page .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.25) !important;
+  border-color: rgba(252, 165, 165, 0.25) !important;
+}
+
+/* Ant Design Select dark mode overrides */
+.dark .report-create-page .ant-select-selector,
+:root[data-theme='dark'] .report-create-page .ant-select-selector {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+  color: rgba(219, 234, 254, 0.9) !important;
+}
+
+.dark .report-create-page .ant-select-selection-placeholder,
+:root[data-theme='dark'] .report-create-page .ant-select-selection-placeholder {
+  color: rgba(96, 165, 250, 0.3) !important;
+}
+
+.dark .report-create-page .shadow-md,
+:root[data-theme='dark'] .report-create-page .shadow-md {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .report-create-page .shadow-sm,
+:root[data-theme='dark'] .report-create-page .shadow-sm {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+}
