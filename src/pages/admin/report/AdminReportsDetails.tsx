@@ -1,562 +1,448 @@
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import { useAuth } from "../../../context/AuthContext";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-misused-promises */
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
+import { motion, type Variants } from "framer-motion";
+import { 
+  ArrowLeft, FileText, Activity, AlertCircle, 
+  Ruler, Microscope, Clock, ShieldAlert,
+  ThermometerSun, XCircle, CheckCircle2
+} from "lucide-react";
 
-interface Sample {
+/* ─── Interfaces Khớp Với API Thật ─── */
+interface RequirementDef {
+  id: string;
+  characteristicCode: string;
+  name: string;
+  description: string;
+  unit: string;
+}
+
+interface StageReqDef {
+  id: string;
+  sampleRequirementDefinitionDto: RequirementDef;
+  minValue: number;
+  maxValue: number;
+  expectedValue: number;
+}
+
+interface LogDetail {
+  id: string;
+  measuredValue: number;
+  isMatch: boolean;
+  stageRequirementDefinitionDto: StageReqDef;
+}
+
+interface ImageDto {
+  id: string;
+  targetType: string;
+  targetId: string;
+  url: string;
+  description: string;
+}
+
+interface AnalyticResult {
+  id: string;
+  anthracnose: number;
+  bacterialWilt: number;
+  blackrot: number;
+  brownspots: number;
+  moldBacterial: number;
+  moldFungus: number;
+  softRot: number;
+  stemRot: number;
+  witheredYellowRoot: number;
+  healthy: number;
+  oxidation: number;
+  virus: number;
+  [key: string]: string | number; // Cho phép index signature để loop
+}
+
+interface MonitoringLog {
   id: string;
   name: string;
-  description?: string;
-  dob: string;
-  statusEnum: string;
-  stage?: string;
-  medium?: string;
-  pH?: number;
-  temp?: number;
-  humidity?: number;
-  ageDays?: number;
-  // measured metrics requested
-  leaves?: number;
-  roots?: number;
-  stemHeightCm?: number;
-  rootLengthCm?: number;
-  note?: string;
+  sampleStageId: string;
+  createdBy: string;
+  createdDate: string;
+  sampleName: string;
+  sampleStageDefinitionName: string;
+  diseaseName: string | null;
+  analyticResult: AnalyticResult | null;
+  status: string;
+  deletedDate: string | null;
+  deletedBy: string | null;
+  updatedDate: string | null;
+  updatedBy: string | null;
+  isNewest: boolean;
+  logDetails: LogDetail[];
+  images: ImageDto[];
+  rejectionReason: string | null;
+  rejectedDate: string | null;
 }
 
-interface AnalyzeResult {
-  stage: string;
-  disease: {
-    predict: string;
-    probability: Record<string, number>;
-  };
-}
-
-export default function AdminReportsDetails() {
+export default function AdminMonitoringLogDetails() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const page = searchParams.get("page") ?? "1";
+  const navigate = useNavigate();
   const { id } = useParams();
 
   const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<any | null>(null);
-  const [sample, setSample] = useState<Sample | null>(null);
-  const [images, setImages] = useState<string[]>([]);
+  const [data, setData] = useState<MonitoringLog | null>(null);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
-  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(
-    null,
-  );
 
-  // --- Mock data (for quick mockup / demo) ---
-  const mockSample: Sample = {
-    id: "SMP-2026-0012",
-    name: "Phalaenopsis 'Sunrise' #12",
-    description: "Mẫu nuôi cấy trên môi trường MS, giai đoạn cây con.",
-    dob: "2025-11-10",
-    statusEnum: "Process",
-    stage: "Coppice",
-    medium: "MS",
-    pH: 5.8,
-    temp: 24,
-    humidity: 78,
-    ageDays: 69,
-    leaves: 6,
-    roots: 3,
-    stemHeightCm: 2.4,
-    rootLengthCm: 1.8,
-  };
-
-  // standard/reference conditions per stage (mock)
-  const standardConditions: Record<
-    string,
-    {
-      leavesRange: [number, number];
-      rootsRange: [number, number];
-      stemHeightRangeCm: [number, number];
-      rootLengthRangeCm: [number, number];
-      pHRange?: [number, number];
-      tempRangeC?: [number, number];
-      humidityRange?: [number, number];
-    }
-  > = {
-    Coppice: {
-      leavesRange: [4, 10],
-      rootsRange: [2, 6],
-      stemHeightRangeCm: [1, 5],
-      rootLengthRangeCm: [0.5, 4],
-      pHRange: [5.6, 6.0],
-      tempRangeC: [22, 25],
-      humidityRange: [70, 85],
-    },
-    // fallback
-    default: {
-      leavesRange: [0, 99],
-      rootsRange: [0, 99],
-      stemHeightRangeCm: [0, 999],
-      rootLengthRangeCm: [0, 999],
-      pHRange: [0, 14],
-      tempRangeC: [0, 50],
-      humidityRange: [0, 100],
-    },
-  };
-
+  // Fetch data từ API thật
   useEffect(() => {
-    // Simulate fetching and populate with mock data for a design mockup
+    if (!id) return;
     setLoading(true);
-    setTimeout(() => {
-      setReport({
-        id: id ?? "RPT-MOCK-001",
-        author: { id: "u01", name: "Nguyễn Văn A" },
-        createdAt: "2026-01-10T09:24:00Z",
-        status: "Open",
-        note: "Quan sát thấy một vài đốm nâu nhỏ trên phiến lá. Đã lấy ảnh để phân tích và theo dõi.",
-        sampleId: mockSample.id,
-      });
-      setSample(mockSample);
-      setImages([
-        "https://images.unsplash.com/photo-1524594154908-36f5342b7314?w=1200&q=60&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1536170724940-3f5b1d9c9f85?w=1200&q=60&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=1200&q=60&auto=format&fit=crop",
-      ]);
-      setSelectedImg(
-        "https://images.unsplash.com/photo-1524594154908-36f5342b7314?w=1200&q=60&auto=format&fit=crop",
-      );
-      setLoading(false);
-    }, 350);
+    axiosInstance
+      .get(`/api/monitoring-log/${id}`)
+      .then((res) => {
+        const logData = res.data as MonitoringLog;
+        setData(logData);
+        if (logData.images && logData.images.length > 0) {
+          setSelectedImg(logData.images[0].url);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching monitoring log:", err);
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   const diseaseNameMap: Record<string, string> = {
-    anthracnose: t("diseases.anthracnose") || "Thán thư",
-    bacterialwilt: t("diseases.bacterialWilt") || "Héo vi khuẩn",
-    blackrot: t("diseases.blackrot") || "Thối đen",
-    brownspots: t("diseases.brownspots") || "Đốm nâu",
-    moldbacterial: t("diseases.moldBacterial") || "Mốc vi khuẩn",
-    moldfungus: t("diseases.moldFungus") || "Mốc nấm",
-    softrot: t("diseases.softRot") || "Thối mềm",
-    stemrot: t("diseases.stemRot") || "Thối thân",
-    witheredyellowroot: t("diseases.witheredYellowRoot") || "Vàng rễ héo",
-    healthy: t("diseases.healthy") || "Khỏe mạnh",
-    oxidation: t("diseases.oxidation") || "Oxy hóa",
-    virus: t("diseases.virus") || "Virus",
+    anthracnose: t("diseases.anthracnose") ?? "Thán thư",
+    bacterialWilt: t("diseases.bacterialWilt") ?? "Héo vi khuẩn",
+    blackrot: t("diseases.blackrot") ?? "Thối đen",
+    brownspots: t("diseases.brownspots") ?? "Đốm nâu",
+    moldBacterial: t("diseases.moldBacterial") ?? "Mốc vi khuẩn",
+    moldFungus: t("diseases.moldFungus") ?? "Mốc nấm",
+    softRot: t("diseases.softRot") ?? "Thối mềm",
+    stemRot: t("diseases.stemRot") ?? "Thối thân",
+    witheredYellowRoot: t("diseases.witheredYellowRoot") ?? "Vàng rễ héo",
+    healthy: t("diseases.healthy") ?? "Khỏe mạnh",
+    oxidation: t("diseases.oxidation") ?? "Oxy hóa",
+    virus: t("diseases.virus") ?? "Virus",
   };
 
-  function formatDate(iso?: string) {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    return d.toLocaleString();
+  function formatDate(iso?: string | null) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleString("vi-VN");
   }
-
-  // Simulated analyze function: generate fake probabilities and a top prediction
-  const analyzeImageFromUrl = async () => {
-    setAnalyzeLoading(true);
-    setAnalyzeResult(null);
-    // simulate network
-    await new Promise((r) => setTimeout(r, 900));
-    // create fake probabilities
-    const classes = [
-      "brownspots",
-      "anthracnose",
-      "blackrot",
-      "moldfungus",
-      "healthy",
-    ];
-    const probs: Record<string, number> = {};
-    let sum = 0;
-    for (const c of classes) {
-      const v = Math.random();
-      probs[c] = v;
-      sum += v;
-    }
-    // normalize
-    Object.keys(probs).forEach(
-      (k) => (probs[k] = +(probs[k] / sum).toFixed(3)),
-    );
-    // pick top
-    const top = Object.entries(probs).sort((a, b) => b[1] - a[1])[0];
-    setAnalyzeResult({
-      stage: sample
-        ? sample.stage || sample.statusEnum || "unknown"
-        : "unknown",
-      disease: {
-        predict: top?.[0] ?? "healthy",
-        probability: probs,
-      },
-    });
-    setAnalyzeLoading(false);
-  };
 
   const getStatusDisplay = (status?: string) => {
-    if (!status) return t("common.noData") || "Không có dữ liệu";
-    const statusMap: Record<string, string> = {
-      Process: t("status.inProgress") || "Đang tiến hành",
-      Suspended: t("experimentLog.suspended") || "Tạm dừng",
-      Destroyed: t("experimentLog.destroyed") || "Đã hủy",
+    if (!status) return "—";
+    // Fix lỗi `any` bằng cách gán type `React.ElementType` cho thuộc tính icon
+    const statusMap: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
+      Created: { label: "Mới tạo", bg: "bg-sky-50", text: "text-sky-700", icon: FileText },
+      Process: { label: "Đang xử lý", bg: "bg-amber-50", text: "text-amber-700", icon: Activity },
+      Approved: { label: "Đã duyệt", bg: "bg-emerald-50", text: "text-emerald-700", icon: CheckCircle2 },
+      Rejected: { label: "Bị từ chối", bg: "bg-rose-50", text: "text-rose-700", icon: XCircle },
     };
-    return statusMap[status] || status;
+    
+    // Fix lỗi `||` bằng nullish coalescing `??`
+    const config = statusMap[status] ?? { label: status, bg: "bg-gray-50", text: "text-gray-700", icon: FileText };
+    const Icon = config.icon;
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-current/20 ${config.bg} ${config.text}`}>
+        <Icon className="w-4 h-4" />
+        {config.label}
+      </span>
+    );
   };
-
-  function metricStatus(
-    value: number | undefined,
-    range: [number, number],
-  ): "ok" | "warning" | "bad" | "na" {
-    if (value == null) return "na";
-    const [min, max] = range;
-    if (value >= min && value <= max) return "ok";
-    // small deviation => warning, large deviation => bad
-    const span = max - min || Math.abs(min) || 1;
-    const diff = value < min ? min - value : value - max;
-    if (diff <= span * 0.3) return "warning";
-    return "bad";
-  }
 
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 flex items-center justify-center">
-        <div className="text-lg text-gray-500">
-          {t("common.loadingData") || "Đang tải..."}
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] flex items-center justify-center">
+        <div className="flex flex-col items-center text-rose-500 animate-pulse">
+          <FileText className="w-10 h-10 mb-4 animate-bounce" />
+          <p className="font-medium">{t("common.loadingData") ?? "Đang tải báo cáo..."}</p>
         </div>
       </main>
     );
   }
 
-  // pick standard for sample.stage or fallback default
-  const std =
-    standardConditions[sample?.stage ?? "default"] ??
-    standardConditions.default;
+  if (!data) {
+    return (
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] flex items-center justify-center">
+        <div className="text-slate-500 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+          <p>Không tìm thấy dữ liệu Monitoring Log.</p>
+          <button type="button" onClick={() => navigate(-1)} className="mt-4 text-[#9f1239] hover:underline">Quay lại</button>
+        </div>
+      </main>
+    );
+  }
+
+  // Lọc xác suất các loại bệnh từ API (bỏ id)
+  const probabilities = data.analyticResult 
+    ? Object.entries(data.analyticResult)
+        .filter(([key]) => key !== "id")
+        .map(([key, val]) => ({ key, value: Number(val) }))
+        .sort((a, b) => b.value - a.value)
+    : [];
+
+  const topPrediction = probabilities.length > 0 ? probabilities[0] : null;
+  // Dùng diseaseName từ API nếu có, không thì lấy cái cao nhất từ analyticResult
+  const finalDiseaseName = data.diseaseName 
+    ? (diseaseNameMap[data.diseaseName] ?? data.diseaseName)
+    : topPrediction 
+      ? (diseaseNameMap[topPrediction.key] ?? topPrediction.key) 
+      : "Chưa phân tích";
+
+  // Animation (Fix lỗi type Variants)
+  const staggerContainer: Variants = { 
+    hidden: { opacity: 0 }, 
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } } 
+  };
+  const fadeInUp: Variants = { 
+    hidden: { opacity: 0, y: 20 }, 
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } 
+  };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-6 lg:p-8 text-slate-800">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Nút quay lại */}
+        <motion.button 
+          variants={fadeInUp}
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-500 hover:text-rose-600 transition-colors mb-2 font-medium w-fit"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t("common.back") ?? "Quay lại"}
+        </motion.button>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-0">
+        <motion.div variants={fadeInUp} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {t("report.reportDetails") || "Chi tiết báo cáo"}
+            <h1 className="text-2xl md:text-3xl font-bold text-[#9f1239] flex items-center gap-3">
+              <FileText className="w-8 h-8 p-1.5 bg-rose-100 text-rose-600 rounded-xl" />
+              {data.name ?? "Chi tiết báo cáo giám sát"}
             </h1>
-            <div className="text-sm text-gray-500 mt-1">
-              {formatDate(report?.createdAt)} • {report?.author?.name}
+            <div className="text-sm text-slate-500 mt-2 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              {formatDate(data.createdDate)} <span className="mx-1">•</span> Tạo bởi: {data.createdBy}
             </div>
           </div>
-        </div>
+          <div className="flex flex-col items-end gap-2">
+            {getStatusDisplay(data.status)}
+            <div className="px-3 py-1.5 bg-white border border-rose-100 rounded-lg shadow-sm text-xs font-medium text-slate-500">
+              Log ID: <span className="text-[#9f1239] font-bold">{data.id}</span>
+            </div>
+          </div>
+        </motion.div>
 
-        {/* Sample summary (vertical, full width) */}
-        <section className="w-full bg-white rounded-lg shadow-sm p-6">
-          <div className="md:flex md:items-start md:gap-6">
-            <div className="flex-1 mt-4 md:mt-0">
-              <div className="flex items-start justify-between">
+        {/* Cảnh báo từ chối (nếu có) */}
+        {data.status === "Rejected" && data.rejectionReason && (
+          <motion.div variants={fadeInUp} className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800">
+            <ShieldAlert className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold">Lý do từ chối:</h4>
+              <p className="text-sm mt-1">{data.rejectionReason}</p>
+              <p className="text-xs text-rose-600 mt-2">Từ chối lúc: {formatDate(data.rejectedDate)}</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Sample summary */}
+        <motion.section variants={fadeInUp} className="w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row gap-8">
+              
+              {/* Left Column: Sample Info */}
+              <div className="flex-1 space-y-6">
                 <div>
-                  <div className="text-lg font-medium text-gray-900">
-                    Mẫu vật: {sample?.name}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{sample?.id}</div>
-                </div>
-                <div className="text-right">
-                  <div>
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700">
-                      {getStatusDisplay(sample?.statusEnum)}
+                  <h2 className="text-xl font-bold text-slate-800">Mẫu: {data.sampleName ?? "—"}</h2>
+                  <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                    Giai đoạn: 
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md font-medium bg-[#fff1f2] text-[#9f1239] border border-rose-100">
+                      {data.sampleStageDefinitionName ?? "—"}
                     </span>
                   </div>
                 </div>
+
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-3 text-sm text-slate-600">
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span>Trạng thái dữ liệu:</span>
+                    <strong className={data.isNewest ? "text-emerald-600" : "text-amber-600"}>
+                      {data.isNewest ? "Mới nhất" : "Cũ"}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between pb-1">
+                    <span>Cập nhật lần cuối:</span>
+                    {/* Sử dụng nullish coalescing để phòng trường hợp updatedDate null */}
+                    <strong>{formatDate(data.updatedDate ?? data.createdDate)}</strong>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-gray-600">
-                <div>
-                  <strong>Nhật ký thí nghiệm:</strong> EL1
-                </div>
-                <div>
-                  <strong>Giai đoạn:</strong>{" "}
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-sky-50 text-sky-700">
-                    {sample?.stage ?? "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* measured metrics block */}
-              <div className="mt-4 border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-900">
-                  Số liệu đo được
+              {/* Right Column: Dynamic Metrics from logDetails */}
+              <div className="flex-[1.5] lg:border-l lg:border-rose-50 lg:pl-8">
+                <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <ThermometerSun className="w-5 h-5 text-rose-500" />
+                  Chỉ số đo đạc thực tế
                 </h4>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <MetricRow
-                    label="Số lá"
-                    value={sample?.leaves}
-                    range={std.leavesRange}
-                    unit=""
-                    metricStatus={metricStatus}
-                  />
-                  <MetricRow
-                    label="Số rễ"
-                    value={sample?.roots}
-                    range={std.rootsRange}
-                    unit=""
-                    metricStatus={metricStatus}
-                  />
-                  <MetricRow
-                    label="Chiều cao thân"
-                    value={sample?.stemHeightCm}
-                    range={std.stemHeightRangeCm}
-                    unit="cm"
-                    metricStatus={metricStatus}
-                  />
-                  <MetricRow
-                    label="Chiều dài rễ"
-                    value={sample?.rootLengthCm}
-                    range={std.rootLengthRangeCm}
-                    unit="cm"
-                    metricStatus={metricStatus}
-                  />
-                </div>
+                
+                {data.logDetails && data.logDetails.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {data.logDetails.map((detail) => (
+                      <MetricRow 
+                        key={detail.id}
+                        label={detail.stageRequirementDefinitionDto.sampleRequirementDefinitionDto.name}
+                        value={detail.measuredValue}
+                        unit={detail.stageRequirementDefinitionDto.sampleRequirementDefinitionDto.unit}
+                        minValue={detail.stageRequirementDefinitionDto.minValue}
+                        maxValue={detail.stageRequirementDefinitionDto.maxValue}
+                        isMatch={detail.isMatch}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-500 italic p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    Không có số liệu đo đạc nào được ghi nhận.
+                  </div>
+                )}
               </div>
 
-              <div className="mt-4 border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-900">
-                  Điều kiện tiêu chuẩn tại giai đoạn {sample?.stage ?? "—"}
-                </h4>
-                <div className="mt-3 text-sm text-gray-600 grid grid-cols-2 gap-2">
-                  <div>
-                    <strong>pH:</strong> {std.pHRange?.[0]} - {std.pHRange?.[1]}
-                  </div>
-                  <div>
-                    <strong>Nhiệt độ:</strong> {std.tempRangeC?.[0]} -{" "}
-                    {std.tempRangeC?.[1]}°C
-                  </div>
-                  <div>
-                    <strong>Độ ẩm:</strong> {std.humidityRange?.[0]} -{" "}
-                    {std.humidityRange?.[1]}%
-                  </div>
-                  <div />
-                  <div>
-                    <strong>Leaves:</strong> {std.leavesRange[0]} -{" "}
-                    {std.leavesRange[1]}
-                  </div>
-                  <div>
-                    <strong>Roots:</strong> {std.rootsRange[0]} -{" "}
-                    {std.rootsRange[1]}
-                  </div>
-                  <div>
-                    <strong>Stem H (cm):</strong> {std.stemHeightRangeCm[0]} -{" "}
-                    {std.stemHeightRangeCm[1]}
-                  </div>
-                  <div>
-                    <strong>Root L (cm):</strong> {std.rootLengthRangeCm[0]} -{" "}
-                    {std.rootLengthRangeCm[1]}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-900">Ghi chú</h4>
-                <div className="text-sm">
-                  {sample?.note ?? "Notes của báo cáo"}
-                </div>
-              </div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Gallery + Analysis and Activity sections remain unchanged */}
-        <section className="w-full bg-white rounded-lg shadow-sm p-6">
-          <div className="flex flex-col gap-4">
-            <div className="w-full rounded-md overflow-hidden bg-gray-100">
-              <img
-                src={selectedImg ?? images[0]}
-                alt="Selected"
-                className="w-full h-64 object-cover"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 overflow-x-auto">
-              {images.map((src) => (
-                <button
-                  key={src}
-                  onClick={() => setSelectedImg(src)}
-                  className={`w-24 h-16 rounded-md overflow-hidden border ${selectedImg === src ? "border-emerald-500 ring-2 ring-emerald-100" : "border-gray-200"} `}
-                >
+        {/* Hình ảnh & Phân tích AI */}
+        <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Cột trái: Hình ảnh */}
+          <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 p-6 flex flex-col h-full">
+            <h4 className="text-base font-bold text-[#9f1239] mb-4 flex items-center gap-2">
+              <Microscope className="w-5 h-5" />
+              Hình ảnh đính kèm
+            </h4>
+            
+            {data.images && data.images.length > 0 ? (
+              <>
+                <div className="w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-4 flex-1 min-h-[300px] relative group">
                   <img
-                    src={src}
-                    alt="thumb"
-                    className="w-full h-full object-cover"
+                    src={selectedImg ?? data.images[0].url}
+                    alt="Selected"
+                    className="w-full h-full object-cover absolute inset-0"
                   />
-                </button>
-              ))}
-
-              <div className="ml-auto flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => selectedImg && analyzeImageFromUrl()}
-                  className="px-3 py-2 bg-emerald-600 text-white rounded-md text-sm flex items-center gap-2"
-                  disabled={!selectedImg || analyzeLoading}
-                >
-                  {analyzeLoading ? "Đang phân tích..." : "Phân tích ảnh"}
-                </button>
-                <button
-                  onClick={() => {
-                    /* open modal view */
-                  }}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
-                >
-                  Xem chi tiết ảnh
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-medium text-gray-800">
-                Kết quả phân tích
-              </h4>
-
-              {!analyzeResult && (
-                <div className="text-sm text-gray-500 mt-3">
-                  Chưa có kết quả. Chọn ảnh và nhấn "Phân tích ảnh" để xem dự
-                  đoán.
-                </div>
-              )}
-
-              {analyzeResult && (
-                <div className="mt-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm text-gray-600">Giai đoạn</div>
-                      <div className="text-base font-medium text-gray-900">
-                        {analyzeResult.stage}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-600">Dự đoán chính</div>
-                      <div className="text-base font-semibold text-rose-600">
-                        {diseaseNameMap[analyzeResult.disease.predict] ??
-                          analyzeResult.disease.predict}
-                      </div>
-                    </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button type="button" onClick={() => window.open(selectedImg ?? data.images[0].url, '_blank')} className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white border border-white/50 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
+                      Mở ảnh gốc
+                    </button>
                   </div>
+                </div>
 
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                  {data.images.map((img) => (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => setSelectedImg(img.url)}
+                      className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === img.url ? "border-rose-500 shadow-md scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
+                    >
+                      <img src={img.url} alt="thumb" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-[300px] flex flex-col items-center justify-center bg-slate-50 border border-slate-100 rounded-xl text-slate-400">
+                <AlertCircle className="w-10 h-10 mb-2 text-slate-300" />
+                <p className="text-sm">Không có hình ảnh đính kèm</p>
+              </div>
+            )}
+          </section>
+
+          {/* Cột phải: Kết quả AI */}
+          <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 p-6 flex flex-col h-full">
+            <h4 className="text-base font-bold text-slate-800 mb-4 border-b border-rose-50 pb-3">
+              Kết quả chẩn đoán AI
+            </h4>
+
+            {!data.analyticResult ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 py-8">
+                <Microscope className="w-12 h-12 mb-3 text-slate-200" />
+                <p className="text-sm text-center max-w-[250px]">
+                  Báo cáo này chưa được phân tích AI hoặc không có dữ liệu chẩn đoán.
+                </p>
+              </div>
+            ) : (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
+                <div className="flex items-center justify-between p-4 bg-rose-50 rounded-xl border border-rose-100">
                   <div>
-                    <div className="text-sm text-gray-600">
-                      Xác suất các lớp
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      {Object.entries(analyzeResult.disease.probability)
-                        .sort((a, b) => b[1] - a[1])
-                        .map(([k, v]) => (
-                          <div key={k} className="flex items-center gap-3">
-                            <div className="w-28 text-sm text-gray-700">
-                              {diseaseNameMap[k] ?? k}
-                            </div>
-                            <div className="flex-1 h-2 bg-gray-100 rounded overflow-hidden">
-                              <div
-                                style={{ width: `${Math.round(v * 100)}%` }}
-                                className="h-full bg-emerald-500"
-                              />
-                            </div>
-                            <div className="w-12 text-right text-xs text-gray-600">
-                              {Math.round(v * 100)}%
-                            </div>
-                          </div>
-                        ))}
+                    <div className="text-xs text-rose-500 font-semibold uppercase tracking-wider mb-1">Dự đoán cao nhất</div>
+                    <div className="text-xl font-bold text-[#9f1239]">
+                      {finalDiseaseName}
                     </div>
                   </div>
+                  {topPrediction && (
+                    <div className="w-14 h-14 bg-white rounded-full flex flex-col items-center justify-center shadow-sm text-rose-600 font-bold border border-rose-100 leading-tight">
+                      <span>{Math.round(topPrediction.value * 100)}%</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
 
-        <section className="w-full bg-white rounded-lg shadow-sm p-6">
-          <div className="md:flex md:justify-between md:items-start md:gap-6">
-            <div className="flex-1">
-              <h4 className="text-sm font-medium text-gray-800">Hoạt động</h4>
-              <ul className="mt-3 space-y-3 text-sm text-gray-600">
-                <li>
-                  <div className="text-gray-700 font-medium">Tạo báo cáo</div>
-                  <div className="text-xs text-gray-500">
-                    {formatDate(report?.createdAt)} • {report?.author?.name}
+                <div>
+                  <div className="text-sm font-semibold text-slate-700 mb-3">Xác suất các loại bệnh:</div>
+                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                    {probabilities.map((prob, idx) => (
+                      <div key={prob.key} className="flex items-center gap-3">
+                        <div className="w-28 text-sm font-medium text-slate-600 truncate" title={diseaseNameMap[prob.key] ?? prob.key}>
+                          {diseaseNameMap[prob.key] ?? prob.key}
+                        </div>
+                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${prob.value * 100}%` }}
+                            transition={{ duration: 0.8, delay: idx * 0.05 }}
+                            className={`h-full rounded-full ${idx === 0 ? "bg-[#9f1239]" : "bg-rose-300"}`}
+                          />
+                        </div>
+                        <div className="w-12 text-right text-xs font-semibold text-slate-500">
+                          {(prob.value * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </li>
-                <li>
-                  <div className="text-gray-700 font-medium">Lần quét ảnh</div>
-                  <div className="text-xs text-gray-500">2026-01-12 10:12</div>
-                </li>
-                <li>
-                  <div className="text-gray-700 font-medium">
-                    Cập nhật trạng thái
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Đã đánh dấu cần theo dõi
-                  </div>
-                </li>
-              </ul>
-            </div>
+                </div>
+              </motion.div>
+            )}
+          </section>
 
-            <div className="mt-6 md:mt-0 md:w-64">
-              <h4 className="text-sm font-medium text-gray-800">
-                Hành động nhanh
-              </h4>
-              <div className="mt-3 flex flex-col gap-2">
-                <button className="px-3 py-2 bg-red-600 text-white rounded-md text-sm">
-                  Đánh dấu nhiễm
-                </button>
-                <button className="px-3 py-2 bg-amber-500 text-white rounded-md text-sm">
-                  Gửi cảnh báo
-                </button>
-                <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm">
-                  Thêm ghi chú
-                </button>
-              </div>
-
-              <div className="mt-6 text-sm text-gray-600 space-y-2">
-                <div>
-                  <strong>Page:</strong> {page}
-                </div>
-                <div>
-                  <strong>Report ID:</strong> {report?.id}
-                </div>
-                <div>
-                  <strong>Assigned:</strong> {user?.name ?? "—"}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+        </motion.div>
+      </motion.div>
     </main>
   );
 }
 
-/* small helper component placed in same file for compactness */
-function MetricRow(props: {
-  label: string;
-  value?: number;
-  range: [number, number];
-  unit?: string;
-  metricStatus: (
-    value: number | undefined,
-    range: [number, number],
-  ) => "ok" | "warning" | "bad" | "na";
+/* Helper Component vẽ Bar cho Số liệu (Log Details) */
+function MetricRow({ 
+  label, value, unit, minValue, maxValue, isMatch 
+}: { 
+  label: string, value: number, unit: string, minValue: number, maxValue: number, isMatch: boolean 
 }) {
-  const { label, value, range, unit = "", metricStatus } = props;
-  const status = metricStatus(value, range);
-  const color =
-    status === "ok"
-      ? "text-emerald-700 bg-emerald-50"
-      : status === "warning"
-        ? "text-amber-700 bg-amber-50"
-        : status === "bad"
-          ? "text-rose-700 bg-rose-50"
-          : "text-gray-500 bg-gray-50";
+  const colorClass = isMatch 
+    ? "text-emerald-700 bg-emerald-50 border-emerald-200" 
+    : "text-rose-700 bg-[#fff1f2] border-rose-200";
 
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="text-sm text-gray-700">{label}</div>
-      <div className="text-right">
-        <div
-          className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-medium ${color}`}
-        >
-          {value == null ? "—" : `${value}${unit}`}
-        </div>
-        <div className="text-xs text-gray-400 mt-1">
-          ref: {range[0]}–{range[1]}
-          {unit}
-        </div>
+    <div className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex flex-col">
+        <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+          <Ruler className="w-3.5 h-3.5 text-slate-400" />
+          {label}
+        </span>
+        <span className="text-xs text-slate-400 mt-0.5">
+          Chuẩn: {minValue} - {maxValue} {unit}
+        </span>
+      </div>
+      <div className={`min-w-[4rem] text-center px-2.5 py-1.5 rounded-lg text-sm font-bold border ${colorClass}`}>
+        {value} {unit}
       </div>
     </div>
   );
