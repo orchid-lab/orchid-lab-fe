@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
@@ -43,20 +44,6 @@ const tagAnimation = {
   center: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.8 },
 };
-
-/** Unwrap API responses that return { value: T } or T directly */
-function unwrapValue<T>(data: unknown): T[] {
-  if (!data) return [];
-  if (
-    typeof data === "object" &&
-    "value" in (data as object) &&
-    Array.isArray((data as { value: unknown }).value)
-  ) {
-    return (data as { value: T[] }).value;
-  }
-  if (Array.isArray(data)) return data as T[];
-  return [];
-}
 
 export default function SuccessRateAnalysis() {
   const { t } = useTranslation();
@@ -106,7 +93,6 @@ export default function SuccessRateAnalysis() {
   }, []);
 
   /* Fetch success rates based on filters */
-  /* Fetch success rates based on filters */
   const fetchSuccessRates = useCallback(async () => {
     setLoading(true);
     try {
@@ -116,31 +102,14 @@ export default function SuccessRateAnalysis() {
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
 
-      console.log("1. Đang gọi API với params:", params);
-      const raw = await getHybridSuccessRates(params);
-      console.log("2. Kết quả raw từ file api trả về:", raw);
+      // Nhờ file API đã được fix, dữ liệu trả về giờ là một mảng chuẩn.
+      // Không cần phải gọi hàm unwrap hay dò cấu trúc lằng nhằng nữa.
+      const data = await getHybridSuccessRates(params);
 
-      let data: HybridSuccessRate[] = [];
-
-      // Vét mọi trường hợp cấu trúc object
-      if (!raw) {
-        console.warn("⚠️ API trả về null/undefined. Hãy mở file seedlingApi.ts và kiểm tra xem hàm getHybridSuccessRates đã có từ khóa 'return' chưa nhé!");
-      } else if (Array.isArray(raw)) {
-        data = raw;
-      } else if (raw.value && Array.isArray(raw.value)) {
-        data = raw.value;
-      } else if (raw.data && Array.isArray(raw.data)) {
-        data = raw.data;
-      } else if (raw.data && raw.data.value && Array.isArray(raw.data.value)) {
-        data = raw.data.value;
-      }
-
-      console.log("3. Dữ liệu mảng sau khi trích xuất:", data);
-
-      setSuccessRates(data);
+      setSuccessRates(data || []);
 
       /* Find highest success rate */
-      if (data.length > 0) {
+      if (data && data.length > 0) {
         const highest = Math.max(...data.map((d) => d.successRate));
         const highestItem = data.find((d) => d.successRate === highest);
         if (highestItem) {
