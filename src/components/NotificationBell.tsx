@@ -58,7 +58,6 @@ const NotificationBell: React.FC = () => {
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
-
     navigate(getNavigationPath(notification));
     setOpen(false);
   };
@@ -68,13 +67,13 @@ const NotificationBell: React.FC = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-full hover:bg-blue-50 transition-colors"
         aria-label={t("notification.title")}
       >
         <FaBell
           size={22}
-          color={open ? "#2D5A27" : "#6B7280"}
-          className={open ? "drop-shadow-[0_0_6px_rgba(45,90,39,0.4)]" : ""}
+          color={open ? "#2563eb" : "#6B7280"}
+          className={open ? "drop-shadow-[0_0_6px_rgba(37,99,235,0.4)]" : ""}
         />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#ef4444] text-[11px] text-white font-semibold shadow-sm border-2 border-white">
@@ -84,13 +83,23 @@ const NotificationBell: React.FC = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[340px] max-h-[420px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-          <div className="px-4 py-3 border-b border-gray-100 font-semibold text-gray-900">
-            {t("notification.title")}
+        <div className="absolute right-0 mt-2 w-[340px] max-h-[600px] overflow-hidden rounded-xl border border-blue-100 bg-white shadow-lg">
+          {/* Header - top corners flat */}
+          <div className="px-4 py-3 border-b border-blue-100 bg-blue-600 rounded-none">
+            <span className="font-semibold text-white text-[15px]">
+              {t("notification.title")}
+            </span>
+            {unreadCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-white text-blue-600 text-[11px] font-bold">
+                {unreadCount} chưa đọc
+              </span>
+            )}
           </div>
-          <ul className="max-h-[360px] overflow-y-auto">
+
+          {/* List */}
+          <ul className="max-h-[540px] overflow-y-auto divide-y divide-gray-100">
             {sortedNotifications.length === 0 && (
-              <li className="p-4 text-sm text-gray-600">
+              <li className="p-5 text-sm text-gray-500 text-center">
                 {t("notification.empty")}
               </li>
             )}
@@ -98,25 +107,32 @@ const NotificationBell: React.FC = () => {
               <li
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
-                className={`flex items-start gap-3 p-4 border-b border-gray-100 transition-colors duration-200 ${
-                  n.isRead ? "bg-white" : "bg-[#F4F7F4]"
-                } hover:bg-gray-50 cursor-pointer`}
+                className={`flex items-start gap-3 px-4 py-3 transition-colors duration-150 cursor-pointer ${
+                  n.isRead
+                    ? "bg-white hover:bg-gray-50"
+                    : "bg-blue-50 hover:bg-blue-100"
+                }`}
               >
-                {!n.isRead && (
-                  <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#2D5A27] flex-shrink-0" />
-                )}
-                <div className="min-w-0">
+                <div className="mt-1 flex-shrink-0 w-2.5">
+                  {!n.isRead && (
+                    <span className="block h-2.5 w-2.5 rounded-full bg-blue-500" />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1">
                   <div
-                    className={`truncate ${
-                      n.isRead ? "text-gray-900" : "text-[#2D5A27] font-semibold"
+                    className={`text-sm leading-snug ${
+                      n.isRead
+                        ? "text-gray-700 font-normal"
+                        : "text-blue-700 font-semibold"
                     }`}
                   >
                     {n.title}
                   </div>
-                  <div className="text-gray-600 text-sm mt-1 truncate">
+                  <div className="text-gray-500 text-xs mt-0.5 line-clamp-2">
                     {n.content}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-[11px] text-gray-400 mt-1">
                     {new Date(n.createdAt).toLocaleString("vi-VN")}
                   </div>
                 </div>
