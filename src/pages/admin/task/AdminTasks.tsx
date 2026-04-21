@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  Search, X, ClipboardList, CheckCircle2, 
+  Search, X, ClipboardList, CheckCircle2,
   XCircle, AlertTriangle, PlayCircle, Circle,
 } from "lucide-react";
 import axiosInstance from "../../../api/axiosInstance";
@@ -20,51 +20,84 @@ import "./AdminTasks.css";
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 /* ─── Types ───────────────────────────────────────────── */
+interface ApiTask {
+  id: string;
+  name: string;
+  description?: string;
+  stageId: number | null;
+  taskTargetType: string | null;
+  targetId: string | null;
+  researcherId: string | null;
+  technicianId: string | null;
+  status: string;
+  expectedEndDate: string | null;
+  createdDate: string;
+}
+
+interface ApiTaskListResponse {
+  totalCount: number;
+  pageCount: number;
+  pageSize: number;
+  pageNumber: number;
+  data: ApiTask[];
+}
+
 interface Task {
   id: string;
   name: string;
-  researcher: string;
-  experimentLogName?: string;
-  end_date: string;
-  create_at?: string;
+  description: string;
+  researcherId: string | null;
+  technicianId: string | null;
+  targetId: string | null;
+  taskTargetType: string | null;
   status: StatusType;
+  expectedEndDate: string | null;
+  createdDate: string;
 }
 
 type StatusType =
+  | "Template" | "InProgress" | "Completed" | "Deleted"
   | "Assigned" | "Taken" | "InProcess"
   | "DoneInTime" | "DoneInLate" | "Cancel";
 
-interface ApiTaskResponse {
-  value?: { data?: Task[]; totalCount?: number };
-}
-
-function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
-  return typeof obj === "object" && obj !== null && "value" in obj &&
-    typeof (obj as { value: unknown }).value === "object";
-}
-
 /* ─── Status config ───────────────────────────────────── */
-const STATUS_CONFIG: Record<StatusType, {
+const STATUS_CONFIG: Record<string, {
   textClass: string; bgClass: string; borderClass: string;
   icon: React.ElementType; label: string;
 }> = {
-  Assigned:   { textClass: "text-blue-700",   bgClass: "bg-blue-50",   borderClass: "border-blue-200",   icon: Circle,        label: "" },
-  Taken:      { textClass: "text-purple-700", bgClass: "bg-purple-50", borderClass: "border-purple-200", icon: ClipboardList, label: "" },
-  InProcess:  { textClass: "text-amber-700",  bgClass: "bg-amber-50",  borderClass: "border-amber-200",  icon: PlayCircle,    label: "" },
-  DoneInTime: { textClass: "text-emerald-700",bgClass: "bg-emerald-50",borderClass: "border-emerald-200",icon: CheckCircle2,  label: "" },
-  DoneInLate: { textClass: "text-orange-700", bgClass: "bg-orange-50", borderClass: "border-orange-200", icon: AlertTriangle, label: "" },
-  Cancel:     { textClass: "text-rose-700",   bgClass: "bg-rose-50",   borderClass: "border-rose-200",   icon: XCircle,       label: "" },
+  Template:   { textClass: "text-slate-600",  bgClass: "bg-slate-50",  borderClass: "border-slate-200",  icon: Circle,        label: "Template" },
+  InProgress: { textClass: "text-amber-700",  bgClass: "bg-amber-50",  borderClass: "border-amber-200",  icon: PlayCircle,    label: "Đang thực hiện" },
+  Completed:  { textClass: "text-emerald-700",bgClass: "bg-emerald-50",borderClass: "border-emerald-200",icon: CheckCircle2,  label: "Hoàn thành" },
+  Deleted:    { textClass: "text-rose-700",   bgClass: "bg-rose-50",   borderClass: "border-rose-200",   icon: XCircle,       label: "Đã xóa" },
+  Assigned:   { textClass: "text-blue-700",   bgClass: "bg-blue-50",   borderClass: "border-blue-200",   icon: Circle,        label: "Được giao" },
+  Taken:      { textClass: "text-purple-700", bgClass: "bg-purple-50", borderClass: "border-purple-200", icon: ClipboardList, label: "Đã nhận" },
+  InProcess:  { textClass: "text-amber-700",  bgClass: "bg-amber-50",  borderClass: "border-amber-200",  icon: PlayCircle,    label: "Đang xử lý" },
+  DoneInTime: { textClass: "text-emerald-700",bgClass: "bg-emerald-50",borderClass: "border-emerald-200",icon: CheckCircle2,  label: "Xong đúng hạn" },
+  DoneInLate: { textClass: "text-orange-700", bgClass: "bg-orange-50", borderClass: "border-orange-200", icon: AlertTriangle, label: "Xong trễ hạn" },
+  Cancel:     { textClass: "text-rose-700",   bgClass: "bg-rose-50",   borderClass: "border-rose-200",   icon: XCircle,       label: "Đã hủy" },
 };
 
-function getStatusLabel(status: StatusType, t: (k: string) => string): string {
-  return ({
-    Assigned: t("status.taskAssigned"),
-    Taken: t("status.taskTaken"),
-    InProcess: t("status.taskInProcess"),
-    DoneInTime: t("status.taskDoneInTime"),
-    DoneInLate: t("status.taskDoneInLate"),
-    Cancel: t("status.taskCancelled"),
-  } as Record<StatusType, string>)[status] ?? status;
+function getStatusConfig(status: string) {
+  return STATUS_CONFIG[status] ?? {
+    textClass: "text-slate-600", bgClass: "bg-slate-50", borderClass: "border-slate-200",
+    icon: Circle, label: status,
+  };
+}
+
+function getStatusLabel(status: string, t: (k: string) => string): string {
+  const map: Record<string, string> = {
+    Template:   "Template",
+    InProgress: t("status.taskInProcess") || "Đang thực hiện",
+    Completed:  t("status.taskDoneInTime") || "Hoàn thành",
+    Deleted:    t("status.taskCancelled") || "Đã xóa",
+    Assigned:   t("status.taskAssigned") || "Được giao",
+    Taken:      t("status.taskTaken") || "Đã nhận",
+    InProcess:  t("status.taskInProcess") || "Đang xử lý",
+    DoneInTime: t("status.taskDoneInTime") || "Xong đúng hạn",
+    DoneInLate: t("status.taskDoneInLate") || "Xong trễ hạn",
+    Cancel:     t("status.taskCancelled") || "Đã hủy",
+  };
+  return map[status] ?? status;
 }
 
 /* ─── Animation variants ──────────────────────────────── */
@@ -90,7 +123,6 @@ const tableRow: Variants = {
 
 const TASKS_PER_PAGE = 20;
 
-/* ─── Chart options ───────────────────────────────────── */
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: true,
@@ -121,20 +153,14 @@ export default function AdminTasks() {
   const [totalCount, setTotalCount] = useState(0);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [researcherFilter, setResearcherFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
-    Assigned: 0, Taken: 0, InProcess: 0,
-    DoneInTime: 0, DoneInLate: 0, Cancel: 0,
-  });
-  const [allResearchers, setAllResearchers] = useState<string[]>([]);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
 
   const [timeMode, setTimeMode] = useState<"day" | "week" | "month">("day");
   const [filterMode, setFilterMode] = useState<"day" | "week" | "month">("day");
   const [filterDate, setFilterDate] = useState<string>("");
 
-  /* ── GSAP progress bar ── */
   const progressRef = useRef<HTMLDivElement>(null);
   const runProgress = () => {
     if (!progressRef.current) return;
@@ -149,17 +175,41 @@ export default function AdminTasks() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await axiosInstance.get("/api/tasks?pageNumber=1&pageSize=1000");
-        if (isApiTaskResponse(res.data)) {
-          const all = Array.isArray(res.data.value?.data) ? res.data.value!.data! : [];
-          setAllTasks(all);
-          const counts: Record<StatusType, number> = { Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0 };
-          const resSet = new Set<string>();
-          all.forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; resSet.add(task.researcher); });
-          setStatusCounts(counts);
-          setAllResearchers(Array.from(resSet));
+        const res = await axiosInstance.get<ApiTaskListResponse>("/api/tasks?pageNumber=1&pageSize=1000");
+        const raw = res.data;
+
+        // Support both { data: [...] } and { value: { data: [...] } } shapes
+        let arr: ApiTask[] = [];
+        if (Array.isArray(raw.data)) {
+          arr = raw.data;
+        } else if ((raw as unknown as { value?: { data?: ApiTask[] } }).value?.data) {
+          arr = (raw as unknown as { value: { data: ApiTask[] } }).value.data;
         }
-      } catch (err) { console.error(err); }
+
+        // Filter out Template tasks for the main task list display
+        const mapped: Task[] = arr.map((t) => ({
+          id: t.id,
+          name: t.name,
+          description: t.description ?? "",
+          researcherId: t.researcherId,
+          technicianId: t.technicianId,
+          targetId: t.targetId,
+          taskTargetType: t.taskTargetType,
+          status: t.status as StatusType,
+          expectedEndDate: t.expectedEndDate,
+          createdDate: t.createdDate,
+        }));
+
+        setAllTasks(mapped);
+
+        const counts: Record<string, number> = {};
+        mapped.forEach((task) => {
+          counts[task.status] = (counts[task.status] ?? 0) + 1;
+        });
+        setStatusCounts(counts);
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+      }
     };
     void loadData();
   }, []);
@@ -168,28 +218,39 @@ export default function AdminTasks() {
   useEffect(() => {
     setLoading(true);
     let filtered = [...allTasks];
-    if (statusFilter !== "all") filtered = filtered.filter((t) => t.status === statusFilter);
-    if (researcherFilter !== "all") filtered = filtered.filter((t) => t.researcher === researcherFilter);
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((t) => t.status === statusFilter);
+    }
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter((task) =>
-        task.name.toLowerCase().includes(q) || task.researcher.toLowerCase().includes(q));
+        task.name.toLowerCase().includes(q) ||
+        (task.researcherId ?? "").toLowerCase().includes(q)
+      );
     }
+
+    filtered.sort((a, b) =>
+      new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+    );
+
     setTotalCount(filtered.length);
     const start = (currentPage - 1) * TASKS_PER_PAGE;
     setTasks(filtered.slice(start, start + TASKS_PER_PAGE));
     setLoading(false);
-  }, [statusFilter, researcherFilter, searchTerm, currentPage, allTasks]);
+  }, [statusFilter, searchTerm, currentPage, allTasks]);
+
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, searchTerm]);
 
   const totalPages = Math.ceil(totalCount / TASKS_PER_PAGE);
-  const hasFilter = statusFilter !== "all" || researcherFilter !== "all" || searchTerm.trim();
+  const hasFilter = statusFilter !== "all" || searchTerm.trim();
 
   /* ── Chart data ── */
   const chartStats = useMemo(() => {
     const grouped: Record<string, { total: number; completedOnTime: number }> = {};
     allTasks.forEach((task) => {
-      if (!task.create_at) return;
-      const date = new Date(task.create_at);
+      if (!task.createdDate || task.createdDate.startsWith("0001")) return;
+      const date = new Date(task.createdDate);
       let key = "";
       if (timeMode === "day") key = date.toLocaleDateString("vi-VN");
       else if (timeMode === "week") {
@@ -198,7 +259,7 @@ export default function AdminTasks() {
       } else key = `${date.getMonth() + 1}/${date.getFullYear()}`;
       if (!grouped[key]) grouped[key] = { total: 0, completedOnTime: 0 };
       grouped[key].total += 1;
-      if (task.status === "DoneInTime") grouped[key].completedOnTime += 1;
+      if (task.status === "Completed" || task.status === "DoneInTime") grouped[key].completedOnTime += 1;
     });
     return Object.entries(grouped).map(([label, v]) => ({ label, ...v }));
   }, [allTasks, timeMode]);
@@ -206,8 +267,8 @@ export default function AdminTasks() {
   const chartData = {
     labels: chartStats.map((i) => i.label),
     datasets: [
-      { label: t("task.totalTasksCreated"), data: chartStats.map((i) => i.total), backgroundColor: "#f43f5e", borderRadius: 6 },
-      { label: t("task.tasksCompletedOnTime"), data: chartStats.map((i) => i.completedOnTime), backgroundColor: "#10b981", borderRadius: 6 },
+      { label: t("task.totalTasksCreated") || "Tổng task tạo", data: chartStats.map((i) => i.total), backgroundColor: "#f43f5e", borderRadius: 6 },
+      { label: t("task.tasksCompletedOnTime") || "Hoàn thành đúng hạn", data: chartStats.map((i) => i.completedOnTime), backgroundColor: "#10b981", borderRadius: 6 },
     ],
   };
 
@@ -215,8 +276,8 @@ export default function AdminTasks() {
     if (!filterDate) return [];
     const grouped: Record<string, { created: number; completedOnTime: number }> = {};
     const filteredTasks = allTasks.filter((task) => {
-      if (!task.create_at) return false;
-      const date = new Date(task.create_at); const sel = new Date(filterDate);
+      if (!task.createdDate || task.createdDate.startsWith("0001")) return false;
+      const date = new Date(task.createdDate); const sel = new Date(filterDate);
       if (filterMode === "day") return date.toDateString() === sel.toDateString();
       if (filterMode === "week") {
         const ws = new Date(sel); ws.setDate(sel.getDate() - sel.getDay() + 1);
@@ -226,7 +287,7 @@ export default function AdminTasks() {
       return date.getMonth() === sel.getMonth() && date.getFullYear() === sel.getFullYear();
     });
     filteredTasks.forEach((task) => {
-      const date = new Date(task.create_at!); let key = "";
+      const date = new Date(task.createdDate); let key = "";
       if (filterMode === "day") key = date.toLocaleDateString("vi-VN");
       else if (filterMode === "week") {
         const s = new Date(date); s.setDate(date.getDate() - date.getDay() + 1);
@@ -234,7 +295,7 @@ export default function AdminTasks() {
       } else key = `${date.getMonth() + 1}/${date.getFullYear()}`;
       if (!grouped[key]) grouped[key] = { created: 0, completedOnTime: 0 };
       grouped[key].created += 1;
-      if (task.status === "DoneInTime") grouped[key].completedOnTime += 1;
+      if (task.status === "Completed" || task.status === "DoneInTime") grouped[key].completedOnTime += 1;
     });
     return Object.entries(grouped).map(([label, v]) => ({ label, ...v }));
   }, [allTasks, filterMode, filterDate]);
@@ -247,13 +308,15 @@ export default function AdminTasks() {
     ],
   };
 
-  const statCards: { key: StatusType; count: number }[] = (
-    Object.keys(STATUS_CONFIG) as StatusType[]
-  ).map((key) => ({ key, count: statusCounts[key] }));
+  // Stat cards — only show statuses that exist in the data
+  const statCards = Object.entries(statusCounts).map(([key, count]) => ({ key, count }));
 
   const tableHeaders = [
-    t("task.taskName"), t("task.taskCreator"),
-    t("task.experimentLog"), t("task.deadline"), t("common.status"),
+    "#", t("task.taskName") || "Tên task",
+    t("common.status") || "Trạng thái",
+    "Loại mục tiêu",
+    t("task.deadline") || "Hạn chót",
+    "Ngày tạo",
   ];
 
   return (
@@ -271,16 +334,14 @@ export default function AdminTasks() {
         {/* ── Header ── */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={0}
-          className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex items-center gap-3"
+          className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
         >
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
-              {t("task.taskStatisticsTitle")}
-            </h1>
-            <p className="mt-0.5 text-sm text-slate-500">
-              Thống kê và quản lý nhiệm vụ trong hệ thống
-            </p>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-[#9f1239]">
+            {t("task.taskStatisticsTitle") || "Thống kê nhiệm vụ"}
+          </h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Thống kê và quản lý nhiệm vụ trong hệ thống
+          </p>
         </motion.div>
 
         {/* ── Chart 1 ── */}
@@ -290,16 +351,16 @@ export default function AdminTasks() {
         >
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold text-[#9f1239]">
-              {t("task.taskStatisticsTitle")}
+              {t("task.taskStatisticsTitle") || "Thống kê nhiệm vụ"}
             </h2>
             <select
               value={timeMode}
               onChange={(e) => setTimeMode(e.target.value as "day" | "week" | "month")}
               className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
             >
-              <option value="day">{t("common.byDay")}</option>
-              <option value="week">{t("common.byWeek")}</option>
-              <option value="month">{t("common.byMonth")}</option>
+              <option value="day">{t("common.byDay") || "Theo ngày"}</option>
+              <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
+              <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
             </select>
           </div>
           <Bar data={chartData} options={chartOptions} />
@@ -312,16 +373,16 @@ export default function AdminTasks() {
         >
           <div className="flex items-center gap-3 flex-wrap mb-5">
             <h2 className="text-base font-semibold text-[#9f1239] flex-1 min-w-max">
-              {t("task.specificTaskStatistics")}
+              {t("task.specificTaskStatistics") || "Thống kê theo thời gian cụ thể"}
             </h2>
             <select
               value={filterMode}
               onChange={(e) => setFilterMode(e.target.value as "day" | "week" | "month")}
               className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
             >
-              <option value="day">{t("common.byDay")}</option>
-              <option value="week">{t("common.byWeek")}</option>
-              <option value="month">{t("common.byMonth")}</option>
+              <option value="day">{t("common.byDay") || "Theo ngày"}</option>
+              <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
+              <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
             </select>
             <input
               type="date"
@@ -339,7 +400,7 @@ export default function AdminTasks() {
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
         >
           {statCards.map((s, i) => {
-            const cfg = STATUS_CONFIG[s.key];
+            const cfg = getStatusConfig(s.key);
             const Icon = cfg.icon;
             return (
               <motion.div
@@ -373,45 +434,32 @@ export default function AdminTasks() {
             {t("seedling.filterAndSearch") || "Lọc & Tìm kiếm"}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
-            {/* Status select */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
             >
-              <option value="all">{t("common.all")}</option>
-              {(Object.keys(STATUS_CONFIG) as StatusType[]).map((key) => (
+              <option value="all">{t("common.all") || "Tất cả"}</option>
+              {Object.keys(STATUS_CONFIG).map((key) => (
                 <option key={key} value={key}>{getStatusLabel(key, t)}</option>
               ))}
             </select>
 
-            {/* Researcher select */}
-            <select
-              value={researcherFilter}
-              onChange={(e) => setResearcherFilter(e.target.value)}
-              className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
-            >
-              <option value="all">{t("common.all")}</option>
-              {allResearchers.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-
-            {/* Search */}
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder={`${t("common.search")} ${t("task.searchTasks").toLowerCase()}...`}
+                placeholder={`Tìm theo tên task...`}
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full border border-rose-100 bg-white rounded-xl pl-10 pr-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e]"
               />
             </div>
 
-            {/* Clear */}
             {hasFilter && (
               <motion.button
                 type="button"
-                onClick={() => { setStatusFilter("all"); setResearcherFilter("all"); setSearchTerm(""); setCurrentPage(1); }}
+                onClick={() => { setStatusFilter("all"); setSearchTerm(""); setCurrentPage(1); }}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -422,34 +470,6 @@ export default function AdminTasks() {
               </motion.button>
             )}
           </div>
-
-          <AnimatePresence>
-            {hasFilter && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-rose-50"
-              >
-                <span className="text-xs text-slate-400">{t("seedling.appliedFilters") || "Bộ lọc đang áp dụng"}</span>
-                {statusFilter !== "all" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
-                    {t("common.status")}: {getStatusLabel(statusFilter as StatusType, t)}
-                  </span>
-                )}
-                {researcherFilter !== "all" && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
-                    {t("task.taskCreator")}: {researcherFilter}
-                  </span>
-                )}
-                {searchTerm.trim() && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-rose-50 text-[#9f1239] border border-rose-100">
-                    {t("common.search")}: "{searchTerm}"
-                  </span>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
 
         {/* ── Table card ── */}
@@ -467,7 +487,7 @@ export default function AdminTasks() {
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
-                      className="p-4 font-semibold text-gray-900 text-center whitespace-nowrap"
+                      className="p-4 font-semibold text-gray-900 text-left whitespace-nowrap"
                     >
                       {h}
                     </motion.th>
@@ -480,7 +500,7 @@ export default function AdminTasks() {
                     <motion.tr key={`sk-${idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       transition={{ delay: idx * 0.03 }}
                       className="border-b border-rose-50 animate-pulse">
-                      {Array.from({ length: 5 }).map((__, ci) => (
+                      {Array.from({ length: tableHeaders.length }).map((__, ci) => (
                         <td key={ci} className="p-4">
                           <div className="h-4 bg-rose-100 rounded w-full" />
                         </td>
@@ -489,16 +509,17 @@ export default function AdminTasks() {
                   ))
                 ) : tasks.length === 0 ? (
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <td colSpan={5} className="text-center p-12 text-gray-500">
+                    <td colSpan={tableHeaders.length} className="text-center p-12 text-gray-500">
                       <div className="text-6xl mb-4">📋</div>
-                      <div className="text-lg font-medium">{t("common.noData")}</div>
+                      <div className="text-lg font-medium">{t("common.noData") || "Không có dữ liệu"}</div>
                     </td>
                   </motion.tr>
                 ) : (
                   <AnimatePresence mode="popLayout">
                     {tasks.map((task, idx) => {
-                      const cfg = STATUS_CONFIG[task.status];
+                      const cfg = getStatusConfig(task.status);
                       const Icon = cfg.icon;
+                      const rowNum = (currentPage - 1) * TASKS_PER_PAGE + idx + 1;
                       return (
                         <motion.tr
                           key={task.id}
@@ -510,21 +531,26 @@ export default function AdminTasks() {
                           className="border-b border-rose-50 cursor-pointer"
                           onClick={() => void navigate(`/admin/tasks/${task.id}`)}
                         >
-                          <td className="p-4 text-center font-medium text-gray-900">{task.name}</td>
-                          <td className="p-4 text-center text-gray-700 text-sm">{task.researcher}</td>
-                          <td className="p-4 text-center text-gray-600 text-sm">
-                            {task.experimentLogName ?? (
-                              <span className="text-slate-300 italic text-xs">—</span>
-                            )}
-                          </td>
-                          <td className="p-4 text-center text-gray-500 text-sm">
-                            {task.end_date ? new Date(task.end_date).toLocaleDateString("vi-VN") : "—"}
-                          </td>
-                          <td className="p-4 text-center">
+                          <td className="p-4 text-gray-500 text-sm">{rowNum}</td>
+                          <td className="p-4 font-medium text-gray-900">{task.name}</td>
+                          <td className="p-4">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bgClass} ${cfg.textClass} border ${cfg.borderClass}`}>
                               <Icon className="w-3 h-3" />
                               {getStatusLabel(task.status, t)}
                             </span>
+                          </td>
+                          <td className="p-4 text-gray-600 text-sm">
+                            {task.taskTargetType ?? <span className="text-slate-300 italic text-xs">—</span>}
+                          </td>
+                          <td className="p-4 text-gray-500 text-sm">
+                            {task.expectedEndDate
+                              ? new Date(task.expectedEndDate).toLocaleDateString("vi-VN")
+                              : <span className="text-slate-300 italic text-xs">—</span>}
+                          </td>
+                          <td className="p-4 text-gray-500 text-sm">
+                            {task.createdDate && !task.createdDate.startsWith("0001")
+                              ? new Date(task.createdDate).toLocaleDateString("vi-VN")
+                              : <span className="text-slate-300 italic text-xs">—</span>}
                           </td>
                         </motion.tr>
                       );
@@ -544,7 +570,7 @@ export default function AdminTasks() {
                 className="flex justify-between items-center text-sm text-slate-600 p-6 bg-white/70 border-t border-rose-100"
               >
                 <span className="font-medium">
-                  {t("common.showing")} {tasks.length} {t("task.tasks")} / {totalCount}
+                  {t("common.showing") || "Hiển thị"} {tasks.length} / {totalCount}
                 </span>
                 {totalPages > 1 && (
                   <div className="flex gap-2">
