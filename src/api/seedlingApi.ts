@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import axiosInstance from "./axiosInstance";
 import type { HybridSuccessRate } from "../types/Seedling";
 
@@ -34,6 +36,17 @@ export const getHybridSuccessRates = async (
   const url = `/api/seedlings/hybrid-success-rates${queryString ? `?${queryString}` : ""}`;
 
   const res = await axiosInstance.get(url);
-  const response = (res.data?.value ?? res.data) as HybridSuccessRateResponse;
-  return response.value || [];
+  
+  // Sửa lại phần bóc tách dữ liệu:
+  // Nếu dữ liệu có dạng { value: [...] }
+  if (res.data && Array.isArray(res.data.value)) {
+    return res.data.value;
+  }
+  
+  // Phòng trường hợp axios interceptor đã bóc sẵn lớp ngoài cùng
+  if (Array.isArray(res.data)) {
+    return res.data;
+  }
+  
+  return [];
 };

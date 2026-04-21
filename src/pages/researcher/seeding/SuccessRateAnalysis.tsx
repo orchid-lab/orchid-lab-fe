@@ -1,11 +1,7 @@
 /* eslint-disable react-x/no-array-index-key */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import "./SuccessRateAnalysis.css";
@@ -48,6 +44,20 @@ const tagAnimation = {
   exit: { opacity: 0, scale: 0.8 },
 };
 
+/** Unwrap API responses that return { value: T } or T directly */
+function unwrapValue<T>(data: unknown): T[] {
+  if (!data) return [];
+  if (
+    typeof data === "object" &&
+    "value" in (data as object) &&
+    Array.isArray((data as { value: unknown }).value)
+  ) {
+    return (data as { value: T[] }).value;
+  }
+  if (Array.isArray(data)) return data as T[];
+  return [];
+}
+
 export default function SuccessRateAnalysis() {
   const { t } = useTranslation();
   const [successRates, setSuccessRates] = useState<HybridSuccessRate[]>([]);
@@ -68,12 +78,11 @@ export default function SuccessRateAnalysis() {
         const seedlingRes = await axiosInstance.get(
           "api/seedlings?PageNumber=1&PageSize=1000",
         );
-        const seedlings = (seedlingRes.data?.data as any[] ?? []).map(
-          (s: any) => ({
-            id: s.id as string,
-            name: (s.localName as string) ?? (s.scientificName as string),
-          }),
-        );
+        const seedlingRaw = seedlingRes.data?.data ?? seedlingRes.data?.value ?? seedlingRes.data ?? [];
+        const seedlings = (seedlingRaw as any[]).map((s: any) => ({
+          id: s.id as string,
+          name: (s.localName as string) ?? (s.scientificName as string),
+        }));
         setAllParents(
           seedlings.filter((s) => s.id && s.name) as SeedlingParentOption[],
         );
@@ -82,12 +91,11 @@ export default function SuccessRateAnalysis() {
         const methodRes = await axiosInstance.get(
           "api/methods?PageNumber=1&PageSize=1000",
         );
-        const methods = (methodRes.data?.data as any[] ?? []).map(
-          (m: any) => ({
-            id: m.id as number,
-            name: m.name as string,
-          }),
-        );
+        const methodRaw = methodRes.data?.data ?? methodRes.data?.value ?? methodRes.data ?? [];
+        const methods = (methodRaw as any[]).map((m: any) => ({
+          id: m.id as number,
+          name: m.name as string,
+        }));
         setAllMethods(methods as MethodOption[]);
       } catch (err) {
         console.error("Error fetching filter options:", err);
@@ -98,6 +106,7 @@ export default function SuccessRateAnalysis() {
   }, []);
 
   /* Fetch success rates based on filters */
+  /* Fetch success rates based on filters */
   const fetchSuccessRates = useCallback(async () => {
     setLoading(true);
     try {
@@ -107,7 +116,27 @@ export default function SuccessRateAnalysis() {
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
 
-      const data = await getHybridSuccessRates(params);
+      console.log("1. Đang gọi API với params:", params);
+      const raw = await getHybridSuccessRates(params);
+      console.log("2. Kết quả raw từ file api trả về:", raw);
+
+      let data: HybridSuccessRate[] = [];
+
+      // Vét mọi trường hợp cấu trúc object
+      if (!raw) {
+        console.warn("⚠️ API trả về null/undefined. Hãy mở file seedlingApi.ts và kiểm tra xem hàm getHybridSuccessRates đã có từ khóa 'return' chưa nhé!");
+      } else if (Array.isArray(raw)) {
+        data = raw;
+      } else if (raw.value && Array.isArray(raw.value)) {
+        data = raw.value;
+      } else if (raw.data && Array.isArray(raw.data)) {
+        data = raw.data;
+      } else if (raw.data && raw.data.value && Array.isArray(raw.data.value)) {
+        data = raw.data.value;
+      }
+
+      console.log("3. Dữ liệu mảng sau khi trích xuất:", data);
+
       setSuccessRates(data);
 
       /* Find highest success rate */
@@ -123,7 +152,7 @@ export default function SuccessRateAnalysis() {
         setHighestSuccessRate("");
       }
     } catch (err) {
-      console.error("Error fetching success rates:", err);
+      console.error("Lỗi khi fetch success rates:", err);
       setSuccessRates([]);
       setHighestSuccessRate("");
     } finally {
@@ -286,11 +315,7 @@ export default function SuccessRateAnalysis() {
                   exit="exit"
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-cyan-50 text-cyan-700 font-medium"
                 >
-                  {
-                    allMethods.find(
-                      (m) => m.id.toString() === methodFilter,
-                    )?.name
-                  }
+                  {allMethods.find((m) => m.id.toString() === methodFilter)?.name}
                 </motion.span>
               )}
               {fromDate && (
@@ -331,18 +356,8 @@ export default function SuccessRateAnalysis() {
           >
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
               <div>
@@ -391,15 +406,9 @@ export default function SuccessRateAnalysis() {
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, idx) => (
-                  <tr
-                    key={`sk-loading-${idx}`}
-                    className="border-b border-blue-50 animate-pulse"
-                  >
+                  <tr key={`sk-loading-${idx}`} className="border-b border-blue-50 animate-pulse">
                     {Array.from({ length: 6 }).map((__, ci) => (
-                      <td
-                        key={`sk-loading-${idx}-${ci}`}
-                        className="py-4 px-6"
-                      >
+                      <td key={`sk-loading-${idx}-${ci}`} className="py-4 px-6">
                         <div className="h-4 bg-blue-100 rounded w-full" />
                       </td>
                     ))}
@@ -426,11 +435,7 @@ export default function SuccessRateAnalysis() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 14 }}
                         layout
-                        transition={{
-                          duration: 0.32,
-                          delay: index * 0.04,
-                          ease: EASE_OUT,
-                        }}
+                        transition={{ duration: 0.32, delay: index * 0.04, ease: EASE_OUT }}
                         whileHover={{
                           backgroundColor: isHighest
                             ? "rgba(5, 150, 213, 0.08)"
@@ -438,60 +443,28 @@ export default function SuccessRateAnalysis() {
                           transition: { duration: 0.15 },
                         }}
                         className={`border-b border-blue-50 ${
-                          isHighest
-                            ? "bg-cyan-100/20 font-semibold"
-                            : "hover:bg-blue-50"
+                          isHighest ? "bg-cyan-100/20 font-semibold" : "hover:bg-blue-50"
                         }`}
                       >
-                        <td
-                          className={`px-6 py-4 ${
-                            isHighest
-                              ? "text-[#005792] font-semibold"
-                              : "text-blue-950"
-                          }`}
-                        >
+                        <td className={`px-6 py-4 ${isHighest ? "text-[#005792] font-semibold" : "text-blue-950"}`}>
                           {item.seedlingParentName}
                         </td>
-                        <td
-                          className={`px-6 py-4 ${
-                            isHighest
-                              ? "text-[#005792] font-semibold"
-                              : "text-blue-950"
-                          }`}
-                        >
+                        <td className={`px-6 py-4 ${isHighest ? "text-[#005792] font-semibold" : "text-blue-950"}`}>
                           {item.methodName}
                         </td>
-                        <td
-                          className={`px-6 py-4 text-center font-medium ${
-                            isHighest
-                              ? "text-[#005792] font-semibold"
-                              : "text-blue-950"
-                          }`}
-                        >
+                        <td className={`px-6 py-4 text-center font-medium ${isHighest ? "text-[#005792] font-semibold" : "text-blue-950"}`}>
                           {item.totalExperiments}
                         </td>
-                        <td
-                          className={`px-6 py-4 text-center font-medium ${
-                            isHighest
-                              ? "text-[#005792] font-semibold"
-                              : "text-blue-950"
-                          }`}
-                        >
+                        <td className={`px-6 py-4 text-center font-medium ${isHighest ? "text-[#005792] font-semibold" : "text-blue-950"}`}>
                           {item.completedExperiments}
                         </td>
                         <td className="px-6 py-4 text-center font-medium">
                           <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{
-                              delay: index * 0.04 + 0.1,
-                              duration: 0.28,
-                              ease: EASE_OUT,
-                            }}
+                            transition={{ delay: index * 0.04 + 0.1, duration: 0.28, ease: EASE_OUT }}
                             className={`inline-flex items-center justify-center rounded-lg px-3 py-1 ${
-                              isHighest
-                                ? "bg-cyan-500 text-white font-semibold shadow-md"
-                                : "bg-cyan-100 text-[#005792]"
+                              isHighest ? "bg-cyan-500 text-white font-semibold shadow-md" : "bg-cyan-100 text-[#005792]"
                             }`}
                           >
                             {item.successRate.toFixed(1)}%
@@ -501,15 +474,9 @@ export default function SuccessRateAnalysis() {
                           <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{
-                              delay: index * 0.04 + 0.1,
-                              duration: 0.28,
-                              ease: EASE_OUT,
-                            }}
+                            transition={{ delay: index * 0.04 + 0.1, duration: 0.28, ease: EASE_OUT }}
                             className={`inline-flex items-center justify-center rounded-lg px-3 py-1 ${
-                              isHighest
-                                ? "bg-blue-500 text-white font-semibold shadow-md"
-                                : "bg-blue-100 text-[#005792]"
+                              isHighest ? "bg-blue-500 text-white font-semibold shadow-md" : "bg-blue-100 text-[#005792]"
                             }`}
                           >
                             {item.averageSurvivalRate.toFixed(1)}%
@@ -534,62 +501,37 @@ export default function SuccessRateAnalysis() {
           custom={3}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          {/* Total Combinations */}
           <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)",
-              transition: { duration: 0.2 },
-            }}
+            whileHover={{ y: -5, boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)", transition: { duration: 0.2 } }}
             className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6"
           >
             <p className="text-sm font-medium text-blue-700 mb-2">
               {t("seedling.totalCombinations")}
             </p>
-            <p className="text-3xl font-semibold text-blue-950">
-              {successRates.length}
-            </p>
+            <p className="text-3xl font-semibold text-blue-950">{successRates.length}</p>
           </motion.div>
 
-          {/* Average Success Rate */}
           <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)",
-              transition: { duration: 0.2 },
-            }}
+            whileHover={{ y: -5, boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)", transition: { duration: 0.2 } }}
             className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6"
           >
             <p className="text-sm font-medium text-blue-700 mb-2">
               {t("seedling.averageSuccessRate")}
             </p>
             <p className="text-3xl font-semibold text-[#005792]">
-              {(
-                successRates.reduce((sum, s) => sum + s.successRate, 0) /
-                successRates.length
-              ).toFixed(1)}
-              %
+              {(successRates.reduce((sum, s) => sum + s.successRate, 0) / successRates.length).toFixed(1)}%
             </p>
           </motion.div>
 
-          {/* Average Survival Rate */}
           <motion.div
-            whileHover={{
-              y: -5,
-              boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)",
-              transition: { duration: 0.2 },
-            }}
+            whileHover={{ y: -5, boxShadow: "0 12px 28px -6px rgba(0,0,0,0.12)", transition: { duration: 0.2 } }}
             className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl p-6"
           >
             <p className="text-sm font-medium text-blue-700 mb-2">
               {t("seedling.averageSurvivalRateOverall")}
             </p>
             <p className="text-3xl font-semibold text-cyan-600">
-              {(
-                successRates.reduce((sum, s) => sum + s.averageSurvivalRate, 0) /
-                successRates.length
-              ).toFixed(1)}
-              %
+              {(successRates.reduce((sum, s) => sum + s.averageSurvivalRate, 0) / successRates.length).toFixed(1)}%
             </p>
           </motion.div>
         </motion.div>
