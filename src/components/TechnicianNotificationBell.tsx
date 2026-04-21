@@ -4,15 +4,13 @@ import { useNotification } from "../context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../context/AuthContext";
 
-const NotificationBell: React.FC = () => {
+const TechnicianNotificationBell: React.FC = () => {
   const { notifications, markAsRead } = useNotification();
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user } = useAuth();
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const sortedNotifications = useMemo(() => {
@@ -34,24 +32,19 @@ const NotificationBell: React.FC = () => {
   const getNavigationPath = (notification: typeof notifications[0]): string => {
     const { title } = notification;
 
-    if (user?.role === "technician") {
-      return "/technician/experiment-log";
+    if (title.includes("Task")) {
+      return "/technician/tasks";
     }
-
-    if (user?.role === "researcher") {
-      if (title.includes("Báo cáo giám sát cần được duyệt")) {
-        return "/researcher/reports";
-      }
-      if (title.includes("Kết quả AI phân tích mẫu")) {
-        return "/researcher/seedlings?page=1";
-      }
-      if (title.includes("Batch") && title.includes("thay đổi trạng thái")) {
-        return "/researcher/tasks";
-      }
-      return "/researcher/experiment-log";
+    if (title.includes("Báo cáo giám sát đã được duyệt")) {
+      return "/technician/reports";
     }
-
-    return "/";
+    if (title.includes("Kết quả AI phân tích mẫu")) {
+      return "/technician/seedlings?page=1";
+    }
+    if (title.includes("Yêu cầu tiêu hủy mẫu vật")) {
+      return "/technician/samples";
+    }
+    return "/technician/experiment-log";
   };
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
@@ -129,4 +122,4 @@ const NotificationBell: React.FC = () => {
   );
 };
 
-export default NotificationBell;
+export default TechnicianNotificationBell;

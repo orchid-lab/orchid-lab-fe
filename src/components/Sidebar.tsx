@@ -23,7 +23,6 @@ export default function Sidebar() {
   const { t } = useTranslation();
   const { logout, user: authUser } = useAuth();
   
-  // Thêm state để lưu full thông tin user giống Topbar
   const [fullUser, setFullUser] = useState<User | null>(null);
 
   // Gọi API lấy dữ liệu chi tiết của user
