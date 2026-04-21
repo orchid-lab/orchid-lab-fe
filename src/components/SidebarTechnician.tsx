@@ -16,17 +16,12 @@ const tabs = [
   { nameKey: "navigation.report", path: "/technician/reports", icon: FaChartBar },
 ];
 
-
 function getRoleBadgeColor(role: string | undefined) {
   switch (role?.toLowerCase()) {
-    case "admin":
-      return "bg-red-500";
-    case "researcher":
-      return "bg-blue-500";
-    case "technician":
-      return "bg-blue-500";
-    default:
-      return "bg-gray-500";
+    case "admin": return "bg-red-500";
+    case "researcher": return "bg-blue-500";
+    case "technician": return "bg-blue-500";
+    default: return "bg-gray-500";
   }
 }
 
@@ -40,7 +35,6 @@ export default function SidebarTechnician() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
-
       try {
         const response = await axiosInstance.get<User>(`/api/user/${authUser.id}`);
         setUser(response.data);
@@ -49,11 +43,9 @@ export default function SidebarTechnician() {
         setUser(authUser);
       }
     };
-
     void fetchUserData();
   }, [authUser]);
 
-  // Update body data attribute when sidebar collapse state changes
   useEffect(() => {
     document.body.setAttribute('data-sidebar-collapsed', String(isCollapsed));
   }, [isCollapsed]);
@@ -63,8 +55,8 @@ export default function SidebarTechnician() {
   );
 
   return (
-    <aside 
-      className={`sidebar-modern ${isCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out`}
+    <aside
+      className={`sidebar-modern sidebar-technician ${isCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out`}
     >
       {/* Header */}
       <div className="sidebar-header h-16 flex items-center justify-between px-4 border-b">
@@ -77,15 +69,10 @@ export default function SidebarTechnician() {
         </div>
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="sidebar-toggle p-2 rounded-lg hover:bg-opacity-10 transition-colors"
+          className="sidebar-toggle p-2 rounded-lg transition-colors"
           aria-label="Toggle sidebar"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             {isCollapsed ? (
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             ) : (
@@ -105,7 +92,7 @@ export default function SidebarTechnician() {
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 focus:outline-none focus:ring-2 transition-all"
+              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 focus:outline-none transition-all"
             />
           </div>
         </div>
@@ -115,12 +102,11 @@ export default function SidebarTechnician() {
       <nav className="flex-1 px-3 overflow-y-auto sidebar-scrollbar">
         {filteredTabs.map((tab) => {
           const Icon = tab.icon;
-          
           return (
             <NavLink
               key={tab.nameKey}
               to={tab.path}
-              className={({ isActive }) => 
+              className={({ isActive }) =>
                 `sidebar-nav-item flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mb-1 group relative ${
                   isActive ? "sidebar-nav-item-active" : ""
                 } ${isCollapsed ? 'justify-center' : ''}`
@@ -135,15 +121,11 @@ export default function SidebarTechnician() {
                   {!isCollapsed && (
                     <>
                       <span className="sidebar-nav-text text-sm font-medium flex-1">{t(tab.nameKey)}</span>
-                      {isActive && (
-                        <span className="sidebar-nav-indicator"></span>
-                      )}
+                      {isActive && <span className="sidebar-nav-indicator"></span>}
                     </>
                   )}
                   {isCollapsed && isActive && (
-                    <div className="sidebar-nav-tooltip">
-                      {t(tab.nameKey)}
-                    </div>
+                    <div className="sidebar-nav-tooltip">{t(tab.nameKey)}</div>
                   )}
                 </>
               )}
@@ -154,7 +136,6 @@ export default function SidebarTechnician() {
 
       {/* Bottom Section */}
       <div className="sidebar-bottom border-t">
-        {/* User Profile */}
         <div className={`sidebar-profile px-3 py-3 border-t ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="flex items-center gap-3">
             <div className="relative flex-shrink-0">
@@ -177,12 +158,12 @@ export default function SidebarTechnician() {
                   {user?.name ?? t('common.loading')}
                 </p>
                 <p className="sidebar-profile-email text-xs truncate opacity-60">
-                  {user?.email ?? 'brooklyn@simmons.com'}
+                  {user?.email ?? ''}
                 </p>
               </div>
             )}
             {!isCollapsed && (
-              <button 
+              <button
                 onClick={logout}
                 className="sidebar-logout-btn p-1.5 rounded-md transition-colors"
                 title="Logout"

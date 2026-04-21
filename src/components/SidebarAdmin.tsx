@@ -75,9 +75,9 @@ export default function SidebarAdmin() {
   );
 
   return (
-    <aside
-      className={`sidebar-modern ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out border-r border-red-100 dark:border-gray-800 bg-white dark:bg-gray-900`}
-    >
+      <aside
+        className={`sidebar-modern sidebar-admin ${isCollapsed ? "sidebar-collapsed" : "sidebar-expanded"} h-screen fixed top-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out border-r border-red-100 dark:border-gray-800 bg-white dark:bg-gray-900`}
+      >
       {/* Header */}
       <div className="sidebar-header h-16 flex items-center justify-between px-4 border-b border-red-50 dark:border-gray-800">
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function SidebarAdmin() {
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="sidebar-toggle p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+          className="sidebar-toggle p-2 rounded-lg text-gray-500 transition-colors"
           aria-label="Toggle sidebar"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ export default function SidebarAdmin() {
               placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 bg-red-50/50 dark:bg-gray-800 focus:ring-2 focus:ring-red-500/50 outline-none transition-all"
+              className="sidebar-search-input w-full pl-10 pr-3 py-2.5 text-sm rounded-lg border-0 outline-none transition-all"
             />
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function SidebarAdmin() {
                 `sidebar-nav-item flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 mb-1 group relative ${
                   isActive
                     ? "active text-red-700 dark:text-red-400"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-gray-800 hover:text-red-600"
+                    : "text-gray-600 dark:text-gray-400"
                 } ${isCollapsed ? "justify-center" : ""}`
               }
               title={isCollapsed ? t(item.labelKey) : undefined}
@@ -143,7 +143,7 @@ export default function SidebarAdmin() {
                 <>
                   <span
                     className={`sidebar-nav-icon text-lg transition-colors ${
-                      isActive ? "text-red-600" : "group-hover:text-red-500"
+                      isActive ? "text-red-600" : ""
                     }`}
                   >
                     <Icon />
@@ -175,7 +175,7 @@ export default function SidebarAdmin() {
           </div>
         )}
 
-        {/* User Profile — không có nền, chỉ padding */}
+        {/* User Profile */}
         <div className={`sidebar-profile px-3 py-3 ${isCollapsed ? "flex justify-center" : ""}`}>
           <div className="flex items-center gap-3 p-2 rounded-xl">
             <div className="relative flex-shrink-0">
@@ -210,7 +210,7 @@ export default function SidebarAdmin() {
               <button
                 type="button"
                 onClick={logout}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                className="sidebar-logout-btn p-2 rounded-lg transition-all"
                 title={t("common.logout")}
               >
                 <FaSignOutAlt className="text-sm" />

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable react-dom/no-missing-button-type */
@@ -22,10 +23,8 @@ const tabs = [
 export default function Sidebar() {
   const { t } = useTranslation();
   const { logout, user: authUser } = useAuth();
-  
   const [fullUser, setFullUser] = useState<User | null>(null);
 
-  // Gọi API lấy dữ liệu chi tiết của user
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authUser?.id) return;
@@ -34,10 +33,9 @@ export default function Sidebar() {
         setFullUser(response.data);
       } catch (error) {
         console.error("Error fetching user data in Sidebar:", error);
-        setFullUser(authUser as User); 
+        setFullUser(authUser as User);
       }
     };
-
     void fetchUserData();
   }, [authUser]);
 
@@ -47,9 +45,6 @@ export default function Sidebar() {
     logout();
   };
 
-  const filteredTabs = tabs;
-
-  // Dùng fullUser để render UI thay vì authUser
   const displayUser = fullUser || authUser;
 
   const userInitials = displayUser?.name
@@ -62,41 +57,86 @@ export default function Sidebar() {
   const userRole = displayUser?.role ? displayUser.role : "Quản trị viên";
 
   return (
-    <aside className="w-full md:w-64 h-screen fixed top-0 left-0 z-30 flex flex-col bg-[#003456] text-white overflow-hidden">
+    <aside className="sidebar-researcher w-full md:w-64 h-screen fixed top-0 left-0 z-30 flex flex-col bg-[#003456] text-white overflow-hidden">
       {/* Header */}
-      <div className="h-16 flex items-center px-6 border-b border-[#00CED1]/20">
+      <div className="h-16 flex items-center px-6" style={{ borderBottom: "1px solid rgba(0,206,209,0.2)" }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 flex items-center justify-center">
-            <GiMicroscope className="text-white text-lg" />
+            <GiMicroscope style={{ color: "#ffffff", fontSize: "1.125rem" }} />
           </div>
-          <span className="text-white text-xl font-bold tracking-tight">
+          <span style={{ color: "#ffffff", fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.025em" }}>
             OrchidLab
           </span>
         </div>
       </div>
 
-      <nav className="flex-1 min-h-0 px-2 pt-2 overflow-y-auto scrollbar-thin scrollbar-thumb-[#00CED1]/40 scrollbar-track-transparent">
-        {filteredTabs.map((tab) => {
+      {/* Nav */}
+      <nav className="flex-1 min-h-0 px-2 pt-2 overflow-y-auto">
+        {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <NavLink
               key={tab.nameKey}
               to={tab.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${
-                  isActive
-                    ? "bg-white/15 text-white font-semibold border-l-4 border-[#00CED1] shadow-sm"
-                    : "text-blue-100/70 hover:bg-white/10 hover:text-white"
-                }`
-              }
             >
               {({ isActive }) => (
-                <>
-                  <span className={`text-base ${isActive ? "text-[#00CED1]" : "text-[#00CED1]/70"}`}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "0.75rem",
+                    marginBottom: "0.5rem",
+                    transition: "all 0.2s",
+                    borderLeft: isActive ? "4px solid #00CED1" : "4px solid transparent",
+                    backgroundColor: isActive ? "rgba(255,255,255,0.15)" : "transparent",
+                    fontWeight: isActive ? 600 : 400,
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+                    }
+                    // force icon color
+                    const icon = e.currentTarget.querySelector(".nav-icon") as HTMLElement;
+                    if (icon) icon.style.color = "#00CED1";
+                    const text = e.currentTarget.querySelector(".nav-text") as HTMLElement;
+                    if (text) text.style.color = "#ffffff";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }
+                    const icon = e.currentTarget.querySelector(".nav-icon") as HTMLElement;
+                    if (icon) icon.style.color = isActive ? "#00CED1" : "rgba(0,206,209,0.7)";
+                    const text = e.currentTarget.querySelector(".nav-text") as HTMLElement;
+                    if (text) text.style.color = isActive ? "#ffffff" : "rgba(255,255,255,0.6)";
+                  }}
+                >
+                  <span
+                    className="nav-icon"
+                    style={{
+                      fontSize: "1rem",
+                      color: isActive ? "#00CED1" : "rgba(0,206,209,0.7)",
+                      flexShrink: 0,
+                      transition: "color 0.2s",
+                    }}
+                  >
                     <Icon />
                   </span>
-                  <span className="text-sm font-medium">{t(tab.nameKey)}</span>
-                </>
+                  <span
+                    className="nav-text"
+                    style={{
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      color: isActive ? "#ffffff" : "rgba(255,255,255,0.6)",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    {t(tab.nameKey)}
+                  </span>
+                </div>
               )}
             </NavLink>
           );
@@ -104,44 +144,67 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile + Logout */}
-      <div className="mt-auto px-4 py-4 border-t border-[#00CED1]/20">
-        <div className="mb-4 flex items-center gap-3">
-          {/* Avatar hiển thị ở đây */}
+      <div className="px-4 py-4" style={{ borderTop: "1px solid rgba(0,206,209,0.2)" }}>
+        <div className="flex items-center gap-3 mb-4">
           {displayUser?.avatarUrl ? (
             <img
               src={displayUser.avatarUrl}
               alt={displayUser?.name || "User Avatar"}
-              className="w-10 h-10 rounded-full object-cover border border-[#00CED1]/30"
+              className="w-10 h-10 rounded-full object-cover"
+              style={{ border: "1px solid rgba(0,206,209,0.3)" }}
               onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                (e.target as HTMLImageElement).style.display = "none";
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
               }}
             />
           ) : null}
-          
-          <div 
-            className={`w-10 h-10 rounded-full bg-[#00CED1]/20 flex items-center justify-center text-[#00CED1] font-bold ${displayUser?.avatarUrl ? 'hidden' : ''}`}
+
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+              displayUser?.avatarUrl ? "hidden" : ""
+            }`}
+            style={{ backgroundColor: "rgba(0,206,209,0.2)", color: "#00CED1" }}
           >
             {userInitials}
           </div>
 
           <div>
-            <p className="text-white text-sm font-semibold leading-tight line-clamp-1">
+            <p style={{ color: "#ffffff", fontSize: "0.875rem", fontWeight: 600 }}>
               {displayUser?.name || t("common.loading")}
             </p>
-            <p className="text-blue-100 text-xs">{userRole}</p>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem" }}>{userRole}</p>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full text-white hover:bg-[#FF6F61]/10 hover:text-[#FF6F61]"
-        >
-          <span className="text-base">
-            <FaSignOutAlt />
-          </span>
-          <span className="text-sm font-medium">{t('common.logout')}</span>
-        </button>
+
+        <LogoutButton onClick={handleLogout} label={t("common.logout")} />
       </div>
     </aside>
+  );
+}
+
+function LogoutButton({ onClick, label }: { onClick: () => void; label: string }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "0.75rem",
+        padding: "0.625rem 0.75rem",
+        borderRadius: "0.75rem",
+        transition: "all 0.2s",
+        width: "100%",
+        background: hovered ? "rgba(255,111,97,0.1)" : "transparent",
+        color: hovered ? "#FF6F61" : "#ffffff",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      <FaSignOutAlt style={{ fontSize: "1rem", color: "inherit" }} />
+      <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>{label}</span>
+    </button>
   );
 }

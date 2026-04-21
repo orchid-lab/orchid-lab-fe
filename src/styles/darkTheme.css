@@ -435,10 +435,6 @@ body {
   background-color: #eff6ff !important;
 }
 
-:root[data-theme='light'] .hover\:bg-red-50:hover {
-  background-color: #fee2e2 !important;
-}
-
 /* Dropdown */
 :root[data-theme='light'] .bg-white[class*="absolute"][class*="shadow"] {
   background-color: #ffffff !important;
@@ -1015,10 +1011,6 @@ body[data-sidebar-collapsed="true"] .topbar-header {
   color: var(--sidebar-text-secondary);
 }
 
-.sidebar-logout-btn:hover {
-  background: var(--logout-hover-bg);
-  color: var(--logout-hover-color);
-}
 
 /* ==================== LIGHT THEME VARIABLES ==================== */
 :root[data-theme='light'] {
@@ -1046,8 +1038,6 @@ body[data-sidebar-collapsed="true"] .topbar-header {
   --avatar-border: #e5e7eb;
   --avatar-placeholder-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 
-  --logout-hover-bg: #fee2e2;
-  --logout-hover-color: #dc2626;
 
   --notification-badge-bg: #6366f1;
 
@@ -1084,8 +1074,6 @@ body[data-sidebar-collapsed="true"] .topbar-header {
   --avatar-border: #374151;
   --avatar-placeholder-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 
-  --logout-hover-bg: rgba(220, 38, 38, 0.15);
-  --logout-hover-color: #f87171;
 
   --notification-badge-bg: #6366f1;
 
