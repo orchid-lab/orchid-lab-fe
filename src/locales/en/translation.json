@@ -923,6 +923,7 @@
     "pageTitle": "Tasks Management",
     "pageSubtitle": "View and manage your assigned tasks",
     "targetName": "Target Name",
+    "technicianName": "Technician",
     "loadingTasks": "Loading task details...",
     "detailTitle": "Task Details",
     "updating": "Updating...",

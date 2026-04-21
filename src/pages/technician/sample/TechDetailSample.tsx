@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-dom/no-missing-button-type */
-/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
@@ -9,6 +9,12 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  ArrowLeft, Leaf, Beaker, ClipboardList, Activity,
+  Camera, Microscope, ShieldAlert, Trash2, X, Info,
+  CheckCircle2, AlertTriangle, User, CalendarClock, Loader2, Save
+} from "lucide-react";
 import type {
   ExperimentLogApiResponse,
   SampleDetail,
@@ -36,11 +42,11 @@ type PredefinedStage = {
 };
 
 const STATUS_COLOR_MAP: Record<SampleStatus, string> = {
-  [SampleStatusValue.Created]: "bg-blue-100 text-blue-800",
-  [SampleStatusValue.InProgressed]: "bg-yellow-100 text-yellow-800",
-  [SampleStatusValue.Completed]: "bg-green-100 text-green-800",
-  [SampleStatusValue.ExecutedBecauseOfDisease]: "bg-red-100 text-red-800",
-  [SampleStatusValue.ConvertedToSeedling]: "bg-purple-100 text-purple-800",
+  [SampleStatusValue.Created]: "bg-slate-100 text-slate-700 border-slate-200",
+  [SampleStatusValue.InProgressed]: "bg-amber-100 text-amber-800 border-amber-200",
+  [SampleStatusValue.Completed]: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  [SampleStatusValue.ExecutedBecauseOfDisease]: "bg-rose-100 text-rose-800 border-rose-200",
+  [SampleStatusValue.ConvertedToSeedling]: "bg-purple-100 text-purple-800 border-purple-200",
 };
 
 const PREDEFINED_STAGES: PredefinedStage[] = [
@@ -71,13 +77,11 @@ const PREDEFINED_STAGES: PredefinedStage[] = [
 ];
 
 const formatDate = (value?: string | null): string => {
-  if (!value) return "";
+  if (!value) return "—";
   return new Date(value).toLocaleDateString("vi-VN");
 };
 
-const normalizeStageList = (
-  sampleStageDto: SampleDetail["sampleStageDto"],
-): SampleStageDetail[] => {
+const normalizeStageList = (sampleStageDto: SampleDetail["sampleStageDto"]): SampleStageDetail[] => {
   if (!sampleStageDto) return [];
   if (Array.isArray(sampleStageDto)) return sampleStageDto;
   return [sampleStageDto];
@@ -85,21 +89,22 @@ const normalizeStageList = (
 
 const resolveImageUrl = (imageUrl?: string | null): string => {
   if (!imageUrl) return "";
-  if (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith("data:")) {
-    return imageUrl;
-  }
-
+  if (/^https?:\/\//i.test(imageUrl) || imageUrl.startsWith("data:")) return imageUrl;
   const baseUrl = axiosInstance.defaults.baseURL ?? "";
-  const normalizedBaseUrl = baseUrl.endsWith("/")
-    ? baseUrl.slice(0, -1)
-    : baseUrl;
-  const normalizedImageUrl = imageUrl.startsWith("/")
-    ? imageUrl
-    : `/${imageUrl}`;
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  const normalizedImageUrl = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
-
+/* ─── Animation Variants ─── */
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+};
 
 export default function TechDetailSample() {
   const navigate = useNavigate();
@@ -108,23 +113,16 @@ export default function TechDetailSample() {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
-  // Get navigation source from location state
-  const navigationSource = location.state as {
-    from?: "experimentLogDetail" | "sampleList";
-    experimentLogId?: string;
-  } | null;
+  const navigationSource = location.state as { from?: "experimentLogDetail" | "sampleList"; experimentLogId?: string; } | null;
 
   const [sample, setSample] = useState<SampleDetail | null>(null);
-  const [experimentLogMap, setExperimentLogMap] = useState<
-    Record<string, string>
-  >({});
+  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(
-    null,
-  );
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -133,63 +131,40 @@ export default function TechDetailSample() {
   const [destroyReason, setDestroyReason] = useState("");
   const [isDestroying, setIsDestroying] = useState(false);
 
-  // --- Confirm Delete (Confirmed status) modal state ---
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // --- Disease Incidents state ---
   const [incidents, setIncidents] = useState<DiseaseIncident[]>([]);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
   const [incidentsError, setIncidentsError] = useState<string | null>(null);
-  const [incidentStatusFilter, setIncidentStatusFilter] = useState<
-    DiseaseIncidentStatus | undefined
-  >(undefined);
-  const [reviewingIncident, setReviewingIncident] =
-    useState<DiseaseIncident | null>(null);
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState<DiseaseIncidentStatus | undefined>(undefined);
+  const [reviewingIncident, setReviewingIncident] = useState<DiseaseIncident | null>(null);
   const [reviewIsConfirmed, setReviewIsConfirmed] = useState(true);
   const [reviewNote, setReviewNote] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [, setReviewError] = useState<string | null>(null);
 
-  const stageNameMap: Record<string, string> = {
-    coppice: "Chồi",
-    tissue: "Mầm",
-    tree: "Cây hoàn chỉnh",
-  };
 
   useEffect(() => {
     const load = async () => {
       if (!id) return;
       setLoading(true);
       setError(null);
-
       try {
-        const [sampleResponse, experimentLogsResponse, usersResponse] =
-          await Promise.all([
-            axiosInstance.get(`/api/samples/${id}`),
-            axiosInstance.get<ExperimentLogApiResponse>(
-              "/api/experiment-logs?PageNo=1&PageSize=1000",
-            ),
-            axiosInstance.get<UserApiResponse>(
-              "/api/user?PageNumber=1&PageSize=1000",
-            ),
-          ]);
-
-        const sampleData = (sampleResponse?.data?.value ??
-          sampleResponse?.data) as SampleDetail;
-
+        const [sampleResponse, experimentLogsResponse, usersResponse] = await Promise.all([
+          axiosInstance.get(`/api/samples/${id}`),
+          axiosInstance.get<ExperimentLogApiResponse>("/api/experiment-logs?PageNo=1&PageSize=1000"),
+          axiosInstance.get<UserApiResponse>("/api/user?PageNumber=1&PageSize=1000"),
+        ]);
+        const sampleData = (sampleResponse?.data?.value ?? sampleResponse?.data) as SampleDetail;
         const logs = experimentLogsResponse.data.data ?? [];
         const mapping: Record<string, string> = {};
-        logs.forEach((log) => {
-          mapping[log.id] = log.name;
-        });
+        logs.forEach((log) => { mapping[log.id] = log.name; });
 
         const users = usersResponse.data.data ?? [];
         const userMapping: Record<string, string> = {};
-        users.forEach((user) => {
-          userMapping[user.id] = user.name;
-        });
+        users.forEach((u) => { userMapping[u.id] = u.name; });
 
         setExperimentLogMap(mapping);
         setUserMap(userMapping);
@@ -201,38 +176,25 @@ export default function TechDetailSample() {
         setLoading(false);
       }
     };
-
     void load();
   }, [id, enqueueSnackbar]);
 
-  // Fetch incidents whenever the sample's experimentLogId or filter changes
   useEffect(() => {
     const expLogId = sample?.experimentLogId;
     if (!expLogId) return;
-
     setIncidentsLoading(true);
     setIncidentsError(null);
 
-    //Fetch stageId first, then fetch incidents based on stageId and filter
-    const stageIdSet = new Set(
-      normalizeStageList(sample?.sampleStageDto).map((stage: SampleStageDetail) => stage.id)
-    );
+    const stageIdSet = new Set(normalizeStageList(sample?.sampleStageDto).map((stage: SampleStageDetail) => stage.id));
 
-    getDiseaseIncidents({
-      experimentLogId: expLogId,
-      status: incidentStatusFilter,
-    })
+    getDiseaseIncidents({ experimentLogId: expLogId, status: incidentStatusFilter })
       .then((data) => {
-        // Filter incidents to only include those related to the sample's stages
-        const filteredIncidents = data.data?.filter((incident) =>
-          stageIdSet.has(incident.sampleStageId),
-        ) ?? [];
+        const filteredIncidents = data.data?.filter((incident) => stageIdSet.has(incident.sampleStageId)) ?? [];
         setIncidents(filteredIncidents);
       })
       .catch(() => setIncidentsError(t("diseaseIncident.loadError")))
       .finally(() => setIncidentsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sample?.experimentLogId, incidentStatusFilter]);
+  }, [sample?.experimentLogId, incidentStatusFilter, sample?.sampleStageDto, t]);
 
   const openReviewModal = (incident: DiseaseIncident) => {
     setReviewingIncident(incident);
@@ -240,28 +202,18 @@ export default function TechDetailSample() {
     setReviewNote("");
     setReviewError(null);
   };
-
-  const closeReviewModal = () => {
-    if (reviewSubmitting) return;
-    setReviewingIncident(null);
-  };
+  const closeReviewModal = () => { if (!reviewSubmitting) setReviewingIncident(null); };
 
   const handleSubmitReview = async () => {
     if (!reviewingIncident) return;
     setReviewSubmitting(true);
     setReviewError(null);
     try {
-      await reviewDiseaseIncident(reviewingIncident.id, {
-        isConfirmed: reviewIsConfirmed,
-        note: reviewNote.trim() || undefined,
-      });
+      await reviewDiseaseIncident(reviewingIncident.id, { isConfirmed: reviewIsConfirmed, note: reviewNote.trim() || undefined });
       setReviewingIncident(null);
       const expLogId = sample?.experimentLogId;
       if (expLogId) {
-        const data = await getDiseaseIncidents({
-          experimentLogId: expLogId,
-          status: incidentStatusFilter,
-        });
+        const data = await getDiseaseIncidents({ experimentLogId: expLogId, status: incidentStatusFilter });
         setIncidents(data.data ?? []);
       }
     } catch {
@@ -273,53 +225,30 @@ export default function TechDetailSample() {
 
   const getIncidentStatusLabel = (status: DiseaseIncidentStatus): string => {
     switch (status) {
-      case DiseaseIncidentStatus.AIDetected:
-        return t("diseaseIncident.statusAIDetected");
-      case DiseaseIncidentStatus.UnderReview:
-        return t("diseaseIncident.statusUnderReview");
-      case DiseaseIncidentStatus.Confirmed:
-        return t("diseaseIncident.statusConfirmed");
-      case DiseaseIncidentStatus.Dismissed:
-        return t("diseaseIncident.statusDismissed");
-      default:
-        return String(status);
+      case DiseaseIncidentStatus.AIDetected: return t("diseaseIncident.statusAIDetected");
+      case DiseaseIncidentStatus.UnderReview: return t("diseaseIncident.statusUnderReview");
+      case DiseaseIncidentStatus.Confirmed: return t("diseaseIncident.statusConfirmed");
+      case DiseaseIncidentStatus.Dismissed: return t("diseaseIncident.statusDismissed");
+      default: return String(status);
     }
   };
 
   const getIncidentStatusClass = (status: DiseaseIncidentStatus): string => {
     switch (status) {
-      case DiseaseIncidentStatus.AIDetected:
-        return "px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700";
-      case DiseaseIncidentStatus.UnderReview:
-        return "px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800";
-      case DiseaseIncidentStatus.Confirmed:
-        return "px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700";
-      case DiseaseIncidentStatus.Dismissed:
-        return "px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600";
-      default:
-        return "px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600";
+      case DiseaseIncidentStatus.AIDetected: return "bg-rose-100 text-rose-700 border-rose-200";
+      case DiseaseIncidentStatus.UnderReview: return "bg-amber-100 text-amber-800 border-amber-200";
+      case DiseaseIncidentStatus.Confirmed: return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case DiseaseIncidentStatus.Dismissed: return "bg-slate-100 text-slate-700 border-slate-200";
+      default: return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
 
   const handleBack = () => {
-    // Navigate back to the source page based on location state
-    if (
-      navigationSource?.from === "experimentLogDetail" &&
-      navigationSource.experimentLogId
-    ) {
-      navigate(
-        `/technician/experiment-log/${navigationSource.experimentLogId}`,
-      );
-    } else if (navigationSource?.from === "sampleList") {
-      navigate("/technician/samples");
+    if (navigationSource?.from === "experimentLogDetail" && navigationSource.experimentLogId) {
+      navigate(`/technician/experiment-log/${navigationSource.experimentLogId}`);
     } else {
-      // Default fallback to sample list
       navigate("/technician/samples");
     }
-  };
-
-  const handleAnalyzeDisease = async () => {
-    setShowImageModal(true);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,36 +256,20 @@ export default function TechDetailSample() {
     if (file) {
       setSelectedImage(file);
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setImagePreview(event.target?.result as string);
-      };
+      reader.onload = (event) => { setImagePreview(event.target?.result as string); };
       reader.readAsDataURL(file);
     }
   };
 
   const handleUploadAndAnalyze = async () => {
     if (!id || !selectedImage) return;
-
     setAnalyzing(true);
     try {
-      // Perform analysis
       const analysisFormData = new FormData();
       analysisFormData.append("image", selectedImage);
-
-      const analysisStart = performance.now();
-      const result = await axiosInstance.post<AnalysisResponse>(
-        "/api/monitoring-log/analysis",
-        analysisFormData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-      const analysisEnd = performance.now();
-      const analysisTime = Math.round(analysisEnd - analysisStart);
-      console.log(`Analysis took ${analysisTime}ms`);
-
+      const result = await axiosInstance.post<AnalysisResponse>("/api/monitoring-log/analysis", analysisFormData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setAnalysisResult(result.data);
       setShowAnalysisModal(true);
       setShowImageModal(false);
@@ -364,7 +277,6 @@ export default function TechDetailSample() {
       setImagePreview("");
       enqueueSnackbar(t("common.success"), { variant: "success" });
     } catch (err) {
-      console.error("Error analyzing disease:", err);
       enqueueSnackbar(t("common.error"), { variant: "error" });
     } finally {
       setAnalyzing(false);
@@ -379,38 +291,20 @@ export default function TechDetailSample() {
 
   const isHealthyAnalysis = useMemo(() => {
     if (!analysisResult) return true;
-
     const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
     const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
-
-    if (
-      diseaseCode.includes("healthy") ||
-      diseaseName.includes("healthy") ||
-      diseaseName.includes("khỏe")
-    ) {
-      return true;
-    }
-
-    const values = Object.entries(analysisResult.analyticResult)
-      .filter(([key]) => key !== "healthy")
-      .map(([, value]) => value as number);
+    if (diseaseCode.includes("healthy") || diseaseName.includes("healthy") || diseaseName.includes("khỏe")) return true;
+    const values = Object.entries(analysisResult.analyticResult).filter(([key]) => key !== "healthy").map(([, value]) => value as number);
     const maxNonHealthy = values.length > 0 ? Math.max(...values) : 0;
-
     return analysisResult.analyticResult.healthy >= maxNonHealthy;
   }, [analysisResult]);
 
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
-
-    const finalReason =
-      destroyReason.trim() || `Mẫu vật nhiễm ${analysisResult.disease.name}`;
+    const finalReason = destroyReason.trim() || `Mẫu vật nhiễm ${analysisResult.disease.name}`;
     setIsDestroying(true);
-
     try {
-      await axiosInstance.delete(`/api/samples/${id}`, {
-        data: { reason: finalReason },
-      });
-
+      await axiosInstance.delete(`/api/samples/${id}`, { data: { reason: finalReason } });
       enqueueSnackbar("Tiêu hủy mẫu vật thành công", { variant: "success" });
       setShowDestroyForm(false);
       setDestroyReason("");
@@ -423,21 +317,12 @@ export default function TechDetailSample() {
     }
   };
 
-  // --- Confirm Delete (Confirmed incident) modal handlers ---
-  const handleCancelDeleteModal = () => {
-    setShowConfirmDeleteModal(false);
-    setDeleteReason("");
-  };
-
   const handleConfirmDeleteSample = async () => {
     if (!sample?.id) return;
     setIsDeleting(true);
     try {
-      await axiosInstance.delete(`/api/samples/${sample.id}`, {
-        data: { reason: deleteReason },
-      });
+      await axiosInstance.delete(`/api/samples/${sample.id}`, { data: { reason: deleteReason } });
       enqueueSnackbar(t("common.success") ?? "Xóa thành công", { variant: "success" });
-      // After deletion, navigate back to list or previous page
       handleBack();
     } catch {
       enqueueSnackbar(t("common.error") ?? "Lỗi khi xóa", { variant: "error" });
@@ -448,51 +333,19 @@ export default function TechDetailSample() {
     }
   };
 
-  // Open confirm delete modal (for Confirmed incidents)
-  const openConfirmDeleteModal = () => setShowConfirmDeleteModal(true);
-
   const getStatusLabel = (status: SampleStatus): string => {
     const statusMap: Record<SampleStatus, string> = {
       [SampleStatusValue.Created]: t("sample.statusCreated"),
       [SampleStatusValue.InProgressed]: t("sample.statusInProgressed"),
       [SampleStatusValue.Completed]: t("sample.statusCompleted"),
-      [SampleStatusValue.ExecutedBecauseOfDisease]: t(
-        "sample.statusExecutedBecauseOfDisease",
-      ),
-      [SampleStatusValue.ConvertedToSeedling]: t(
-        "sample.statusConvertedToSeedling",
-      ),
+      [SampleStatusValue.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
+      [SampleStatusValue.ConvertedToSeedling]: t("sample.statusConvertedToSeedling"),
     };
     return statusMap[status] || status;
   };
 
-  const metadataRows = useMemo(() => {
-    if (!sample) return [];
 
-    return [
-      {
-        label: t("sample.createdBy"),
-        value: userMap[sample.createdBy ?? ""] ?? sample.createdBy ?? "",
-      },
-      { label: t("sample.createdDate"), value: formatDate(sample.createdDate) },
-      {
-        label: t("sample.updatedBy"),
-        value: userMap[sample.updatedBy ?? ""] ?? sample.updatedBy ?? "",
-      },
-      { label: t("sample.updatedDate"), value: formatDate(sample.updatedDate) },
-      {
-        label: t("sample.executionDate"),
-        value: formatDate(sample.executionDate),
-      },
-    ].filter((item) => item.value);
-  }, [sample, userMap, t]);
-
-  const sampleStages = useMemo(
-    () => normalizeStageList(sample?.sampleStageDto ?? null),
-    [sample?.sampleStageDto],
-  );
-
-  // Lấy latestStage: ưu tiên InProgressed, nếu không lấy stage cuối cùng (theo thứ tự API)
+  const sampleStages = useMemo(() => normalizeStageList(sample?.sampleStageDto ?? null), [sample?.sampleStageDto]);
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
     const inProgressStage = sampleStages.find((stage) => stage.status === SampleStatusValue.InProgressed);
@@ -500,50 +353,38 @@ export default function TechDetailSample() {
     return sampleStages[sampleStages.length - 1];
   }, [sampleStages]);
 
-  // Lấy currentStageLabel từ sample.currentSampleStage
   const currentStageLabel = sample?.currentSampleStage ?? "-";
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
 
-  // Tiến trình giai đoạn nuôi cấy: không sort, lấy đúng thứ tự sampleStages từ API
   const stageProgressRows = useMemo(() => {
     return sampleStages.map((stage) => {
-      const predefinedStage = PREDEFINED_STAGES.find(
-        (pre) => pre.order === stage.sampleStageDefinition?.order
-      );
+      const predefinedStage = PREDEFINED_STAGES.find((pre) => pre.order === stage.sampleStageDefinition?.order);
       const hasReport = (stage.logDetailDtos?.length ?? 0) > 0;
       const stageImageUrl = resolveImageUrl(stage.latestImageUrl);
       const hasImage = Boolean(stageImageUrl);
       let progressLabel = t("sample.stageProgress.future");
-      let progressClass = "bg-blue-100 text-blue-800";
+      let progressClass = "bg-slate-100 text-slate-600 border-slate-200";
       if (stage.status === SampleStatusValue.Completed) {
         progressLabel = t("sample.stageProgress.passed");
-        progressClass = "bg-emerald-100 text-emerald-800";
+        progressClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
       } else if (stage.status === SampleStatusValue.InProgressed) {
         progressLabel = t("sample.stageProgress.current");
-        progressClass = "bg-yellow-100 text-yellow-800";
+        progressClass = "bg-amber-100 text-amber-800 border-amber-200";
       } else if (hasReport) {
         progressLabel = t("sample.stageProgress.hasData");
-        progressClass = "bg-green-100 text-green-800";
+        progressClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
       }
-      return {
-        predefinedStage,
-        matchedStage: stage,
-        hasReport,
-        hasImage,
-        stageImageUrl,
-        progressLabel,
-        progressClass,
-      };
+      return { predefinedStage, matchedStage: stage, hasReport, hasImage, stageImageUrl, progressLabel, progressClass };
     });
   }, [sampleStages, t]);
 
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center text-emerald-600 animate-pulse">
+          <Leaf className="w-12 h-12 mb-4 animate-bounce" />
+          <p className="font-medium text-lg">Đang tải dữ liệu mẫu...</p>
         </div>
       </main>
     );
@@ -551,16 +392,12 @@ export default function TechDetailSample() {
 
   if (error || !sample) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">
-            {error ?? "Không tìm thấy dữ liệu"}
-          </p>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
-          >
-            Quay lại
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-slate-50 p-8 flex items-center justify-center">
+        <div className="text-center max-w-md bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+          <AlertTriangle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+          <p className="text-rose-600 font-semibold text-lg mb-6">{error ?? "Không tìm thấy dữ liệu"}</p>
+          <button onClick={handleBack} className="px-6 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium">
+            Quay lại danh sách
           </button>
         </div>
       </main>
@@ -568,856 +405,474 @@ export default function TechDetailSample() {
   }
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
-      <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1200px] mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">
-            Chi tiết mẫu thí nghiệm: {sample.name}
-          </h2>
-          <div className="flex gap-3 items-center">
-            {/* Delete button for Confirmed incidents */}
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-6 lg:p-8 text-slate-800">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Nút Quay Lại */}
+        <motion.button variants={fadeInUp} onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 transition-colors mb-2 font-medium w-fit">
+          <ArrowLeft className="w-4 h-4" /> Quay lại
+        </motion.button>
+
+        {/* Header & Actions */}
+        <motion.div variants={fadeInUp} className="bg-white rounded-2xl p-6 shadow-sm border border-[#DDEEE0] flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-[#E4F0E8] text-[#2D5A27] rounded-xl shadow-inner">
+              <Leaf className="w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#1e3e1c]">{sample.name}</h2>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${STATUS_COLOR_MAP[sample.status] || "bg-slate-100 text-slate-700"}`}>
+                  {getStatusLabel(sample.status)}
+                </span>
+                <span className="text-sm text-slate-500 font-medium">ID: {sample.id.split("-")[0]}...</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
             {incidents.some((inc) => inc.status === DiseaseIncidentStatus.Confirmed) && (
-                <button
-                type="button"
-                onClick={openConfirmDeleteModal}
-                className={`px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium`}
-              >
-                {t("sample.destroySample") ?? "Xóa"}
+              <button onClick={() => setShowConfirmDeleteModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors font-semibold shadow-sm">
+                <Trash2 className="w-4 h-4" /> {t("sample.destroySample") ?? "Hủy mẫu"}
               </button>
             )}
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
-              <button
-                onClick={handleAnalyzeDisease}
-                disabled={analyzing}
-                className={`px-4 py-2 rounded-lg transition-colors font-medium text-white ${
-                  analyzing
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                }`}
-              >
+              <button onClick={() => setShowImageModal(true)} disabled={analyzing} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-sm ${analyzing ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-[#2D5A27] hover:bg-[#1e3e1c] text-white"}`}>
+                <Microscope className="w-4 h-4" />
                 {analyzing ? t("sample.analyzing") : t("sample.analyzeDisease")}
               </button>
             )}
-            <span
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
-                STATUS_COLOR_MAP[sample.status] || "bg-gray-100 text-gray-800"
-              }`}
-            >
-              {getStatusLabel(sample.status)}
-            </span>
           </div>
+        </motion.div>
+
+        {/* Grid Thông Tin Cơ Bản */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div variants={fadeInUp} className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+              <Info className="w-5 h-5 text-[#2D5A27]" />
+              <h3 className="text-lg font-bold text-[#1e3e1c]">Thông tin mẫu</h3>
+            </div>
+            <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Thí nghiệm</span>
+                <div className="text-base font-medium text-slate-800 flex items-center gap-2">
+                  <Beaker className="w-4 h-4 text-emerald-600" />
+                  {experimentLogMap[sample.experimentLogId] || sample.experimentLogId}
+                </div>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Giai đoạn hiện tại</span>
+                <div className="text-base font-medium text-slate-800 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-amber-500" />
+                  {currentStageLabel}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ghi chú mẫu</span>
+                <div className="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  {sample.notes ?? <span className="italic text-slate-400">Không có ghi chú</span>}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden h-fit">
+            <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+              <User className="w-5 h-5 text-[#2D5A27]" />
+              <h3 className="text-lg font-bold text-[#1e3e1c]">Người thực hiện</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Người tạo</span>
+                <div className="text-sm font-bold text-[#2D5A27]">{userMap[sample.createdBy ?? ""] ?? sample.createdBy ?? "—"}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{formatDate(sample.createdDate)}</div>
+              </div>
+              <div className="pt-3 border-t border-[#DDEEE0]">
+                <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Cập nhật lần cuối</span>
+                <div className="text-sm font-bold text-[#1e3e1c]">{userMap[sample.updatedBy ?? ""] ?? sample.updatedBy ?? "—"}</div>
+                <div className="text-xs text-slate-400 mt-0.5">{formatDate(sample.updatedDate)}</div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">Thông tin người làm</h3>
-          {metadataRows.length === 0 ? (
-            <p className="text-sm text-gray-500">Không có thông tin hiển thị</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {metadataRows.map((row) => (
-                <div key={row.label} className="flex flex-col">
-                  <label className="font-medium mb-1.5">{row.label}</label>
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {row.value}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">Thông tin cơ bản</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <label className="font-medium mb-1.5">Tên mẫu</label>
-              <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {sample.name}
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <label className="font-medium mb-1.5">Thí nghiệm</label>
-              <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {experimentLogMap[sample.experimentLogId] ||
-                  sample.experimentLogId}
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <label className="font-medium mb-1.5">
-                Giai đoạn phát triển hiện tại
-              </label>
-              <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {currentStageLabel}
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <label className="font-medium mb-1.5">Ghi chú</label>
-              <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {sample.notes ?? "-"}
-              </div>
-            </div>
+        {/* Tiến Trình Giai Đoạn */}
+        <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden">
+          <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+            <CalendarClock className="w-5 h-5 text-[#2D5A27]" />
+            <h3 className="text-lg font-bold text-[#1e3e1c]">{t("sample.stageProgress.title") ?? "Tiến trình nuôi cấy"}</h3>
           </div>
-        </section>
-
-        <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">
-            {t("sample.stageProgress.title")}
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             {stageProgressRows.map((row, idx) => {
-              const {
-                predefinedStage,
-                matchedStage,
-                hasReport,
-                hasImage,
-                stageImageUrl,
-                progressLabel,
-                progressClass,
-              } = row;
+              const { predefinedStage, matchedStage, hasReport, hasImage, stageImageUrl, progressLabel, progressClass } = row;
               if (!predefinedStage) return null;
               return (
-                <article key={predefinedStage.order ?? idx} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
-                  <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
-                    <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
-                      {predefinedStage.order}. {t(predefinedStage.nameKey)}
+                <div key={predefinedStage.order ?? idx} className="border border-[#DDEEE0] rounded-xl p-5 bg-white hover:border-[#2D5A27]/40 hover:shadow-md transition-all flex flex-col h-full">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <h4 className="font-bold text-[#1e3e1c] leading-tight">
+                      Giai đoạn {predefinedStage.order}:<br/>
+                      <span className="text-[#2D5A27]">{t(predefinedStage.nameKey)}</span>
                     </h4>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium text-center leading-4 min-w-[112px] ${progressClass}`}
-                    >
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-bold border text-center ${progressClass}`}>
                       {progressLabel}
                     </span>
                   </div>
-
-                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">{t(predefinedStage.descriptionKey)}</p>
-
-                  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+                  <p className="text-sm text-slate-500 mb-4 flex-1">{t(predefinedStage.descriptionKey)}</p>
+                  
+                  <div className="mb-4 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 aspect-video flex items-center justify-center">
                     {hasImage ? (
-                      <img
-                        src={stageImageUrl}
-                        alt={`${t(predefinedStage.nameKey)} image`}
-                        className="w-full h-32 object-cover"
-                        loading="lazy"
-                      />
+                      <img src={stageImageUrl} alt="stage" className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <div className="h-32 flex items-center justify-center text-sm text-gray-500">
+                      <div className="text-slate-400 text-xs flex flex-col items-center gap-1">
+                        <Camera className="w-6 h-6 opacity-50" />
                         {t("sample.stageProgress.noImage")}
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.standardDuration")}</span>
-                      <span className="text-gray-800 font-medium">
-                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays} {t("common.days")}
-                      </span>
+                  <div className="space-y-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Chuẩn (ngày):</span>
+                      <span className="font-semibold text-slate-700">{predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays}</span>
                     </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.actualStartDate")}</span>
-                      <span className="text-gray-800 font-medium">
-                        {formatDate(matchedStage?.startAt) ?? "-"}
-                      </span>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Ngày bắt đầu:</span>
+                      <span className="font-semibold text-slate-700">{formatDate(matchedStage?.startAt)}</span>
                     </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.report")}</span>
-                      <span className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}>
-                        {hasReport ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.stageImage")}</span>
-                      <span className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}>
-                        {hasImage ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.systemStatus")}</span>
-                      <span className="text-gray-800 font-medium">
-                        {matchedStage?.status ? getStatusLabel(matchedStage.status) : "-"}
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Báo cáo:</span>
+                      <span className={`font-semibold ${hasReport ? "text-[#2D5A27]" : "text-slate-400"}`}>
+                        {hasReport ? "Có dữ liệu" : "Chưa có"}
                       </span>
                     </div>
                   </div>
-                </article>
+                </div>
               );
             })}
           </div>
-        </section>
+        </motion.div>
 
-        <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">
-            {t("sample.latestImageTitle")}
-          </h3>
-          {!latestImageUrl ? (
-            <p className="text-sm text-gray-500">{t("sample.noLatestImage")}</p>
-          ) : (
-            <div className="w-full max-w-xl rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-              <img
-                src={latestImageUrl}
-                alt={`Latest sample stage of ${sample.name}`}
-                className="w-full h-auto object-cover"
-                loading="lazy"
-                onError={(event) => {
-                  const target = event.currentTarget;
-                  target.style.display = "none";
-                }}
-              />
+        {/* Khu Vực Hình Ảnh và Báo cáo */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div variants={fadeInUp} className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+              <Camera className="w-5 h-5 text-[#2D5A27]" />
+              <h3 className="text-lg font-bold text-[#1e3e1c]">Hình ảnh mới nhất</h3>
             </div>
-          )}
-        </section>
+            <div className="p-6">
+              {!latestImageUrl ? (
+                <div className="h-48 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
+                  <Camera className="w-8 h-8 mb-2 opacity-50" />
+                  <p className="text-sm">{t("sample.noLatestImage") ?? "Chưa có ảnh"}</p>
+                </div>
+              ) : (
+                <img src={latestImageUrl} alt="Latest" className="w-full rounded-xl object-cover border border-slate-200 shadow-sm" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              )}
+            </div>
+          </motion.div>
 
-        <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">
-            {t("sample.currentStageReportTitle")}
-          </h3>
-          {reportRows.length === 0 ? (
-            <p className="text-sm text-gray-500">Không có dữ liệu báo cáo</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      STT
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Chỉ số
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Giá trị đo
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Kỳ vọng
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Khoảng chuẩn
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Đơn vị
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      Kết quả
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportRows.map((row, index) => {
-                    const req = row.stageRequirementDefinitionDto;
-                    const sampleReq = req.sampleRequirementDefinitionDto;
-
-                    return (
-                      <tr key={row.id} className="border-b">
-                        <td className="p-3 text-sm text-gray-800">
-                          {index + 1}
-                        </td>
-                        <td className="p-3 text-sm text-gray-800">
-                          {sampleReq.name}
-                        </td>
-                        <td className="p-3 text-sm text-gray-800">
-                          {row.measuredValue}
-                        </td>
-                        <td className="p-3 text-sm text-gray-800">
-                          {req.expectedValue}
-                        </td>
-                        <td className="p-3 text-sm text-gray-800">
-                          {req.minValue} - {req.maxValue}
-                        </td>
-                        <td className="p-3 text-sm text-gray-800">
-                          {sampleReq.unit || "-"}
-                        </td>
-                        <td className="p-3 text-sm">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              row.isMatch
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {row.isMatch ? "Đạt" : "Không đạt"}
-                          </span>
-                        </td>
+          <motion.div variants={fadeInUp} className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+              <ClipboardList className="w-5 h-5 text-[#2D5A27]" />
+              <h3 className="text-lg font-bold text-[#1e3e1c]">Báo cáo giai đoạn hiện tại</h3>
+            </div>
+            <div className="p-0">
+              {reportRows.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 italic">Chưa có dữ liệu đo đạc cho giai đoạn này.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-3">Chỉ số</th>
+                        <th className="px-6 py-3">Đo được</th>
+                        <th className="px-6 py-3">Chuẩn (Min-Max)</th>
+                        <th className="px-6 py-3 text-center">Kết quả</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {reportRows.map((row) => {
+                        const req = row.stageRequirementDefinitionDto;
+                        const sampleReq = req.sampleRequirementDefinitionDto;
+                        return (
+                          <tr key={row.id} className="border-b border-slate-100 hover:bg-[#F4F7F4] transition-colors">
+                            <td className="px-6 py-4 font-medium text-[#1e3e1c]">{sampleReq.name}</td>
+                            <td className="px-6 py-4 font-bold text-[#2D5A27]">{row.measuredValue} <span className="text-xs text-slate-500 font-normal">{sampleReq.unit}</span></td>
+                            <td className="px-6 py-4 text-slate-600">{req.minValue} - {req.maxValue} {sampleReq.unit}</td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold border ${row.isMatch ? "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]" : "bg-rose-100 text-rose-700 border-rose-200"}`}>
+                                {row.isMatch ? "Đạt" : "Không đạt"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          )}
-        </section>
-
-        <div className="flex justify-end pt-4 border-t">
-          <button
-            type="button"
-            className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
-            onClick={handleBack}
-          >
-            Quay lại
-          </button>
+          </motion.div>
         </div>
-      </div>
 
-      {/* Disease Incidents panel — outside the white card, full-width */}
-      {sample?.experimentLogId && (
-        <div className="w-full max-w-[1200px] mx-auto mt-6 bg-white rounded-xl px-8 py-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
-            <h3 className="text-lg font-semibold m-0">
-              {t("diseaseIncident.title")}
-            </h3>
-            {incidents.some(
-              (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
-            ) && (
-              <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">
-                ● {t("diseaseIncident.badge")}
-              </span>
-            )}
-            <div className="ml-auto flex gap-2">
+        {/* Disease Incidents Panel */}
+        {sample?.experimentLogId && (
+          <motion.div variants={fadeInUp} className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+                <h3 className="text-lg font-bold text-[#1e3e1c]">{t("diseaseIncident.title") ?? "Cảnh báo Bệnh AI"}</h3>
+                {incidents.some((inc) => inc.status === DiseaseIncidentStatus.AIDetected) && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> Mới phát hiện
+                  </span>
+                )}
+              </div>
               <select
                 value={incidentStatusFilter ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setIncidentStatusFilter(
-                    val === ""
-                      ? undefined
-                      : (val as DiseaseIncidentStatus),
-                  );
+                  setIncidentStatusFilter(val === "" ? undefined : (val as DiseaseIncidentStatus));
                 }}
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+                className="border border-[#DDEEE0] bg-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50"
               >
-                <option value="">{t("diseaseIncident.filterAll")}</option>
-                <option value={DiseaseIncidentStatus.AIDetected}>
-                  {t("diseaseIncident.statusAIDetected")}
-                </option>
-                <option value={DiseaseIncidentStatus.UnderReview}>
-                  {t("diseaseIncident.statusUnderReview")}
-                </option>
-                <option value={DiseaseIncidentStatus.Confirmed}>
-                  {t("diseaseIncident.statusConfirmed")}
-                </option>
-                <option value={DiseaseIncidentStatus.Dismissed}>
-                  {t("diseaseIncident.statusDismissed")}
-                </option>
+                <option value="">{t("diseaseIncident.filterAll") ?? "Tất cả trạng thái"}</option>
+                <option value={DiseaseIncidentStatus.AIDetected}>{t("diseaseIncident.statusAIDetected")}</option>
+                <option value={DiseaseIncidentStatus.UnderReview}>{t("diseaseIncident.statusUnderReview")}</option>
+                <option value={DiseaseIncidentStatus.Confirmed}>{t("diseaseIncident.statusConfirmed")}</option>
+                <option value={DiseaseIncidentStatus.Dismissed}>{t("diseaseIncident.statusDismissed")}</option>
               </select>
             </div>
-          </div>
 
-          {incidentsError && (
-            <p className="text-sm text-red-500 mb-3">{incidentsError}</p>
-          )}
-
-          {incidentsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : incidents.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4">
-              {t("diseaseIncident.noIncidents")}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px]">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      {t("diseaseIncident.sampleName")}
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      {t("diseaseIncident.diseaseName")}
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      {t("diseaseIncident.aiConfidence")}
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      {t("diseaseIncident.status")}
-                    </th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
-                      {t("diseaseIncident.action")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {incidents.map((inc) => (
-                    <tr key={inc.id} className="border-b">
-                      <td className="p-3 text-sm text-gray-800">
-                        {inc.sampleName}
-                      </td>
-                      <td className="p-3 text-sm text-gray-800">
-                        {inc.diseaseName}
-                      </td>
-                      <td className="p-3 text-sm font-semibold">
-                        <span
-                          className={
-                            inc.aiConfidence >= 0.8
-                              ? "text-red-600"
-                              : inc.aiConfidence >= 0.5
-                                ? "text-yellow-600"
-                                : "text-gray-500"
-                          }
-                        >
-                          {(inc.aiConfidence * 100).toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="p-3 text-sm">
-                        <span className={getIncidentStatusClass(inc.status)}>
-                          {getIncidentStatusLabel(inc.status)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-sm">
-                        {(inc.status === DiseaseIncidentStatus.AIDetected ||
-                          inc.status === DiseaseIncidentStatus.UnderReview) && (
-                          <button
-                            type="button"
-                            onClick={() => openReviewModal(inc)}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
-                          >
-                            {t("diseaseIncident.review")}
-                          </button>
-                        )}
-                        {/* Delete button for Confirmed incidents moved to header */}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                {t("sample.selectImage")}
-              </h3>
-              <button
-                onClick={handleCancelImageModal}
-                disabled={analyzing}
-                className="text-gray-500 hover:text-gray-700 text-2xl disabled:cursor-not-allowed"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {imagePreview ? (
-                <div className="space-y-4">
-                  <div className="w-full h-64 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setImagePreview("");
-                      }}
-                      disabled={analyzing}
-                      className="w-full px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {t("common.change")}
-                    </button>
-                  </div>
+            <div className="p-0">
+              {incidentsError && <div className="p-4 text-sm text-rose-600 bg-rose-50">{incidentsError}</div>}
+              {incidentsLoading ? (
+                <div className="p-8 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D5A27]"></div></div>
+              ) : incidents.length === 0 ? (
+                <div className="p-8 text-center text-[#4B6C54] italic flex flex-col items-center gap-2">
+                  <CheckCircle2 className="w-8 h-8 text-[#DDEEE0]" />
+                  Mẫu hiện không có cảnh báo bệnh nào.
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <label className="flex flex-col items-center justify-center cursor-pointer gap-2">
-                    <svg
-                      className="w-12 h-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    <span className="text-sm text-gray-600">
-                      {t("common.uploadImage")}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageSelect}
-                      disabled={analyzing}
-                      className="hidden"
-                    />
-                  </label>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4">Tên Bệnh (AI)</th>
+                        <th className="px-6 py-4">Độ tự tin</th>
+                        <th className="px-6 py-4">Trạng thái</th>
+                        <th className="px-6 py-4 text-right">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incidents.map((inc) => (
+                        <tr key={inc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-bold text-rose-700">{inc.diseaseName}</td>
+                          <td className="px-6 py-4">
+                            <span className={`font-bold ${inc.aiConfidence >= 0.8 ? "text-rose-600" : inc.aiConfidence >= 0.5 ? "text-amber-600" : "text-slate-500"}`}>
+                              {(inc.aiConfidence * 100).toFixed(1)}%
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${getIncidentStatusClass(inc.status)}`}>
+                              {getIncidentStatusLabel(inc.status)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {(inc.status === DiseaseIncidentStatus.AIDetected || inc.status === DiseaseIncidentStatus.UnderReview) && (
+                              <button onClick={() => openReviewModal(inc)} className="px-4 py-1.5 rounded-lg bg-[#2D5A27] text-white hover:bg-[#1e3e1c] font-semibold shadow-sm transition-colors">
+                                {t("diseaseIncident.review") ?? "Đánh giá"}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
 
-            <div className="border-t p-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={handleCancelImageModal}
-                disabled={analyzing}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={handleUploadAndAnalyze}
-                disabled={!selectedImage || analyzing}
-                className={`px-4 py-2 text-sm rounded-lg text-white font-medium transition-colors ${
-                  selectedImage && !analyzing
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {analyzing ? t("sample.analyzing") : t("common.confirm")}
-              </button>
-            </div>
+      </motion.div>
+
+      {/* --- Modals --- */}
+      <AnimatePresence>
+        {/* Upload Image Modal */}
+        {showImageModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={handleCancelImageModal} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 border border-[#DDEEE0]">
+              <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex justify-between items-center rounded-t-2xl">
+                <h3 className="text-lg font-bold text-[#1e3e1c]">{t("sample.selectImage") ?? "Chọn ảnh phân tích"}</h3>
+                <button onClick={handleCancelImageModal} disabled={analyzing} className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition-colors"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="p-6">
+                {imagePreview ? (
+                  <div className="space-y-4">
+                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-xl border border-slate-200 shadow-sm" />
+                    <button onClick={() => { setSelectedImage(null); setImagePreview(""); }} disabled={analyzing} className="w-full py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-colors">Chọn ảnh khác</button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-[#2D5A27]/30 rounded-xl bg-[#F4F7F4] hover:bg-[#E4F0E8] cursor-pointer transition-colors text-[#2D5A27]">
+                    <Camera className="w-10 h-10 mb-3 opacity-70" />
+                    <span className="font-semibold">{t("common.uploadImage") ?? "Tải ảnh lên"}</span>
+                    <input type="file" accept="image/*" onChange={handleImageSelect} disabled={analyzing} className="hidden" />
+                  </label>
+                )}
+              </div>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 rounded-b-2xl flex justify-end gap-3">
+                <button onClick={handleCancelImageModal} disabled={analyzing} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 transition-colors">Hủy</button>
+                <button onClick={handleUploadAndAnalyze} disabled={!selectedImage || analyzing} className={`px-6 py-2 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm ${selectedImage && !analyzing ? "bg-[#2D5A27] hover:bg-[#1e3e1c]" : "bg-slate-300 cursor-not-allowed"}`}>
+                  {analyzing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : <Microscope className="w-4 h-4"/>}
+                  {analyzing ? t("sample.analyzing") : t("common.confirm")}
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showAnalysisModal && analysisResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">
-                {t("sample.analysisResults")}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAnalysisModal(false);
-                  setShowDestroyForm(false);
-                  setDestroyReason("");
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-medium text-sm text-gray-600">
-                    Giai đoạn
-                  </label>
-                  <p className="mt-1 text-gray-900">
-                    {stageNameMap[analysisResult.stageName] ||
-                      analysisResult.stageName}
-                  </p>
+        {/* AI Analysis Result Modal */}
+        {showAnalysisModal && analysisResult && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isDestroying && setShowAnalysisModal(false)} />
+           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto relative z-10 custom-scrollbar border border-[#DDEEE0]">
+             <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
+               <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2"><Microscope className="w-6 h-6"/> Kết quả AI</h3>
+               <button onClick={() => { setShowAnalysisModal(false); setShowDestroyForm(false); }} className="text-slate-400 hover:text-rose-600 p-1"><X className="w-6 h-6"/></button>
+             </div>
+             
+             <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between p-5 bg-[#E4F0E8] border border-[#DDEEE0] rounded-xl">
+                  <div>
+                    <span className="text-xs font-bold text-[#2D5A27] uppercase tracking-wider">Dự đoán bệnh cao nhất</span>
+                    <h4 className="text-2xl font-black text-[#1e3e1c] mt-1">{analysisResult.disease.name}</h4>
+                  </div>
+                  <div className="w-16 h-16 bg-white rounded-full border-4 border-[#C9E7D2] flex items-center justify-center shadow-sm">
+                    <span className="font-bold text-[#2D5A27]">{(analysisResult.analyticResult[analysisResult.disease.code as keyof typeof analysisResult.analyticResult] as number * 100).toFixed(0)}%</span>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="font-medium text-sm text-gray-600">
-                    Tên bệnh
-                  </label>
-                  <p className="mt-1 text-gray-900">
-                    {analysisResult.disease.name}
-                  </p>
+                  <h5 className="font-bold text-slate-800 mb-3">Xác suất các bệnh khác:</h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    {Object.entries(analysisResult.analyticResult)
+                      .filter(([k]) => k !== 'id')
+                      .sort(([,a], [,b]) => Number(b) - Number(a))
+                      .map(([key, val]) => (
+                        <div key={key} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                          <span className="text-sm font-medium text-slate-600">{t(`sample.${key}`) || key}</span>
+                          <span className="font-bold text-slate-800">{(Number(val) * 100).toFixed(1)}%</span>
+                        </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="font-medium text-sm text-gray-600">
-                  Mô tả bệnh
-                </label>
-                <p className="mt-1 text-gray-900">
-                  {analysisResult.disease.description}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">
-                  Kết quả phân tích chi tiết
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    { key: "healthy", label: t("sample.healthy") },
-                    { key: "anthracnose", label: t("sample.anthracnose") },
-                    { key: "bacterialWilt", label: t("sample.bacterialWilt") },
-                    { key: "blackrot", label: t("sample.blackrot") },
-                    { key: "brownspots", label: t("sample.brownspots") },
-                    { key: "moldBacterial", label: t("sample.moldBacterial") },
-                    { key: "moldFungus", label: t("sample.moldFungus") },
-                    { key: "softRot", label: t("sample.softRot") },
-                    { key: "stemRot", label: t("sample.stemRot") },
-                    {
-                      key: "witheredYellowRoot",
-                      label: t("sample.witheredYellowRoot"),
-                    },
-                    { key: "oxidation", label: t("sample.oxidation") },
-                    { key: "virus", label: t("sample.virus") },
-                  ].map((item) => (
-                    <div
-                      key={item.key}
-                      className="flex justify-between items-center p-2 bg-gray-50 rounded"
-                    >
-                      <span className="text-sm text-gray-800">
-                        {item.label}
-                      </span>
-                      <span className="font-semibold text-blue-600">
-                        {(
-                          (analysisResult.analyticResult[
-                            item.key as keyof typeof analysisResult.analyticResult
-                          ] as number) * 100
-                        ).toFixed(1)}
-                        %
-                      </span>
+                {!isHealthyAnalysis && (
+                  <div className="mt-4 p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-6 h-6 text-rose-600" />
+                      <p className="text-sm font-bold text-rose-800">Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu ngay lập tức!</p>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {!isHealthyAnalysis && (
-                <div className="border border-red-200 bg-red-50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-red-700 font-medium">
-                      Mẫu vật có dấu hiệu bệnh. Bạn có thể tiêu hủy mẫu vật này.
-                    </p>
-                    {!showDestroyForm && (
-                      <button
-                        type="button"
-                        onClick={() => setShowDestroyForm(true)}
-                        className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                      >
-                        Tiêu hủy mẫu vật
+                    {!showDestroyForm ? (
+                      <button onClick={() => setShowDestroyForm(true)} className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors">
+                        Tiến hành Tiêu Hủy
                       </button>
+                    ) : (
+                      <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                        <label className="block text-sm font-bold text-slate-700 mb-2">Lý do tiêu hủy:</label>
+                        <textarea value={destroyReason} onChange={(e) => setDestroyReason(e.target.value)} rows={2} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`} />
+                        <div className="flex justify-end gap-2 mt-3">
+                          <button onClick={() => setShowDestroyForm(false)} disabled={isDestroying} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
+                          <button onClick={handleDestroySample} disabled={isDestroying} className="px-5 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg disabled:opacity-50 flex items-center gap-2">
+                            {isDestroying && <Loader2 className="w-4 h-4 animate-spin"/>}
+                            {isDestroying ? "Đang xử lý..." : "Xác nhận Tiêu hủy"}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
+                )}
+             </div>
+           </motion.div>
+         </div>
+        )}
 
-                  {showDestroyForm && (
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">
-                          Lý do tiêu hủy (có thể để trống)
-                        </label>
-                        <textarea
-                          value={destroyReason}
-                          onChange={(e) => setDestroyReason(e.target.value)}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                          placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowDestroyForm(false);
-                            setDestroyReason("");
-                          }}
-                          disabled={isDestroying}
-                          className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDestroySample()}
-                          disabled={isDestroying}
-                          className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {isDestroying ? "Đang xử lý..." : "Xác nhận tiêu hủy"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="border-t p-6 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowAnalysisModal(false);
-                  setShowDestroyForm(false);
-                  setDestroyReason("");
-                }}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                {t("common.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Delete Modal for Confirmed incidents */}
-      {showConfirmDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
-            <div className="border-b p-6 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                {t("sample.destroySample") ?? "Xác nhận tiêu hủy mẫu"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowConfirmDeleteModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">
-                  {t("sample.deleteReason") ?? "Lý do xóa"}
-                </label>
-                <textarea
-                  value={deleteReason}
-                  onChange={(e) => setDeleteReason(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                  placeholder={t("sample.deleteReason") ?? "Nhập lý do"}
-                />
+        {/* Review Incident Modal */}
+        {reviewingIncident && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeReviewModal} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 border border-[#DDEEE0]">
+              <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex justify-between items-center rounded-t-2xl">
+                <h3 className="text-lg font-bold text-[#1e3e1c]">{t("diseaseIncident.reviewModalTitle") ?? "Đánh giá cảnh báo AI"}</h3>
+                <button onClick={closeReviewModal} disabled={reviewSubmitting} className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"><X className="w-5 h-5"/></button>
               </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={handleCancelDeleteModal}
-                  disabled={isDeleting}
-                  className="px-3 py-2 text-sm rounded-lg border border-orange-500 text-orange-500 hover:bg-orange-50 disabled:opacity-60"
-                >
-                  {t("common.cancel") ?? "Hủy"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDeleteSample}
-                  disabled={isDeleting}
-                  className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
-                >
-                  {isDeleting ? t("common.deleting") ?? "Đang xóa..." : t("common.confirm") ?? "Xác nhận"}
+              <div className="p-6 space-y-5">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm space-y-2">
+                  <div className="flex justify-between"><span className="text-slate-500">Mẫu:</span><span className="font-bold text-[#1e3e1c]">{reviewingIncident.sampleName}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Bệnh phát hiện:</span><span className="font-bold text-rose-600">{reviewingIncident.diseaseName}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">AI Tự tin:</span><span className="font-bold text-amber-600">{(reviewingIncident.aiConfidence * 100).toFixed(1)}%</span></div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Quyết định của Kỹ thuật viên:</label>
+                  <div className="flex gap-4">
+                    <label className={`flex-1 flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${reviewIsConfirmed ? "border-[#2D5A27] bg-[#E4F0E8]" : "border-slate-200 bg-white"}`}>
+                      <input type="radio" name="tech-review" className="hidden" checked={reviewIsConfirmed} onChange={() => setReviewIsConfirmed(true)} disabled={reviewSubmitting} />
+                      <CheckCircle2 className={`w-6 h-6 ${reviewIsConfirmed ? "text-[#2D5A27]" : "text-slate-300"}`} />
+                      <span className={`text-sm font-bold ${reviewIsConfirmed ? "text-[#2D5A27]" : "text-slate-500"}`}>Xác nhận Bệnh</span>
+                    </label>
+                    <label className={`flex-1 flex flex-col items-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all ${!reviewIsConfirmed ? "border-slate-500 bg-slate-100" : "border-slate-200 bg-white"}`}>
+                      <input type="radio" name="tech-review" className="hidden" checked={!reviewIsConfirmed} onChange={() => setReviewIsConfirmed(false)} disabled={reviewSubmitting} />
+                      <X className={`w-6 h-6 ${!reviewIsConfirmed ? "text-slate-600" : "text-slate-300"}`} />
+                      <span className={`text-sm font-bold ${!reviewIsConfirmed ? "text-slate-700" : "text-slate-500"}`}>Bác bỏ AI</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Ghi chú thêm:</label>
+                  <textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} rows={3} disabled={reviewSubmitting} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50 shadow-sm" placeholder="Nhập ghi chú hoặc lý do đánh giá..." />
+                </div>
+              </div>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 rounded-b-2xl flex justify-end gap-3">
+                <button type="button" onClick={closeReviewModal} disabled={reviewSubmitting} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 shadow-sm disabled:opacity-50">Hủy</button>
+                <button type="button" onClick={() => void handleSubmitReview()} disabled={reviewSubmitting} className="px-6 py-2 bg-[#2D5A27] text-white rounded-xl font-bold hover:bg-[#1e3e1c] shadow-sm disabled:opacity-50 flex items-center gap-2">
+                  {reviewSubmitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Lên báo cáo
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Review Disease Incident Modal */}
-      {reviewingIncident && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={closeReviewModal}
-        >
-          <div
-            className="bg-white rounded-lg shadow-lg w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="border-b p-6 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                {t("diseaseIncident.reviewModalTitle")}
-              </h3>
-              <button
-                onClick={closeReviewModal}
-                disabled={reviewSubmitting}
-                className="text-gray-500 hover:text-gray-700 text-2xl disabled:cursor-not-allowed"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
+        {/* Delete Confirmation Modal */}
+        {showConfirmDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isDeleting && setShowConfirmDeleteModal(false)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 border border-rose-100">
+              <div className="px-6 py-5 border-b border-rose-50 flex justify-between items-center bg-rose-50/30 rounded-t-2xl">
+                <h3 className="text-lg font-bold text-rose-800 flex items-center gap-2"><Trash2 className="w-5 h-5"/> Xác nhận hủy mẫu</h3>
+                <button onClick={() => setShowConfirmDeleteModal(false)} disabled={isDeleting} className="text-slate-400 hover:text-rose-600"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm text-rose-700 font-medium">Hành động này không thể hoàn tác. Mẫu sẽ bị đánh dấu là đã tiêu hủy vĩnh viễn.</div>
                 <div>
-                  <span className="font-medium">
-                    {t("diseaseIncident.sampleName")}:
-                  </span>{" "}
-                  {reviewingIncident.sampleName}
-                </div>
-                <div>
-                  <span className="font-medium">
-                    {t("diseaseIncident.diseaseName")}:
-                  </span>{" "}
-                  {reviewingIncident.diseaseName}
-                </div>
-                <div>
-                  <span className="font-medium">
-                    {t("diseaseIncident.aiConfidence")}:
-                  </span>{" "}
-                  {(reviewingIncident.aiConfidence * 100).toFixed(1)}%
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Lý do hủy (bắt buộc):</label>
+                  <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} rows={3} disabled={isDeleting} className="w-full px-4 py-3 bg-white border border-rose-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-sm" placeholder="VD: Mẫu bị nhiễm khuẩn nặng..." />
                 </div>
               </div>
-
-              <div>
-                <label className="block font-medium text-sm text-gray-700 mb-2">
-                  {t("diseaseIncident.reviewDecision")}
-                </label>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tech-review-decision"
-                      checked={reviewIsConfirmed}
-                      onChange={() => setReviewIsConfirmed(true)}
-                      disabled={reviewSubmitting}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      {t("diseaseIncident.reviewConfirm")}
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tech-review-decision"
-                      checked={!reviewIsConfirmed}
-                      onChange={() => setReviewIsConfirmed(false)}
-                      disabled={reviewSubmitting}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm">
-                      {t("diseaseIncident.reviewDismiss")}
-                    </span>
-                  </label>
-                </div>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 rounded-b-2xl flex justify-end gap-3">
+                <button type="button" onClick={() => setShowConfirmDeleteModal(false)} disabled={isDeleting} className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 shadow-sm">Hủy</button>
+                <button type="button" onClick={() => void handleConfirmDeleteSample()} disabled={isDeleting || !deleteReason.trim()} className="px-6 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 shadow-sm disabled:opacity-50 flex items-center gap-2">
+                  {isDeleting && <Loader2 className="w-4 h-4 animate-spin"/>}
+                  {isDeleting ? "Đang xóa..." : "Xác nhận Hủy"}
+                </button>
               </div>
-
-              <div>
-                <label className="block font-medium text-sm text-gray-700 mb-1.5">
-                  {t("diseaseIncident.reviewNote")}
-                </label>
-                <textarea
-                  value={reviewNote}
-                  onChange={(e) => setReviewNote(e.target.value)}
-                  rows={3}
-                  disabled={reviewSubmitting}
-                  placeholder={t("diseaseIncident.reviewNotePlaceholder")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:bg-gray-50"
-                />
-              </div>
-
-              {reviewError && (
-                <p className="text-sm text-red-600">{reviewError}</p>
-              )}
-            </div>
-
-            <div className="border-t p-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeReviewModal}
-                disabled={reviewSubmitting}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSubmitReview()}
-                disabled={reviewSubmitting}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 font-medium"
-              >
-                {reviewSubmitting
-                  ? t("diseaseIncident.submitting")
-                  : t("diseaseIncident.submitReview")}
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </main>
   );
 }

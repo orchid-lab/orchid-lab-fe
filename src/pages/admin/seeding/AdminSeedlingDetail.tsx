@@ -1,13 +1,51 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-x/no-array-index-key */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { Seedling } from "../../../types/Seedling";
+import { motion, type Variants } from "framer-motion";
+import { 
+  ArrowLeft, Leaf, Info, Clock, 
+  User as UserIcon, Calendar, Sprout, Palette,
+  Dna, AlertCircle
+} from "lucide-react";
 import type { User } from "../../../types/Auth";
 import axiosInstance from "../../../api/axiosInstance";
 import { findClosestColorName } from "../../../utils/colorHelper";
-import "./AdminSeedlingDetail.css";
+
+// Mở rộng interface Seedling để bao gồm traits theo code cũ của bạn
+export interface Trait {
+  name: string;
+  value: number | string;
+  unit?: string;
+}
+
+export interface SeedlingDetailData {
+  id: string;
+  localName: string | null;
+  scientificName: string | null;
+  description: string | null;
+  parentALocalName: string | null;
+  parentAScientificName: string | null;
+  createdDate: string;
+  createdBy: string;
+  deletedDate: string | null;
+  deletedBy: string | null;
+  updatedDate: string | null;
+  updatedBy: string | null;
+  traits?: Trait[];
+}
+
+/* ─── Animation variants ──────────────────────────────── */
+const staggerContainer: Variants = { 
+  hidden: { opacity: 0 }, 
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } } 
+};
+
+const fadeInUp: Variants = { 
+  hidden: { opacity: 0, y: 20 }, 
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } 
+};
 
 export default function AdminSeedlingDetail() {
   const { t } = useTranslation();
@@ -15,7 +53,8 @@ export default function AdminSeedlingDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const page = searchParams.get("page") ?? "1";
-  const [seedling, setSeedling] = useState<Seedling | null>(null);
+  
+  const [seedling, setSeedling] = useState<SeedlingDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userMap, setUserMap] = useState<Record<string, string>>({});
@@ -23,7 +62,7 @@ export default function AdminSeedlingDetail() {
   useEffect(() => {
     const fetchSeedlingDetail = async () => {
       if (!id) {
-        setError(`${t("seedling.notFound")}`);
+        setError(t("seedling.notFound") ?? "Không tìm thấy cây giống");
         setLoading(false);
         return;
       }
@@ -32,24 +71,23 @@ export default function AdminSeedlingDetail() {
       setError(null);
 
       try {
-        const response = await axiosInstance.get<{ value?: Seedling }>(`/api/seedlings/${id}`);
-
-        let seedlingData: Seedling | null = null;
+        const response = await axiosInstance.get<{ value?: SeedlingDetailData }>(`/api/seedlings/${id}`);
+        let seedlingData: SeedlingDetailData | null = null;
 
         if (response.data?.value) {
           seedlingData = response.data.value;
         } else if (response.data) {
-          seedlingData = response.data as unknown as Seedling;
+          seedlingData = response.data as unknown as SeedlingDetailData;
         }
 
         if (seedlingData) {
           setSeedling(seedlingData);
         } else {
-          setError(`${t("seedling.notFound")}`);
+          setError(t("seedling.notFound") ?? "Không tìm thấy dữ liệu cây giống");
         }
       } catch (err) {
         console.error("Error loading seedling:", err);
-        setError(`${t("seedling.loadingError") || "Failed to load seedling details"}`);
+        setError(t("seedling.loadingError") ?? "Lỗi tải dữ liệu");
       } finally {
         setLoading(false);
       }
@@ -79,64 +117,13 @@ export default function AdminSeedlingDetail() {
     void fetchUsers();
   }, []);
 
-  if (loading) {
-    return (
-      <main className="admin-seedling-detail ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-10 bg-gray-200 rounded w-32" />
-            <div className="bg-white rounded-xl p-8 space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-full" />
-              <div className="h-4 bg-gray-200 rounded w-2/3" />
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="h-20 bg-gray-200 rounded" />
-                <div className="h-20 bg-gray-200 rounded" />
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-8 space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-2/3" />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-20 bg-gray-200 rounded" />
-                <div className="h-20 bg-gray-200 rounded" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (error || !seedling) {
-    return (
-      <main className="admin-seedling-detail ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <button
-            type="button"
-            className="back-button inline-flex items-center px-4 py-2 mb-6 text-sm font-medium"
-            onClick={() => { navigate(`/admin/seedling?page=${page}`); }}
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            {t("common.back")}
-          </button>
-          <div className="bg-white rounded-xl p-16 text-center border border-gray-200">
-            <p className="text-red-600 text-lg">{error ?? t("seedling.notFound")}</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return "-";
+    if (!dateString) return "—";
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString("vi-VN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit"
       });
     } catch {
       return dateString;
@@ -144,249 +131,235 @@ export default function AdminSeedlingDetail() {
   };
 
   const getUserName = (userId: string | null | undefined): string => {
-    if (!userId) return "-";
-    if (!userId.includes("-")) return userId;
+    if (!userId) return "—";
+    if (!userId.includes("-")) return userId; // Nếu là 'system' thì trả về luôn
     return userMap[userId] || userId;
   };
 
-  return (
-    <main className="admin-seedling-detail ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Back Button */}
-        <button
-          type="button"
-          className="back-button inline-flex items-center px-4 py-2 mb-6 text-sm font-medium"
-          onClick={() => { navigate(`/admin/seedling?page=${page}`); }}
-        >
-          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          {t("common.back")}
-        </button>
+  if (loading) {
+    return (
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] flex items-center justify-center p-8">
+        <div className="flex flex-col items-center text-rose-500 animate-pulse">
+          <Leaf className="w-12 h-12 mb-4 animate-bounce" />
+          <p className="font-medium text-lg">{t("common.loadingData") ?? "Đang tải dữ liệu cây giống..."}</p>
+        </div>
+      </main>
+    );
+  }
 
-        {/* Header */}
-        <div className="detail-header mb-8">
-          <div>
-            <h1 className="detail-title text-4xl font-bold mb-2">
-              {seedling.localName || seedling.scientificName}
-            </h1>
-            <p className="detail-subtitle text-lg">
-              <em>{seedling.scientificName}</em>
-            </p>
+  if (error || !seedling) {
+    return (
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-6 lg:p-8">
+        <div className="max-w-6xl mx-auto">
+          <button
+            type="button"
+            className="flex items-center gap-2 text-slate-500 hover:text-rose-600 transition-colors mb-6 font-medium w-fit"
+            onClick={() => navigate(`/admin/seedlings?page=${page}`)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t("common.back") ?? "Quay lại"}
+          </button>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-16 text-center border border-rose-100 shadow-sm flex flex-col items-center">
+            <AlertCircle className="w-16 h-16 text-rose-300 mb-4" />
+            <p className="text-rose-600 text-xl font-semibold">{error ?? t("seedling.notFound")}</p>
           </div>
         </div>
+      </main>
+    );
+  }
 
-        {/* Basic Information Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Main Info Card */}
-          <div className="lg:col-span-2">
-            <div className="info-card bg-white rounded-xl shadow-md p-8 border-l-4 border-red-500">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="section-icon section-icon--info w-8 h-8 flex items-center justify-center rounded-full mr-3 font-semibold">
-                  ℹ
+  return (
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-6 lg:p-8 text-slate-800">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Back Button */}
+        <motion.button
+          variants={fadeInUp}
+          type="button"
+          className="flex items-center gap-2 text-slate-500 hover:text-rose-600 transition-colors mb-2 font-medium w-fit"
+          onClick={() => navigate(`/admin/seedlings?page=${page}`)}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t("common.back") ?? "Quay lại danh sách"}
+        </motion.button>
+
+        {/* Header Section */}
+        <motion.div variants={fadeInUp} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#9f1239] flex items-center gap-3">
+              <Leaf className="w-10 h-10 p-2 bg-rose-100 text-rose-600 rounded-xl shadow-sm" />
+              {seedling.localName ?? seedling.scientificName}
+            </h1>
+            <p className="text-lg text-slate-500 mt-2 font-medium italic flex items-center gap-2">
+              <Dna className="w-5 h-5 text-slate-400" />
+              {seedling.scientificName}
+            </p>
+          </div>
+          <div className="px-4 py-2 bg-white border border-rose-100 rounded-xl shadow-sm text-sm font-medium text-slate-600">
+            ID: <span className="text-[#9f1239] font-bold">{seedling.id.split('-')[0]}...</span>
+          </div>
+        </motion.div>
+
+        {/* Main Info & Metadata Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Basic Information Card */}
+          <motion.div variants={fadeInUp} className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+            <div className="px-6 py-5 border-b border-rose-50 bg-gradient-to-r from-rose-50/50 to-transparent flex items-center gap-3">
+              <Info className="w-5 h-5 text-rose-600" />
+              <h2 className="text-lg font-bold text-slate-800">{t("seedling.basicInfo") ?? "Thông tin cơ bản"}</h2>
+            </div>
+            
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <span className="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                    {t("seedling.seedlingName") ?? "Tên địa phương"}
+                  </span>
+                  <span className="text-lg font-medium text-slate-800">{seedling.localName ?? "—"}</span>
+                </div>
+                <div>
+                  <span className="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                    {t("seedling.scientificName") ?? "Tên khoa học"}
+                  </span>
+                  <span className="text-lg text-slate-700 italic">{seedling.scientificName ?? "—"}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  {t("seedling.description") ?? "Mô tả / Đặc điểm"}
                 </span>
-                {t("seedling.basicInfo")}
-              </h2>
+                <p className="text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">
+                  {seedling.description ?? <span className="italic text-slate-400">Chưa có mô tả</span>}
+                </p>
+              </div>
 
-              <div className="space-y-4">
-                <div className="info-row">
-                  <span className="info-label font-semibold">
-                    {t("seedling.seedlingName")}:
+              {/* Thông tin cây lai */}
+              {(seedling.parentALocalName ?? seedling.parentAScientificName) && (
+                <div className="pt-4 border-t border-rose-50">
+                  <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Sprout className="w-4 h-4 text-emerald-500" />
+                    {t("seedling.parentA") ?? "Thông tin Cây Mẹ (Parent A)"}
                   </span>
-                  <span className="info-value">{seedling.localName}</span>
-                </div>
-
-                <div className="info-row">
-                  <span className="info-label font-semibold">
-                    {t("seedling.scientificName")}:
-                  </span>
-                  <span className="info-value italic">
-                    {seedling.scientificName}
-                  </span>
-                </div>
-
-                <div className="info-row">
-                  <span className="info-label font-semibold">
-                    {t("seedling.description")}:
-                  </span>
-                  <span className="info-value">
-                    {seedling.description || "-"}
-                  </span>
-                </div>
-
-                {seedling.parentALocalName && (
-                  <div className="info-row">
-                    <span className="info-label font-semibold">
-                      {t("seedling.parentA")}:
-                    </span>
-                    <div className="info-value">
-                      <div>{seedling.parentALocalName}</div>
-                      <div className="text-sm italic mt-0.5 opacity-70">
-                        {seedling.parentAScientificName}
-                      </div>
+                  <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex flex-col md:flex-row gap-4 md:gap-8">
+                    <div>
+                      <span className="text-xs text-emerald-600/70 font-semibold uppercase">Tên địa phương</span>
+                      <div className="text-emerald-900 font-medium">{seedling.parentALocalName ?? "—"}</div>
+                    </div>
+                    <div>
+                      <span className="text-xs text-emerald-600/70 font-semibold uppercase">Tên khoa học</span>
+                      <div className="text-emerald-800 italic">{seedling.parentAScientificName ?? "—"}</div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Metadata Card */}
-          <div className="info-card bg-white rounded-xl shadow-md p-8 border-l-4 border-orange-500">
-            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-              <span className="section-icon section-icon--meta w-8 h-8 flex items-center justify-center rounded-full mr-3 font-semibold">
-                ⏱
-              </span>
-              {t("seedling.metadata")}
-            </h2>
-
-            <div className="space-y-4">
-              <div className="metadata-item">
-                <div className="text-sm font-semibold mb-1 metadata-label">
-                  {t("seedling.createdDate")}
-                </div>
-                <div className="font-medium metadata-value">
-                  {formatDate(seedling.createdDate)}
+          <motion.div variants={fadeInUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-orange-100 overflow-hidden h-fit">
+            <div className="px-6 py-5 border-b border-orange-50 bg-gradient-to-r from-orange-50/50 to-transparent flex items-center gap-3">
+              <Clock className="w-5 h-5 text-orange-600" />
+              <h2 className="text-lg font-bold text-slate-800">{t("seedling.metadata") ?? "Lịch sử hệ thống"}</h2>
+            </div>
+            
+            <div className="p-6 space-y-5">
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><Calendar className="w-4 h-4" /></div>
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">{t("seedling.createdDate") ?? "Ngày tạo"}</div>
+                  <div className="text-sm font-medium text-slate-800">{formatDate(seedling.createdDate)}</div>
                 </div>
               </div>
 
-              <div className="metadata-item">
-                <div className="text-sm font-semibold mb-1 metadata-label">
-                  {t("seedling.createdBy")}
-                </div>
-                <div className="font-medium metadata-value">
-                  {getUserName(seedling.createdBy)}
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-slate-50 rounded-lg text-slate-400"><UserIcon className="w-4 h-4" /></div>
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">{t("seedling.createdBy") ?? "Người tạo"}</div>
+                  <div className="text-sm font-medium text-rose-600">{getUserName(seedling.createdBy)}</div>
                 </div>
               </div>
 
               {seedling.updatedDate && (
-                <div className="metadata-item">
-                  <div className="text-sm font-semibold mb-1 metadata-label">
-                    {t("seedling.updatedDate")}
-                  </div>
-                  <div className="font-medium metadata-value">
-                    {formatDate(seedling.updatedDate)}
-                  </div>
-                </div>
-              )}
-
-              {seedling.updatedBy && (
-                <div className="metadata-item">
-                  <div className="text-sm font-semibold mb-1 metadata-label">
-                    {t("seedling.updatedBy")}
-                  </div>
-                  <div className="font-medium metadata-value">
-                    {getUserName(seedling.updatedBy)}
-                  </div>
-                </div>
-              )}
-
-              {seedling.deletedDate && (
-                <div className="metadata-item">
-                  <div className="text-sm font-semibold mb-1 metadata-label">
-                    {t("seedling.deletedDate")}
-                  </div>
-                  <div className="font-medium metadata-value">
-                    {formatDate(seedling.deletedDate)}
-                  </div>
-                </div>
-              )}
-
-              {seedling.deletedBy && (
-                <div className="metadata-item">
-                  <div className="text-sm font-semibold mb-1 metadata-label">
-                    {t("seedling.deletedBy")}
-                  </div>
-                  <div className="font-medium metadata-value">
-                    {getUserName(seedling.deletedBy)}
+                <div className="flex items-start gap-4 pt-4 border-t border-slate-100">
+                  <div className="p-2 bg-sky-50 rounded-lg text-sky-500"><Clock className="w-4 h-4" /></div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-0.5">{t("seedling.updatedDate") ?? "Cập nhật lần cuối"}</div>
+                    <div className="text-sm font-medium text-slate-800">{formatDate(seedling.updatedDate)}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">bởi {getUserName(seedling.updatedBy)}</div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
+
         </div>
 
         {/* Traits Section */}
-        {seedling.traits && seedling.traits.length > 0 && (() => {
-          const colorTraits = seedling.traits.filter(
-            (trait) => trait.name === "Màu hoa chính" || trait.name === "Màu hoa phụ"
-          );
-          const colorCards = colorTraits.map((trait) => {
-            const value = trait.value;
-            const r = Math.floor(value / 1_000_000);
-            const g = Math.floor((value % 1_000_000) / 1_000);
-            const b = value % 1_000;
-            const colorName = findClosestColorName(r, g, b);
-            return (
-              <div
-                key={trait.name}
-                className="trait-card rounded-lg p-6 border hover:shadow-lg transition-shadow"
-              >
-                <div className="text-sm font-semibold trait-label mb-4">{trait.name}</div>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-20 h-20 rounded-lg border-4 border-gray-300 shadow-md flex-shrink-0"
-                    style={{ backgroundColor: `rgb(${r}, ${g}, ${b})` }}
-                  />
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold trait-value">{colorName}</div>
-                    <div className="text-xs font-mono mt-1 trait-rgb">RGB({r}, {g}, {b})</div>
-                  </div>
-                </div>
-              </div>
-            );
-          });
-
-          const otherTraits = seedling.traits.filter(
-            (trait) => trait.name !== "Màu hoa chính" && trait.name !== "Màu hoa phụ"
-          );
-
-          return (
-            <div className="info-card bg-white rounded-xl shadow-md p-8 border-l-4 border-rose-500">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="section-icon section-icon--traits w-8 h-8 flex items-center justify-center rounded-full mr-3 font-semibold">
-                  🌱
-                </span>
-                {t("seedling.traits")}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {colorCards}
-                {otherTraits.map((trait, index) => (
-                  <div
-                    key={trait.name + index}
-                    className="trait-card rounded-lg p-6 border hover:shadow-lg transition-shadow"
-                  >
-                    <div className="text-sm font-semibold trait-label mb-2 line-clamp-2">
-                      {trait.name}
-                    </div>
-                    <div className="text-3xl font-bold trait-value mb-2">
-                      {trait.value}
-                    </div>
-                    <div className="text-sm font-medium trait-unit">
-                      {trait.unit}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Empty State for Traits */}
-        {(!seedling.traits || seedling.traits.length === 0) && (
-          <div className="info-card bg-white rounded-xl shadow-md p-8 border-l-4 border-rose-500">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="section-icon section-icon--traits w-8 h-8 flex items-center justify-center rounded-full mr-3 font-semibold">
-                🌱
-              </span>
-              {t("seedling.traits")}
-            </h2>
-            <div className="text-center py-8 trait-empty">
-              {t("seedling.noTraits") || "No traits recorded"}
-            </div>
+        <motion.div variants={fadeInUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+          <div className="px-6 py-5 border-b border-rose-50 bg-gradient-to-r from-rose-50/50 to-transparent flex items-center gap-3">
+            <Palette className="w-5 h-5 text-rose-600" />
+            <h2 className="text-lg font-bold text-slate-800">{t("seedling.traits") ?? "Đặc điểm sinh học (Traits)"}</h2>
           </div>
-        )}
-      </div>
+
+          <div className="p-6 md:p-8">
+            {seedling.traits && seedling.traits.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {seedling.traits.map((trait, index) => {
+                  const isColorTrait = trait.name.toLowerCase().includes("màu");
+                  
+                  if (isColorTrait && typeof trait.value === 'number') {
+                    // Logic xử lý màu sắc
+                    const value = trait.value;
+                    const r = Math.floor(value / 1_000_000);
+                    const g = Math.floor((value % 1_000_000) / 1_000);
+                    const b = value % 1_000;
+                    const colorName = findClosestColorName(r, g, b);
+
+                    return (
+                      <div key={`trait-${index}`} className="group relative bg-white border border-slate-200 rounded-xl p-5 hover:border-rose-300 hover:shadow-md transition-all">
+                        <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">{trait.name}</div>
+                        <div className="flex items-center gap-4">
+                          <div 
+                            className="w-14 h-14 rounded-full border-4 border-white shadow-md shadow-slate-200/50 flex-shrink-0 group-hover:scale-110 transition-transform"
+                            style={{ backgroundColor: `rgb(${r}, ${g}, ${b})` }} 
+                          />
+                          <div>
+                            <div className="text-lg font-bold text-slate-800 leading-tight">{colorName}</div>
+                            <div className="text-xs font-mono text-slate-400 mt-1 bg-slate-50 px-2 py-0.5 rounded-md inline-block">
+                              RGB({r}, {g}, {b})
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Các trait thông thường (Số, Text)
+                  return (
+                    <div key={`trait-${index}`} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-rose-300 hover:shadow-md transition-all flex flex-col justify-center">
+                      <div className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1 truncate" title={trait.name}>
+                        {trait.name}
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-[#9f1239]">{trait.value}</span>
+                        {trait.unit && <span className="text-sm font-medium text-slate-400">{trait.unit}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <Dna className="w-10 h-10 mb-3 text-slate-300" />
+                <p>{t("seedling.noTraits") ?? "Chưa có đặc điểm nào được ghi nhận cho giống này."}</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+      </motion.div>
     </main>
   );
 }

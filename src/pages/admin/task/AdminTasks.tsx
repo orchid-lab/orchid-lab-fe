@@ -125,7 +125,7 @@ const TASKS_PER_PAGE = 20;
 
 const chartOptions = {
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false, // <-- Tắt tự động giữ tỷ lệ
   plugins: {
     legend: { labels: { font: { size: 12 }, color: "#64748b" } },
     tooltip: {
@@ -344,55 +344,64 @@ export default function AdminTasks() {
           </p>
         </motion.div>
 
-        {/* ── Chart 1 ── */}
-        <motion.div
-          variants={fadeUp} initial="hidden" animate="visible" custom={1}
-          className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
-        >
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-[#9f1239]">
-              {t("task.taskStatisticsTitle") || "Thống kê nhiệm vụ"}
-            </h2>
-            <select
-              value={timeMode}
-              onChange={(e) => setTimeMode(e.target.value as "day" | "week" | "month")}
-              className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
-            >
-              <option value="day">{t("common.byDay") || "Theo ngày"}</option>
-              <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
-              <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
-            </select>
-          </div>
-          <Bar data={chartData} options={chartOptions} />
-        </motion.div>
+        {/* GỘP 2 BIỂU ĐỒ VÀO 1 GRID CHIA ĐÔI */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ── Chart 1 ── */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={1}
+            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col"
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold text-[#9f1239]">
+                {t("task.taskStatisticsTitle") || "Thống kê nhiệm vụ"}
+              </h2>
+              <select
+                value={timeMode}
+                onChange={(e) => setTimeMode(e.target.value as "day" | "week" | "month")}
+                className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
+              >
+                <option value="day">{t("common.byDay") || "Theo ngày"}</option>
+                <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
+                <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
+              </select>
+            </div>
+            {/* Ép chiều cao cứng */}
+            <div className="relative w-full h-64 sm:h-72">
+              <Bar data={chartData} options={chartOptions} />
+            </div>
+          </motion.div>
 
-        {/* ── Chart 2 ── */}
-        <motion.div
-          variants={fadeUp} initial="hidden" animate="visible" custom={2}
-          className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6"
-        >
-          <div className="flex items-center gap-3 flex-wrap mb-5">
-            <h2 className="text-base font-semibold text-[#9f1239] flex-1 min-w-max">
-              {t("task.specificTaskStatistics") || "Thống kê theo thời gian cụ thể"}
-            </h2>
-            <select
-              value={filterMode}
-              onChange={(e) => setFilterMode(e.target.value as "day" | "week" | "month")}
-              className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
-            >
-              <option value="day">{t("common.byDay") || "Theo ngày"}</option>
-              <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
-              <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
-            </select>
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
-            />
-          </div>
-          <Bar data={filteredChartData} options={chartOptions} />
-        </motion.div>
+          {/* ── Chart 2 ── */}
+          <motion.div
+            variants={fadeUp} initial="hidden" animate="visible" custom={2}
+            className="bg-white/80 backdrop-blur-sm border border-rose-100 rounded-2xl shadow-sm p-6 flex flex-col"
+          >
+            <div className="flex items-center gap-3 flex-wrap mb-5">
+              <h2 className="text-base font-semibold text-[#9f1239] flex-1 min-w-max">
+                {t("task.specificTaskStatistics") || "Thống kê theo thời gian cụ thể"}
+              </h2>
+              <select
+                value={filterMode}
+                onChange={(e) => setFilterMode(e.target.value as "day" | "week" | "month")}
+                className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
+              >
+                <option value="day">{t("common.byDay") || "Theo ngày"}</option>
+                <option value="week">{t("common.byWeek") || "Theo tuần"}</option>
+                <option value="month">{t("common.byMonth") || "Theo tháng"}</option>
+              </select>
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="border border-rose-100 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f43f5e] text-slate-700"
+              />
+            </div>
+            {/* Ép chiều cao cứng */}
+            <div className="relative w-full h-64 sm:h-72">
+              <Bar data={filteredChartData} options={chartOptions} />
+            </div>
+          </motion.div>
+        </div>
 
         {/* ── Status stat cards ── */}
         <motion.div
