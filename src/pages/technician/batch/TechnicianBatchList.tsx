@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Wrench,
   LayoutGrid,
+  Eye,
 } from "lucide-react";
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -253,9 +254,9 @@ const TechnicianBatchList = () => {
   };
 
   // Derived stats
-  const totalCount   = items.length;
-  const readyCount   = items.filter((i) => i.status === "Ready").length;
-  const inUseCount   = items.filter((i) => i.status === "InUse").length;
+  const totalCount    = items.length;
+  const readyCount    = items.filter((i) => i.status === "Ready").length;
+  const inUseCount    = items.filter((i) => i.status === "InUse").length;
   const cleaningCount = items.filter((i) => i.status === "Cleaning").length;
 
   // Unique lab rooms for filter
@@ -388,12 +389,10 @@ const TechnicianBatchList = () => {
                       t("tissueCultureBatch.dimensions"),
                       t("common.status"),
                       t("common.action"),
-                      "",
-                    ].map((header, idx) => (
+                    ].map((header) => (
                       <th
-                        key={idx}
-                        className={`px-6 py-4 text-xs font-semibold text-[#2D5A27] uppercase tracking-wider
-                          ${idx === 6 ? "text-center" : "text-left"}`}
+                        key={header}
+                        className="px-6 py-4 text-xs font-semibold text-[#2D5A27] uppercase tracking-wider text-left"
                       >
                         {header}
                       </th>
@@ -404,7 +403,7 @@ const TechnicianBatchList = () => {
                   <AnimatePresence>
                     {filtered.length === 0 ? (
                       <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <td colSpan={8} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
+                        <td colSpan={7} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
                       </motion.tr>
                     ) : (
                       filtered.map((item, index) => (
@@ -439,28 +438,29 @@ const TechnicianBatchList = () => {
                               {item.status}
                             </motion.span>
                           </td>
-                          <td className="px-6 py-4 text-center">
-                            {item.status === "Cleaning" && (
-                              <motion.button
-                                type="button"
-                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                onClick={() => handleCompleteCleaning(String(item.id))}
-                                disabled={isCompletingCleaning[String(item.id)]}
-                                className="px-3 py-1.5 rounded-lg bg-[#2D5A27] text-white text-xs font-medium hover:bg-[#1e3e1c] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              {item.status === "Cleaning" && (
+                                <motion.button
+                                  type="button"
+                                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleCompleteCleaning(String(item.id))}
+                                  disabled={isCompletingCleaning[String(item.id)]}
+                                  className="px-3 py-1.5 rounded-lg bg-[#2D5A27] text-white text-xs font-medium hover:bg-[#1e3e1c] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  {isCompletingCleaning[String(item.id)]
+                                    ? t("common.processing")
+                                    : t("tissueCultureBatch.completeCleaningBtn")}
+                                </motion.button>
+                              )}
+                              <Link
+                                to={`/technician/batches/${item.id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 text-xs font-medium hover:bg-[#E4F0E8] hover:border-[#2D5A27] hover:text-[#2D5A27] transition-colors whitespace-nowrap"
                               >
-                                {isCompletingCleaning[String(item.id)]
-                                  ? t("common.processing")
-                                  : t("tissueCultureBatch.completeCleaningBtn")}
-                              </motion.button>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <Link
-                              to={`/technician/batches/${item.id}`}
-                              className="text-[#2D5A27] hover:text-[#1e3e1c] hover:underline text-sm font-medium"
-                            >
-                              {t("tissueCultureBatch.details")}
-                            </Link>
+                                <Eye className="w-3.5 h-3.5" />
+                                {t("tissueCultureBatch.details")}
+                              </Link>
+                            </div>
                           </td>
                         </motion.tr>
                       ))
