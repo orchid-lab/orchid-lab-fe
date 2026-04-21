@@ -1,24 +1,26 @@
+/* eslint-disable react-x/no-array-index-key */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
-/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
-import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import type { Sample, SampleApiResponse, ExperimentLogApiResponse } from "../../../types/Sample";
-import { SampleStatus } from "../../../types/Sample";
+import type { TissueCultureBatch, ApiListResponse } from "../../../types/Batch";
+import CleaningResultBadge from "../../../components/CleaningResultBadge";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
-  Search,
   Filter,
+  ChevronDown,
   FlaskConical,
   CheckCircle2,
-  AlertTriangle,
-  Sprout,
-  PlusCircle,
-  ChevronDown,
+  Wrench,
+  LayoutGrid,
 } from "lucide-react";
 
 // ─── Animation Variants ───────────────────────────────────────────────────────
@@ -27,33 +29,22 @@ const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
 const fadeInDown: Variants = {
   hidden: { opacity: 0, y: -16 },
-  visible: {
-    opacity: 1, y: 0,
-    transition: { duration: 0.4, ease: EASE_OUT_EXPO },
-  },
-};
-
-const staggerContainer: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
 };
 
 const cardVariant: Variants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { duration: 0.4, ease: EASE_OUT_EXPO },
-  },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: EASE_OUT_EXPO } },
+};
+
+const staggerContainer: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
 };
 
 const filterPanelVariant: Variants = {
   hidden: { opacity: 0, scaleY: 0.96, y: -8 },
-  visible: {
-    opacity: 1, scaleY: 1, y: 0,
-    transition: { duration: 0.35, ease: EASE_OUT_EXPO },
-  },
+  visible: { opacity: 1, scaleY: 1, y: 0, transition: { duration: 0.35, ease: EASE_OUT_EXPO } },
 };
 
 const tableRowVariant: Variants = {
@@ -65,24 +56,10 @@ const tableRowVariant: Variants = {
   exit: { opacity: 0, x: 12, transition: { duration: 0.2 } },
 };
 
-const progressBarVariant: Variants = {
-  hidden: { width: "0%" },
-  visible: (pct: number) => ({
-    width: `${pct}%`,
-    transition: { duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.3 },
-  }),
-};
-
 const dropdownVariant: Variants = {
   hidden: { opacity: 0, scaleY: 0.88, y: -6 },
-  visible: {
-    opacity: 1, scaleY: 1, y: 0,
-    transition: { duration: 0.22, ease: EASE_OUT_EXPO },
-  },
-  exit: {
-    opacity: 0, scaleY: 0.9, y: -4,
-    transition: { duration: 0.15, ease: "easeIn" as const },
-  },
+  visible: { opacity: 1, scaleY: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT_EXPO } },
+  exit: { opacity: 0, scaleY: 0.9, y: -4, transition: { duration: 0.15, ease: "easeIn" as const } },
 };
 
 const dropdownItemVariant: Variants = {
@@ -93,50 +70,20 @@ const dropdownItemVariant: Variants = {
   }),
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Status config ────────────────────────────────────────────────────────────
 
-const formatVietnameseDate = (dateString: string | null): string => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+type BatchStatus = "Ready" | "InUse" | "Cleaning";
+
+const STATUS_COLORS: Record<BatchStatus, string> = {
+  Ready:    "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
+  InUse:    "bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE]",
+  Cleaning: "bg-[#FEF9C3] text-[#854D0E] border-[#FDE68A]",
 };
 
-const STATUS_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]:                   "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.InProgressed]:              "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.Completed]:                 "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]",
-  [SampleStatus.ExecutedBecauseOfDisease]:  "bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]",
-  [SampleStatus.ConvertedToSeedling]:       "bg-[#FFF0F9] text-[#DA70D6] border-[#F3D4EB]",
-};
-
-const STATUS_ICON_COLORS: Record<SampleStatus, string> = {
-  [SampleStatus.Created]:                   "text-[#2D5A27]",
-  [SampleStatus.InProgressed]:              "text-[#2D5A27]",
-  [SampleStatus.Completed]:                 "text-[#2D5A27]",
-  [SampleStatus.ExecutedBecauseOfDisease]:  "text-[#B91C1C]",
-  [SampleStatus.ConvertedToSeedling]:       "text-[#DA70D6]",
-};
-
-const STATUS_FILTER_ORDER: SampleStatus[] = [
-  SampleStatus.Created,
-  SampleStatus.InProgressed,
-  SampleStatus.Completed,
-  SampleStatus.ExecutedBecauseOfDisease,
-  SampleStatus.ConvertedToSeedling,
-];
-
-const getStatusIcon = (status: SampleStatus) => {
-  const cls = `w-4 h-4 ${STATUS_ICON_COLORS[status]}`;
-  switch (status) {
-    case SampleStatus.Created:                   return <PlusCircle className={cls} />;
-    case SampleStatus.InProgressed:              return <FlaskConical className={cls} />;
-    case SampleStatus.Completed:                 return <CheckCircle2 className={cls} />;
-    case SampleStatus.ExecutedBecauseOfDisease:  return <AlertTriangle className={cls} />;
-    case SampleStatus.ConvertedToSeedling:       return <Sprout className={cls} />;
-  }
+const STATUS_ICON: Record<BatchStatus, React.ReactNode> = {
+  Ready:    <CheckCircle2 className="w-4 h-4 text-[#2D5A27]" />,
+  InUse:    <FlaskConical className="w-4 h-4 text-[#1D4ED8]" />,
+  Cleaning: <Wrench className="w-4 h-4 text-[#854D0E]" />,
 };
 
 // ─── AnimatedSelect ───────────────────────────────────────────────────────────
@@ -146,98 +93,60 @@ interface SelectOption<T extends string> {
   label: string;
 }
 
-interface AnimatedSelectProps<T extends string> {
-  value: T;
-  onChange: (value: T) => void;
-  options: SelectOption<T>[];
-  placeholder?: string;
-  disabled?: boolean;
-}
-
 function AnimatedSelect<T extends string>({
   value,
   onChange,
   options,
   placeholder = "Select...",
-  disabled = false,
-}: AnimatedSelectProps<T>) {
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: SelectOption<T>[];
+  placeholder?: string;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   return (
     <div ref={ref} className="relative select-none">
       <button
         type="button"
-        disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
-        className={`
-          flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white
-          transition-all duration-150 whitespace-nowrap
-          ${open
-            ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]"
-            : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"
-          }
-          ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-        `}
+        onClick={() => setOpen((p) => !p)}
+        className={`flex items-center gap-2 border rounded-lg px-4 py-2.5 text-sm bg-white transition-all duration-150 whitespace-nowrap cursor-pointer
+          ${open ? "border-[#2D5A27] ring-2 ring-[#2D5A27]/20 text-[#2D5A27]" : "border-gray-300 text-gray-700 hover:border-[#2D5A27]/50"}`}
       >
         <span>{selectedLabel}</span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
-          className="flex items-center"
-        >
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center">
           <ChevronDown className="w-4 h-4 text-gray-400" />
         </motion.span>
       </button>
-
       <AnimatePresence>
         {open && (
           <motion.ul
             key="dropdown"
             variants={dropdownVariant}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial="hidden" animate="visible" exit="exit"
             style={{ transformOrigin: "top center" }}
-            className="
-              absolute z-50 top-[calc(100%+6px)] left-0 min-w-full
-              bg-white border border-[#DDEEE0] rounded-xl
-              shadow-[0_8px_32px_rgba(45,90,39,0.14)]
-              overflow-hidden py-1
-            "
+            className="absolute z-50 top-[calc(100%+6px)] left-0 min-w-full bg-white border border-[#DDEEE0] rounded-xl shadow-[0_8px_32px_rgba(45,90,39,0.14)] overflow-hidden py-1"
           >
             {options.map((opt, i) => (
               <motion.li
                 key={opt.value}
                 custom={i}
                 variants={dropdownItemVariant}
-                initial="hidden"
-                animate="visible"
+                initial="hidden" animate="visible"
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`
-                  px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap
-                  transition-colors duration-75
-                  ${opt.value === value
-                    ? "bg-[#E4F0E8] text-[#2D5A27] font-medium"
-                    : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"
-                  }
-                `}
+                className={`px-4 py-2.5 text-sm cursor-pointer whitespace-nowrap transition-colors duration-75
+                  ${opt.value === value ? "bg-[#E4F0E8] text-[#2D5A27] font-medium" : "text-gray-700 hover:bg-[#F4F7F4] hover:text-[#2D5A27]"}`}
               >
                 {opt.label}
               </motion.li>
@@ -251,16 +160,10 @@ function AnimatedSelect<T extends string>({
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  value: number;
-  valueColor: string;
-  help: string;
-}
-
-function StatCard({ icon, iconBg, label, value, valueColor, help }: StatCardProps) {
+function StatCard({ icon, iconBg, label, value, valueColor, help }: {
+  icon: React.ReactNode; iconBg: string; label: string;
+  value: number; valueColor: string; help: string;
+}) {
   return (
     <motion.div
       variants={cardVariant}
@@ -269,15 +172,12 @@ function StatCard({ icon, iconBg, label, value, valueColor, help }: StatCardProp
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full ${iconBg}`}>
-            {icon}
-          </span>
+          <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full ${iconBg}`}>{icon}</span>
           <span className="text-sm font-medium text-[#2D5A27]">{label}</span>
         </div>
         <motion.span
           key={value}
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
           className={`text-2xl font-semibold ${valueColor}`}
         >
@@ -291,237 +191,163 @@ function StatCard({ icon, iconBg, label, value, valueColor, help }: StatCardProp
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function ListSample() {
-  const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
+const TechnicianBatchList = () => {
   const { t } = useTranslation();
-
-  const [samples, setSamples] = useState<Sample[]>([]);
-  const [allSamples, setAllSamples] = useState<Sample[]>([]);
-  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<TissueCultureBatch[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SampleStatus | "">("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const itemsPerPage = 20;
+  const [isCompletingCleaning, setIsCompletingCleaning] = useState<Record<string, boolean>>({});
+  const [cleaningResult, setCleaningResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<BatchStatus | "">("");
+  const [labFilter, setLabFilter] = useState<string>("");
 
-  const getStatusLabel = (status: SampleStatus): string => {
-    const statusMap: Record<SampleStatus, string> = {
-      [SampleStatus.Created]:                  t("sample.statusCreated"),
-      [SampleStatus.InProgressed]:             t("sample.statusInProgressed"),
-      [SampleStatus.Completed]:                t("sample.statusCompleted"),
-      [SampleStatus.ExecutedBecauseOfDisease]: t("sample.statusExecutedBecauseOfDisease"),
-      [SampleStatus.ConvertedToSeedling]:      t("sample.statusConvertedToSeedling"),
-    };
-    return statusMap[status] || status;
+  const fetchBatches = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axiosInstance.get("/api/batches?pageNo=1&pageSize=1000");
+      const raw = res.data as ApiListResponse | TissueCultureBatch[];
+      let arr: TissueCultureBatch[] = [];
+      if ((raw as ApiListResponse)?.value?.data)       arr = (raw as ApiListResponse).value!.data!;
+      else if ((raw as ApiListResponse)?.data)         arr = (raw as ApiListResponse).data!;
+      else if (Array.isArray(raw))                     arr = raw;
+      arr.sort((a, b) => {
+        const idA = typeof a.id === "string" ? parseInt(a.id) : a.id;
+        const idB = typeof b.id === "string" ? parseInt(b.id) : b.id;
+        return idA - idB;
+      });
+      setItems(arr);
+    } catch (err) {
+      console.error("Error loading batches:", err);
+      setError(t("tissueCultureBatch.errorLoadingList"));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Build status options for AnimatedSelect
-  const statusOptions: SelectOption<SampleStatus | "">[] = [
-    { value: "", label: t("sample.allStatus") },
-    ...STATUS_FILTER_ORDER.map((s) => ({
-      value: s as SampleStatus | "",
-      label: getStatusLabel(s),
-    })),
+  useEffect(() => { fetchBatches(); }, [t]);
+
+  useEffect(() => {
+    if (cleaningResult) {
+      const timer = setTimeout(() => setCleaningResult(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [cleaningResult]);
+
+  const handleCompleteCleaning = async (batchId: string) => {
+    setIsCompletingCleaning((prev) => ({ ...prev, [batchId]: true }));
+    setCleaningResult(null);
+    try {
+      const response = await axiosInstance.patch(`/api/batches/${batchId}/complete-cleaning`);
+      if (response.status === 200) {
+        setCleaningResult({ success: true, message: t("tissueCultureBatch.cleaningCompleteSuccess") });
+        await fetchBatches();
+      }
+    } catch (err: any) {
+      setCleaningResult({
+        success: false,
+        message: err.response?.data?.detail ?? t("tissueCultureBatch.cleaningCompleteFailed"),
+      });
+    } finally {
+      setIsCompletingCleaning((prev) => ({ ...prev, [batchId]: false }));
+    }
+  };
+
+  // Derived stats
+  const totalCount   = items.length;
+  const readyCount   = items.filter((i) => i.status === "Ready").length;
+  const inUseCount   = items.filter((i) => i.status === "InUse").length;
+  const cleaningCount = items.filter((i) => i.status === "Cleaning").length;
+
+  // Unique lab rooms for filter
+  const labRooms = Array.from(new Set(items.map((i) => i.labRoomName ?? i.labName ?? "").filter(Boolean)));
+
+  const statusOptions: SelectOption<BatchStatus | "">[] = [
+    { value: "", label: t("common.allStatus") || "Tất cả trạng thái" },
+    { value: "Ready",    label: "Ready" },
+    { value: "InUse",    label: "In Use" },
+    { value: "Cleaning", label: "Cleaning" },
   ];
 
-  useEffect(() => {
-    const fetchExperimentLogs = async () => {
-      try {
-        const params = new URLSearchParams({ PageNo: "1", PageSize: "1000" });
-        const response = await axiosInstance.get<ExperimentLogApiResponse>(
-          `/api/experiment-logs?${params.toString()}`
-        );
-        const logMap: Record<string, string> = {};
-        response.data.data.forEach((log) => { logMap[log.id] = log.name; });
-        setExperimentLogMap(logMap);
-      } catch (err) {
-        console.error("Error fetching experiment logs:", err);
-      }
-    };
-    fetchExperimentLogs();
-  }, []);
+  const labOptions: SelectOption<string>[] = [
+    { value: "", label: "Tất cả phòng lab" },
+    ...labRooms.map((l) => ({ value: l, label: l })),
+  ];
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const params = new URLSearchParams({ pageNo: "1", pageSize: "1000" });
-        const response = await axiosInstance.get<SampleApiResponse>(`/api/samples?${params.toString()}`);
-        setAllSamples(response.data.data || []);
-      } catch (err) {
-        console.error("Error fetching summary samples:", err);
-      }
-    };
-    fetchAll();
-  }, []);
-
-  useEffect(() => {
-    const fetchSamples = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams({ pageNo: "1", pageSize: "1000" });
-        const response = await axiosInstance.get<SampleApiResponse>(`/api/samples?${params.toString()}`);
-        let filtered = response.data.data || [];
-        if (searchTerm.trim())
-          filtered = filtered.filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        if (statusFilter)
-          filtered = filtered.filter((s) => s.status === statusFilter);
-        filtered.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());
-        setTotalCount(filtered.length);
-        const start = (currentPage - 1) * itemsPerPage;
-        setSamples(filtered.slice(start, start + itemsPerPage));
-      } catch (err) {
-        setError(t("sample.fetchError") || "Không thể tải danh sách mẫu thí nghiệm");
-        enqueueSnackbar(t("common.error"), { variant: "error" });
-        console.error("Error fetching samples:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    const timeout = setTimeout(fetchSamples, searchTerm ? 300 : 0);
-    return () => clearTimeout(timeout);
-  }, [searchTerm, statusFilter, currentPage, enqueueSnackbar, t]);
-
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
-
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
-
-  const totalSamples    = allSamples.length;
-  const inProgressCount = allSamples.filter((s) => s.status === SampleStatus.InProgressed).length;
-  const completedCount  = allSamples.filter((s) => s.status === SampleStatus.Completed).length;
-  const diseaseCount    = allSamples.filter((s) => s.status === SampleStatus.ExecutedBecauseOfDisease).length;
-  const seedlingCount   = allSamples.filter((s) => s.status === SampleStatus.ConvertedToSeedling).length;
-  const completedPercent = Math.round((completedCount / Math.max(totalSamples, 1)) * 100);
+  const filtered = items.filter((item) => {
+    const matchStatus = !statusFilter || item.status === statusFilter;
+    const matchLab    = !labFilter || (item.labRoomName ?? item.labName ?? "") === labFilter;
+    return matchStatus && matchLab;
+  });
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-8">
+      <CleaningResultBadge result={cleaningResult} />
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Header ── */}
-        <motion.div className="mb-8" variants={fadeInDown} initial="hidden" animate="visible">
-          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">{t("sample.sampleList")}</h1>
-          <p className="text-[#4B6C54] text-lg">{t("sample.sampleManagement")}</p>
+        <motion.div variants={fadeInDown} initial="hidden" animate="visible" className="mb-8">
+          <h1 className="text-4xl font-bold text-[#2D5A27] mb-2">
+            {t("tissueCultureBatch.tissueCultureBatchList")}
+          </h1>
+          <p className="text-[#4B6C54] text-lg">{t("tissueCultureBatch.viewBatches")}</p>
         </motion.div>
 
-        {/* ── Overview ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Progress card */}
-          <motion.div
-            variants={cardVariant}
-            initial="hidden"
-            animate="visible"
-            whileHover={{ y: -4, boxShadow: "0 24px 48px rgba(45,90,39,0.18)" }}
-            className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.12)] border border-[#DDEEE0] p-6"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-[#2D5A27] mb-1">
-                  {t("sample.overallDistribution", { defaultValue: "Tổng quan mẫu thí nghiệm" })}
-                </h3>
-                <p className="text-sm text-[#4B6C54]">
-                  {t("sample.overallSummary", { defaultValue: "Tổng hợp trạng thái toàn bộ mẫu" })}
-                </p>
-              </div>
-              <div className="text-right">
-                <motion.div
-                  key={totalSamples}
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                  className="text-3xl font-bold text-[#2D5A27]"
-                >
-                  {totalSamples}
-                </motion.div>
-                <div className="text-xs text-[#4B6C54] mt-1">
-                  {t("sample.totalSamples", { defaultValue: "mẫu" })}
-                </div>
-              </div>
-            </div>
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
-                <span>{t("sample.completedRate", { defaultValue: "Tỉ lệ hoàn thành" })}</span>
-                <motion.span key={completedPercent} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="font-semibold text-[#2D5A27]"
-                >
-                  {completedPercent}%
-                </motion.span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-[#E4F0E8] overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-[#2D5A27]"
-                  variants={progressBarVariant}
-                  initial="hidden"
-                  animate="visible"
-                  custom={completedPercent}
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Stat cards */}
-          <motion.div className="grid grid-cols-2 gap-4" variants={staggerContainer} initial="hidden" animate="visible">
-            <StatCard icon={<FlaskConical className="w-5 h-5" />} iconBg="bg-[#DDEEE0] text-[#2D5A27]"
-              label={t("sample.statusInProgressed", { defaultValue: "Đang thực hiện" })}
-              value={inProgressCount} valueColor="text-[#2D5A27]"
-              help={t("sample.inProgressHelp", { defaultValue: "Mẫu đang trong quá trình thí nghiệm." })} />
-            <StatCard icon={<CheckCircle2 className="w-5 h-5" />} iconBg="bg-[#E5E7EB] text-[#4B5563]"
-              label={t("sample.statusCompleted", { defaultValue: "Hoàn thành" })}
-              value={completedCount} valueColor="text-[#4B5563]"
-              help={t("sample.completedHelp", { defaultValue: "Mẫu đã hoàn thành thí nghiệm." })} />
-            <StatCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-[#FEE2E2] text-[#B91C1C]"
-              label={t("sample.statusExecutedBecauseOfDisease", { defaultValue: "Xử lý bệnh" })}
-              value={diseaseCount} valueColor="text-[#B91C1C]"
-              help={t("sample.diseaseHelp", { defaultValue: "Mẫu bị xử lý do bệnh." })} />
-            <StatCard icon={<Sprout className="w-5 h-5" />} iconBg="bg-[#FFF0F9] text-[#DA70D6]"
-              label={t("sample.statusConvertedToSeedling", { defaultValue: "Chuyển cây giống" })}
-              value={seedlingCount} valueColor="text-[#DA70D6]"
-              help={t("sample.seedlingHelp", { defaultValue: "Mẫu đã được chuyển thành cây giống." })} />
-          </motion.div>
-        </div>
+        {/* ── Stat Cards ── */}
+        <motion.div
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+          variants={staggerContainer} initial="hidden" animate="visible"
+        >
+          <StatCard
+            icon={<LayoutGrid className="w-5 h-5" />} iconBg="bg-[#DDEEE0]"
+            label="Tổng lồng" value={totalCount} valueColor="text-[#2D5A27]"
+            help="Tổng số lồng nuôi cấy trong hệ thống"
+          />
+          <StatCard
+            icon={<CheckCircle2 className="w-5 h-5" />} iconBg="bg-[#DDEEE0]"
+            label="Sẵn sàng" value={readyCount} valueColor="text-[#2D5A27]"
+            help="Lồng đang ở trạng thái sẵn sàng sử dụng"
+          />
+          <StatCard
+            icon={<FlaskConical className="w-5 h-5" />} iconBg="bg-[#DBEAFE]"
+            label="Đang sử dụng" value={inUseCount} valueColor="text-[#1D4ED8]"
+            help="Lồng đang được sử dụng cho thí nghiệm"
+          />
+          <StatCard
+            icon={<Wrench className="w-5 h-5" />} iconBg="bg-[#FEF9C3]"
+            label="Đang vệ sinh" value={cleaningCount} valueColor="text-[#854D0E]"
+            help="Lồng đang trong quá trình vệ sinh"
+          />
+        </motion.div>
 
         {/* ── Filter panel ── */}
         <motion.div
-          variants={filterPanelVariant}
-          initial="hidden"
-          animate="visible"
+          variants={filterPanelVariant} initial="hidden" animate="visible"
           className="bg-white rounded-2xl shadow-[0_10px_20px_rgba(45,90,39,0.08)] border border-[#DDEEE0] p-6 origin-top"
         >
           <div className="flex flex-wrap items-center gap-4">
-            {/* Status filter — AnimatedSelect */}
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5 text-[#2D5A27]" />
               <AnimatedSelect
                 value={statusFilter}
-                onChange={(v) => { setStatusFilter(v as SampleStatus | ""); setCurrentPage(1); }}
+                onChange={(v) => setStatusFilter(v as BatchStatus | "")}
                 options={statusOptions}
-                placeholder={t("sample.allStatus")}
+                placeholder="Tất cả trạng thái"
               />
             </div>
-
-            {/* Search */}
-            <div className="flex-1 min-w-[300px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t("sample.searchPlaceholder")}
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A27] focus:border-transparent transition-shadow"
-              />
-            </div>
-
-            {/* Clear filters */}
+            <AnimatedSelect
+              value={labFilter}
+              onChange={(v) => setLabFilter(v)}
+              options={labOptions}
+              placeholder="Tất cả phòng lab"
+            />
             <motion.button
               type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => { setSearchTerm(""); setStatusFilter(""); setCurrentPage(1); }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => { setStatusFilter(""); setLabFilter(""); }}
               className="px-4 py-2.5 text-sm text-[#2D5A27] hover:text-[#1e3e1c] hover:bg-[#E4F0E8] rounded-lg transition-colors font-medium"
             >
-              {t("common.clearFilters")}
+              {t("common.clearFilters") || "Xóa bộ lọc"}
             </motion.button>
           </div>
         </motion.div>
@@ -548,9 +374,7 @@ export default function ListSample() {
           ) : (
             <motion.div
               key="table"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
               className="bg-white rounded-2xl shadow-[0_18px_40px_rgba(45,90,39,0.08)] border border-[#DDEEE0] overflow-hidden"
             >
@@ -558,118 +382,100 @@ export default function ListSample() {
                 <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                   <tr>
                     {[
-                      t("sample.number"),
-                      t("common.name"),
-                      t("sample.experimentLog"),
-                      t("sample.currentStage"),
-                      t("sample.notes"),
+                      "#",
+                      t("tissueCultureBatch.labRoom"),
+                      t("tissueCultureBatch.batchName"),
+                      t("tissueCultureBatch.batchSize"),
+                      t("tissueCultureBatch.dimensions"),
                       t("common.status"),
-                      t("sample.executionDate"),
-                    ].map((header) => (
-                      <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
+                      t("common.action"),
+                      "",
+                    ].map((header, idx) => (
+                      <th
+                        key={idx}
+                        className={`px-6 py-4 text-xs font-semibold text-[#2D5A27] uppercase tracking-wider
+                          ${idx === 6 ? "text-center" : "text-left"}`}
+                      >
                         {header}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-100">
                   <AnimatePresence>
-                    {samples.length === 0 ? (
+                    {filtered.length === 0 ? (
                       <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <td colSpan={7} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
+                        <td colSpan={8} className="p-12 text-center text-gray-500">{t("common.noData")}</td>
                       </motion.tr>
                     ) : (
-                      samples.map((sample, i) => {
-                        const rowNumber = (currentPage - 1) * itemsPerPage + i + 1;
-                        return (
-                          <motion.tr
-                            key={sample.id}
-                            custom={i}
-                            variants={tableRowVariant}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            className="cursor-pointer transition-colors hover:bg-[#EBF7EE]" 
-                            onClick={() => navigate(`/technician/samples/${sample.id}`, { state: { from: "sampleList" } })}
-                          >
-                            <td className="px-6 py-4 font-medium text-gray-900">{rowNumber}</td>
-                            <td className="px-6 py-4 font-medium text-gray-900">{sample.name}</td>
-                            <td className="px-6 py-4 text-gray-600 text-sm">
-                              {experimentLogMap[sample.experimentLogId] ||
-                                sample.experimentLogId.substring(0, 8) + "..."}
-                            </td>
-                            <td className="px-6 py-4 text-gray-600">{sample.currentSampleStage ?? "-"}</td>
-                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{sample.notes ?? "-"}</td>
-                            <td className="px-6 py-4">
-                              <motion.span
-                                initial={{ opacity: 0, scale: 0.85 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
-                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
-                                  STATUS_COLORS[sample.status] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"
-                                }`}
+                      filtered.map((item, index) => (
+                        <motion.tr
+                          key={item.id}
+                          custom={index}
+                          variants={tableRowVariant}
+                          initial="hidden" animate="visible" exit="exit"
+                          className="hover:bg-[#EBF7EE] transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-900">{index + 1}</td>
+                          <td className="px-6 py-4 text-gray-700">{item.labRoomName ?? item.labName ?? "-"}</td>
+                          <td className="px-6 py-4 font-medium text-gray-900">{item.batchName ?? item.name ?? "-"}</td>
+                          <td className="px-6 py-4 text-gray-700">
+                            {item.batchSizeWidth && item.batchSizeHeight
+                              ? `${item.batchSizeWidth} × ${item.batchSizeHeight}`
+                              : "-"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-700">
+                            {item.widthUnit && item.heightUnit
+                              ? `${item.widthUnit} × ${item.heightUnit}`
+                              : item.widthUnit ?? item.heightUnit ?? "-"}
+                          </td>
+                          <td className="px-6 py-4">
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.03 + 0.1, type: "spring", stiffness: 280, damping: 22 }}
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border
+                                ${STATUS_COLORS[item.status as BatchStatus] ?? "bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]"}`}
+                            >
+                              {STATUS_ICON[item.status as BatchStatus]}
+                              {item.status}
+                            </motion.span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {item.status === "Cleaning" && (
+                              <motion.button
+                                type="button"
+                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                onClick={() => handleCompleteCleaning(String(item.id))}
+                                disabled={isCompletingCleaning[String(item.id)]}
+                                className="px-3 py-1.5 rounded-lg bg-[#2D5A27] text-white text-xs font-medium hover:bg-[#1e3e1c] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                               >
-                                {getStatusIcon(sample.status)}
-                                {getStatusLabel(sample.status)}
-                              </motion.span>
-                            </td>
-                            <td className="px-6 py-4 text-[#4B6C54]">{formatVietnameseDate(sample.executionDate)}</td>
-                          </motion.tr>
-                        );
-                      })
+                                {isCompletingCleaning[String(item.id)]
+                                  ? t("common.processing")
+                                  : t("tissueCultureBatch.completeCleaningBtn")}
+                              </motion.button>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Link
+                              to={`/technician/batches/${item.id}`}
+                              className="text-[#2D5A27] hover:text-[#1e3e1c] hover:underline text-sm font-medium"
+                            >
+                              {t("tissueCultureBatch.details")}
+                            </Link>
+                          </td>
+                        </motion.tr>
+                      ))
                     )}
                   </AnimatePresence>
                 </tbody>
               </table>
-
-              {/* ── Pagination ── */}
-              {totalPages > 1 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="px-6 py-4 bg-[#F4F7F4] border-t border-[#DDEEE0] flex justify-between items-center"
-                >
-                  <span className="text-sm text-gray-600">
-                    {t("sample.showing")} {samples.length} {t("sample.outOf")} {totalCount} {t("sample.samples")}
-                  </span>
-                  <div className="flex gap-2">
-                    {currentPage > 1 && (
-                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >←</motion.button>
-                    )}
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5)                    pageNum = i + 1;
-                      else if (currentPage <= 3)              pageNum = i + 1;
-                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                      else                                    pageNum = currentPage - 2 + i;
-                      return (
-                        <motion.button key={pageNum} type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`px-3 py-1.5 rounded-lg text-sm ${
-                            currentPage === pageNum
-                              ? "bg-[#2D5A27] text-white"
-                              : "bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8]"
-                          }`}
-                        >{pageNum}</motion.button>
-                      );
-                    })}
-                    {currentPage < totalPages && (
-                      <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-[#DDEEE0] hover:bg-[#E4F0E8] text-sm"
-                      >→</motion.button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </main>
   );
-}
+};
+
+export default TechnicianBatchList;

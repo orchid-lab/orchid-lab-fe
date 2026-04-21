@@ -82,7 +82,8 @@
     "errorOccurred": "An error occurred",
     "duration": "Duration",
     "active": "Active",
-    "reason": "Reason"
+    "reason": "Reason",
+    "allStatus": "All statuses"
   },
   "diseases": {
     "anthracnose": "Anthracnose",
