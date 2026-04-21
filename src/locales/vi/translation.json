@@ -922,7 +922,8 @@
   },
   "technicianTask": {
     "loadingTasks": "Đang tải công việc...",
-    "targetName": "Kỹ thuật viên",
+    "targetName": "Tên đối tượng",
+    "technicianName": "Kỹ thuật viên",
     "pageTitle": "Quản lý công việc",
     "pageDescription": "Theo dõi và quản lý các công việc được giao trong quá trình nuôi cấy mô",
     "pageSubtitle": "Danh sách công việc",

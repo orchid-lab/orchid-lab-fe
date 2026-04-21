@@ -1,21 +1,4 @@
-/**
- * =============================================================================
- * TECHNICIAN TASK TYPES
- * =============================================================================
- * Centralized types for technician task management
- */
 
-/**
- * Task Status - Status values for tasks
- * 0: Assigned - Task vừa được tạo xong
- * 1: InProgress - Technician nhận task để làm
- * 2: WaitingForApproval - Technician hoàn thành, chờ approval từ researcher
- * 3: CompletedInTime - Researcher đã approve, hoàn thành đúng hạn
- * 4: CompletedOutTime - Hoàn thành trễ hạn
- * 5: Deleted - Researcher xóa task
- * 6: DeclinedByTechnician - Technician từ chối nhận task
- * 7: ReworkRequired - Researcher yêu cầu làm lại
- */
 export type TaskStatus =
   | "Assigned"
   | "InProgress"
@@ -26,19 +9,9 @@ export type TaskStatus =
   | "DeclinedByTechnician"
   | "ReworkRequired";
 
-/**
- * Target Type - Types of targets for tasks
- */
+
 export type TargetType = "Sample" | "ExperimentLog";
-
-/**
- * Check List Item Status - Status values for checklist items
- */
 export type CheckListItemStatus = "Pending" | "InProgress" | "Complete" | "Failed";
-
-/**
- * Task Status Type - Status values for tasks in technician view (with Unknown)
- */
 export type TaskStatusType =
   | "Assigned"
   | "InProgress"
@@ -49,10 +22,6 @@ export type TaskStatusType =
   | "DeclinedByTechnician"
   | "ReworkRequired"
   | "Unknown";
-
-/**
- * Task Attribute - Attributes/properties of a task
- */
 export interface TaskAttribute {
   chemicalName: string | null;
   materialName: string | null;
@@ -60,9 +29,6 @@ export interface TaskAttribute {
   value: number;
 }
 
-/**
- * Task Assignment - Assignment details for a task
- */
 export interface TaskAssignment {
   taskId: string;
   technicianName: string;
@@ -73,9 +39,6 @@ export interface TaskAssignment {
   expectedEndDate: string;
 }
 
-/**
- * Check List Item - Individual item in a checklist
- */
 export interface CheckListItem {
   id: string;
   name: string;
@@ -91,17 +54,11 @@ export interface CheckListItem {
   evaluated: string;
 }
 
-/**
- * Task Check List - Collection of checklist items
- */
 export interface TaskCheckList {
   id: string;
   checkListItemDtos: CheckListItem[];
 }
 
-/**
- * Task Data - Complete task information with all details
- */
 export interface TaskData {
   id: string;
   name: string;
@@ -120,9 +77,6 @@ export interface TaskData {
   taskCheckList: TaskCheckList | null;
 }
 
-/**
- * Task Item - Task information for list view
- */
 export interface TaskItem {
   id: string;
   name: string;
@@ -138,9 +92,6 @@ export interface TaskItem {
   targetName?: string;
 }
 
-/**
- * Task List API Response
- */
 export interface TaskListApiResponse {
   totalCount?: number;
   pageCount?: number;
