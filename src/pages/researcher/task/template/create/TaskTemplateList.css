@@ -1,0 +1,74 @@
+button.task-template-create-button.task-template-page,
+.task-template-page button.task-template-create-button {
+  background-color: rgba(30, 58, 138, 0.7) !important;
+  color: #ffffff !important;
+  transition: background-color 0.2s ease !important;
+}
+
+button.task-template-create-button.task-template-page:hover,
+.task-template-page button.task-template-create-button:hover {
+  background-color: rgba(30, 58, 138, 1.0) !important;
+}
+
+.task-template-page button.task-template-create-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 87, 146, 0.24) !important;
+}
+
+.task-template-page button.task-template-create-button:active {
+  background-color: #002f52 !important;
+}
+
+.dark .task-template-page,
+:root[data-theme='dark'] .task-template-page {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(180deg, #091421 0%, #0c172a 100%) !important;
+}
+
+.dark .task-template-page .bg-white\/80,
+:root[data-theme='dark'] .task-template-page .bg-white\/80 {
+  background-color: rgba(10, 20, 42, 0.96) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark .task-template-page .bg-white\/60,
+:root[data-theme='dark'] .task-template-page .bg-white\/60 {
+  background-color: rgba(10, 20, 42, 0.84) !important;
+}
+
+.dark .task-template-page .border-blue-100,
+:root[data-theme='dark'] .task-template-page .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+.dark .task-template-page .border-blue-50,
+:root[data-theme='dark'] .task-template-page .border-blue-50 {
+  border-color: rgba(96, 165, 250, 0.12) !important;
+}
+
+.dark .task-template-page .text-blue-950,
+:root[data-theme='dark'] .task-template-page .text-blue-950 {
+  color: #e2e8f0 !important;
+}
+
+.dark .task-template-page .text-blue-900\/70,
+:root[data-theme='dark'] .task-template-page .text-blue-900\/70 {
+  color: #cbd5e1 !important;
+}
+
+.dark .task-template-page .text-\[\#005792\],
+:root[data-theme='dark'] .task-template-page .text-\[\#005792\] {
+  color: #7dd3fc !important;
+}
+
+.dark .task-template-page .text-blue-700,
+:root[data-theme='dark'] .task-template-page .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+.dark .task-template-page .bg-cyan-50,
+:root[data-theme='dark'] .task-template-page .bg-cyan-50 {
+  background-color: rgba(56, 189, 248, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.28) !important;
+}

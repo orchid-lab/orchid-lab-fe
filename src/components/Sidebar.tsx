@@ -89,7 +89,6 @@ export default function Sidebar() {
                     borderRadius: "0.75rem",
                     marginBottom: "0.5rem",
                     transition: "all 0.2s",
-                    borderLeft: isActive ? "4px solid #00CED1" : "4px solid transparent",
                     backgroundColor: isActive ? "rgba(255,255,255,0.15)" : "transparent",
                     fontWeight: isActive ? 600 : 400,
                     cursor: "pointer",
