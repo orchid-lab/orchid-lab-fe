@@ -23,7 +23,7 @@ const SelectTechnicianContainer: React.FC = () => {
   // If template mode, skip this step
   useEffect(() => {
     if (state.taskMode === "template") {
-      void navigate("/create-task/step-3", { replace: true });
+      void navigate("/researcher/create-task/step-3", { replace: true });
     }
   }, [state.taskMode, navigate]);
 
@@ -62,12 +62,12 @@ const SelectTechnicianContainer: React.FC = () => {
         ...prev,
         technician: techObj ? { id: techObj.id, name: techObj.name } : null,
       }));
-      void navigate("/create-task/step-3");
+      void navigate("/researcher/create-task/step-3");
     }
   };
 
   const handleBack = (): void => {
-    void navigate("/create-task/step-1");
+    void navigate("/researcher/create-task/step-1");
   };
 
   return (

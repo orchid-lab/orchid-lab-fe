@@ -666,6 +666,7 @@
     }
   },
   "experimentLog": {
+    "completionDetails": "Chi tiết hoàn thành",
     "experimentLogManagement": "Quản lý nhật ký thí nghiệm",
     "experimentLogDetails": "Chi tiết nhật ký thí nghiệm",
     "createExperimentLog": "Tạo nhật ký thí nghiệm",
@@ -1116,7 +1117,21 @@
     "noIncidents": "Không có cảnh báo bệnh",
     "loadError": "Không thể tải cảnh báo bệnh",
     "filterAll": "Tất cả",
-    "filterPending": "Chờ xem xét"
-    
+    "filterPending": "Chờ xem xét" 
+  },
+  "experimentSteps": {
+    "step1": {
+      "name": "Thông tin lô nuôi cấy",
+      "description": "Chọn Lô nuôi cấy và Phương pháp lai"
+    },
+    "step2": {
+      "name": "Mẫu",
+      "description": "Chọn cây bố và cây mẹ cho thí nghiệm"
+    },
+    "step3": {
+      "name": "Review",
+      "description": "Kiểm tra thông tin và hoàn thành tạo Experiment Log"
+    }
   }
+
 }

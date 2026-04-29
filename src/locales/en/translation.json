@@ -665,6 +665,7 @@
     }
   },
   "experimentLog": {
+    "completionDetails": "Completion Details",
     "experimentLogManagement": "Experiment Log Management",
     "experimentLogDetails": "Experiment Log Details",
     "createExperimentLog": "Create Experiment Log",
@@ -1114,6 +1115,19 @@
     "loadError": "Failed to load disease alerts",
     "filterAll": "All",
     "filterPending": "Pending Review"
+  },
+  "experimentSteps": {
+    "step1": {
+      "name": "Culture Batch Info",
+      "description": "Select Culture Batch and Hybridization Method"
+    },
+    "step2": {
+      "name": "Samples",
+      "description": "Select parent plants for the experiment"
+    },
+    "step3": {
+      "name": "Review",
+      "description": "Review information and complete Experiment Log creation"
+    }
   }
-  
 }

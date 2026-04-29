@@ -1,18 +1,24 @@
-
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ExperimentSteps = ({ currentStep = 1 }) => {
+  const { t } = useTranslation();
+
   const steps = [
     {
       id: 1,
-      name: "Thông tin lô nuôi cấy",
-      description: "Chọn Lô nuôi cấy và Phương pháp lai",
+      name: t("experimentSteps.step1.name"),
+      description: t("experimentSteps.step1.description"),
     },
-    { id: 2, name: "Mẫu", description: "Chọn cây bố và cây mẹ cho thí nghiệm" },
+    {
+      id: 2,
+      name: t("experimentSteps.step2.name"),
+      description: t("experimentSteps.step2.description"),
+    },
     {
       id: 3,
-      name: "Review",
-      description: "Kiểm tra thông tin và hoàn thành tạo Experiment Log",
+      name: t("experimentSteps.step3.name"),
+      description: t("experimentSteps.step3.description"),
     },
   ];
 

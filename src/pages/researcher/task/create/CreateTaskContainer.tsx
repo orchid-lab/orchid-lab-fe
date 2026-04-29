@@ -289,7 +289,7 @@ const CreateTaskContainer: React.FC = () => {
         attributes: attributes.filter((a) => a.itemId > 0),
         checklistItems,
       }));
-      void navigate("/create-task/step-2");
+      void navigate("/researcher/create-task/step-2");
     } else {
       // Template mode — skip technician step
       const tplEL = experimentLogs.find((x) => x.id === templateELId) ?? null;
@@ -307,7 +307,7 @@ const CreateTaskContainer: React.FC = () => {
         attributes: attributes.filter((a) => a.itemId > 0),
         checklistItems,
       }));
-      void navigate("/create-task/step-3");
+      void navigate("/researcher/create-task/step-3");
     }
     setLoading(false);
   };

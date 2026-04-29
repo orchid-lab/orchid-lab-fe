@@ -897,7 +897,6 @@ const ExperimentLog = () => {
                   }
                 >
                   <option value="all">{t("experimentLog.allStatuses")}</option>
-                  <option value="Created">{t("status.created")}</option>
                   <option value="InProcess">{t("status.inProgress")}</option>
                   <option value="Done">{t("status.completed")}</option>
                   <option value="Cancel">{t("status.cancelled")}</option>

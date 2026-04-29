@@ -1,32 +1,86 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
+/* eslint-disable react-x/no-array-index-key */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
+import { motion, type Variants } from "framer-motion";
+import {
+  ArrowLeft,
+  FileText,
+  Calendar,
+  Activity,
+  Info,
+  CheckCircle2,
+  ListChecks,
+  Beaker,
+  Edit3,
+  Trash2,
+} from "lucide-react";
+
+// Map stageId → tên giai đoạn (đồng bộ với TaskTemplateList)
+const STAGE_NAME_MAP: Record<number, string> = {
+  1: "Chuẩn bị mẫu",
+  2: "Khử trùng",
+  3: "Nuôi cấy khởi động",
+  4: "Nhân nhanh",
+  5: "Tạo rễ",
+  6: "Ra giá thể",
+};
+
+interface TaskAttribute {
+  chemicalName: string | null;
+  materialName: string | null;
+  unit: string;
+  value: number;
+}
+
+interface CheckListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  order: number;
+  expectedUnit: string | null;
+  expectedMinValue: number | null;
+  expectedMaxValue: number | null;
+  status: string;
+  measurementUnit: string | null;
+  mesuredValue: number | null;
+  isPass: boolean | null;
+  evaluated: unknown;
+}
+
+interface TaskCheckList {
+  id: string;
+  checkListItemDtos: CheckListItem[];
+}
 
 interface TaskTemplate {
   id: string;
   name: string;
-  stageID: string;
-  stageName: string;
   description: string;
-  status: boolean;
-  details: TemplateDetail[];
+  stageId: number | null;
+  researcherId: string | null;
+  status: string;
+  createdDate: string;
+  createdBy: string | null;
+  updatedDate: string | null;
+  updatedBy: string | null;
+  taskAttributes: TaskAttribute[] | null;
+  taskAssignments: unknown;
+  taskCheckList: TaskCheckList | null;
 }
 
-interface TemplateDetail {
-  id: string;
-  element: string;
-  name: string;
-  description: string;
-  expectedValue: number;
-  unit: string;
-  isRequired: boolean;
-  status: boolean;
-}
+/* ─── Animation variants ──────────────────────────────── */
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } },
+};
 
-interface ApiTaskTemplateResponse {
-  value?: TaskTemplate;
-}
+const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+};
 
 const TaskTemplateDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,10 +100,10 @@ const TaskTemplateDetail: React.FC = () => {
 
     setLoading(true);
     axiosInstance
-      .get(`/api/tasktemplate/${id}`)
-      .then((res: { data: ApiTaskTemplateResponse }) => {
-        if (res.data?.value) {
-          setTemplate(res.data.value);
+      .get(`/api/tasks/${id}`)
+      .then((res: { data: TaskTemplate }) => {
+        if (res.data?.id) {
+          setTemplate(res.data);
         } else {
           setError(true);
         }
@@ -65,14 +119,44 @@ const TaskTemplateDetail: React.FC = () => {
       });
   }, [id, enqueueSnackbar]);
 
+  const renderStatusBadge = (status?: string) => {
+    if (!status) return null;
+    const configMap: Record<
+      string,
+      { label: string; bg: string; text: string; icon: React.ElementType }
+    > = {
+      Template: {
+        label: "Mẫu nhiệm vụ",
+        bg: "bg-[#E4F0E8] border-[#C9E7D2]",
+        text: "text-[#2D5A27]",
+        icon: CheckCircle2,
+      },
+    };
+
+    const config = configMap[status] ?? {
+      label: status,
+      bg: "bg-gray-50 border-gray-200",
+      text: "text-gray-700",
+      icon: Info,
+    };
+    const Icon = config.icon;
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ${config.bg} ${config.text}`}
+      >
+        <Icon className="w-4 h-4" />
+        {config.label}
+      </span>
+    );
+  };
+
   if (loading) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10">
-        <div className="bg-white rounded-xl px-8 pt-8 pb-6 shadow-md max-w-2xl w-full text-center">
-          <h2 className="text-2xl font-bold mb-6 text-green-800">
-            Đang tải...
-          </h2>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] flex items-center justify-center">
+        <div className="flex flex-col items-center text-[#2D5A27] animate-pulse">
+          <FileText className="w-10 h-10 mb-4 animate-bounce" />
+          <p className="font-medium">Đang tải chi tiết mẫu nhiệm vụ...</p>
         </div>
       </main>
     );
@@ -80,17 +164,14 @@ const TaskTemplateDetail: React.FC = () => {
 
   if (error || !template) {
     return (
-      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10">
-        <div className="bg-white rounded-xl px-8 pt-8 pb-6 shadow-md max-w-2xl w-full text-center">
-          <h2 className="text-2xl font-bold mb-6 text-red-700">
-            Không tìm thấy mẫu nhiệm vụ
-          </h2>
+      <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] flex items-center justify-center">
+        <div className="text-slate-500 text-center">
+          <Info className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+          <p>Không tìm thấy mẫu nhiệm vụ.</p>
           <button
             type="button"
-            className="mt-4 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
-            onClick={() => {
-              void navigate("/researcher/task-templates");
-            }}
+            onClick={() => navigate("/researcher/task-templates")}
+            className="mt-4 text-[#2D5A27] hover:underline"
           >
             Quay lại danh sách
           </button>
@@ -99,129 +180,289 @@ const TaskTemplateDetail: React.FC = () => {
     );
   }
 
+  const stageName =
+    template.stageId !== null
+      ? STAGE_NAME_MAP[template.stageId] ?? `Giai đoạn ${template.stageId}`
+      : "—";
+
+  const sortedCheckList = template.taskCheckList?.checkListItemDtos
+    ? [...template.taskCheckList.checkListItemDtos].sort(
+        (a, b) => a.order - b.order
+      )
+    : [];
+
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-4">
-      <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[900px] mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">
-            Chi tiết mẫu nhiệm vụ: {template.name}
-          </h2>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Chỉnh sửa
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Xóa mẫu
-            </button>
-          </div>
-        </div>
+    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-6 lg:p-8 text-slate-800">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="max-w-6xl mx-auto space-y-6"
+      >
+        {/* Back Button */}
+        <motion.button
+          variants={fadeInUp}
+          type="button"
+          className="flex items-center gap-2 text-slate-500 hover:text-[#2D5A27] transition-colors font-medium w-fit"
+          onClick={() => navigate("/researcher/task-templates")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Quay lại danh sách
+        </motion.button>
 
-        {/* Status */}
-        <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Trạng thái</label>
-          <span
-            className={`px-3 py-2 rounded-md text-sm font-medium w-fit ${
-              template.status
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
+        <div className="grid grid-cols-1 gap-6">
+          {/* Main Info Card */}
+          <motion.div
+            variants={fadeInUp}
+            className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden"
           >
-            {template.status ? "Hoạt động" : "Không hoạt động"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên nhiệm vụ mẫu</label>
-            <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {template.name}
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <label className="font-medium mb-1.5">Tên giai đoạn</label>
-            <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {template.stageName}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col mb-6">
-          <label className="font-medium mb-1.5">Mô tả</label>
-          <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 min-h-[80px]">
-            {template.description}
-          </div>
-        </div>
-
-        {/* Nguyên vật liệu */}
-        <div className="flex flex-col mb-8">
-          <label className="font-medium mb-1.5">Nguyên vật liệu</label>
-          {template.details && template.details.length > 0 ? (
-            <div className="space-y-2">
-              {/* Header - sắp xếp giống CreateTaskContainer */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-2 font-medium text-sm text-gray-700">
-                <span>Tên vật tư</span>
-                <span>Đơn vị</span>
-                <span>Số lượng</span>
-                <span>Mô tả</span>
-                <span>Bắt buộc</span>
+            <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-[#2D5A27] p-1 bg-[#E4F0E8] rounded-lg" />
+                <h1 className="text-xl font-bold text-[#1e3e1c]">
+                  {template.name}
+                </h1>
               </div>
-              {/* Data rows */}
-              {template.details.map((detail, idx) => (
-                <div
-                  className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-2"
-                  key={detail.id || idx}
-                >
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {detail.name || detail.element}
-                  </div>
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {detail.unit}
-                  </div>
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {detail.expectedValue}
-                  </div>
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {detail.description || "N/A"}
-                  </div>
-                  <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        detail.isRequired
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {detail.isRequired ? "Có" : "Không"}
-                    </span>
+              <div className="flex items-center gap-3">
+                {renderStatusBadge(template.status)}
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/50 p-5 rounded-xl border border-slate-100">
+                <div>
+                  <span className="block text-sm font-semibold text-slate-500 uppercase mb-1">
+                    Giai đoạn
+                  </span>
+                  <div className="text-lg font-medium text-slate-800 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-[#2D5A27]" />
+                    {stageName}
                   </div>
                 </div>
-              ))}
+                <div>
+                  <span className="block text-sm font-semibold text-slate-500 uppercase mb-1">
+                    Mô tả
+                  </span>
+                  <div className="text-base font-medium text-slate-800">
+                    {template.description || "Không có mô tả"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400 border border-slate-100">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold text-slate-500 uppercase">
+                      Ngày tạo
+                    </span>
+                    <span className="text-base font-medium text-slate-800">
+                      {new Date(template.createdDate).toLocaleDateString(
+                        "vi-VN"
+                      )}
+                    </span>
+                    {template.createdBy && (
+                      <span className="text-xs text-slate-500 ml-2">
+                        (bởi {template.createdBy})
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {template.updatedDate && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-[#E4F0E8] rounded-xl text-[#2D5A27] border border-[#DDEEE0]">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold text-slate-500 uppercase">
+                        Cập nhật lần cuối
+                      </span>
+                      <span className="text-base font-medium text-slate-800">
+                        {new Date(template.updatedDate).toLocaleDateString(
+                          "vi-VN"
+                        )}
+                      </span>
+                      {template.updatedBy && (
+                        <span className="text-xs text-slate-500 ml-2">
+                          (bởi {template.updatedBy})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 italic">
-              Không có nguyên vật liệu nào được ghi nhận
-            </div>
-          )}
+          </motion.div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        {/* Task Attributes (nguyên vật liệu) */}
+        <motion.div
+          variants={fadeInUp}
+          className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden"
+        >
+          <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+            <Beaker className="w-5 h-5 text-[#2D5A27]" />
+            <h2 className="text-lg font-bold text-[#1e3e1c]">
+              Nguyên vật liệu & Hóa chất
+            </h2>
+          </div>
+
+          <div className="p-0">
+            {template.taskAttributes && template.taskAttributes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-[#F4F7F4] text-slate-600 font-semibold border-b border-[#DDEEE0]">
+                    <tr>
+                      <th className="px-6 py-4">Tên vật tư</th>
+                      <th className="px-6 py-4">Tên hóa chất</th>
+                      <th className="px-6 py-4 text-center">Số lượng</th>
+                      <th className="px-6 py-4 text-center">Đơn vị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {template.taskAttributes.map((attr, idx) => (
+                      <tr
+                        key={idx}
+                        className={`border-b border-slate-100 hover:bg-[#F4F7F4] transition-colors ${
+                          idx === template.taskAttributes!.length - 1
+                            ? "border-none"
+                            : ""
+                        }`}
+                      >
+                        <td className="px-6 py-4 font-medium text-slate-800">
+                          {attr.materialName ?? "—"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {attr.chemicalName ?? "—"}
+                        </td>
+                        <td className="px-6 py-4 text-center font-bold text-[#1e3e1c]">
+                          {attr.value}
+                        </td>
+                        <td className="px-6 py-4 text-center text-slate-600">
+                          {attr.unit}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-500 italic">
+                Không có yêu cầu nguyên vật liệu nào.
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Checklist */}
+        <motion.div
+          variants={fadeInUp}
+          className="bg-white rounded-2xl shadow-sm border border-[#DDEEE0] overflow-hidden"
+        >
+          <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
+            <ListChecks className="w-5 h-5 text-[#2D5A27]" />
+            <h2 className="text-lg font-bold text-[#1e3e1c]">
+              Danh sách kiểm tra (Checklist)
+            </h2>
+          </div>
+
+          <div className="p-0">
+            {sortedCheckList.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-[#F4F7F4] text-slate-600 font-semibold border-b border-[#DDEEE0]">
+                    <tr>
+                      <th className="px-6 py-4 w-16 text-center">TT</th>
+                      <th className="px-6 py-4">Tên bước</th>
+                      <th className="px-6 py-4 text-center">Giá trị kỳ vọng</th>
+                      <th className="px-6 py-4 text-center">Đơn vị</th>
+                      <th className="px-6 py-4 text-center">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedCheckList.map((item, idx) => (
+                      <tr
+                        key={item.id}
+                        className={`border-b border-slate-100 hover:bg-[#F4F7F4] transition-colors ${
+                          idx === sortedCheckList.length - 1
+                            ? "border-none"
+                            : ""
+                        }`}
+                      >
+                        <td className="px-6 py-4 text-center text-slate-500 font-medium">
+                          {item.order}
+                        </td>
+                        <td className="px-6 py-4 font-medium text-slate-800">
+                          {item.name}
+                        </td>
+                        <td className="px-6 py-4 text-center text-slate-600">
+                          {item.expectedMinValue !== null &&
+                          item.expectedMaxValue !== null ? (
+                            item.expectedMinValue === item.expectedMaxValue ? (
+                              <span className="font-bold">
+                                {item.expectedMinValue}
+                              </span>
+                            ) : (
+                              <span className="font-bold">
+                                {item.expectedMinValue} –{" "}
+                                {item.expectedMaxValue}
+                              </span>
+                            )
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center text-slate-600">
+                          {item.expectedUnit ?? "—"}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span
+                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                              item.status === "Pending"
+                                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                : item.status === "Pass"
+                                ? "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {item.status === "Pending"
+                              ? "Chờ kiểm tra"
+                              : item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-500 italic">
+                Không có danh sách kiểm tra.
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Bottom Action Buttons */}
+        <motion.div variants={fadeInUp} className="flex justify-end gap-3 pt-4">
           <button
             type="button"
-            className="min-w-[90px] px-5 py-2 rounded-lg border-none text-base font-semibold cursor-pointer transition-colors duration-200 bg-gray-300 text-gray-800 hover:bg-gray-400"
-            onClick={() => {
-              void navigate("/researcher/task-templates");
-            }}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-sm transition-all"
           >
-            Quay lại
+            <Edit3 className="w-5 h-5" />
+            Chỉnh sửa
           </button>
-        </div>
-      </div>
+          <button
+            type="button"
+            className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-sm transition-all"
+          >
+            <Trash2 className="w-5 h-5" />
+            Xóa mẫu
+          </button>
+        </motion.div>
+      </motion.div>
     </main>
   );
 };

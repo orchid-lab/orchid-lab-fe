@@ -1,3 +1,5 @@
+/* eslint-disable react-x/no-array-index-key */
+/* eslint-disable react-dom/no-missing-button-type */
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../../../../api/axiosInstance";
@@ -356,7 +358,7 @@ const AutoCreateTaskContainer: React.FC = () => {
           </h2>
           <button
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            onClick={() => void navigate("/create-task/step-1")}
+            onClick={() => void navigate("/researcher/create-task/step-1")}
           >
             Tạo thủ công
           </button>
