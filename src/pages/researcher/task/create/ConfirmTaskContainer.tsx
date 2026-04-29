@@ -15,7 +15,7 @@ const ConfirmTaskContainer: React.FC = () => {
   const isTemplate = state.taskMode === "template";
 
   const handleBack = (): void => {
-    void navigate(isTemplate ? "/create-task/step-1" : "/create-task/step-2");
+    void navigate(isTemplate ? "/researcher/create-task/step-1" : "/researcher/create-task/step-2");
   };
 
   const handleCreate = async (

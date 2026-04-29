@@ -292,7 +292,7 @@ export default function Tasks() {
                 type="button"
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 350, damping: 22 }}
-                onClick={() => void navigate("/create-task/step-1")}
+                onClick={() => void navigate("/researcher/create-task/step-1")}
                 className="inline-flex items-center gap-2 rounded-full bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#004d73] active:bg-[#003f5a] focus:outline-none focus:ring-2 focus:ring-[#005792]/60"
               >
                 <motion.svg
