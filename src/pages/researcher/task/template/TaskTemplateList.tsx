@@ -205,34 +205,6 @@ export default function TaskTemplateList() {
                 Quản lý các mẫu nhiệm vụ theo từng giai đoạn nuôi cấy
               </p>
             </motion.div>
-
-            <motion.button
-              type="button"
-              onClick={() => void navigate("/researcher/task-templates/new")}
-              className="task-template-create-button inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60 hover:bg-[#004d73] transition-colors duration-200"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 320, damping: 20 }}
-            >
-              <motion.span
-                initial={{ rotate: 0 }}
-                whileHover={{ rotate: 90 }}
-                transition={{ duration: 0.25 }}
-                className="flex"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-5 w-5"
-                >
-                  <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </motion.span>
-              Tạo mẫu nhiệm vụ
-            </motion.button>
           </div>
         </motion.div>
 
