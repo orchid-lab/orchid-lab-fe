@@ -18,12 +18,9 @@ const ConfirmTaskContainer: React.FC = () => {
     void navigate(isTemplate ? "/researcher/create-task/step-1" : "/researcher/create-task/step-2");
   };
 
-  const handleCreate = async (
-    e: React.FormEvent<HTMLFormElement>,
-  ): Promise<void> => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
-    // Build createTaskAttribute
     const createTaskAttribute = state.attributes
       .filter((a) => a.itemId > 0)
       .map((a) => ({
@@ -33,7 +30,6 @@ const ConfirmTaskContainer: React.FC = () => {
         value: a.value,
       }));
 
-    // Build createTaskCheckListItemDtos
     const createTaskCheckListItemDtos = state.checklistItems.map((item, i) => ({
       name: item.name,
       description: item.description,
@@ -43,25 +39,18 @@ const ConfirmTaskContainer: React.FC = () => {
       expectedMaxValue: item.expectedMaxValue ?? 0,
     }));
 
-    // Build createTaskAssignment (null for template)
     let createTaskAssignment = null;
     if (!isTemplate && state.technician) {
-      const targetId =
-        state.targetType === "ExperimentLog"
-          ? state.selectedEL?.id
-          : state.selectedSample?.id;
+      const targetId = state.targetType === "ExperimentLog" ? state.selectedEL?.id : state.selectedSample?.id;
 
       createTaskAssignment = {
         technicianId: state.technician.id,
         targetType: state.targetType,
         targetId: targetId ?? "",
-        expectedEndDate: state.expectedEndDate
-          ? new Date(state.expectedEndDate).toISOString()
-          : new Date().toISOString(),
+        expectedEndDate: state.expectedEndDate ? new Date(state.expectedEndDate).toISOString() : new Date().toISOString(),
       };
     }
 
-    // stageId: only for template, from templateEL's currentStageOrder
     const stageId = isTemplate ? (state.templateEL?.currentStageOrder ?? 0) : 0;
 
     const body = {
@@ -76,216 +65,134 @@ const ConfirmTaskContainer: React.FC = () => {
     try {
       await axiosInstance.post("/api/tasks", body);
       enqueueSnackbar(t("task.createTaskSuccess"), { variant: "success" });
-      void navigate("/researcher/tasks");
+      if (state.taskMode === "template") {
+        void navigate("/researcher/task-templates");
+      } else {
+        void navigate("/researcher/tasks");
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       enqueueSnackbar(
-        t("task.createTaskFailed") +
-          " " +
-          (error?.response?.data?.message ??
-            JSON.stringify(error?.response?.data) ??
-            ""),
-        { variant: "error" },
+        t("task.createTaskFailed") + " " + (error?.response?.data?.message ?? JSON.stringify(error?.response?.data) ?? ""),
+        { variant: "error" }
       );
     }
   };
 
   return (
-    <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <CreateTaskStepper currentStep={3} />
-      <form
-        className="bg-white rounded-2xl px-10 pt-8 pb-10 shadow-md w-full max-w-4xl mt-6"
-        onSubmit={(e) => {
-          void handleCreate(e);
-        }}
-      >
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+
+      <form onSubmit={(e) => { void handleCreate(e); }} className="mt-8 bg-white shadow-sm border border-slate-200 rounded-2xl p-6 md:p-8">
+        <h2 className="text-xl font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
           {t("task.confirmTaskTitle")}
         </h2>
-        <p className="text-sm text-gray-400 mb-8">
-          {t("task.confirmTaskSubtitle")}
-        </p>
 
-        {/* ── Basic info ── */}
-        <div className="mb-8">
-          <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-            {t("task.stepBasicInfo")}
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">
-                {t("task.taskName")}
-              </p>
-              <p className="text-gray-800 font-medium">{state.name}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">
-                {t("common.status")}
-              </p>
-              <span
-                className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${
-                  isTemplate
-                    ? "bg-purple-100 text-purple-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                {isTemplate
-                  ? t("task.taskModeTemplate")
-                  : t("task.taskModeRegular")}
-              </span>
-            </div>
-            {state.description && (
-              <div className="col-span-2">
-                <p className="text-xs font-medium text-gray-400 mb-1">
-                  {t("common.description")}
-                </p>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {state.description}
-                </p>
-              </div>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.taskName")}</p>
+            <p className="text-base font-bold text-slate-800">{state.name}</p>
           </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.creationMode")}</p>
+            <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full ${isTemplate ? "bg-purple-100 text-purple-700 border border-purple-200" : "bg-blue-100 text-blue-700 border border-blue-200"}`}>
+              {isTemplate ? t("task.taskModeTemplate") : t("task.taskModeRegular")}
+            </span>
+          </div>
+          {state.description && (
+            <div className="md:col-span-2">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("common.description")}</p>
+              <p className="text-sm font-medium text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 whitespace-pre-wrap">{state.description || <span className="italic text-slate-400">{t("task.noDescription")}</span>}</p>
+            </div>
+          )}
+
+          {!isTemplate && (
+            <>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.targetType")}</p>
+                <p className="text-sm font-bold text-slate-800">{state.targetType === "ExperimentLog" ? t("task.experimentLog") : t("task.targetTypeSample")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.targetObject")}</p>
+                <p className="text-sm font-medium text-slate-800">{state.targetType === "ExperimentLog" ? (state.selectedEL?.name ?? "-") : (state.selectedSample?.name ?? "-")}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.technician")}</p>
+                <p className="text-sm font-bold text-blue-800">{state.technician?.name ?? "-"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.expectedEndDate")}</p>
+                <p className="text-sm font-medium text-slate-800">{state.expectedEndDate ? new Date(state.expectedEndDate).toLocaleDateString("vi-VN") : "-"}</p>
+              </div>
+            </>
+          )}
+
+          {isTemplate && state.templateEL && (
+            <div className="md:col-span-2">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">{t("task.experimentLog")} / StageId</p>
+              <p className="text-sm font-medium text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                {state.templateEL.name} — Stage {state.templateEL.currentStageOrder ?? 0}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* ── Assignment info ── */}
-        {!isTemplate && (
-          <div className="mb-8">
-            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              {t("task.sectionAssignment")}
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium text-gray-400 mb-1">
-                  {t("task.targetType")}
-                </p>
-                <p className="text-gray-800">
-                  {state.targetType === "ExperimentLog"
-                    ? t("task.experimentLog")
-                    : t("task.targetTypeSample")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-400 mb-1">
-                  {t("task.targetObject")}
-                </p>
-                <p className="text-gray-800">
-                  {state.targetType === "ExperimentLog"
-                    ? (state.selectedEL?.name ?? "-")
-                    : (state.selectedSample?.name ?? "-")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-400 mb-1">
-                  {t("task.technician")}
-                </p>
-                <p className="text-gray-800 font-medium">
-                  {state.technician?.name ?? "-"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-400 mb-1">
-                  {t("task.expectedEndDate")}
-                </p>
-                <p className="text-gray-800">
-                  {state.expectedEndDate
-                    ? new Date(state.expectedEndDate).toLocaleDateString(
-                        "vi-VN",
-                      )
-                    : "-"}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {isTemplate && state.templateEL && (
-          <div className="mb-8">
-            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              {t("task.sectionTemplate")}
-            </h3>
-            <div>
-              <p className="text-xs font-medium text-gray-400 mb-1">
-                {t("task.experimentLog")} / StageId
-              </p>
-              <p className="text-gray-800">
-                {state.templateEL.name} — Stage{" "}
-                {state.templateEL.currentStageOrder ?? 0}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Attributes ── */}
+        {/* Attributes */}
         {state.attributes.filter((a) => a.itemId > 0).length > 0 && (
           <div className="mb-8">
-            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              {t("task.taskAttributesTitle")}
-            </h3>
-            <div className="space-y-2">
-              {state.attributes
-                .filter((a) => a.itemId > 0)
-                .map((a) => (
-                  <div
-                    key={`attr-${a.type}-${a.itemId}`}
-                    className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
-                  >
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                        a.type === "chemical"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {a.type === "chemical"
-                        ? t("element.chemical")
-                        : t("element.material")}
-                    </span>
-                    <span className="flex-1 text-gray-800 font-medium">
-                      {a.itemName}
-                    </span>
-                    <span className="text-gray-500 text-sm bg-white border border-gray-200 px-3 py-1 rounded-lg">
-                      {a.value} {a.unit}
-                    </span>
-                  </div>
-                ))}
+            <h3 className="text-sm font-bold text-slate-700 uppercase mb-3">{t("task.taskAttributesTitle")}</h3>
+            <div className="overflow-hidden border border-slate-200 rounded-xl">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left">{t("task.attrType")}</th>
+                    <th className="px-4 py-3 text-left">{t("task.materialChemicalId")}</th>
+                    <th className="px-4 py-3 text-right">{t("task.quantity")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {state.attributes.filter((a) => a.itemId > 0).map((a, idx) => (
+                    <tr key={`attr-${a.type}-${a.itemId}-${idx}`} className="bg-white">
+                      <td className="px-4 py-3 font-medium text-slate-800">
+                        {a.type === "chemical" ? t("element.chemical") : t("task.material")}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">ID: {a.itemId}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-blue-700">
+                        {a.value} {a.unit}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* ── Checklist ── */}
+        {/* Checklist */}
         {state.checklistItems.length > 0 && (
-          <div className="mb-8">
-            <h3 className="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200">
-              {t("task.taskChecklist")}
-            </h3>
-            <div className="space-y-2">
-              {state.checklistItems.map((item) => (
-                <div
-                  key={`cl-${item.order}-${item.name}`}
-                  className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                      {item.order}
-                    </span>
-                    <span className="font-semibold text-gray-800 flex-1">
-                      {item.name}
-                    </span>
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 uppercase mb-3">{t("task.taskChecklist")}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {state.checklistItems.map((item, i) => (
+                <div key={`cl-${i}-${item.name}`} className="p-4 bg-slate-50 rounded-xl border border-slate-100 relative">
+                  <div className="absolute top-4 right-4 text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    {t("task.stepPrefix")} {i + 1}
+                  </div>
+                  <div className="flex items-center gap-2 mb-2 pr-12">
+                    <span className="font-bold text-slate-800">{item.name}</span>
                     {item.expectedUnit && (
-                      <span className="text-xs text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-lg">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
                         {item.expectedUnit}
                       </span>
                     )}
-                    {(item.expectedMinValue != null ||
-                      item.expectedMaxValue != null) && (
-                      <span className="text-xs text-gray-500">
-                        {item.expectedMinValue ?? "–"} →{" "}
-                        {item.expectedMaxValue ?? "–"}
-                      </span>
-                    )}
                   </div>
+                  {(item.expectedMinValue != null || item.expectedMaxValue != null) && (
+                    <div className="text-xs font-semibold text-slate-500 mb-2 bg-white w-fit px-2 py-1 rounded border border-slate-200">
+                      {t("task.threshold")} {item.expectedMinValue ?? "–"} → {item.expectedMaxValue ?? "–"}
+                    </div>
+                  )}
                   {item.description && (
-                    <p className="text-xs text-gray-400 mt-1.5 ml-9">
+                    <p className="text-xs text-slate-600 mt-2 p-2 bg-white rounded border border-slate-100">
                       {item.description}
                     </p>
                   )}
@@ -295,23 +202,16 @@ const ConfirmTaskContainer: React.FC = () => {
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            className="px-6 py-2.5 rounded-lg text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
-            onClick={handleBack}
-          >
+        <div className="flex justify-end gap-3 pt-6 mt-8 border-t border-slate-200">
+          <button type="button" onClick={handleBack} className="px-6 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors shadow-sm">
             {t("common.back")}
           </button>
-          <button
-            type="submit"
-            className="px-8 py-2.5 rounded-lg text-base font-semibold bg-green-700 text-white hover:bg-green-800 transition-colors"
-          >
+          <button type="submit" className="px-8 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-sm">
             {t("task.confirmCreateTask")}
           </button>
         </div>
       </form>
-    </main>
+    </div>
   );
 };
 

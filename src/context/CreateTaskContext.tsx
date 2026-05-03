@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState, useMemo } from "react";
 import type { ReactNode } from "react";
 
 export interface Chemical {
@@ -75,6 +77,10 @@ export interface Stage {
 }
 
 export interface CreateTaskState {
+  checklists?: ChecklistItem[] | unknown;
+  assigneeId?: string | number | null;
+  targetId?: string | number | null;
+  assigneeName: string;
   name: string;
   description: string;
   taskMode: TaskMode;
@@ -103,6 +109,10 @@ const defaultState: CreateTaskState = {
   templateEL: null,
   attributes: [],
   checklistItems: [],
+  checklists: undefined,
+  assigneeId: undefined,
+  targetId: undefined,
+  assigneeName: ""
 };
 
 export const CreateTaskContext = createContext<{
@@ -119,8 +129,18 @@ export const useCreateTask = () => useContext(CreateTaskContext);
 
 export const CreateTaskProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<CreateTaskState>(defaultState);
+
+  // SỬA LỖI: Đưa object value vào useMemo để tránh re-render không cần thiết (react-x/no-unstable-context-value)
+  const contextValue = useMemo(
+    () => ({
+      state,
+      setState,
+    }),
+    [state] // Chỉ tạo lại object khi state thay đổi
+  );
+
   return (
-    <CreateTaskContext.Provider value={{ state, setState }}>
+    <CreateTaskContext.Provider value={contextValue}>
       {children}
     </CreateTaskContext.Provider>
   );
