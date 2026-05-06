@@ -718,6 +718,8 @@
     }
   },
   "experimentLog": {
+    "exportProcess": "Xuất tiến trình",
+    "exportSummary": "Xuất tóm tắt",
     "completionDetails": "Chi tiết hoàn thành",
     "experimentLogManagement": "Quản lý nhật ký thí nghiệm",
     "experimentLogDetails": "Chi tiết nhật ký thí nghiệm",
@@ -881,6 +883,8 @@
     "cannotViewInactive": "Phòng thực nghiệm này đã ngừng hoạt động nên không thể xem chi tiết"
   },
   "tissueCultureBatch": {
+    "height": "Chiều cao",
+    "width": "Chiều rộng",
     "tissueCultureBatchManagement": "Quản lý lô nuôi cấy mô",
     "createTissueCultureBatch": "Tạo lô nuôi cấy mô",
     "editTissueCultureBatch": "Chỉnh sửa lô nuôi cấy mô",

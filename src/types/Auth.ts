@@ -16,6 +16,7 @@ export interface User {
 }
 
 export interface UserApiResponse {
+  name(name: any): unknown;
   data: User[];
   totalCount: number;
   pageCount: number;

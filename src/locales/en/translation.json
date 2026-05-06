@@ -740,6 +740,8 @@
     }
   },
   "experimentLog": {
+    "exportProcess": "Export Process",
+    "exportSummary": "Export Summary",
     "completionDetails": "Completion Details",
     "experimentLogManagement": "Experiment Log Management",
     "experimentLogDetails": "Experiment Log Details",
@@ -903,6 +905,8 @@
     "cannotViewInactive": "This lab room has been deactivated so details cannot be viewed"
   },
   "tissueCultureBatch": {
+    "height": "Height",
+    "width": "Width",
     "tissueCultureBatchManagement": "Tissue Culture Batch Management",
     "createTissueCultureBatch": "Create Tissue Culture Batch",
     "editTissueCultureBatch": "Edit Tissue Culture Batch",

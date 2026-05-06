@@ -55,6 +55,8 @@ export interface StageRequirementDefinition {
 }
 
 export interface SampleLogDetail {
+  createdDate: string | number | Date;
+  images: boolean;
   id: string;
   measuredValue: number;
   isMatch: boolean;
@@ -62,6 +64,8 @@ export interface SampleLogDetail {
 }
 
 export interface SampleStageDetail {
+  startDate: string | number | Date;
+  stageName: any;
   id: string;
   startAt: string;
   currentSampleStage: string;
@@ -79,6 +83,9 @@ export interface SampleStageDetail {
 }
 
 export interface SampleDetail {
+  dob(dob: any): import("react").ReactNode | Iterable<import("react").ReactNode>;
+  stages: SampleStageDetail[];
+  monitoringLogs: SampleLogDetail[];
   id: string;
   name: string;
   experimentLogId: string;
@@ -139,6 +146,7 @@ export interface ExperimentLog {
 
 // Experiment Log API Response
 export interface ExperimentLogApiResponse {
+  name: ReactI18NextChildren | Iterable<ReactI18NextChildren>;
   totalCount: number;
   pageCount: number;
   pageSize: number;

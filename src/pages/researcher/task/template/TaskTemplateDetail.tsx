@@ -14,11 +14,8 @@ import {
   CheckCircle2,
   ListChecks,
   Beaker,
-  Edit3,
-  Trash2,
 } from "lucide-react";
 
-// Map stageId → tên giai đoạn (đồng bộ với TaskTemplateList)
 const STAGE_NAME_MAP: Record<number, string> = {
   1: "Chuẩn bị mẫu",
   2: "Khử trùng",
@@ -443,24 +440,6 @@ const TaskTemplateDetail: React.FC = () => {
               </div>
             )}
           </div>
-        </motion.div>
-
-        {/* Bottom Action Buttons */}
-        <motion.div variants={fadeInUp} className="flex justify-end gap-3 pt-4">
-          <button
-            type="button"
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-sm transition-all"
-          >
-            <Edit3 className="w-5 h-5" />
-            Chỉnh sửa
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-semibold shadow-sm transition-all"
-          >
-            <Trash2 className="w-5 h-5" />
-            Xóa mẫu
-          </button>
         </motion.div>
       </motion.div>
     </main>
