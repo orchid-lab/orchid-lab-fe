@@ -15,6 +15,7 @@ import {
 } from "framer-motion";
 import "./Method.css";
 import axiosInstance from "../../../api/axiosInstance";
+import ResearcherMethodSuccessRate from "./MethodSuccessRate";
 
 interface MethodListItem {
   id: number;
@@ -103,6 +104,7 @@ export default function MethodList() {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
 
+  const [activeTab, setActiveTab] = useState<"list" | "analysis">("list");
   const [data, setData] = useState<MethodListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -179,262 +181,316 @@ export default function MethodList() {
               </p>
             </motion.div>
 
+            {activeTab === "list" && (
+              <motion.button
+                type="button"
+                onClick={() => void navigate("/researcher/method/new")}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60 hover:bg-[#004d73] transition-colors duration-200"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              >
+                <motion.span
+                  initial={{ rotate: 0 }}
+                  whileHover={{ rotate: 90 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    className="h-5 w-5"
+                  >
+                    <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </motion.span>
+                {t("method.createMethod")}
+              </motion.button>
+            )}
+          </div>
+
+          {/* ── Tabs ── */}
+          <div className="flex gap-2 mt-6 border-b border-blue-100">
             <motion.button
               type="button"
-              onClick={() => void navigate("/researcher/method/new")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#005792] px-5 py-2 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/60 hover:bg-[#004d73] transition-colors duration-200"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              whileHover={{ backgroundColor: activeTab === "list" ? undefined : "rgba(239,246,255,0.5)" }}
+              onClick={() => setActiveTab("list")}
+              className={`px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                activeTab === "list"
+                  ? "text-[#005792] border-b-2 border-[#005792]"
+                  : "text-blue-900/60 hover:text-blue-900/80 border-b-2 border-transparent"
+              }`}
             >
-              <motion.span
-                initial={{ rotate: 0 }}
-                whileHover={{ rotate: 90 }}
-                transition={{ duration: 0.25 }}
-                className="flex"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  className="h-5 w-5"
-                >
-                  <path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </motion.span>
-              {t("method.createMethod")}
+              {t("method.methodList", "Danh sách phương pháp")}
+            </motion.button>
+            <motion.button
+              type="button"
+              whileHover={{ backgroundColor: activeTab === "analysis" ? undefined : "rgba(239,246,255,0.5)" }}
+              onClick={() => setActiveTab("analysis")}
+              className={`px-4 py-3 font-medium text-sm transition-all duration-200 ${
+                activeTab === "analysis"
+                  ? "text-[#005792] border-b-2 border-[#005792]"
+                  : "text-blue-900/60 hover:text-blue-900/80 border-b-2 border-transparent"
+              }`}
+            >
+              {t("seedling.successRateAnalysis", "Phân tích tỉ lệ thành công")}
             </motion.button>
           </div>
         </motion.div>
 
-        {/* ── Stats ── */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
-        >
-          <div className="text-sm font-medium text-blue-700 mb-1">
-            {t("method.totalMethods")}
-          </div>
-          <div className="text-3xl font-semibold text-blue-950">
-            <AnimatedCounter value={totalCount} />
-          </div>
-        </motion.div>
-
-        {/* ── Search ── */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
-        >
-          <motion.div
-            className="relative max-w-xl"
-            animate={searchFocused ? { scale: 1.015 } : { scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          >
-            <motion.span
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005792]"
-              animate={searchFocused ? { scale: 1.15, color: "#003f60" } : { scale: 1 }}
-              transition={{ duration: 0.2 }}
+        {/* ── Content ── */}
+        <AnimatePresence mode="wait">
+          {activeTab === "list" ? (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                className="h-5 w-5"
+              {/* ── Stats ── */}
+              <motion.div
+                variants={cardVariants}
+                className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
               >
-                <path
-                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </motion.span>
-            <input
-              type="text"
-              className="w-full border border-blue-100 bg-white/90 rounded-xl px-4 py-2 pl-11 text-sm font-medium text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#005792] transition-all duration-200"
-              placeholder={t("method.searchPlaceholder")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            <AnimatePresence>
-              {searchTerm && (
-                <motion.button
-                  key="clear"
-                  type="button"
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  transition={{ duration: 0.18 }}
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-700 transition-colors"
+                <div className="text-sm font-medium text-blue-700 mb-1">
+                  {t("method.totalMethods")}
+                </div>
+                <div className="text-3xl font-semibold text-blue-950">
+                  <AnimatedCounter value={totalCount} />
+                </div>
+              </motion.div>
+
+              {/* ── Search ── */}
+              <motion.div
+                variants={cardVariants}
+                className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
+              >
+                <motion.div
+                  className="relative max-w-xl"
+                  animate={searchFocused ? { scale: 1.015 } : { scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </motion.div>
-
-        {/* ── Table ── */}
-        <motion.div
-          variants={cardVariants}
-          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm overflow-hidden"
-        >
-          <table className="min-w-full">
-            <thead className="bg-white/60">
-              <tr>
-                {["method.methodName", "common.description", "common.duration", "common.action"].map(
-                  (key, i) => (
-                    <motion.th
-                      key={key}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60"
-                    >
-                      {t(key)}
-                    </motion.th>
-                  )
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence mode="wait">
-                {loading ? (
-                  <>
-                    {Array.from({ length: SKELETON_ROWS }).map((_, idx) => (
-                      <motion.tr
-                        key={`skeleton-${idx}`}
-                        variants={skeletonVariants}
-                        initial="hidden"
-                        animate="visible"
-                        custom={idx}
-                        className="border-b border-blue-50"
-                      >
-                        {[3 / 4, 1, 1 / 3, 1 / 2].map((w, ci) => (
-                          <td key={ci} className="py-4 px-6">
-                            <motion.div
-                              className="h-4 bg-blue-100 rounded"
-                              style={{ width: `${w * 100}%` }}
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{
-                                duration: 1.4,
-                                repeat: Infinity,
-                                delay: idx * 0.08 + ci * 0.05,
-                                ease: "easeInOut",
-                              }}
-                            />
-                          </td>
-                        ))}
-                      </motion.tr>
-                    ))}
-                  </>
-                ) : filteredData.length === 0 ? (
-                  <motion.tr
-                    key="empty"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4 }}
+                  <motion.span
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#005792]"
+                    animate={searchFocused ? { scale: 1.15, color: "#003f60" } : { scale: 1 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <td colSpan={4} className="text-center py-14 text-blue-900/40">
-                      <motion.div
-                        animate={{ scale: [1, 1.05, 1] }}
-                        transition={{ duration: 2.5, repeat: Infinity }}
-                        className="text-4xl mb-3"
-                      >
-                        🔍
-                      </motion.div>
-                      {t("common.noData")}
-                    </td>
-                  </motion.tr>
-                ) : (
-                  filteredData.map((method, idx) => (
-                    <motion.tr
-                      key={method.id}
-                      custom={idx}
-                      variants={rowVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      layout
-                      onClick={() => void navigate(`/researcher/method/${method.id}`)}
-                      className="border-b border-blue-50 cursor-pointer"
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      className="h-5 w-5"
                     >
-                      <td className="py-4 px-6 font-medium text-blue-950">
-                        {method.name}
-                      </td>
-                      <td className="py-4 px-6 text-blue-900 max-w-[440px]">
-                        <div className="line-clamp-2" title={method.description}>
-                          {method.description}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <motion.span
-                          className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 border border-cyan-100"
-                          whileHover={{ scale: 1.08 }}
-                          transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                      <path
+                        d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1 0 6.5 6.5a7.5 7.5 0 0 0 10.6 10.6z"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </motion.span>
+                  <input
+                    type="text"
+                    className="w-full border border-blue-100 bg-white/90 rounded-xl px-4 py-2 pl-11 text-sm font-medium text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-[#005792] transition-all duration-200"
+                    placeholder={t("method.searchPlaceholder")}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
+                  />
+                  <AnimatePresence>
+                    {searchTerm && (
+                      <motion.button
+                        key="clear"
+                        type="button"
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        transition={{ duration: 0.18 }}
+                        onClick={() => setSearchTerm("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-700 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+                        </svg>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </motion.div>
+
+              {/* ── Table ── */}
+              <motion.div
+                variants={cardVariants}
+                className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm overflow-hidden"
+              >
+                <table className="min-w-full">
+                  <thead className="bg-white/60">
+                    <tr>
+                      {["method.methodName", "common.description", "common.duration", "common.action"].map(
+                        (key, i) => (
+                          <motion.th
+                            key={key}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
+                            className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60"
+                          >
+                            {t(key)}
+                          </motion.th>
+                        )
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence mode="wait">
+                      {loading ? (
+                        <>
+                          {Array.from({ length: SKELETON_ROWS }).map((_, idx) => (
+                            <motion.tr
+                              key={`skeleton-${idx}`}
+                              variants={skeletonVariants}
+                              initial="hidden"
+                              animate="visible"
+                              custom={idx}
+                              className="border-b border-blue-50"
+                            >
+                              {[3 / 4, 1, 1 / 3, 1 / 2].map((w, ci) => (
+                                <td key={ci} className="py-4 px-6">
+                                  <motion.div
+                                    className="h-4 bg-blue-100 rounded"
+                                    style={{ width: `${w * 100}%` }}
+                                    animate={{ opacity: [0.5, 1, 0.5] }}
+                                    transition={{
+                                      duration: 1.4,
+                                      repeat: Infinity,
+                                      delay: idx * 0.08 + ci * 0.05,
+                                      ease: "easeInOut",
+                                    }}
+                                  />
+                                </td>
+                              ))}
+                            </motion.tr>
+                          ))}
+                        </>
+                      ) : filteredData.length === 0 ? (
+                        <motion.tr
+                          key="empty"
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4 }}
                         >
-                          {method.totalDurationDays} {t("common.days")}
-                        </motion.span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          {/* View */}
-                          <ActionButton
-                            label={t("common.view")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void navigate(`/researcher/method/${method.id}`);
-                            }}
+                          <td colSpan={4} className="text-center py-14 text-blue-900/40">
+                            <motion.div
+                              animate={{ scale: [1, 1.05, 1] }}
+                              transition={{ duration: 2.5, repeat: Infinity }}
+                              className="text-4xl mb-3"
+                            >
+                              🔍
+                            </motion.div>
+                            {t("common.noData")}
+                          </td>
+                        </motion.tr>
+                      ) : (
+                        filteredData.map((method, idx) => (
+                          <motion.tr
+                            key={method.id}
+                            custom={idx}
+                            variants={rowVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            layout
+                            onClick={() => void navigate(`/researcher/method/${method.id}`)}
+                            className="border-b border-blue-50 cursor-pointer"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </ActionButton>
+                            <td className="py-4 px-6 font-medium text-blue-950">
+                              {method.name}
+                            </td>
+                            <td className="py-4 px-6 text-blue-900 max-w-[440px]">
+                              <div className="line-clamp-2" title={method.description}>
+                                {method.description}
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <motion.span
+                                className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 border border-cyan-100"
+                                whileHover={{ scale: 1.08 }}
+                                transition={{ type: "spring", stiffness: 350, damping: 20 }}
+                              >
+                                {method.totalDurationDays} {t("common.days")}
+                              </motion.span>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center gap-2">
+                                {/* View */}
+                                <ActionButton
+                                  label={t("common.view")}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void navigate(`/researcher/method/${method.id}`);
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                  </svg>
+                                </ActionButton>
 
-                          {/* Edit */}
-                          <ActionButton
-                            label={t("common.edit")}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                              <path d="M12 20h9" />
-                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                            </svg>
-                          </ActionButton>
+                                {/* Edit */}
+                                <ActionButton
+                                  label={t("common.edit")}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                                  </svg>
+                                </ActionButton>
 
-                          {/* Delete */}
-                          <ActionButton
-                            label={t("common.delete")}
-                            onClick={(e) => e.stopPropagation()}
-                            danger
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                              <path d="M3 6h18" />
-                              <path d="M8 6v14h8V6" />
-                              <path d="M10 10v6" />
-                              <path d="M14 10v6" />
-                              <path d="M9 6V4h6v2" />
-                            </svg>
-                          </ActionButton>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </motion.div>
+                                {/* Delete */}
+                                <ActionButton
+                                  label={t("common.delete")}
+                                  onClick={(e) => e.stopPropagation()}
+                                  danger
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6v14h8V6" />
+                                    <path d="M10 10v6" />
+                                    <path d="M14 10v6" />
+                                    <path d="M9 6V4h6v2" />
+                                  </svg>
+                                </ActionButton>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="analysis"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ResearcherMethodSuccessRate />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </main>
   );

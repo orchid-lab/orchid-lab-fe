@@ -142,7 +142,23 @@ const CreateExperimentStep1 = () => {
     }));
   }, [selectedBatch, selectedMethod, batches, setForm, methods, name, startDate, endDate, numberOfSample, objective, selectedTechnician, technicians]);
 
-  const isStep1Valid = Boolean(name && selectedBatch && selectedMethod && selectedTechnician);
+  // --- VALIDATE NGÀY ---
+  const todayStr = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+  // Ngày bắt đầu không được ở quá khứ (so sánh string YYYY-MM-DD là đủ chính xác)
+  const isStartDateValid = !startDate || startDate >= todayStr;
+
+  // Ngày kết thúc không được trước ngày bắt đầu
+  const isEndDateValid = !startDate || !endDate || endDate >= startDate;
+
+  const isStep1Valid = Boolean(
+    name &&
+    selectedBatch &&
+    selectedMethod &&
+    selectedTechnician &&
+    isStartDateValid &&
+    isEndDateValid
+  );
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F4F7F4] p-6 lg:p-8">
@@ -168,17 +184,42 @@ const CreateExperimentStep1 = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Start Date */}
               <div>
                 <label className={labelClass}>{t("experimentLog.startDate")}</label>
                 <div className="relative">
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputClass} />
+                  <input
+                    type="date"
+                    value={startDate}
+                    min={todayStr}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className={`${inputClass} ${!isStartDateValid ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500" : ""}`}
+                  />
                 </div>
+                {!isStartDateValid && (
+                  <p className="text-xs text-rose-500 mt-2 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Ngày bắt đầu không thể ở trong quá khứ.
+                  </p>
+                )}
               </div>
+
+              {/* End Date */}
               <div>
                 <label className={labelClass}>{t("experimentLog.endDate")}</label>
                 <div className="relative">
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} />
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate || todayStr}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={`${inputClass} ${!isEndDateValid ? "border-rose-500 focus:ring-rose-500/20 focus:border-rose-500" : ""}`}
+                  />
                 </div>
+                {!isEndDateValid && (
+                  <p className="text-xs text-rose-500 mt-2 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Ngày kết thúc không thể trước ngày bắt đầu.
+                  </p>
+                )}
               </div>
             </div>
 

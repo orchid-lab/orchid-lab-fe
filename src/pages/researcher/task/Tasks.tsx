@@ -1,3 +1,4 @@
+ 
 /* eslint-disable react-x/no-array-index-key */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +8,15 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import "./Tasks.css";
 import gsap from "gsap";
+import {
+  Clock,
+  UserPlus,
+  Loader,
+  CheckCheck,
+  AlertCircle,
+  XCircle,
+  Inbox,
+} from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface Task {
@@ -21,9 +31,12 @@ interface Task {
   technicianId?: string | null;
   experimentLogName?: string;
   end_date?: string;
-  create_at?: string;
+  createdDate?: string;     
   status: string;
   expectedEndDate?: string | null;
+  // enriched fields
+  targetName?: string;
+  technicianName?: string;
 }
 
 type StatusType = "Assigned" | "Taken" | "InProcess" | "DoneInTime" | "DoneInLate" | "Cancel";
@@ -78,6 +91,26 @@ function getStatusLabel(status: StatusType, t: (key: string) => string): string 
   const statusKey = STATUS_UI[status]?.labelKey;
   return statusKey ? t(statusKey) : status;
 }
+
+function getStatusIcon(status: StatusType) {
+  const base = "w-4 h-4";
+  switch (status) {
+    case "Assigned":   return <UserPlus className={base} />;
+    case "Taken":      return <Inbox className={base} />;
+    case "InProcess":  return <Loader className={base} />;
+    case "DoneInTime": return <CheckCheck className={base} />;
+    case "DoneInLate": return <AlertCircle className={base} />;
+    case "Cancel":     return <XCircle className={base} />;
+    default:           return <Clock className={base} />;
+  }
+}
+
+const formatDateVi = (value?: string | null): string => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
 
 /* ─── Animation variants ─────────────────────────────────── */
 type CubicBezier = [number, number, number, number];
@@ -149,7 +182,10 @@ export default function Tasks() {
     Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0,
   });
   const [allResearchers, setAllResearchers] = useState<string[]>([]);
-  const [technicianNames, setTechnicianNames] = useState<Record<string, string>>({});
+
+  // Cache to avoid redundant API calls
+  const technicianNameCache = useRef<Record<string, string>>({});
+  const targetNameCache = useRef<Record<string, string>>({});
 
   const tasksPerPage = 8;
 
@@ -164,6 +200,59 @@ export default function Tasks() {
     return () => ctx.revert();
   }, [loading]);
 
+  /* ─── Fetch helpers ── */
+  const fetchTechnicianName = async (technicianId: string | null | undefined): Promise<string> => {
+    if (!technicianId) return "-";
+    if (technicianNameCache.current[technicianId]) return technicianNameCache.current[technicianId];
+    try {
+      const res = await axiosInstance.get(`/api/user/${technicianId}`);
+      const rawData: unknown = res.data;
+      let data: unknown;
+      if (typeof rawData === "object" && rawData !== null) {
+        const obj = rawData as { value?: unknown };
+        data = obj.value ?? rawData;
+      } else {
+        data = rawData;
+      }
+      const userData = data as Record<string, unknown>;
+      const name: string = (typeof userData?.fullName === "string" ? userData.fullName : typeof userData?.name === "string" ? userData.name : typeof userData?.userName === "string" ? userData.userName : "-");
+      technicianNameCache.current[technicianId] = name;
+      return name;
+    } catch {
+      return "-";
+    }
+  };
+
+  const fetchTargetName = async (
+    targetType: string | null | undefined,
+    targetId: string | null | undefined
+  ): Promise<string> => {
+    if (!targetId || !targetType) return "-";
+    const cacheKey = `${targetType}:${targetId}`;
+    if (targetNameCache.current[cacheKey]) return targetNameCache.current[cacheKey];
+    try {
+      let endpoint = "";
+      if (targetType === "ExperimentLog") endpoint = `/api/experiment-logs/${targetId}`;
+      else if (targetType === "Sample") endpoint = `/api/sample/${targetId}`;
+      if (endpoint) {
+        const res = await axiosInstance.get(endpoint);
+        const rawData: unknown = res.data;
+        let data: unknown;
+        if ((rawData as Record<string, unknown>)?.value) {
+          data = (rawData as Record<string, unknown>).value;
+        } else {
+          data = rawData;
+        }
+        const targetData = data as Record<string, unknown>;
+        const name: string = (targetData?.name as string) ?? "-";
+        targetNameCache.current[cacheKey] = name;
+        return name;
+      }
+    } catch { /* ignore */ }
+    return "-";
+  };
+
+  /* ─── Query builder ── */
   const buildApiQuery = useMemo(() => {
     const params = new URLSearchParams();
     params.append("pageNumber", "1");
@@ -173,13 +262,15 @@ export default function Tasks() {
     return params.toString();
   }, [researcherFilter, searchTerm]);
 
+  /* ─── Main fetch ── */
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setLoading(true);
       setError(null);
 
-      axiosInstance.get(`/api/tasks?${buildApiQuery}`)
-        .then(async (res) => {
+      const fetchTasks = async () => {
+        try {
+          const res = await axiosInstance.get(`/api/tasks?${buildApiQuery}`);
           let data: Task[] = [];
           if (isApiTaskResponse(res.data)) {
             data = Array.isArray(res.data.value?.data) ? res.data.value.data : [];
@@ -187,7 +278,10 @@ export default function Tasks() {
             data = (res.data as { data: Task[] }).data;
           }
 
-          const counts: Record<StatusType, number> = { Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0 };
+          // Status counts & researcher list
+          const counts: Record<StatusType, number> = {
+            Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0,
+          };
           const researcherSet = new Set<string>();
           data.forEach((task) => {
             const normalized = normalizeStatus(task.status);
@@ -197,43 +291,51 @@ export default function Tasks() {
           setStatusCounts(counts);
           setAllResearchers(Array.from(researcherSet));
 
+          // Sort by date desc
           const sortedData = [...data].sort((a, b) => {
-            const dateA = new Date(a.expectedEndDate ?? a.end_date ?? a.create_at ?? 0);
-            const dateB = new Date(b.expectedEndDate ?? b.end_date ?? b.create_at ?? 0);
+            const dateA = new Date(a.expectedEndDate ?? a.end_date ?? a.createdDate ?? 0);
+            const dateB = new Date(b.expectedEndDate ?? b.end_date ?? b.createdDate ?? 0);
             return dateB.getTime() - dateA.getTime();
           });
 
+          // Client-side filters
           let filteredData = sortedData;
-          if (statusFilter !== "Tất cả") filteredData = filteredData.filter((task) => normalizeStatus(task.status) === statusFilter);
-          if (researcherFilter !== "Tất cả") filteredData = filteredData.filter((task) => (task.researcherId ?? "") === researcherFilter);
+          if (statusFilter !== "Tất cả")
+            filteredData = filteredData.filter((t) => normalizeStatus(t.status) === statusFilter);
+          if (researcherFilter !== "Tất cả")
+            filteredData = filteredData.filter((t) => (t.researcherId ?? "") === researcherFilter);
           if (searchTerm.trim()) {
-            filteredData = filteredData.filter((task) =>
-              (task.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (task.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+            filteredData = filteredData.filter((t) =>
+              (t.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (t.description ?? "").toLowerCase().includes(searchTerm.toLowerCase())
             );
           }
 
           const startIndex = (currentPage - 1) * tasksPerPage;
           const paginatedData = filteredData.slice(startIndex, startIndex + tasksPerPage);
-          setTasks(paginatedData);
           setTotalCount(filteredData.length);
 
-          const uniqueTechIds = Array.from(new Set(paginatedData.map((t) => t.technicianId).filter((id): id is string => !!id)));
-          const techNameMap: Record<string, string> = {};
-          await Promise.all(uniqueTechIds.map(async (id) => {
-            try {
-              const userRes = await axiosInstance.get(`/api/user/${id}`);
-              const userData = userRes.data as { value?: { name?: string }; name?: string };
-              techNameMap[id] = userData?.value?.name ?? userData?.name ?? id;
-            } catch { techNameMap[id] = id; }
-          }));
-          setTechnicianNames(techNameMap);
-        })
-        .catch(() => {
+          // Enrich with technician name & target name in parallel
+          const enriched = await Promise.all(
+            paginatedData.map(async (task) => {
+              const [technicianName, targetName] = await Promise.all([
+                fetchTechnicianName(task.technicianId),
+                fetchTargetName(task.taskTargetType, task.targetId),
+              ]);
+              return { ...task, technicianName, targetName };
+            })
+          );
+
+          setTasks(enriched);
+        } catch {
           setError(t("task.cannotLoadList"));
           enqueueSnackbar(t("common.errorLoading"), { variant: "error" });
-        })
-        .finally(() => setLoading(false));
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      void fetchTasks();
     }, searchTerm ? 300 : 0);
 
     return () => clearTimeout(timeoutId);
@@ -253,6 +355,17 @@ export default function Tasks() {
     InProcess: t("status.taskInProcess"), DoneInTime: t("status.taskDoneInTime"),
     DoneInLate: t("status.taskDoneInLate"), Cancel: t("status.taskCancelled"),
   });
+
+  /* ─── Table column headers ── */
+  const TABLE_HEADERS = [
+    t("task.taskName"),
+    t("task.targetType"),
+    t("task.technician"),
+    t("technicianTask.targetName"),
+    t("task.deadline"),
+    t("common.createdAt"),
+    t("common.status"),
+  ];
 
   return (
     <main className="tasks-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#F0F8FF] text-blue-950">
@@ -429,44 +542,45 @@ export default function Tasks() {
             <table className="w-full">
               <thead className="bg-gradient-to-r from-[#E6F1FF] to-[#F0F8FF] border-b border-blue-100">
                 <tr>
-                  {[t("task.taskName"), t("common.status"), t("task.deadline"), t("task.technician"), ""].map((header, i) => (
+                  {TABLE_HEADERS.map((header, i) => (
                     <motion.th
                       key={i}
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.25 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
-                      className={`text-left p-4 font-semibold text-gray-900 ${i === 4 ? "sr-only" : ""}`}
+                      className="text-left px-6 py-4 font-semibold text-[#005792] text-sm"
                     >
                       {header}
                     </motion.th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-blue-50">
                 {loading ? (
-                  /* Skeleton rows */
                   Array.from({ length: 6 }).map((_, idx) => (
                     <motion.tr
                       key={`sk-${idx}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="border-b border-blue-50 animate-pulse"
+                      className="animate-pulse"
                     >
-                      <td className="p-4"><div className="h-4 bg-blue-100 rounded w-3/4" /></td>
-                      <td className="p-4"><div className="h-6 bg-blue-100 rounded-full w-24" /></td>
-                      <td className="p-4"><div className="h-4 bg-blue-100 rounded w-28" /></td>
-                      <td className="p-4"><div className="h-4 bg-blue-100 rounded w-32" /></td>
-                      <td className="p-4"><div className="h-8 w-8 bg-blue-100 rounded-xl ml-auto" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-3/4" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-24" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-28" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-32" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-20" /></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-blue-100 rounded w-20" /></td>
+                      <td className="px-6 py-4"><div className="h-6 bg-blue-100 rounded-full w-28" /></td>
                     </motion.tr>
                   ))
                 ) : error ? (
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <td colSpan={5} className="text-center py-8 text-red-500">{error}</td>
+                    <td colSpan={7} className="text-center py-8 text-red-500">{error}</td>
                   </motion.tr>
                 ) : tasks.length === 0 ? (
                   <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <td colSpan={5} className="text-center py-8 text-gray-500">{t("task.noTasks")}</td>
+                    <td colSpan={7} className="text-center py-8 text-gray-500">{t("task.noTasks")}</td>
                   </motion.tr>
                 ) : (
                   <AnimatePresence mode="popLayout">
@@ -481,9 +595,6 @@ export default function Tasks() {
                         ? STATUS_UI[normalizedStatus].badgeClasses
                         : STATUS_UI_FALLBACK[task.status]?.badgeClasses ?? "bg-gray-100 text-gray-700 border border-gray-200";
 
-                      const dateStr = task.expectedEndDate ?? task.end_date ?? task.create_at;
-                      const displayDate = dateStr ? new Date(dateStr).toLocaleDateString("vi-VN") : "-";
-
                       return (
                         <motion.tr
                           key={task.id}
@@ -494,33 +605,49 @@ export default function Tasks() {
                           exit="exit"
                           layout
                           whileHover={{ backgroundColor: "rgba(239,246,255,0.85)", transition: { duration: 0.15 } }}
-                          className="border-b border-blue-50 cursor-pointer"
+                          className="cursor-pointer"
                           onClick={() => void navigate(`/researcher/tasks/${task.id}`)}
                         >
-                          <td className="p-4 font-medium text-gray-900">{task.name ?? "-"}</td>
-                          <td className="p-4">
+                          {/* Task Name */}
+                          <td className="px-6 py-4 font-medium text-gray-900">
+                            {task.name ?? "-"}
+                          </td>
+
+                          {/* Target Type */}
+                          <td className="px-6 py-4 text-gray-600">
+                            {task.taskTargetType ?? "-"}
+                          </td>
+
+                          {/* Technician */}
+                          <td className="px-6 py-4 text-gray-600 max-w-[160px] truncate">
+                            {task.technicianName ?? "-"}
+                          </td>
+
+                          {/* Target Name */}
+                          <td className="px-6 py-4 text-gray-600 max-w-xs truncate">
+                            {task.targetName ?? "-"}
+                          </td>
+
+                          {/* Deadline */}
+                          <td className="px-6 py-4 text-gray-700 font-medium">
+                            {formatDateVi(task.expectedEndDate ?? task.end_date)}
+                          </td>
+
+                          {/* Created At */}
+                          <td className="px-6 py-4 text-gray-600">
+                            {formatDateVi(task.createdDate)}
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-6 py-4">
                             <motion.span
-                              initial={{ opacity: 0, scale: 0.8 }}
+                              initial={{ opacity: 0, scale: 0.85 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: i * 0.045 + 0.1, duration: 0.28, ease: EASE_OUT }}
-                              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses}`}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${statusClasses}`}
                             >
+                              {normalizedStatus && getStatusIcon(normalizedStatus)}
                               {statusLabel}
-                            </motion.span>
-                          </td>
-                          <td className="p-4 text-gray-700 font-medium">{displayDate}</td>
-                          <td className="p-4 text-gray-700 font-medium">
-                            {task.technicianId ? technicianNames[task.technicianId] || task.technicianId : "-"}
-                          </td>
-                          <td className="p-4 text-right">
-                            <motion.span
-                              whileHover={{ scale: 1.15, backgroundColor: "rgba(255,255,255,1)" }}
-                              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 border border-blue-100 cursor-pointer"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#005792" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-                                <path d="M15 12H9" /><path d="M12 15l-3-3 3-3" />
-                              </svg>
                             </motion.span>
                           </td>
                         </motion.tr>
@@ -540,17 +667,17 @@ export default function Tasks() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.3 }}
-                className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-slate-600 p-6 bg-white/70 border-t border-blue-100"
+                className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-slate-600 p-6 bg-[#F0F8FF] border-t border-blue-100"
               >
                 <span className="font-medium">
-                  {t("common.showing")} {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}-
+                  {t("common.showing")} {tasks.length > 0 ? (currentPage - 1) * tasksPerPage + 1 : 0}–
                   {Math.min(currentPage * tasksPerPage, totalCount)} {t("common.of")} {totalCount}
                 </span>
                 <div className="flex gap-2">
                   {currentPage > 1 && (
                     <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                       onClick={() => paginate(currentPage - 1)}
-                      className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm hover:bg-white">←</motion.button>
+                      className="px-4 py-2 rounded-lg bg-white border border-blue-100 text-blue-950 shadow-sm hover:bg-white">←</motion.button>
                   )}
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     let pageNum: number;
@@ -566,7 +693,7 @@ export default function Tasks() {
                         className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
                           currentPage === pageNum
                             ? "bg-[#005792] text-white"
-                            : "bg-white/80 border border-blue-100 text-blue-950 hover:bg-white"
+                            : "bg-white border border-blue-100 text-blue-950 hover:bg-white"
                         }`}
                       >
                         {pageNum}
@@ -576,7 +703,7 @@ export default function Tasks() {
                   {currentPage < totalPages && (
                     <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                       onClick={() => paginate(currentPage + 1)}
-                      className="px-4 py-2 rounded-lg bg-white/80 border border-blue-100 text-blue-950 shadow-sm hover:bg-white">→</motion.button>
+                      className="px-4 py-2 rounded-lg bg-white border border-blue-100 text-blue-950 shadow-sm hover:bg-white">→</motion.button>
                   )}
                 </div>
               </motion.div>

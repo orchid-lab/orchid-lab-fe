@@ -420,6 +420,10 @@ const TaskDetailPage: React.FC = () => {
 
   const sortedChecklistItems = taskData?.taskCheckList?.checkListItemDtos?.slice().sort((a, b) => a.order - b.order) ?? [];
 
+  const isEditable = taskData
+    ? !["InProcess", "DoneInTime", "DoneInLate"].includes(taskData.status)
+    : true;
+
   return (
     <main className="task-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#f8fafc] text-slate-800 p-6 lg:p-8">
       {loading ? (
@@ -481,12 +485,16 @@ const TaskDetailPage: React.FC = () => {
                       </button>
                     </>
                   )}
-                  <button type="button" onClick={handleEdit} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl shadow-sm hover:bg-slate-50 transition-colors">
-                    <Edit3 className="w-4 h-4" /> {t("common.edit")}
-                  </button>
-                  <button type="button" onClick={handleDelete} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-rose-200 text-rose-600 font-semibold rounded-xl shadow-sm hover:bg-rose-50 transition-colors">
-                    <Trash2 className="w-4 h-4" /> {t("common.delete")}
-                  </button>
+                  {isEditable && (
+                    <>
+                      <button type="button" onClick={handleEdit} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl shadow-sm hover:bg-slate-50 transition-colors">
+                        <Edit3 className="w-4 h-4" /> {t("common.edit")}
+                      </button>
+                      <button type="button" onClick={handleDelete} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-rose-200 text-rose-600 font-semibold rounded-xl shadow-sm hover:bg-rose-50 transition-colors">
+                        <Trash2 className="w-4 h-4" /> {t("common.delete")}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -572,14 +580,16 @@ const TaskDetailPage: React.FC = () => {
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex justify-end gap-2">
-                                <button type="button" onClick={() => handleOpenChecklistEdit(item)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t("common.edit")}>
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
-                                <button type="button" onClick={() => requestDeleteChecklistItem(item.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title={t("common.delete")}>
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
+                              {isEditable && (
+                                <div className="flex justify-end gap-2">
+                                  <button type="button" onClick={() => handleOpenChecklistEdit(item)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t("common.edit")}>
+                                    <Edit3 className="w-4 h-4" />
+                                  </button>
+                                  <button type="button" onClick={() => requestDeleteChecklistItem(item.id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title={t("common.delete")}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}

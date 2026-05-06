@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { useEffect, useState } from "react";
@@ -14,11 +15,7 @@ import {
 interface LabRoom {
   id: string | number;
   name: string;
-}
-
-interface LabRoomResponse {
-  value?: { data?: LabRoom[] };
-  data?: LabRoom[];
+  description?: string;
 }
 
 const AdminTissueCultureBatchCreate = () => {
@@ -38,16 +35,10 @@ const AdminTissueCultureBatchCreate = () => {
 
   useEffect(() => {
     axiosInstance
-      .get("/api/labroom?pageNumber=1&pageSize=100")
+      .get("/api/labroom?PageNo=1&PageSize=100")
       .then((res) => {
-        const raw = res.data as LabRoomResponse | LabRoom[];
-        let arr: LabRoom[] = [];
-        if ((raw as LabRoomResponse)?.value?.data)
-          arr = (raw as LabRoomResponse).value!.data!;
-        else if ((raw as LabRoomResponse)?.data)
-          arr = (raw as LabRoomResponse).data!;
-        else if (Array.isArray(raw)) arr = raw as LabRoom[];
-        setLabRooms(arr);
+        const data = res.data?.data;
+        setLabRooms(Array.isArray(data) ? data : []);
       })
       .catch(() => setLabRooms([]));
   }, []);
@@ -63,8 +54,8 @@ const AdminTissueCultureBatchCreate = () => {
         batchName: name,
         batchSizeWidth: Number(batchSizeWidth),
         batchSizeHeight: Number(batchSizeHeight),
-        widthUnit: widthUnit,
-        heightUnit: heightUnit
+        widthUnit,
+        heightUnit,
       });
       navigate("/admin/tissue-culture-batches");
     } catch (error) {
@@ -81,7 +72,7 @@ const AdminTissueCultureBatchCreate = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-3xl mx-auto"
       >
-        {/* Nút quay lại (Đã fix lỗi missing button type) */}
+        {/* Nút quay lại */}
         <button 
           type="button"
           onClick={() => navigate("/admin/tissue-culture-batches")}
@@ -150,7 +141,9 @@ const AdminTissueCultureBatchCreate = () => {
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               </div>
