@@ -1,10 +1,12 @@
+export type NotificationTargetType = "Task" | "ExperimentLog" | "Report" | "Batch";
+
 export interface Notification {
   id: string;
+  userId: string;
   title: string;
-  message: string;
-  type?: "info" | "success" | "warning" | "error";
+  content: string;
   isRead: boolean;
   createdAt: string;
-  relatedId?: string;
-  relatedType?: string;
+  notificationTargetType: NotificationTargetType;
+  targetId: string;
 }

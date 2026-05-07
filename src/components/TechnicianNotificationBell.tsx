@@ -30,21 +30,20 @@ const TechnicianNotificationBell: React.FC = () => {
   }, [open]);
 
   const getNavigationPath = (notification: typeof notifications[0]): string => {
-    const { title } = notification;
+    const { notificationTargetType, targetId } = notification;
 
-    if (title.includes("Task")) {
-      return "/technician/tasks";
+    switch (notificationTargetType) {
+      case "Task":
+        return `/technician/tasks/${targetId}`;
+      case "ExperimentLog":
+        return `/technician/experiment-log/${targetId}`;
+      case "Report":
+        return `/reports/${targetId}`;
+      case "MonitoringLog":
+        return `/monitoring-logs/${targetId}`;
+      default:
+        return "/technician/experiment-log";
     }
-    if (title.includes("Báo cáo giám sát đã được duyệt")) {
-      return "/technician/reports";
-    }
-    if (title.includes("Kết quả AI phân tích mẫu")) {
-      return "/technician/seedlings?page=1";
-    }
-    if (title.includes("Yêu cầu tiêu hủy mẫu vật")) {
-      return "/technician/samples";
-    }
-    return "/technician/experiment-log";
   };
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
@@ -77,7 +76,6 @@ const TechnicianNotificationBell: React.FC = () => {
 
       {open && (
         <div className="absolute right-0 mt-2 w-[340px] max-h-[600px] overflow-hidden rounded-xl border border-green-100 bg-white shadow-lg">
-          {/* Header */}
           <div className="px-4 py-3 border-b border-green-100 bg-[#2D5A27] rounded-none">
             <span className="font-semibold text-white text-[15px]">
               {t("notification.title")}
@@ -89,7 +87,6 @@ const TechnicianNotificationBell: React.FC = () => {
             )}
           </div>
 
-          {/* List */}
           <ul className="max-h-[540px] overflow-y-auto divide-y divide-gray-100">
             {sortedNotifications.length === 0 && (
               <li className="p-5 text-sm text-gray-500 text-center">
@@ -99,7 +96,10 @@ const TechnicianNotificationBell: React.FC = () => {
             {sortedNotifications.map((n) => (
               <li
                 key={n.id}
-                onClick={() => handleNotificationClick(n)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleNotificationClick(n);
+                }}
                 className={`flex items-start gap-3 px-4 py-3 transition-colors duration-150 cursor-pointer ${
                   n.isRead
                     ? "bg-white hover:bg-gray-50"

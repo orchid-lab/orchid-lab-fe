@@ -357,7 +357,6 @@ export default function SampleDetail() {
     [sample?.sampleStageDto]
   );
 
-  // Lấy latestStage: ưu tiên InProgressed, nếu không lấy stage cuối cùng (theo thứ tự API)
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
     const inProgressStage = sampleStages.find((stage) => stage.status === SampleStatusValue.InProgressed);

@@ -31,30 +31,45 @@ const NotificationBell: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const getNavigationPath = (notification: typeof notifications[0]): string => {
-    const { title } = notification;
+    const getNavigationPath = (notification: typeof notifications[0]): string => {
+    const { notificationTargetType, targetId } = notification;
 
-    if (user?.role === "technician") {
-      return "/technician/experiment-log";
+    if (user?.role === "technician" || user?.role === "Lab Technician") {
+      switch (notificationTargetType) {
+        case "Task":
+          return `/technician/tasks/${targetId}`;
+        case "ExperimentLog":
+          return `/technician/experiment-log/${targetId}`;
+        case "Report":
+          return `/reports/${targetId}`;
+        case "MonitoringLog":
+          return `/monitoring-logs/${targetId}`;
+        default:
+          return "/technician/experiment-log";
+      }
     }
 
-    if (user?.role === "researcher") {
-      if (title.includes("Báo cáo giám sát cần được duyệt")) {
-        return "/researcher/reports";
+    if (user?.role === "researcher" || user?.role === "Researcher") {
+      switch (notificationTargetType) {
+        case "Task":
+          return `/researcher/tasks/${targetId}`;
+        case "ExperimentLog":
+          return `/researcher/experiment-log/${targetId}`;
+        case "Report":
+          return `/reports/${targetId}`;
+        case "MonitoringLog":
+          return `/monitoring-logs/${targetId}`;
+        default:
+          return "/researcher/experiment-log";
       }
-      if (title.includes("Kết quả AI phân tích mẫu")) {
-        return "/researcher/seedlings?page=1";
-      }
-      if (title.includes("Batch") && title.includes("thay đổi trạng thái")) {
-        return "/researcher/tasks";
-      }
-      return "/researcher/experiment-log";
     }
 
     return "/";
   };
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
+    console.log("clicked!", notification);
+    console.log("user:", user);
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
@@ -84,7 +99,7 @@ const NotificationBell: React.FC = () => {
 
       {open && (
         <div className="absolute right-0 mt-2 w-[340px] max-h-[600px] overflow-hidden rounded-xl border border-blue-100 bg-white shadow-lg">
-          {/* Header - top corners flat */}
+          {/* Header */}
           <div className="px-4 py-3 border-b border-blue-100 bg-blue-600 rounded-none">
             <span className="font-semibold text-white text-[15px]">
               {t("notification.title")}
@@ -104,14 +119,16 @@ const NotificationBell: React.FC = () => {
               </li>
             )}
             {sortedNotifications.map((n) => (
-              <li
-                key={n.id}
-                onClick={() => handleNotificationClick(n)}
-                className={`flex items-start gap-3 px-4 py-3 transition-colors duration-150 cursor-pointer ${
-                  n.isRead
-                    ? "bg-white hover:bg-gray-50"
-                    : "bg-blue-50 hover:bg-blue-100"
-                }`}
+            <li
+              key={n.id}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleNotificationClick(n);
+              }}
+              onClick={() => {
+                console.log("onClick fired!", n.title);
+                handleNotificationClick(n);
+              }}
               >
                 <div className="mt-1 flex-shrink-0 w-2.5">
                   {!n.isRead && (

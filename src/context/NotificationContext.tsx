@@ -25,6 +25,8 @@ export interface Notification {
   content: string;
   isRead: boolean;
   createdAt: string;
+  notificationTargetType: "Task" | "ExperimentLog" | "Report" | "Batch" | "MonitoringLog";
+  targetId: string;
 }
 
 interface NotificationContextType {
