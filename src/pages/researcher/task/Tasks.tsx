@@ -2,6 +2,7 @@
 /* eslint-disable react-x/no-array-index-key */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -166,6 +167,7 @@ function AnimatedCounter({ value, textColor }: { value: number; textColor: strin
 export default function Tasks() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
   const { t } = useTranslation();
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -254,13 +256,14 @@ export default function Tasks() {
 
   /* ─── Query builder ── */
   const buildApiQuery = useMemo(() => {
-    const params = new URLSearchParams();
-    params.append("pageNumber", "1");
-    params.append("pageSize", "1000");
-    if (researcherFilter !== "Tất cả") params.append("researcher", researcherFilter);
-    if (searchTerm.trim()) params.append("search", searchTerm.trim());
-    return params.toString();
-  }, [researcherFilter, searchTerm]);
+  const params = new URLSearchParams();
+  params.append("pageNumber", "1");
+  params.append("pageSize", "1000");
+  params.append("ResearcherId", user?.id ?? "");
+  if (researcherFilter !== "Tất cả") params.append("researcher", researcherFilter);
+  if (searchTerm.trim()) params.append("search", searchTerm.trim());
+  return params.toString();
+}, [researcherFilter, searchTerm, user?.id]);
 
   /* ─── Main fetch ── */
   useEffect(() => {
@@ -302,8 +305,6 @@ export default function Tasks() {
           let filteredData = sortedData;
           if (statusFilter !== "Tất cả")
             filteredData = filteredData.filter((t) => normalizeStatus(t.status) === statusFilter);
-          if (researcherFilter !== "Tất cả")
-            filteredData = filteredData.filter((t) => (t.researcherId ?? "") === researcherFilter);
           if (searchTerm.trim()) {
             filteredData = filteredData.filter((t) =>
               (t.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||

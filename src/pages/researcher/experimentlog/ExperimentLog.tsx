@@ -7,6 +7,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import { Search, Plus, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import "./ExperimentLog.css";
@@ -214,7 +215,7 @@ function normalizeRawLog(obj: any): ExperimentLogEntry | null {
 /* ─── Main Component ─────────────────────────────────────── */
 const ExperimentLog = () => {
   const { t } = useTranslation();
-
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">(
     "all",
@@ -374,7 +375,7 @@ const ExperimentLog = () => {
       let data: unknown;
       try {
         const res = await axiosInstance.get("/api/experiment-logs", {
-          params: { pageNo: 1, pageSize: 1000 },
+          params: { pageNo: 1, pageSize: 1000, ResearcherId: user?.id ?? "" },
         });
         data = res.data;
       } catch (err) {
@@ -438,7 +439,7 @@ const ExperimentLog = () => {
         Cancel: 0,
       });
     }
-  }, [t]);
+  }, [t, user?.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -450,6 +451,7 @@ const ExperimentLog = () => {
         const paramsObj: Record<string, unknown> = {
           pageNo: currentPage,
           pageSize: logsPerPage,
+          ResearcherId: user?.id ?? "",
         };
         if (methodName) {
           paramsObj.methodNameSearchTerm = methodName;
@@ -535,6 +537,7 @@ const ExperimentLog = () => {
     fetchAllSampleCounts,
     fetchStatsOnly,
     t,
+    user?.id,
   ]);
 
   /* ─── Donut chart data ───────────────────────────────── */
