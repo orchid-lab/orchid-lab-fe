@@ -858,7 +858,7 @@
     "name": "Tên nhật ký thí nghiệm",
     "namePlaceholder": "Nhập tên nhật ký thí nghiệm...",
     "startDate": "Ngày bắt đầu",
-    "endDate": "Ngày kết thúc",
+    "endDate": "Ngày dự kiến kết thúc",
     "batch": "Lô nuôi cấy mô",
     "selectBatch": "Chọn lô nuôi cấy mô",
     "batchLoading": "Đang tải danh sách lô...",

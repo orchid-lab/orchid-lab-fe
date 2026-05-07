@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
@@ -18,6 +19,27 @@ interface MethodSuccessRate {
   completedExperimentLog: number;
   failedExperimentLog: number;
   successRate: number;
+}
+
+interface FailedExperiment {
+  experimentLogId: string;
+  experimentLogName: string;
+  failedAtStageOrder: number;
+  failedAtStageName: string;
+  seedlingLocalName: string;
+  seedlingScientificName: string;
+  status: string;
+  reason: string;
+  issues: string;
+  recommendations: string;
+  failedDate: string;
+}
+
+interface FailedExperimentsResponse {
+  totalCount: number;
+  items: FailedExperiment[];
+  skip: number;
+  take: number;
 }
 
 /* ─── Animation variants ─────────────────────────────────── */
@@ -38,6 +60,18 @@ const cardVariant: Variants = {
     opacity: 1, y: 0,
     transition: { duration: 0.4, delay: (i as number) * 0.06, ease: EASE_OUT },
   }),
+};
+
+const modalVariant: Variants = {
+  hidden: { opacity: 0, scale: 0.95, y: 16 },
+  visible: {
+    opacity: 1, scale: 1, y: 0,
+    transition: { duration: 0.32, ease: EASE_OUT },
+  },
+  exit: {
+    opacity: 0, scale: 0.96, y: 8,
+    transition: { duration: 0.2 },
+  },
 };
 
 /* ─── Animated Counter ───────────────────────────────────── */
@@ -122,8 +156,286 @@ function DonutChart({ completed, failed }: { completed: number; failed: number }
   );
 }
 
+/* ─── Status Badge ───────────────────────────────────────── */
+function StatusBadge({ status }: { status: string }) {
+  const cfg: Record<string, string> = {
+    Cancelled: "bg-orange-50 text-orange-700 border-orange-200",
+    Destroyed: "bg-red-50 text-red-700 border-red-200",
+    Failed:    "bg-red-50 text-red-700 border-red-200",
+  };
+  const cls = cfg[status] ?? "bg-slate-50 text-slate-600 border-slate-200";
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${cls}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+      {status}
+    </span>
+  );
+}
+
+/* ─── Failed Experiments Modal ───────────────────────────── */
+function FailedExperimentsModal({
+  method,
+  onClose,
+}: {
+  method: MethodSuccessRate;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(0);
+  const [data, setData] = useState<FailedExperimentsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPage = useCallback(async (skip: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axiosInstance.get(
+        `/api/methods/${method.id}/failed-experiments`,
+        { params: { skip, take: PAGE_SIZE } }
+      );
+      setData(res.data as FailedExperimentsResponse);
+    } catch {
+      setError(t("common.errorLoading"));
+    } finally {
+      setLoading(false);
+    }
+  }, [method.id, t]);
+
+  useEffect(() => {
+    void fetchPage(page * PAGE_SIZE);
+  }, [page, fetchPage]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const totalPages = data ? Math.ceil(data.totalCount / PAGE_SIZE) : 0;
+
+  // ✅ Portal — thoát khỏi stacking context của Framer Motion
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backdropFilter: "blur(6px)", backgroundColor: "rgba(0,0,0,0.35)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        variants={modalVariant}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden"
+        style={{ border: "1.5px solid #fecdd3" }}
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-rose-50 bg-gradient-to-r from-[#9f1239]/5 to-[#f43f5e]/5 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-slate-500 font-medium">{t("experimentLog.bestMethod", "Phương pháp")}</p>
+              <h2 className="font-bold text-[#9f1239] text-base leading-tight truncate">{method.name}</h2>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+            {data && (
+              <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-full px-3 py-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                {data.totalCount} {t("status.cancelled", "thất bại")}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-500 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="border border-rose-100 rounded-xl p-4 animate-pulse space-y-3">
+                  <div className="flex justify-between">
+                    <div className="h-4 bg-rose-100 rounded w-1/2" />
+                    <div className="h-5 bg-rose-50 rounded-full w-20" />
+                  </div>
+                  <div className="h-3 bg-rose-50 rounded w-3/4" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-3 bg-rose-50 rounded" />
+                    <div className="h-3 bg-rose-50 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-rose-500">
+              <div className="text-4xl mb-3">⚠️</div>
+              <p className="font-medium">{error}</p>
+            </div>
+          ) : !data || data.items.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-5xl mb-3">✅</div>
+              <p className="text-slate-500 font-medium">{t("common.noData", "Không có thí nghiệm thất bại")}</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={page}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3"
+              >
+                {data.items.map((exp, idx) => (
+                  <div
+                    key={exp.experimentLogId + idx}
+                    className="border border-rose-100 rounded-xl p-4 hover:border-rose-300 hover:shadow-sm transition-all bg-white group"
+                  >
+                    {/* Row 1: Name + Status */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-[#9f1239] text-sm leading-snug group-hover:text-[#7f0f2e] transition-colors">
+                        {exp.experimentLogName}
+                      </h3>
+                      <StatusBadge status={exp.status} />
+                    </div>
+
+                    {/* Row 2: Seedling info */}
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <span className="text-xs text-slate-700 font-medium">{exp.seedlingLocalName}</span>
+                      <span className="text-xs text-slate-400 italic">({exp.seedlingScientificName})</span>
+                    </div>
+
+                    {/* Row 3: Grid details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs mb-3">
+                      <div className="flex gap-1.5">
+                        <span className="text-slate-400 flex-shrink-0">{t("experimentLog.stage", "Giai đoạn thất bại")}:</span>
+                        <span className="font-medium text-orange-600">#{exp.failedAtStageOrder} — {exp.failedAtStageName}</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className="text-slate-400 flex-shrink-0">{t("experimentLog.failedDate", "Ngày thất bại")}:</span>
+                        <span className="font-medium text-slate-700">{exp.failedDate}</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className="text-slate-400 flex-shrink-0">{t("experimentLog.reason", "Lý do")}:</span>
+                        <span className="font-medium text-slate-700 line-clamp-1">{exp.reason}</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <span className="text-slate-400 flex-shrink-0">{t("experimentLog.issues", "Vấn đề")}:</span>
+                        <span className="font-medium text-slate-700 line-clamp-1">{exp.issues}</span>
+                      </div>
+                    </div>
+
+                    {/* Recommendations */}
+                    {exp.recommendations && exp.recommendations !== "No recommendations" && (
+                      <div className="bg-rose-50 rounded-lg px-3 py-2 flex gap-2 items-start">
+                        <svg className="w-3.5 h-3.5 text-[#9f1239] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <p className="text-xs text-[#9f1239] leading-relaxed">{exp.recommendations}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
+
+        {/* Modal Footer — Pagination */}
+        {data && totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-rose-50 bg-slate-50/50 flex-shrink-0">
+            <span className="text-xs text-slate-500">
+              {t("common.page", "Trang")} {page + 1} / {totalPages}
+              <span className="ml-2 text-slate-400">({data.totalCount} {t("common.items", "mục")})</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={page === 0 || loading}
+                onClick={() => setPage(p => p - 1)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-rose-100 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed text-[#9f1239] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i)
+                  .filter(i => i === 0 || i === totalPages - 1 || Math.abs(i - page) <= 1)
+                  .reduce<(number | "ellipsis")[]>((acc, i, idx, arr) => {
+                    if (idx > 0 && i - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                    acc.push(i);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <span key={`e-${idx}`} className="text-xs text-slate-400 px-1">…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setPage(item as number)}
+                        className={`w-7 h-7 text-xs rounded-lg font-medium transition-colors ${
+                          page === item
+                            ? "bg-[#9f1239] text-white"
+                            : "border border-rose-100 text-[#9f1239] hover:bg-rose-50"
+                        }`}
+                      >
+                        {(item as number) + 1}
+                      </button>
+                    )
+                  )}
+              </div>
+
+              <button
+                type="button"
+                disabled={page >= totalPages - 1 || loading}
+                onClick={() => setPage(p => p + 1)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-rose-100 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed text-[#9f1239] transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </div>,
+    document.body // ✅ Portal ra ngoài DOM tree
+  );
+}
+
 /* ─── Method Card ────────────────────────────────────────── */
-function MethodCard({ method, index }: { method: MethodSuccessRate; index: number }) {
+function MethodCard({
+  method,
+  index,
+  onViewFailed,
+}: {
+  method: MethodSuccessRate;
+  index: number;
+  onViewFailed: (method: MethodSuccessRate) => void;
+}) {
   const { t } = useTranslation();
   const total = method.completedExperimentLog + method.failedExperimentLog;
   const rate = method.successRate;
@@ -213,6 +525,21 @@ function MethodCard({ method, index }: { method: MethodSuccessRate; index: numbe
         <span className="text-xs text-slate-500">{t("experimentLog.totalDuration", "Tổng thời gian")}</span>
         <span className="text-xs font-semibold text-[#9f1239]">{method.totalDurationDays} {t("common.days", "ngày")}</span>
       </div>
+
+      {/* ✅ View Failed Button — chỉ hiện khi có dữ liệu thất bại */}
+      {method.failedExperimentLog > 0 && (
+        <button
+          type="button"
+          onClick={() => onViewFailed(method)}
+          className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl py-2 transition-colors group"
+        >
+          <svg className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          {t("experimentLog.viewFailed", "Xem thí nghiệm thất bại")} ({method.failedExperimentLog})
+        </button>
+      )}
     </motion.div>
   );
 }
@@ -226,6 +553,7 @@ export default function AdminMethodSuccessRate() {
   const [sortBy, setSortBy] = useState<"successRate" | "name" | "total">("successRate");
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
   const [search, setSearch] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<MethodSuccessRate | null>(null); // ✅ state modal
 
   useEffect(() => {
     const fetch = async () => {
@@ -238,7 +566,6 @@ export default function AdminMethodSuccessRate() {
           : Array.isArray(res.data?.data) ? res.data.data
           : [];
 
-        // Deduplicate by id, merge stats
         const merged: Record<number, MethodSuccessRate> = {};
         raw.forEach((item: any) => {
           const id = Number(item.id);
@@ -471,14 +798,30 @@ export default function AdminMethodSuccessRate() {
           <p className="text-slate-500">{t("common.noData")}</p>
         </motion.div>
       ) : (
-        <AnimatePresence mode="popLayout">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        // ✅ AnimatePresence nằm bên trong div.grid, wrap trực tiếp các MethodCard
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
             {sorted.map((method, idx) => (
-              <MethodCard key={method.id} method={method} index={idx} />
+              <MethodCard
+                key={method.id}
+                method={method}
+                index={idx}
+                onViewFailed={setSelectedMethod}
+              />
             ))}
-          </div>
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       )}
+
+      {/* ✅ Modal — AnimatePresence ở root level, Portal render ra document.body */}
+      <AnimatePresence>
+        {selectedMethod && (
+          <FailedExperimentsModal
+            method={selectedMethod}
+            onClose={() => setSelectedMethod(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
