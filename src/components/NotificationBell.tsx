@@ -125,10 +125,6 @@ const NotificationBell: React.FC = () => {
                 e.stopPropagation();
                 handleNotificationClick(n);
               }}
-              onClick={() => {
-                console.log("onClick fired!", n.title);
-                handleNotificationClick(n);
-              }}
               >
                 <div className="mt-1 flex-shrink-0 w-2.5">
                   {!n.isRead && (
