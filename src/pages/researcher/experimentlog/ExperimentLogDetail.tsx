@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-misused-promises */
@@ -133,6 +134,9 @@ const ExperimentLogDetail = () => {
 
   const [allTasksCompleted, setAllTasksCompleted] = useState<boolean>(false);
 
+  const [isBatchDropdownOpen, setIsBatchDropdownOpen] = useState(false);
+
+
   const lastStageOrder = (() => {
     if (!log?.method?.methodStages?.length) return undefined;
     return Math.max(...log.method.methodStages.map((s) => s.order));
@@ -228,20 +232,40 @@ const ExperimentLogDetail = () => {
   };
 
   const fetchReadyBatches = async () => {
-    setBatchesLoading(true);
-    setBatchesError(null);
-    try {
-      const res = await axiosInstance.get("/api/batches", {
-        params: { pageNo: 1, pageSize: 100 },
-      });
-      const allBatches: Batch[] = res.data?.data ?? [];
-      setReadyBatches(allBatches.filter((b) => b.status === "Ready"));
-    } catch {
-      setBatchesError(t("common.errorLoading"));
-      setReadyBatches([]);
-    } finally {
-      setBatchesLoading(false);
+  setBatchesLoading(true);
+  setBatchesError(null);
+  try {
+    const res = await axiosInstance.get("/api/batches", {
+      params: { pageNo: 1, pageSize: 100 },
+    });
+    const allBatches: Batch[] = res.data?.data ?? [];
+    const readyList = allBatches.filter((b) => b.status === "Ready");
+
+    if (currentBatchId !== undefined) {
+      const alreadyIncluded = readyList.some((b) => b.id === currentBatchId);
+      if (!alreadyIncluded) {
+        const currentBatch = allBatches.find((b) => b.id === currentBatchId);
+        if (currentBatch) {
+          readyList.unshift(currentBatch); // thêm vào đầu
+        } else {
+          try {
+            const batchRes = await axiosInstance.get(`/api/batches/${currentBatchId}`);
+            const fetched: Batch = batchRes.data?.value ?? batchRes.data;
+            if (fetched) readyList.unshift(fetched);
+          } catch {
+            // ignore
+          }
+        }
+      }
     }
+
+    setReadyBatches(readyList);
+  } catch {
+    setBatchesError(t("common.errorLoading"));
+    setReadyBatches([]);
+  } finally {
+    setBatchesLoading(false);
+  }
   };
 
   const fetchIncidents = async () => {
@@ -351,15 +375,16 @@ const ExperimentLogDetail = () => {
   /* ─── Modal handlers ─── */
   const openChangeStageModal = () => {
     setChangeStageError(null);
-    setSelectedBatchId("");
+    setSelectedBatchId(currentBatchId ?? "");
     setIsChangeStageModalOpen(true);
-    void fetchReadyBatches(); // gọi API lấy danh sách lô khi mở modal
+    void fetchReadyBatches(); 
   };
   const closeChangeStageModal = () => {
     setIsChangeStageModalOpen(false);
     setChangeStageError(null);
     setChangeReason("");
     setBatchesError(null);
+    setIsBatchDropdownOpen(false);
   };
   const openReviewModal = (incident: DiseaseIncident) => { setReviewingIncident(incident); setReviewIsConfirmed(true); setReviewNote(""); setReviewError(null); };
   const closeReviewModal = () => { setReviewingIncident(null); setReviewNote(""); setReviewError(null); };
@@ -367,12 +392,7 @@ const ExperimentLogDetail = () => {
   const closeCancelModal = () => { setIsCancelModalOpen(false); setCancelReason(""); setCancelConclusion(""); setCancelIssue(""); setCancelRecommendation(""); };
 
   const getBatchOptionLabel = (b: Batch): string => {
-    const name = b.batchName ?? `Batch #${b.id}`;
-    const room = b.labRoomName ? ` — ${b.labRoomName}` : "";
-    const size = b.batchSizeWidth && b.batchSizeHeight
-      ? ` (${b.batchSizeWidth}${b.widthUnit ?? ""} x ${b.batchSizeHeight}${b.heightUnit ?? ""})`
-      : "";
-    return `${name}${room}${size}`;
+    return b.batchName ?? `Batch #${b.id}`;
   };
 
   const samples = log.samples ?? [];
@@ -902,26 +922,51 @@ const ExperimentLogDetail = () => {
                     {t("experimentLog.batchLabel")} <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <select
-                      value={selectedBatchId}
-                      onChange={(e) => setSelectedBatchId(e.target.value === "" ? "" : Number(e.target.value))}
+                    <button
+                      type="button"
                       disabled={batchesLoading || changingStage}
-                      className={`${inputClass} appearance-none`}
+                      onClick={() => setIsBatchDropdownOpen(prev => !prev)}
+                      className={`${inputClass} appearance-none flex items-center justify-between w-full text-left ${selectedBatchId === "" ? "text-slate-400" : "text-slate-800"}`}
                     >
-                      <option value="">
-                        {batchesLoading ? t("experimentLog.loadingBatches") : t("experimentLog.selectBatchPlaceholder")}
-                      </option>
-                      {readyBatches.map(b => (
-                        <option key={b.id} value={b.id}>{getBatchOptionLabel(b)}</option>
-                      ))}
-                    </select>
-                    {/* Icon: spinner khi loading, chevron khi không */}
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      {batchesLoading
-                        ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                        : <ChevronDown className="w-5 h-5" />
-                      }
-                    </div>
+                      <span>
+                        {selectedBatchId === ""
+                          ? (batchesLoading ? t("experimentLog.loadingBatches") : t("experimentLog.selectBatchPlaceholder"))
+                          : getBatchOptionLabel(readyBatches.find(b => b.id === selectedBatchId) ?? { id: selectedBatchId as number, batchName: String(selectedBatchId) })}
+
+                      </span>
+                      <div className="text-slate-400">
+                        {batchesLoading
+                          ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                          : <ChevronDown className={`w-5 h-5 transition-transform ${isBatchDropdownOpen ? "rotate-180" : ""}`} />
+                        }
+                      </div>
+                    </button>
+
+                    {isBatchDropdownOpen && !batchesLoading && (
+                      <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                        {readyBatches.map(b => {
+                          const isCurrent = b.id === currentBatchId;
+                          const isSelected = b.id === selectedBatchId;
+                          return (
+                            <div
+                              key={b.id}
+                              onClick={() => { setSelectedBatchId(b.id); setIsBatchDropdownOpen(false); }}
+                              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors
+                                ${isSelected ? "bg-blue-50" : "hover:bg-slate-50"}`}
+                            >
+                              <span className={`text-sm font-medium ${isSelected ? "text-blue-700" : "text-slate-700"}`}>
+                                {getBatchOptionLabel(b)}
+                              </span>
+                              {isCurrent && (
+                                <span className="text-[11px] font-semibold text-emerald-600 ml-4 whitespace-nowrap">
+                                   {t("common.current")}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   {/* Trạng thái phụ bên dưới select */}
                   {batchesLoading && (

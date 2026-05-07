@@ -31,7 +31,7 @@ const NotificationBell: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-    const getNavigationPath = (notification: typeof notifications[0]): string => {
+  const getNavigationPath = (notification: typeof notifications[0]): string => {
     const { notificationTargetType, targetId } = notification;
 
     if (user?.role === "technician" || user?.role === "Lab Technician") {
@@ -119,12 +119,13 @@ const NotificationBell: React.FC = () => {
               </li>
             )}
             {sortedNotifications.map((n) => (
-            <li
-              key={n.id}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleNotificationClick(n);
-              }}
+              <li
+                key={n.id}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleNotificationClick(n);
+                }}
+                className="flex items-start gap-2.5 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
               >
                 <div className="mt-1 flex-shrink-0 w-2.5">
                   {!n.isRead && (

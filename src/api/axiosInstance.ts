@@ -43,6 +43,59 @@ function processQueue(error: AxiosError | null, token: string | null = null) {
   failedQueue = [];
 }
 
+// --- Proactive refresh: tự động refresh mỗi 30 phút ---
+let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+async function doRefreshToken(): Promise<void> {
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken || isRefreshing) return;
+
+  isRefreshing = true;
+  try {
+    const response = await axiosInstance.post<RefreshTokenResponse>(
+      "/api/authentication/refresh-token",
+      JSON.stringify(refreshToken),
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    const newAccessToken = response.data.accessToken;
+    const newRefreshToken = response.data.refreshToken;
+
+    if (!newAccessToken || !newRefreshToken) {
+      throw new Error("Invalid refresh token response - missing tokens");
+    }
+
+    localStorage.setItem("accessToken", newAccessToken);
+    localStorage.setItem("refreshToken", newRefreshToken);
+    axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+
+    processQueue(null, newAccessToken);
+    console.log("Proactive refresh token success");
+  } catch (err) {
+    console.error("Proactive refresh token failed:", err);
+    processQueue(err as AxiosError, null);
+    stopAutoRefresh();
+    localStorage.clear();
+    window.location.href = "/login";
+  } finally {
+    isRefreshing = false;
+  }
+}
+
+export function startAutoRefresh(): void {
+  if (refreshInterval) return; // tránh chạy nhiều lần
+  refreshInterval = setInterval(() => {
+    void doRefreshToken();
+  }, 30 * 60 * 1000); // 30 phút
+}
+
+export function stopAutoRefresh(): void {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+}
+
 // Response interceptor: Tự động refresh token khi 401
 axiosInstance.interceptors.response.use(
   (res) => res,
@@ -51,7 +104,6 @@ axiosInstance.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Check if error is 401 and not refresh endpoint itself
     if (
       err.response?.status === 401 &&
       !originalRequest._retry &&
@@ -70,6 +122,7 @@ axiosInstance.interceptors.response.use(
       if (!refreshToken) {
         console.error("No refresh token found");
         isRefreshing = false;
+        stopAutoRefresh();
         localStorage.clear();
         window.location.href = "/login";
         return Promise.reject(err);
@@ -79,13 +132,8 @@ axiosInstance.interceptors.response.use(
         const response = await axiosInstance.post<RefreshTokenResponse>(
           "/api/authentication/refresh-token",
           JSON.stringify(refreshToken),
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          { headers: { "Content-Type": "application/json" } }
         );
-        console.log("Refresh token success:", response.data);
 
         const newAccessToken = response.data.accessToken;
         const newRefreshToken = response.data.refreshToken;
@@ -96,7 +144,6 @@ axiosInstance.interceptors.response.use(
 
         localStorage.setItem("accessToken", newAccessToken);
         localStorage.setItem("refreshToken", newRefreshToken);
-
         axiosInstance.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 
         processQueue(null, newAccessToken);
@@ -107,13 +154,11 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         console.error("Refresh token failed:", refreshError);
-        
         processQueue(refreshError as AxiosError, null);
         isRefreshing = false;
-      
+        stopAutoRefresh();
         localStorage.clear();
         window.location.href = "/login";
-        
         return Promise.reject(refreshError);
       }
     }

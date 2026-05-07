@@ -1,5 +1,6 @@
 {
   "common": {
+    "current": "Current",
     "creator": "Creator",
     "login": "Login",
     "logout": "Logout",
