@@ -453,15 +453,15 @@ export default function Seedlings() {
         >
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-white/60">
+              <thead className="bg-gradient-to-r from-[#E6F1FF] to-[#F0F8FF] border-b border-blue-100">
                 <tr>
                   {tableHeaders.map((header, i) => (
                     <motion.th
                       key={i}
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.04, duration: 0.3, ease: EASE_OUT }}
-                      className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-blue-900/60"
+                      transition={{ delay: 0.25 + i * 0.04, duration: 0.3, ease: EASE_OUT }}
+                      className="text-left px-6 py-4 font-semibold text-[#005792] text-sm"
                     >
                       {header}
                     </motion.th>
