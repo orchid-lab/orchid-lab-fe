@@ -351,6 +351,7 @@ const ExperimentLogDetail = () => {
   /* ─── Modal handlers ─── */
   const openChangeStageModal = () => {
     setChangeStageError(null);
+    setSelectedBatchId("");
     setIsChangeStageModalOpen(true);
     void fetchReadyBatches(); // gọi API lấy danh sách lô khi mở modal
   };

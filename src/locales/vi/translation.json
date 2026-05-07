@@ -723,6 +723,7 @@
     }
   },
   "experimentLog": {
+    "progressTitle": "Tiến trình thí nghiệm",
     "totalMonitoringLogs": "Tổng số báo cáo giám sát",
     "summaryLoading": "Đang tải tóm tắt thí nghiệm...",
     "totalDuration": "Tổng thời gian",

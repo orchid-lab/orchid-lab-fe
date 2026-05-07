@@ -745,6 +745,7 @@
     }
   },
   "experimentLog": {
+    "progressTitle": "Experiment Progress",
     "totalMonitoringLogs": "Total monitoring logs",
     "summaryLoading": "Loading experiment summary...",
     "totalDuration": "Total Duration",
