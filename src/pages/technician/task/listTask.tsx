@@ -430,11 +430,9 @@ export default function ListTask() {
     return t("common.none");
   };
 
-  // ─── NEW: Fetch technician name by ID ──────────────────────────────────────
   const fetchTechnicianName = async (technicianId: string | undefined): Promise<string> => {
     if (!technicianId) return "-";
 
-    // Return cached value if available
     if (technicianNameCache.current[technicianId]) {
       return technicianNameCache.current[technicianId];
     }
@@ -458,6 +456,7 @@ export default function ListTask() {
         const params = new URLSearchParams();
         params.append("PageNumber", "1");
         params.append("PageSize", "1000");
+        params.append("TechnicianId", user?.id ?? "");
         const response = await axiosInstance.get(`/api/tasks?${params.toString()}`);
         if (isTaskListApiResponse(response.data)) {
           const allTasks = Array.isArray(response.data.data)
@@ -468,11 +467,10 @@ export default function ListTask() {
                   status: normalizeTaskStatus(String(task.status ?? "")),
                 }))
             : [];
-          const myTasks = allTasks.filter((task) => task.technicianId === user?.id);
           const counts: Record<TaskStatusType, number> = createEmptyStatusCounts();
-          myTasks.forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; });
+          allTasks.forEach((task) => { counts[task.status] = (counts[task.status] || 0) + 1; });
           setStatusCounts(counts);
-          setTotalTasks(myTasks.length);
+          setTotalTasks(allTasks.length);
         }
       } catch (err) {
         console.error("Error loading summary data:", err);
@@ -508,10 +506,14 @@ export default function ListTask() {
                     }))
                 : [];
 
-              let filteredData = data.filter((task) => task.technicianId === user?.id);
+              let filteredData = [...data];
+
+
+              // ─── FIX: use ?? 0 to handle undefined createdDate ───────────
               filteredData = [...filteredData].sort((a, b) =>
-                new Date(a.expectedEndDate).getTime() - new Date(b.expectedEndDate).getTime()
+                new Date(b.createdDate ?? 0).getTime() - new Date(a.createdDate ?? 0).getTime()
               );
+
               if (statusFilter !== "All")
                 filteredData = filteredData.filter((task) => task.status === statusFilter);
               if (todayFilter) {
@@ -534,7 +536,6 @@ export default function ListTask() {
               const startIndex = (currentPage - 1) * tasksPerPage;
               const paginatedData = filteredData.slice(startIndex, startIndex + tasksPerPage);
 
-              // ─── UPDATED: Fetch both targetName and technicianName in parallel ───
               const tasksWithNames = await Promise.all(
                 paginatedData.map(async (task) => {
                   const [targetName, technicianName] = await Promise.all([
@@ -785,11 +786,10 @@ export default function ListTask() {
               <table className="w-full">
                 <thead className="bg-[#F4F7F4] border-b border-[#DDEEE0]">
                   <tr>
-                    {/* ── UPDATED: 7 columns now includes Kỹ thuật viên ── */}
                     {[
                       t("task.taskName"),
                       t("task.targetType"),
-                      t("technicianTask.technicianName",),
+                      t("technicianTask.technicianName"),
                       t("technicianTask.targetName"),
                       t("task.deadline"),
                       t("common.createdAt"),
@@ -814,7 +814,6 @@ export default function ListTask() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        {/* ── UPDATED: colSpan 6 → 7 ── */}
                         <td colSpan={7} className="p-12 text-center text-gray-500">
                           {t("task.noTasks")}
                         </td>
@@ -833,7 +832,6 @@ export default function ListTask() {
                         >
                           <td className="px-6 py-4 font-medium text-gray-900">{task.name}</td>
                           <td className="px-6 py-4 text-gray-600">{task.taskTargetType ?? "-"}</td>
-                          {/* ── UPDATED: Technician name column ── */}
                           <td className="px-6 py-4 text-gray-600 max-w-[160px] truncate">
                             {(task as TaskItem & { technicianName?: string }).technicianName ?? "-"}
                           </td>
