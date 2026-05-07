@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { Search, Plus, ChevronRight } from "lucide-react";
+import { Search, Plus, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import "./ExperimentLog.css";
 import gsap from "gsap";
@@ -217,9 +217,7 @@ const ExperimentLog = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">(
-    "all",
-  );
+  const [statusFilter, setStatusFilter] = useState<ExperimentStatus | "all">("all");
   const [methodFilter, setMethodFilter] = useState<string>("");
   const [logs, setLogs] = useState<ExperimentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,6 +236,20 @@ const ExperimentLog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 5;
   const navigate = useNavigate();
+
+  /* ─── Active filter count (badge) ─────────────────────── */
+  const activeFilterCount = [
+    statusFilter !== "all",
+    methodFilter !== "",
+    searchTerm !== "",
+  ].filter(Boolean).length;
+
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setMethodFilter("");
+    setSearchTerm("");
+    setCurrentPage(1);
+  };
 
   /* ─── Localised status label ─────────────────────────── */
   const statusToLabel = useCallback(
@@ -294,16 +306,6 @@ const ExperimentLog = () => {
       ? Math.round((stats.Done / completedOrFailed) * 100)
       : 0;
   const bottlenecksCount = stats.Waiting;
-
-  // const approachingDeadlineCount = logs.filter((log) => {
-  //   const now = Date.now(); const in7Days = now + 7 * 24 * 60 * 60 * 1000;
-  //   return Boolean(log.stages?.some((stage) => {
-  //     if (!stage.dateOfProcessing) return false;
-  //     let ts = stage.dateOfProcessing;
-  //     if (ts < 1e12) ts = ts * 1000;
-  //     return ts >= now && ts <= in7Days;
-  //   }));
-  // }).length;
 
   const priorityLogs = logs
     .filter((log) => normalizeStatus(log.status) === "Waiting")
@@ -449,12 +451,14 @@ const ExperimentLog = () => {
       const methodName = selectedMethod ? selectedMethod.name : methodFilter;
       try {
         const paramsObj: Record<string, unknown> = {
-          pageNo: currentPage,
-          pageSize: logsPerPage,
+          PageNo: currentPage,
+          PageSize: logsPerPage,
           ResearcherId: user?.id ?? "",
         };
+        if (searchTerm) {
+          paramsObj.NameSearchTerm = searchTerm; // ← đổi từ client-side filter sang server-side
+        }
         if (methodName) {
-          paramsObj.methodNameSearchTerm = methodName;
           paramsObj.MethodNameSearchTerm = methodName;
         }
 
@@ -534,6 +538,7 @@ const ExperimentLog = () => {
     currentPage,
     logsPerPage,
     methodFilter,
+    searchTerm, 
     fetchAllSampleCounts,
     fetchStatsOnly,
     t,
@@ -571,18 +576,15 @@ const ExperimentLog = () => {
       return slice;
     });
 
-  /* ─── Filtered logs ──────────────────────────────────── */
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch =
-      !searchTerm ||
-      log.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.tissueCultureBatchName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || normalizeStatus(log.status) === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  /* ─── Status options with counts ────────────────────── */
+  const statusOptions: { value: ExperimentStatus | "all"; labelKey: string; count?: number; dotColor: string }[] = [
+    { value: "all", labelKey: "experimentLog.allStatuses", dotColor: "#94a3b8" },
+    { value: "Created", labelKey: "status.created", count: stats.Created, dotColor: "#005792" },
+    { value: "Waiting", labelKey: "experimentLog.waitingForStageChange", count: stats.Waiting, dotColor: "#FF6F61" },
+    { value: "InProcess", labelKey: "status.inProgress", count: stats.InProcess, dotColor: "#00CED1" },
+    { value: "Done", labelKey: "status.completed", count: stats.Done, dotColor: "#22c55e" },
+    { value: "Cancel", labelKey: "status.cancelled", count: stats.Cancel, dotColor: "#ef4444" },
+  ];
 
   /* ─── Table headers (translated) ────────────────────── */
   const tableHeaders = [
@@ -871,77 +873,186 @@ const ExperimentLog = () => {
           </motion.div>
         </div>
 
-        {/* Filter panel */}
-        <div className="xl:col-span-1">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            custom={3}
-            className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6"
-          >
-            <h2 className="text-lg font-semibold text-[#005792]">
-              {t("common.filter")}
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              {t("experimentLog.manageAndTrack")}
-            </p>
-            <div className="mt-5 space-y-4">
-              {/* Status filter */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">
-                  {t("common.status")}
-                </label>
-                <select
-                  className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1]"
-                  value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(e.target.value as ExperimentStatus | "all")
-                  }
-                >
-                  <option value="all">{t("experimentLog.allStatuses")}</option>
-                  <option value="InProcess">{t("status.inProgress")}</option>
-                  <option value="Done">{t("status.completed")}</option>
-                  <option value="Cancel">{t("status.cancelled")}</option>
-                </select>
+        {/* ── Filter panel ── */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          custom={3}
+          className="bg-white/80 backdrop-blur-sm border border-blue-100 rounded-2xl shadow-sm p-6 sticky top-24"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-[#005792]">
+                {t("common.filter")}
+              </h2>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#005792] text-white text-[10px] font-bold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-500 transition-colors font-medium"
+              >
+                <X className="w-3 h-3" />
+                {t("common.clearAll", "Xóa bộ lọc")}
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-5">
+
+            {/* ── Search by name ── */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                {t("common.search")}
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={t("experimentLog.searchByName", "Tìm theo tên...")}
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  className="w-full border border-slate-200 bg-white rounded-xl pl-9 pr-9 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/30 focus:border-[#005792] transition"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchTerm(""); setCurrentPage(1); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              {/* Method filter */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">
-                  {t("experimentLog.method")}
-                </label>
+            </div>
+
+            {/* ── Status dropdown ── */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                {t("common.status")}
+              </label>
+              <div className="relative">
                 <select
-                  className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1]"
-                  value={methodFilter}
-                  onChange={(e) => setMethodFilter(e.target.value)}
+                  className={`w-full border rounded-xl px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/30 focus:border-[#005792] appearance-none transition ${
+                    statusFilter !== "all"
+                      ? "border-[#005792] bg-blue-50 text-[#005792] font-medium"
+                      : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value as ExperimentStatus | "all"); setCurrentPage(1); }}
                 >
-                  <option value="">{t("experimentLog.allMethods")}</option>
-                  {methods.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}{opt.count !== undefined ? ` (${opt.count})` : ""}
                     </option>
                   ))}
                 </select>
-              </div>
-              {/* Search */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">
-                  {t("common.search")}
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder={t("sample.searchPlaceholder")}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full border border-slate-200 bg-white rounded-xl px-10 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00CED1]"
-                  />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
+                {statusFilter !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => { setStatusFilter("all"); setCurrentPage(1); }}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
-          </motion.div>
-        </div>
+
+            {/* ── Method dropdown ── */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                {t("experimentLog.method")}
+              </label>
+              <div className="relative">
+                <select
+                  className={`w-full border rounded-xl px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#005792]/30 focus:border-[#005792] appearance-none transition ${
+                    methodFilter
+                      ? "border-[#005792] bg-blue-50 text-[#005792] font-medium"
+                      : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                  value={methodFilter}
+                  onChange={(e) => { setMethodFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="">{t("experimentLog.allMethods")}</option>
+                  {methods.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                {methodFilter && (
+                  <button
+                    type="button"
+                    onClick={() => { setMethodFilter(""); setCurrentPage(1); }}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ── Active filters summary ── */}
+            <AnimatePresence>
+              {activeFilterCount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-1 border-t border-slate-100">
+                    <p className="text-xs text-slate-500 mb-2 mt-3 font-medium">
+                      {t("common.activeFilters", "Bộ lọc đang áp dụng")}:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {statusFilter !== "all" && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-[#005792]/10 text-[#005792] px-2 py-1 rounded-lg font-medium">
+                          {t(statusOptions.find(o => o.value === statusFilter)?.labelKey ?? "")}
+                          <button type="button" onClick={() => { setStatusFilter("all"); setCurrentPage(1); }}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {methodFilter && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-[#005792]/10 text-[#005792] px-2 py-1 rounded-lg font-medium">
+                          {methods.find(m => m.id === methodFilter)?.name ?? methodFilter}
+                          <button type="button" onClick={() => { setMethodFilter(""); setCurrentPage(1); }}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {searchTerm && (
+                        <span className="inline-flex items-center gap-1 text-xs bg-[#005792]/10 text-[#005792] px-2 py-1 rounded-lg font-medium">
+                          "{searchTerm}"
+                          <button type="button" onClick={() => { setSearchTerm(""); setCurrentPage(1); }}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+          </div>
+        </motion.div>
       </div>
 
       {/* ── Table ── */}
@@ -1002,9 +1113,9 @@ const ExperimentLog = () => {
                       {error}
                     </td>
                   </motion.tr>
-                ) : filteredLogs.length > 0 ? (
+                ) : logs.length > 0 ? (
                   <AnimatePresence mode="popLayout">
-                    {filteredLogs.map((log, idx) => (
+                    {logs.map((log, idx) => (
                       <motion.tr
                         key={log.id}
                         custom={idx}

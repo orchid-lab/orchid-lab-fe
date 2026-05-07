@@ -1,6 +1,4 @@
-/* eslint-disable no-empty-pattern */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -91,9 +89,10 @@ const ExperimentLogDetail = () => {
   const [changingStage, setChangingStage] = useState(false);
   const [changeStageError, setChangeStageError] = useState<string | null>(null);
   const [isChangeStageModalOpen, setIsChangeStageModalOpen] = useState(false);
-  const [readyBatches] = useState<Batch[]>([]);
-  const [batchesLoading] = useState(false);
-  const [] = useState<string | null>(null);
+  // ── Batch list state ──
+  const [readyBatches, setReadyBatches] = useState<Batch[]>([]);
+  const [batchesLoading, setBatchesLoading] = useState(false);
+  const [batchesError, setBatchesError] = useState<string | null>(null);
   const [currentBatchId, setCurrentBatchId] = useState<number | undefined>(undefined);
   const [selectedBatchId, setSelectedBatchId] = useState<number | "">("");
   const [changeReason, setChangeReason] = useState("");
@@ -228,6 +227,23 @@ const ExperimentLogDetail = () => {
     } catch { setSummaryError(t("common.errorLoading")); } finally { setSummaryLoading(false); }
   };
 
+  const fetchReadyBatches = async () => {
+    setBatchesLoading(true);
+    setBatchesError(null);
+    try {
+      const res = await axiosInstance.get("/api/batches", {
+        params: { pageNo: 1, pageSize: 100 },
+      });
+      const allBatches: Batch[] = res.data?.data ?? [];
+      setReadyBatches(allBatches.filter((b) => b.status === "Ready"));
+    } catch {
+      setBatchesError(t("common.errorLoading"));
+      setReadyBatches([]);
+    } finally {
+      setBatchesLoading(false);
+    }
+  };
+
   const fetchIncidents = async () => {
     if (!id) return;
     setIncidentsLoading(true); setIncidentsError(null);
@@ -290,7 +306,7 @@ const ExperimentLogDetail = () => {
     if (!log) return;
     const tcbId = ((log as unknown as Record<string, unknown>)?.tissueCultureBatchId as string) ?? ((log as unknown as Record<string, unknown>)?.tissueCultureBatchID as string);
     if (tcbId) {
-      axiosInstance.get(`/api/tissue-culture-batch/${tcbId}`)
+      axiosInstance.get(`/api/batches/${tcbId}`)
         .then((res) => {
           const raw = res.data;
           setLabName((raw?.value?.labName as string) ?? (raw?.labName as string) ?? t("experimentLog.notAvailable"));
@@ -333,8 +349,17 @@ const ExperimentLogDetail = () => {
   const labRoomName = log.batch?.labRoomName ?? t("experimentLog.notAvailable");
 
   /* ─── Modal handlers ─── */
-  const openChangeStageModal = () => { setChangeStageError(null); setIsChangeStageModalOpen(true); };
-  const closeChangeStageModal = () => { setIsChangeStageModalOpen(false); setChangeStageError(null); setChangeReason(""); };
+  const openChangeStageModal = () => {
+    setChangeStageError(null);
+    setIsChangeStageModalOpen(true);
+    void fetchReadyBatches(); // gọi API lấy danh sách lô khi mở modal
+  };
+  const closeChangeStageModal = () => {
+    setIsChangeStageModalOpen(false);
+    setChangeStageError(null);
+    setChangeReason("");
+    setBatchesError(null);
+  };
   const openReviewModal = (incident: DiseaseIncident) => { setReviewingIncident(incident); setReviewIsConfirmed(true); setReviewNote(""); setReviewError(null); };
   const closeReviewModal = () => { setReviewingIncident(null); setReviewNote(""); setReviewError(null); };
   const closeCompletionModal = () => { setIsCompletionModalOpen(false); setCompletionConclusion(""); setCompletionIssues(""); setCompletionRecommendations(""); setCompletionError(null); };
@@ -876,15 +901,41 @@ const ExperimentLogDetail = () => {
                     {t("experimentLog.batchLabel")} <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <select value={selectedBatchId} onChange={(e) => setSelectedBatchId(e.target.value === "" ? "" : Number(e.target.value))} disabled={batchesLoading || changingStage} className={`${inputClass} appearance-none`}>
-                      <option value="">{t("experimentLog.selectBatchPlaceholder")}</option>
-                      {readyBatches.map(b => <option key={b.id} value={b.id}>{getBatchOptionLabel(b)}</option>)}
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => setSelectedBatchId(e.target.value === "" ? "" : Number(e.target.value))}
+                      disabled={batchesLoading || changingStage}
+                      className={`${inputClass} appearance-none`}
+                    >
+                      <option value="">
+                        {batchesLoading ? t("experimentLog.loadingBatches") : t("experimentLog.selectBatchPlaceholder")}
+                      </option>
+                      {readyBatches.map(b => (
+                        <option key={b.id} value={b.id}>{getBatchOptionLabel(b)}</option>
+                      ))}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none" />
+                    {/* Icon: spinner khi loading, chevron khi không */}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      {batchesLoading
+                        ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                        : <ChevronDown className="w-5 h-5" />
+                      }
+                    </div>
                   </div>
+                  {/* Trạng thái phụ bên dưới select */}
                   {batchesLoading && (
                     <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
                       <Loader2 className="w-3 h-3 animate-spin" /> {t("experimentLog.loadingBatches")}
+                    </p>
+                  )}
+                  {batchesError && !batchesLoading && (
+                    <p className="text-xs text-rose-500 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {batchesError}
+                    </p>
+                  )}
+                  {!batchesLoading && !batchesError && readyBatches.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {t("experimentLog.noBatchesAvailable")}
                     </p>
                   )}
                 </div>
@@ -902,7 +953,7 @@ const ExperimentLogDetail = () => {
                 <button type="button" onClick={closeChangeStageModal} disabled={changingStage} className="px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-semibold hover:bg-slate-50 transition-colors">
                   {t("common.cancel")}
                 </button>
-                <button type="button" onClick={handleChangeStage} disabled={changingStage || selectedBatchId === ""} className="btn-action-primary disabled:opacity-50">
+                <button type="button" onClick={handleChangeStage} disabled={changingStage || selectedBatchId === "" || batchesLoading} className="btn-action-primary disabled:opacity-50">
                   {changingStage ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {changingStage ? t("experimentLog.changingStage") : t("experimentLog.confirmChangeStageBtn")}
                 </button>

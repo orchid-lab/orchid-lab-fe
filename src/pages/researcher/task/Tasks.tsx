@@ -40,7 +40,7 @@ interface Task {
   technicianName?: string;
 }
 
-type StatusType = "Assigned" | "Taken" | "InProcess" | "DoneInTime" | "DoneInLate" | "Cancel";
+type StatusType = "Assigned" | "InProgress" | "WaitingForApproval" | "CompletedInTime" | "CompletedOutTime" | "Deleted" | "DeclinedByTechnician" | "ReworkRequired";
 
 interface ApiTaskResponse {
   value?: { totalCount?: number; pageCount?: number; pageSize?: number; pageNumber?: number; data?: Task[] };
@@ -55,10 +55,14 @@ function isApiTaskResponse(obj: unknown): obj is ApiTaskResponse {
 }
 
 const STATUS_NORMALIZE_MAP: Record<string, StatusType> = {
-  Assigned: "Assigned", Taken: "Taken", InProcess: "InProcess", InProgress: "InProcess",
-  DoneInTime: "DoneInTime", CompletedInTime: "DoneInTime", DoneInLate: "DoneInLate",
-  CompletedLate: "DoneInLate", CompletedInLate: "DoneInLate",
-  Cancel: "Cancel", Cancelled: "Cancel", Canceled: "Cancel",
+  Assigned: "Assigned",
+  InProgress: "InProgress",
+  WaitingForApproval: "WaitingForApproval",
+  CompletedInTime: "CompletedInTime",
+  CompletedOutTime: "CompletedOutTime",
+  Deleted: "Deleted",
+  DeclinedByTechnician: "DeclinedByTechnician",
+  ReworkRequired: "ReworkRequired",
 };
 
 function normalizeStatus(status: string): StatusType | null {
@@ -66,12 +70,14 @@ function normalizeStatus(status: string): StatusType | null {
 }
 
 const STATUS_UI: Record<StatusType, { labelKey: string; badgeClasses: string }> = {
-  Assigned:   { labelKey: "status.assigned",   badgeClasses: "bg-blue-50 text-blue-700 border border-blue-100" },
-  Taken:      { labelKey: "status.taken",       badgeClasses: "bg-indigo-50 text-indigo-700 border border-indigo-100" },
-  InProcess:  { labelKey: "status.inProcess",   badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100" },
-  DoneInTime: { labelKey: "status.doneInTime",  badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
-  DoneInLate: { labelKey: "status.doneInLate",  badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100" },
-  Cancel:     { labelKey: "status.cancel",      badgeClasses: "bg-red-50 text-red-700 border border-red-100" },
+  Assigned:             { labelKey: "status.assigned",             badgeClasses: "bg-blue-50 text-blue-700 border border-blue-100" },
+  InProgress:           { labelKey: "status.inProgress",           badgeClasses: "bg-cyan-50 text-cyan-700 border border-cyan-100" },
+  WaitingForApproval:   { labelKey: "status.waitingForApproval",   badgeClasses: "bg-amber-50 text-amber-700 border border-amber-100" },
+  CompletedInTime:      { labelKey: "status.completedInTime",      badgeClasses: "bg-emerald-50 text-emerald-700 border border-emerald-100" },
+  CompletedOutTime:     { labelKey: "status.completedOutTime",     badgeClasses: "bg-orange-50 text-orange-700 border border-orange-100" },
+  Deleted:              { labelKey: "status.deleted",              badgeClasses: "bg-gray-100 text-gray-600 border border-gray-200" },
+  DeclinedByTechnician: { labelKey: "status.declinedByTechnician", badgeClasses: "bg-red-50 text-red-700 border border-red-100" },
+  ReworkRequired:       { labelKey: "status.reworkRequired",       badgeClasses: "bg-rose-50 text-rose-700 border border-rose-100" },
 };
 
 const STATUS_UI_FALLBACK: Record<string, { labelKey: string; badgeClasses: string }> = {
@@ -84,8 +90,14 @@ const STATUS_UI_FALLBACK: Record<string, { labelKey: string; badgeClasses: strin
 };
 
 const STATUS_TEXT_COLORS: Record<string, string> = {
-  Assigned: "text-[#005792]", Taken: "text-indigo-700", InProcess: "text-yellow-700",
-  DoneInTime: "text-green-700", DoneInLate: "text-orange-700", Cancel: "text-red-700",
+  Assigned:             "text-blue-700",
+  InProgress:           "text-cyan-700",
+  WaitingForApproval:   "text-amber-700",
+  CompletedInTime:      "text-emerald-700",
+  CompletedOutTime:     "text-orange-700",
+  Deleted:              "text-gray-600",
+  DeclinedByTechnician: "text-red-700",
+  ReworkRequired:       "text-rose-700",
 };
 
 function getStatusLabel(status: StatusType, t: (key: string) => string): string {
@@ -96,13 +108,15 @@ function getStatusLabel(status: StatusType, t: (key: string) => string): string 
 function getStatusIcon(status: StatusType) {
   const base = "w-4 h-4";
   switch (status) {
-    case "Assigned":   return <UserPlus className={base} />;
-    case "Taken":      return <Inbox className={base} />;
-    case "InProcess":  return <Loader className={base} />;
-    case "DoneInTime": return <CheckCheck className={base} />;
-    case "DoneInLate": return <AlertCircle className={base} />;
-    case "Cancel":     return <XCircle className={base} />;
-    default:           return <Clock className={base} />;
+    case "Assigned":             return <UserPlus className={base} />;
+    case "InProgress":           return <Loader className={base} />;
+    case "WaitingForApproval":   return <Clock className={base} />;
+    case "CompletedInTime":      return <CheckCheck className={base} />;
+    case "CompletedOutTime":     return <AlertCircle className={base} />;
+    case "Deleted":              return <XCircle className={base} />;
+    case "DeclinedByTechnician": return <Inbox className={base} />;
+    case "ReworkRequired":       return <AlertCircle className={base} />;
+    default:                     return <Clock className={base} />;
   }
 }
 
@@ -180,9 +194,11 @@ export default function Tasks() {
   const [researcherFilter, setResearcherFilter] = useState<string>("Tất cả");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
-    Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0,
-  });
+const [statusCounts, setStatusCounts] = useState<Record<StatusType, number>>({
+  Assigned: 0, InProgress: 0, WaitingForApproval: 0,
+  CompletedInTime: 0, CompletedOutTime: 0, Deleted: 0,
+  DeclinedByTechnician: 0, ReworkRequired: 0,
+});
   const [allResearchers, setAllResearchers] = useState<string[]>([]);
 
   // Cache to avoid redundant API calls
@@ -283,7 +299,14 @@ export default function Tasks() {
 
           // Status counts & researcher list
           const counts: Record<StatusType, number> = {
-            Assigned: 0, Taken: 0, InProcess: 0, DoneInTime: 0, DoneInLate: 0, Cancel: 0,
+            Assigned: 0,
+            InProgress: 0,
+            WaitingForApproval: 0,
+            CompletedInTime: 0,
+            CompletedOutTime: 0,
+            Deleted: 0,
+            DeclinedByTechnician: 0,
+            ReworkRequired: 0,
           };
           const researcherSet = new Set<string>();
           data.forEach((task) => {
@@ -352,9 +375,12 @@ export default function Tasks() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const statEntries = Object.entries({
-    Assigned: t("status.taskAssigned"), Taken: t("status.taskTaken"),
-    InProcess: t("status.taskInProcess"), DoneInTime: t("status.taskDoneInTime"),
-    DoneInLate: t("status.taskDoneInLate"), Cancel: t("status.taskCancelled"),
+    Assigned:             t("status.assigned"),
+    InProgress:           t("status.inProgress"),
+    WaitingForApproval:   t("status.waitingForApproval"),
+    CompletedInTime:      t("status.completedInTime"),
+    CompletedOutTime:     t("status.completedOutTime"),
+    ReworkRequired:       t("status.reworkRequired"),
   });
 
   /* ─── Table column headers ── */
@@ -455,8 +481,16 @@ export default function Tasks() {
                 className="border border-blue-100 bg-white/90 rounded-xl px-4 py-2 text-sm text-blue-950 focus:ring-2 focus:ring-blue-200 focus:border-[#005792]"
               >
                 <option value="Tất cả">{t("common.all")}</option>
-                {Object.entries({ Assigned: t("status.assigned"), Taken: t("status.taken"), InProcess: t("status.inProcess"), DoneInTime: t("status.doneInTime"), DoneInLate: t("status.doneInLate"), Cancel: t("status.cancel") })
-                  .map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                {Object.entries({
+                  Assigned:             t("status.assigned"),
+                  InProgress:           t("status.inProgress"),
+                  WaitingForApproval:   t("status.waitingForApproval"),
+                  CompletedInTime:      t("status.completedInTime"),
+                  CompletedOutTime:     t("status.completedOutTime"),
+                  Deleted:              t("status.deleted"),
+                  DeclinedByTechnician: t("status.declinedByTechnician"),
+                  ReworkRequired:       t("status.reworkRequired"),
+                }).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
             </div>
             {/* Researcher filter */}

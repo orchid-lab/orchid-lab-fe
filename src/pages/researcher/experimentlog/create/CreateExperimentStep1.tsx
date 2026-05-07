@@ -156,8 +156,11 @@ const CreateExperimentStep1 = () => {
     selectedBatch &&
     selectedMethod &&
     selectedTechnician &&
+    startDate &&         
+    endDate &&            
     isStartDateValid &&
-    isEndDateValid
+    isEndDateValid &&
+    objective              
   );
 
   return (

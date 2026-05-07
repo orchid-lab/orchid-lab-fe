@@ -1,5 +1,6 @@
 {
   "common": {
+    "creator": "Người tạo",
     "login": "Đăng nhập",
     "logout": "Đăng xuất",
     "dashboard": "Bảng điều khiển",
@@ -197,6 +198,7 @@
     "users": "người dùng"
   },
   "task": {
+    "material": "Nguyên vật liệu",
     "typeLog": "Nhật ký thí nghiệm",
     "typeSample": "Mẫu vật",
     "selectLog": "Chọn nhật ký",
@@ -271,7 +273,10 @@
     "assignmentInfo": "Thông tin phân công",
     "noAssignmentInfo": "Không có thông tin phân công",
     "endDate": "Ngày kết thúc",
+    "expectedStartDate": "Ngày bắt đầu",
     "expectedEndDate": "Ngày dự kiến kết thúc",
+    "startDateCannotBeInPast": "Ngày bắt đầu không được ở quá khứ",
+    "endDateBeforeStartDate": "Ngày kết thúc không được ở trước ngày bắt đầu",
     "taskChecklist": "Checklist công việc",
     "noChecklist": "Không có checklist nào",
     "materialName": "Tên vật liệu",
@@ -718,6 +723,14 @@
     }
   },
   "experimentLog": {
+    "noBatchesAvailable": "Không có lô thí nghiệm nào khả dụng",
+    "confirmChangeStageBtn": "Xác nhận thay đổi giai đoạn",
+    "changeStageReasonPlaceholder": "Nhập lý do thay đổi giai đoạn...",
+    "confirmChangeStageTitle": "Xác nhận thay đổi giai đoạn",
+    "batchLabel": "Lô thí nghiệm",
+    "selectBatchPlaceholder": "Chọn lô thí nghiệm...",
+    "confirmCreateProtocorm": "Xác nhận tạo Protocorm",
+    "confirmCreateProtocormMessage": "Bạn có chắc chắn muốn tạo {{quantity}} protocorm không? Hành động này không thể hoàn tác.",
     "exportProcess": "Xuất tiến trình",
     "exportSummary": "Xuất tóm tắt",
     "completionDetails": "Chi tiết hoàn thành",

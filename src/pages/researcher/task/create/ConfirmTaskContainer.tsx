@@ -51,13 +51,13 @@ const ConfirmTaskContainer: React.FC = () => {
       };
     }
 
-    const stageId = isTemplate ? (state.templateEL?.currentStageOrder ?? 0) : 0;
+    const stageId = isTemplate ? (state.templateEL?.currentStageOrder ?? 0) : null;
 
     const body = {
       name: state.name,
-      description: state.description,
+      description: state.description || null,
       createTaskAssignment,
-      stageId,
+      ...(stageId !== null ? { stageId } : {}),
       createTaskAttribute,
       createTaskCheckListItemDtos,
     };

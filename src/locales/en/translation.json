@@ -1,5 +1,6 @@
 {
   "common": {
+    "creator": "Creator",
     "login": "Login",
     "logout": "Logout",
     "dashboard": "Dashboard",
@@ -203,6 +204,7 @@
     "users": "users"
   },
   "task": {
+    "material": "Material",
     "taskManagement": "Task Management",
     "createTask": "Create Task",
     "editTask": "Edit Task",
@@ -271,7 +273,10 @@
     "assignmentInfo": "Assignment Information",
     "noAssignmentInfo": "No assignment information",
     "endDate": "End Date",
+    "expectedStartDate": "Expected Start Date",
     "expectedEndDate": "Expected End Date",
+    "startDateCannotBeInPast": "Start date cannot be in the past",
+    "endDateBeforeStartDate": "End date cannot be before start date",
     "taskChecklist": "Task Checklist",
     "noChecklist": "No checklists",
     "materialName": "Material Name",
@@ -740,6 +745,14 @@
     }
   },
   "experimentLog": {
+    "noBatchesAvailable": "No tissue culture batches available.",
+    "confirmChangeStageBtn": "Confirm Stage Change",
+    "changeStageReasonPlaceholder": "Enter stage change reason...",
+    "confirmChangeStageTitle": "Confirm Stage Change",
+    "batchLabel": "Experiment Batch",
+    "selectBatchPlaceholder": "Select experiment batch...",
+    "confirmCreateProtocorm": "Confirm Create Protocorm",
+    "confirmCreateProtocormMessage": "Are you sure you want to create {{quantity}} protocorm(s)? This action cannot be undone.",
     "exportProcess": "Export Process",
     "exportSummary": "Export Summary",
     "completionDetails": "Completion Details",

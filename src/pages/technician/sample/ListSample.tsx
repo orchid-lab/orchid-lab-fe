@@ -563,8 +563,8 @@ export default function ListSample() {
                       t("sample.experimentLog"),
                       t("sample.currentStage"),
                       t("sample.notes"),
+                      t("sample.executionDate"),                    
                       t("common.status"),
-                      t("sample.executionDate"),
                     ].map((header) => (
                       <th key={header} className="text-left px-6 py-4 font-semibold text-[#2D5A27] text-sm">
                         {header}
@@ -589,7 +589,7 @@ export default function ListSample() {
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            className="cursor-pointer transition-colors hover:bg-[#EBF7EE]" 
+                            className="cursor-pointer transition-colors hover:bg-[#EBF7EE]"
                             onClick={() => navigate(`/technician/samples/${sample.id}`, { state: { from: "sampleList" } })}
                           >
                             <td className="px-6 py-4 font-medium text-gray-900">{rowNumber}</td>
@@ -600,6 +600,7 @@ export default function ListSample() {
                             </td>
                             <td className="px-6 py-4 text-gray-600">{sample.currentSampleStage ?? "-"}</td>
                             <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{sample.notes ?? "-"}</td>
+                            <td className="px-6 py-4 text-[#4B6C54]">{formatVietnameseDate(sample.executionDate)}</td>
                             <td className="px-6 py-4">
                               <motion.span
                                 initial={{ opacity: 0, scale: 0.85 }}
@@ -613,7 +614,6 @@ export default function ListSample() {
                                 {getStatusLabel(sample.status)}
                               </motion.span>
                             </td>
-                            <td className="px-6 py-4 text-[#4B6C54]">{formatVietnameseDate(sample.executionDate)}</td>
                           </motion.tr>
                         );
                       })

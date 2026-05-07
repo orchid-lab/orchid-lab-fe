@@ -196,7 +196,8 @@ const CreateTaskContainer: React.FC = () => {
   };
 
   const isRegular = taskMode === "regular";
-  const canSubmitRegular = !!name && !!targetType && (targetType === "ExperimentLog" ? !!selectedELId : !!selectedSampleId) && !!expectedEndDate;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const canSubmitRegular = !!name && !!targetType && (targetType === "ExperimentLog" ? !!selectedELId : !!selectedSampleId) && !!expectedEndDate && expectedEndDate >= todayStr;
   const canSubmitTemplate = !!name;
   const canSubmit = isRegular ? canSubmitRegular : canSubmitTemplate;
 
@@ -243,7 +244,14 @@ const CreateTaskContainer: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">{t("task.expectedEndDate")} <span className="text-rose-500">*</span></label>
-                <input type="date" value={expectedEndDate} onChange={(e) => setExpectedEndDate(e.target.value)} required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 bg-white shadow-sm" />
+                  <input
+                    type="date"
+                    value={expectedEndDate}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) => setExpectedEndDate(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 bg-white shadow-sm"
+                  />              
               </div>
 
               {targetType === "ExperimentLog" && (
