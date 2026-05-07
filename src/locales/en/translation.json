@@ -745,6 +745,8 @@
     }
   },
   "experimentLog": {
+    "totalMonitoringLogs": "Total monitoring logs",
+    "summaryLoading": "Loading experiment summary...",
     "totalDuration": "Total Duration",
     "totalSamples": "Total Samples",
     "aliveSamples": "Alive Samples",
@@ -1021,6 +1023,16 @@
     "materials": "materials"
   },
   "technicianTask": {
+    "overallTaskSummary": "Overall Task Summary",
+    "urgentTasksHelp": "Tasks that need priority completion",
+    "waitingApprovalHelp": "Tasks that are completed and waiting for researcher approval",
+    "completed": "Completed",
+    "completedHelp": "Completed tasks",
+    "completedRate": "Completion Rate",
+    "urgentTasks": "Urgent Tasks",
+    "inProgress": "In Progress",
+    "waitingApproval": "Waiting for Approval",
+    "inProgressHelp": "Tasks currently in progress",
     "pageTitle": "Tasks Management",
     "pageSubtitle": "View and manage your assigned tasks",
     "targetName": "Target Name",

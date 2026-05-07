@@ -57,7 +57,7 @@ const AdminTissueCultureBatchDetail = () => {
 
   useEffect(() => {
     axiosInstance
-      .get("/api/labroom?pageNumber=1&pageSize=100")
+      .get("/api/labroom?pageNo=1&pageSize=100")
       .then((res) => {
         const raw = res.data as LabRoomResponse | LabRoom[];
         let arr: LabRoom[] = [];

@@ -723,6 +723,8 @@
     }
   },
   "experimentLog": {
+    "totalMonitoringLogs": "Tổng số báo cáo giám sát",
+    "summaryLoading": "Đang tải tóm tắt thí nghiệm...",
     "totalDuration": "Tổng thời gian",
     "totalSamples": "Tổng số mẫu",
     "aliveSamples": "Mẫu sống",
@@ -1023,7 +1025,17 @@
     "materials": "vật liệu"
   },
   "technicianTask": {
+    "overallTaskSummary": "Tổng quan công việc",
+    "urgentTasksHelp": "Các công việc cần ưu tiên hoàn thành",
+    "waitingApprovalHelp": "Các công việc đã hoàn thành và đang chờ researcher duyệt",
+    "completed": "Đã hoàn thành",
     "loadingTasks": "Đang tải công việc...",
+    "completedHelp": "Các công việc đã hoàn thành",
+    "completedRate": "Tỉ lệ hoàn thành",
+    "urgentTasks": "Cần làm ngay / Trễ hạn",
+    "inProgress": "Đang thực hiện",
+    "waitingApproval": "Đã hoàn thành - Chờ duyệt",
+    "inProgressHelp": "Các công việc đang thực hiện",
     "targetName": "Tên đối tượng",
     "technicianName": "Kỹ thuật viên",
     "pageTitle": "Quản lý công việc",

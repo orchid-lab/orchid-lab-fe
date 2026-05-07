@@ -622,7 +622,7 @@ export default function ListTask() {
                   {t("technicianTask.overallTaskDistribution")}
                 </h3>
                 <p className="text-sm text-[#4B6C54]">
-                  {t("technicianTask.overallTaskSummary", { defaultValue: "Overview of your tasks" })}
+                  {t("technicianTask.overallTaskSummary")}
                 </p>
               </div>
               <div className="text-right">
@@ -640,7 +640,7 @@ export default function ListTask() {
             </div>
             <div className="mt-6">
               <div className="flex items-center justify-between text-sm text-[#4B6C54] mb-2">
-                <span>{t("technicianTask.completedRate", { defaultValue: "Completed" })}</span>
+                <span>{t("technicianTask.completedRate")}</span>
                 <motion.span
                   key={completedPercent}
                   initial={{ opacity: 0 }}
@@ -671,32 +671,32 @@ export default function ListTask() {
             <StatCard
               icon={<AlertCircle className="w-5 h-5" />}
               iconBg="bg-gradient-to-br from-[#DA70D6]/30 to-[#F97316]/30 text-[#DA70D6]"
-              label={t("technicianTask.urgentTasks", { defaultValue: "Cần làm ngay / Trễ hạn" })}
-              help={t("technicianTask.urgentTasksHelp", { defaultValue: "Tasks past due or require immediate attention." })}
+              label={t("technicianTask.urgentTasks")}
+              help={t("technicianTask.urgentTasksHelp")}
               value={urgentCount}
               valueColor="text-[#DA70D6]"
             />
             <StatCard
               icon={<Loader className="w-5 h-5" />}
               iconBg="bg-[#DDEEE0] text-[#2D5A27]"
-              label={t("technicianTask.inProgress", { defaultValue: "Đang thực hiện" })}
-              help={t("technicianTask.inProgressHelp", { defaultValue: "Tasks currently in progress." })}
+              label={t("technicianTask.inProgress")}
+              help={t("technicianTask.inProgressHelp")}
               value={inProgressCount}
               valueColor="text-[#2D5A27]"
             />
             <StatCard
               icon={<Clock className="w-5 h-5" />}
               iconBg="bg-[#FFF0F9] text-[#DA70D6]"
-              label={t("technicianTask.waitingApproval", { defaultValue: "Chờ phê duyệt" })}
-              help={t("technicianTask.waitingApprovalHelp", { defaultValue: "Tasks waiting for approval." })}
+              label={t("technicianTask.waitingApproval")}
+              help={t("technicianTask.waitingApprovalHelp")}
               value={waitingApprovalCount}
               valueColor="text-[#DA70D6]"
             />
             <StatCard
               icon={<CheckCheck className="w-5 h-5" />}
               iconBg="bg-[#E5E7EB] text-[#4B5563]"
-              label={t("technicianTask.completed", { defaultValue: "Hoàn thành" })}
-              help={t("technicianTask.completedHelp", { defaultValue: "Tasks completed on time or late." })}
+              label={t("technicianTask.completed")}
+              help={t("technicianTask.completedHelp")}
               value={completedCount}
               valueColor="text-[#4B5563]"
             />

@@ -96,6 +96,22 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
+/** 
+ * Lấy value từ analyticResult theo disease.code
+ * API trả về code dạng "disease_anthracnose", key trong analyticResult là "anthracnose"
+ * → Strip prefix "disease_" rồi tìm case-insensitive
+ */
+const getAnalyticValueByDiseaseCode = (
+  analyticResult: AnalysisResponse["analyticResult"],
+  diseaseCode: string
+): number => {
+  const stripped = diseaseCode.replace(/^disease_/i, "").toLowerCase();
+  const entry = Object.entries(analyticResult).find(
+    ([k]) => k.toLowerCase() === stripped
+  );
+  return Number(entry?.[1] ?? 0);
+};
+
 /* ─── Animation Variants ─── */
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
@@ -104,6 +120,22 @@ const staggerContainer: Variants = {
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
+};
+
+// Label map for analyticResult keys → Vietnamese display names
+const ANALYTIC_KEY_LABEL: Record<string, string> = {
+  anthracnose: "Thán thư",
+  bacterialWilt: "Héo rũ do vi khuẩn",
+  blackrot: "Thối đen",
+  brownspots: "Đốm nâu",
+  moldBacterial: "Mốc vi khuẩn",
+  moldFungus: "Mốc nấm",
+  softRot: "Thối mềm",
+  stemRot: "Thối thân",
+  witheredYellowRoot: "Vàng héo rễ",
+  healthy: "Khỏe mạnh",
+  oxidation: "Oxy hoá",
+  virus: "Virus",
 };
 
 export default function TechDetailSample() {
@@ -294,7 +326,7 @@ export default function TechDetailSample() {
     const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
     const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
     if (diseaseCode.includes("healthy") || diseaseName.includes("healthy") || diseaseName.includes("khỏe")) return true;
-    const values = Object.entries(analysisResult.analyticResult).filter(([key]) => key !== "healthy").map(([, value]) => value as number);
+    const values = Object.entries(analysisResult.analyticResult).filter(([key]) => key !== "healthy" && key !== "id").map(([, value]) => value as number);
     const maxNonHealthy = values.length > 0 ? Math.max(...values) : 0;
     return analysisResult.analyticResult.healthy >= maxNonHealthy;
   }, [analysisResult]);
@@ -379,6 +411,22 @@ export default function TechDetailSample() {
     });
   }, [sampleStages, t]);
 
+  // Prepare sorted analytic rows (exclude "id" field), sorted descending by value
+  const analyticRows = useMemo(() => {
+    if (!analysisResult) return [];
+    const diseaseCodeKey = analysisResult.disease.code.replace(/^disease_/i, "").toLowerCase();
+    return Object.entries(analysisResult.analyticResult)
+      .filter(([k]) => k !== "id")
+      .map(([key, value]) => ({
+        key,
+        label: ANALYTIC_KEY_LABEL[key] ?? key,
+        value: Number(value),
+        isTopDisease: key.toLowerCase() === diseaseCodeKey,
+        isHealthy: key === "healthy",
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [analysisResult]);
+
   if (loading) {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-slate-50 flex items-center justify-center">
@@ -429,9 +477,9 @@ export default function TechDetailSample() {
               </div>
             </div>
           </div>
-
           <div className="flex flex-wrap items-center gap-3">
-            {incidents.some((inc) => inc.status === DiseaseIncidentStatus.Confirmed) && (
+            {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && 
+             incidents.some((inc) => inc.status === DiseaseIncidentStatus.Confirmed) && (
               <button onClick={() => setShowConfirmDeleteModal(true)} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors font-semibold shadow-sm">
                 <Trash2 className="w-4 h-4" /> {t("sample.destroySample") ?? "Hủy mẫu"}
               </button>
@@ -733,58 +781,152 @@ export default function TechDetailSample() {
           </div>
         )}
 
-        {/* AI Analysis Result Modal */}
+        {/* ── AI Analysis Result Modal ── */}
         {showAnalysisModal && analysisResult && (
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isDestroying && setShowAnalysisModal(false)} />
-           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto relative z-10 custom-scrollbar border border-[#DDEEE0]">
-             <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
-               <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2"><Microscope className="w-6 h-6"/> Kết quả AI</h3>
-               <button onClick={() => { setShowAnalysisModal(false); setShowDestroyForm(false); }} className="text-slate-400 hover:text-rose-600 p-1"><X className="w-6 h-6"/></button>
-             </div>
-             
-             <div className="p-6 space-y-6">
-                <div className="flex items-center justify-between p-5 bg-[#E4F0E8] border border-[#DDEEE0] rounded-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !isDestroying && setShowAnalysisModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto relative z-10 border border-[#DDEEE0]"
+            >
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
+                <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2">
+                  <Microscope className="w-6 h-6"/> Kết quả AI
+                </h3>
+                <button
+                  onClick={() => { setShowAnalysisModal(false); setShowDestroyForm(false); }}
+                  className="text-slate-400 hover:text-rose-600 p-1"
+                >
+                  <X className="w-6 h-6"/>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+
+                {/* ── Top Disease Banner ── */}
+                <div className={`flex items-center justify-between p-5 rounded-xl border ${isHealthyAnalysis ? "bg-[#E4F0E8] border-[#DDEEE0]" : "bg-rose-50 border-rose-200"}`}>
                   <div>
-                    <span className="text-xs font-bold text-[#2D5A27] uppercase tracking-wider">Dự đoán bệnh cao nhất</span>
-                    <h4 className="text-2xl font-black text-[#1e3e1c] mt-1">{analysisResult.disease.name}</h4>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}>
+                      Dự đoán bệnh cao nhất
+                    </span>
+                    <h4 className={`text-2xl font-black mt-1 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}>
+                      {analysisResult.disease.name}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-xs">{analysisResult.disease.description}</p>
                   </div>
-                  <div className="w-16 h-16 bg-white rounded-full border-4 border-[#C9E7D2] flex items-center justify-center shadow-sm">
-                    <span className="font-bold text-[#2D5A27]">{(analysisResult.analyticResult[analysisResult.disease.code as keyof typeof analysisResult.analyticResult] as number * 100).toFixed(0)}%</span>
+                  {/* ── Fixed: use getAnalyticValueByDiseaseCode instead of direct key lookup ── */}
+                  <div className={`w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 ${isHealthyAnalysis ? "bg-white border-[#C9E7D2]" : "bg-white border-rose-200"}`}>
+                    <span className={`text-lg font-black leading-none ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}>
+                      {(getAnalyticValueByDiseaseCode(analysisResult.analyticResult, analysisResult.disease.code) * 100).toFixed(0)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">độ tin</span>
                   </div>
                 </div>
 
+                {/* ── Analytic Result Table ── */}
                 <div>
-                  <h5 className="font-bold text-slate-800 mb-3">Xác suất các bệnh khác:</h5>
-                  <div className="grid grid-cols-2 gap-3">
-                    {Object.entries(analysisResult.analyticResult)
-                      .filter(([k]) => k !== 'id')
-                      .sort(([,a], [,b]) => Number(b) - Number(a))
-                      .map(([key, val]) => (
-                        <div key={key} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                          <span className="text-sm font-medium text-slate-600">{t(`sample.${key}`) || key}</span>
-                          <span className="font-bold text-slate-800">{(Number(val) * 100).toFixed(1)}%</span>
-                        </div>
-                    ))}
+                  <h5 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">Xác suất tất cả các bệnh</h5>
+                  <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="px-4 py-3 text-left font-semibold text-slate-600">Loại bệnh</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-600 w-20">Xác suất</th>
+                          <th className="px-4 py-3 text-left font-semibold text-slate-600">Mức độ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analyticRows.map(({ key, label, value, isTopDisease, isHealthy }) => {
+                          const pct = value * 100;
+                          // Bar color logic
+                          const barColor = isTopDisease && !isHealthy
+                            ? "bg-rose-500"
+                            : isHealthy
+                            ? "bg-emerald-500"
+                            : pct >= 5
+                            ? "bg-amber-400"
+                            : "bg-slate-300";
+                          const rowBg = isTopDisease && !isHealthy
+                            ? "bg-rose-50"
+                            : isTopDisease && isHealthy
+                            ? "bg-emerald-50"
+                            : "hover:bg-slate-50";
+                          return (
+                            <tr key={key} className={`border-b border-slate-100 transition-colors ${rowBg}`}>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {isTopDisease && !isHealthy && (
+                                    <AlertTriangle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+                                  )}
+                                  {isHealthy && (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                  )}
+                                  <span className={`font-medium ${isTopDisease && !isHealthy ? "text-rose-700 font-bold" : isHealthy ? "text-emerald-700" : "text-slate-700"}`}>
+                                    {label}
+                                  </span>
+                                  {isTopDisease && (
+                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isHealthy ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>
+                                      Cao nhất
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <span className={`font-bold tabular-nums ${isTopDisease && !isHealthy ? "text-rose-600" : isHealthy ? "text-emerald-600" : pct >= 5 ? "text-amber-600" : "text-slate-500"}`}>
+                                  {pct.toFixed(1)}%
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className={`h-2 rounded-full transition-all ${barColor}`}
+                                    style={{ width: `${Math.min(pct, 100)}%` }}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
+                {/* ── Destroy Warning ── */}
                 {!isHealthyAnalysis && (
-                  <div className="mt-4 p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
+                  <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
                     <div className="flex items-center gap-3">
-                      <AlertTriangle className="w-6 h-6 text-rose-600" />
-                      <p className="text-sm font-bold text-rose-800">Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu ngay lập tức!</p>
+                      <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
+                      <p className="text-sm font-bold text-rose-800">
+                        Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu ngay lập tức!
+                      </p>
                     </div>
                     {!showDestroyForm ? (
-                      <button onClick={() => setShowDestroyForm(true)} className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors">
+                      <button
+                        onClick={() => setShowDestroyForm(true)}
+                        className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors"
+                      >
                         Tiến hành Tiêu Hủy
                       </button>
                     ) : (
                       <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
                         <label className="block text-sm font-bold text-slate-700 mb-2">Lý do tiêu hủy:</label>
-                        <textarea value={destroyReason} onChange={(e) => setDestroyReason(e.target.value)} rows={2} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`} />
+                        <textarea
+                          value={destroyReason}
+                          onChange={(e) => setDestroyReason(e.target.value)}
+                          rows={2}
+                          className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                          placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
+                        />
                         <div className="flex justify-end gap-2 mt-3">
-                          <button onClick={() => setShowDestroyForm(false)} disabled={isDestroying} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Hủy</button>
+                          <button onClick={() => setShowDestroyForm(false)} disabled={isDestroying} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">
+                            Hủy
+                          </button>
                           <button onClick={handleDestroySample} disabled={isDestroying} className="px-5 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg disabled:opacity-50 flex items-center gap-2">
                             {isDestroying && <Loader2 className="w-4 h-4 animate-spin"/>}
                             {isDestroying ? "Đang xử lý..." : "Xác nhận Tiêu hủy"}
@@ -794,9 +936,9 @@ export default function TechDetailSample() {
                     )}
                   </div>
                 )}
-             </div>
-           </motion.div>
-         </div>
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {/* Review Incident Modal */}
