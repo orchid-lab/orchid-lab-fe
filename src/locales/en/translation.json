@@ -880,7 +880,7 @@
     "name": "Experiment Log Name",
     "namePlaceholder": "Enter experiment log name...",
     "startDate": "Start Date",
-    "endDate": "End Date",
+    "endDate": "Expected End Date",
     "batch": "Tissue Culture Batch",
     "selectBatch": "Select tissue culture batch",
     "batchLoading": "Loading batches...",
