@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 export const SampleStatus = {
-  Created: 'Created',
-  InProgressed: 'InProgressed',
-  Completed: 'Completed',
-  ExecutedBecauseOfDisease: 'ExecutedBecauseOfDisease',
-  ConvertedToSeedling: 'ConvertedToSeedling'
+  Created: "Created",
+  InProgressed: "InProgressed",
+  Completed: "Completed",
+  ExecutedBecauseOfDisease: "ExecutedBecauseOfDisease",
+  ConvertedToSeedling: "ConvertedToSeedling",
 } as const;
 
-export type SampleStatus = typeof SampleStatus[keyof typeof SampleStatus];
+export type SampleStatus = (typeof SampleStatus)[keyof typeof SampleStatus];
 
 // Sample interface matching API response
 export interface Sample {
@@ -84,13 +84,16 @@ export interface SampleStageDetail {
 }
 
 export interface SampleDetail {
-  dob(dob: any): import("react").ReactNode | Iterable<import("react").ReactNode>;
+  dob(
+    dob: any,
+  ): import("react").ReactNode | Iterable<import("react").ReactNode>;
   stages: SampleStageDetail[];
   monitoringLogs: SampleLogDetail[];
   id: string;
   name: string;
   experimentLogId: string;
   notes: string | null;
+  initialCondition?: string | null;
   reason: string | null;
   executionDate: string | null;
   currentSampleStage: string | null;
@@ -147,7 +150,8 @@ export interface ExperimentLog {
 
 // Experiment Log API Response
 export interface ExperimentLogApiResponse {
-  name: string | any;  totalCount: number;
+  name: string | any;
+  totalCount: number;
   pageCount: number;
   pageSize: number;
   pageNumber: number;
