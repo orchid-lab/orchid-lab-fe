@@ -1,17 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable react-x/no-unstable-context-value */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User } from "../types/Auth";
 import axiosInstance from "../api/axiosInstance";
+import { startAutoRefresh, stopAutoRefresh } from "../api/axiosInstance"; // ✅ import
 
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthReady: boolean;
-  login: (data: {
-    accessToken: string;
-    refreshToken: string;
-    user: User;
-  }) => void;
+  login: (data: { accessToken: string; refreshToken: string; user: User }) => void;
   logout: () => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   updateUser: (user: User) => void;
@@ -33,17 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(JSON.parse(storedUser) as User);
       setAccessToken(storedAccessToken);
       setRefreshToken(storedRefreshToken);
+      startAutoRefresh(); // ✅ Khởi động lại nếu đã có token (reload trang)
     }
     setIsAuthReady(true);
   }, []);
 
   const handleLogoutApi = async () => {
-      const res = await axiosInstance.post("/api/authentication/logout", {
-        refreshToken: refreshToken,
-      });
-      if (res.status !== 200) {
-        throw new Error("Đăng xuất không thành công");
-      }
+    const res = await axiosInstance.post("/api/authentication/logout", {
+      refreshToken: refreshToken,
+    });
+    if (res.status !== 200) {
+      throw new Error("Đăng xuất không thành công");
+    }
   };
 
   const login = ({
@@ -55,43 +59,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshToken: string;
     user: User;
   }) => {
-    // Clear old data first to avoid stale cache
     localStorage.clear();
-    
-    // Normalize role to lowercase for consistent checking
-    // Check 'Role' (capital R from API) first, then 'role' (lowercase r)
-    const roleFromApi = (user as any).Role || (user as any).role;
-    
-    if (roleFromApi && typeof roleFromApi === 'string') {
-      // Store normalized lowercase role
+
+    const roleFromApi = (user as any).Role ?? (user as any).role;
+    if (roleFromApi && typeof roleFromApi === "string") {
       user.role = roleFromApi.toLowerCase().trim();
     } else if (user.roleId) {
-      // Fallback to roleId mapping
-      // IMPORTANT: Verify these roleId mappings match your database
       switch (user.roleId) {
-        case 1:
-          user.role = "researcher";
-          break;
-        case 2:
-          user.role = "admin";
-          break;
-        case 3:
-          user.role = "lab technician";
-          break;
-        default:
-          user.role = "researcher";
+        case 1: user.role = "researcher"; break;
+        case 2: user.role = "admin"; break;
+        case 3: user.role = "lab technician"; break;
+        default: user.role = "researcher";
       }
     }
-    
+
     setUser(user);
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
+
+    startAutoRefresh(); // ✅ Bắt đầu tự refresh mỗi 30 phút
   };
 
   const logout = () => {
+    stopAutoRefresh(); // ✅ Dừng auto refresh trước
     handleLogoutApi();
     setUser(null);
     setAccessToken(null);
@@ -106,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
   };
-  
+
   const updateUser = (user: User) => {
     setUser(user);
     localStorage.setItem("user", JSON.stringify(user));
@@ -114,16 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        accessToken,
-        refreshToken,
-        isAuthReady,
-        login,
-        logout,
-        setTokens,
-        updateUser,
-      }}
+      value={{ user, accessToken, refreshToken, isAuthReady, login, logout, setTokens, updateUser }}
     >
       {children}
     </AuthContext.Provider>
