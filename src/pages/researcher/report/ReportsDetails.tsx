@@ -1,3 +1,4 @@
+/* eslint-disable react-x/no-array-index-key */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { Report } from "../../../types/Report";
