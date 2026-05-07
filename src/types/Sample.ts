@@ -1,4 +1,5 @@
-// Sample status constants
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 export const SampleStatus = {
   Created: 'Created',
   InProgressed: 'InProgressed',
@@ -146,8 +147,7 @@ export interface ExperimentLog {
 
 // Experiment Log API Response
 export interface ExperimentLogApiResponse {
-  name: ReactI18NextChildren | Iterable<ReactI18NextChildren>;
-  totalCount: number;
+  name: string | any;  totalCount: number;
   pageCount: number;
   pageSize: number;
   pageNumber: number;

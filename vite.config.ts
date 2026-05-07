@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
   server: {
     host: "0.0.0.0",
     port: 3000,
@@ -16,5 +17,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
+  },
+
+  preview: {
+    host: "0.0.0.0",
+    port: 3000,
+    allowedHosts: ["client.orchid-lab.systems", "client.tissuex.me"],
+    strictPort: true,
   },
 });

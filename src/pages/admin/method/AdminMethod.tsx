@@ -10,7 +10,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
-import AdminMethodSuccessRate from "./Adminmethodsuccessrate"; 
+import AdminMethodSuccessRate from "./AdminMethodSuccessRate"; 
 import "./AdminMethod.css";
 
 const PAGE_SIZE = 5;
