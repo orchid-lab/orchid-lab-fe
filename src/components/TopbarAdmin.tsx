@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import NotificationBell from "./NotificationBell";
-import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import axiosInstance from "../api/axiosInstance";
 import type { User } from "../types/Auth";
@@ -78,7 +77,7 @@ export default function TopbarAdmin() {
         <div style={{ position: "relative" }}>
           <NotificationBell/>
         </div>
-        <ThemeToggle accentClass="text-red-500" />
+        {/* <ThemeToggle accentClass="text-red-500" /> */}
         <LanguageSelector accentClass="text-red-500" hoverBgClass="hover:bg-red-50/40 dark:hover:bg-gray-700" activeBgClass="bg-red-900 dark:bg-red-700" activeTextClass="text-white" />
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
         <div
