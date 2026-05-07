@@ -10,13 +10,7 @@ export default defineConfig({
     port: 3000,
     allowedHosts: ["client.orchid-lab.systems", "client.tissuex.me"],
     strictPort: true,
-    proxy: {
-      "/api": {
-        target: "https://net-api.orchid-lab.systems",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
+    hmr: false,
   },
 
   preview: {
