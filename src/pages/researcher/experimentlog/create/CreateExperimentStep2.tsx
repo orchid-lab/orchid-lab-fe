@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Plus, ChevronDown, Leaf, AlertCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, ChevronDown, Leaf, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
 import ExperimentSteps from "./ExperimentSteps";
@@ -120,9 +120,6 @@ const CreateExperimentStep2 = () => {
                 <p className="text-sm text-slate-500 mt-0.5">Bước 2: Chọn cây giống cho phương pháp "{mName}"</p>
               </div>
             </div>
-            <Link to="/seedlings/new" className="flex items-center gap-2 px-4 py-2 bg-[#E4F0E8] text-[#2D5A27] hover:bg-[#DDEEE0] rounded-xl font-semibold transition-colors">
-              <Plus className="w-4 h-4" /> Tạo cây giống mới
-            </Link>
           </div>
           
           <div className="p-6 md:p-8 space-y-8">
