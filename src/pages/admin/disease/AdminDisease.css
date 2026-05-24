@@ -1,0 +1,97 @@
+/* ==========================================================================
+   Admin Disease Page — Scoped styles
+   ========================================================================== */
+
+.admin-disease-page {
+  font-family: inherit;
+  transition: background-color 0.3s ease;
+}
+
+.admin-disease-page table thead tr {
+  background: linear-gradient(to right, #f8fafc, #ffffff) !important;
+}
+
+.admin-disease-page table thead th {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+.admin-disease-page table tbody tr {
+  border-bottom: 1px solid #e5e7eb !important;
+  background-color: transparent !important;
+  transition: background-color 0.15s ease;
+}
+
+.admin-disease-page table tbody tr:hover {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}
+
+.admin-disease-page table tbody td {
+  background-color: transparent !important;
+}
+
+.admin-disease-page .line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-disease-page input[type="text"],
+.admin-disease-page input[type="search"],
+.admin-disease-page select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-disease-page input:focus,
+.admin-disease-page select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.12) !important;
+}
+
+.dark .admin-disease-page,
+:root[data-theme='dark'] .admin-disease-page {
+  background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.12), transparent 30%),
+    linear-gradient(180deg, #0f172a 0%, #111827 100%) !important;
+}
+
+.dark .admin-disease-page .bg-white\/80,
+:root[data-theme='dark'] .admin-disease-page .bg-white\/80 {
+  background-color: rgba(15, 23, 42, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.15) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .admin-disease-page .border-slate-200,
+:root[data-theme='dark'] .admin-disease-page .border-slate-200 {
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+.dark .admin-disease-page .bg-slate-50,
+:root[data-theme='dark'] .admin-disease-page .bg-slate-50 {
+  background-color: rgba(148, 163, 184, 0.12) !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+.dark .admin-disease-page .text-slate-900,
+:root[data-theme='dark'] .admin-disease-page .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .admin-disease-page .text-slate-500,
+:root[data-theme='dark'] .admin-disease-page .text-slate-500 {
+  color: rgba(203, 213, 225, 0.7) !important;
+}
+
+.dark .admin-disease-page .text-slate-600,
+:root[data-theme='dark'] .admin-disease-page .text-slate-600 {
+  color: rgba(148, 163, 184, 0.9) !important;
+}
+
+.dark .admin-disease-page .text-slate-700,
+:root[data-theme='dark'] .admin-disease-page .text-slate-700 {
+  color: #cbd5e1 !important;
+}

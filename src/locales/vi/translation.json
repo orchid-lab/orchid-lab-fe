@@ -118,6 +118,7 @@
     "navigation": "Điều hướng",
     "account": "Tài khoản",
     "method": "Phương pháp",
+    "disease": "Bệnh",
     "seedling": "Cây giống",
     "task": "Công việc",
     "report": "Báo cáo",
@@ -127,6 +128,12 @@
     "sample": "Mẫu",
     "element": "Nguyên vật liệu",
     "config": "Cấu hình"
+  },
+  "adminDisease": {
+    "diseaseManagement": "Quản lý bệnh",
+    "diseaseManagementDesc": "Theo dõi và quản lý hồ sơ bệnh lý lan hồ điệp",
+    "searchPlaceholder": "Tìm kiếm theo tên bệnh, mã hoặc lớp ONNX...",
+    "noDiseases": "Không tìm thấy bệnh nào"
   },
   "auth": {
     "username": "Tên đăng nhập",
