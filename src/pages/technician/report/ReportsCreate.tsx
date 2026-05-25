@@ -41,7 +41,7 @@ const isInProgressSample = (status?: string): boolean => {
 };
 
 const getCurrentSampleStage = (
-  sampleStageDto: SampleDetail["sampleStageDto"]
+  sampleStageDto: SampleDetail["sampleStageDto"],
 ): SampleStageDetail | null => {
   if (!sampleStageDto) return null;
   if (!Array.isArray(sampleStageDto)) return sampleStageDto;
@@ -51,12 +51,13 @@ const getCurrentSampleStage = (
   const inProgressStage = sampleStageDto.find(
     (stage) =>
       stage.status?.toLowerCase() === "inprogressed" ||
-      stage.status?.toLowerCase() === "inprogress"
+      stage.status?.toLowerCase() === "inprogress",
   );
   if (inProgressStage) return inProgressStage;
   // Nếu không có, lấy stage có startAt mới nhất
   return [...sampleStageDto].sort(
-    (a, b) => new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime()
+    (a, b) =>
+      new Date(b.startAt ?? "").getTime() - new Date(a.startAt ?? "").getTime(),
   )[0];
 };
 
@@ -68,13 +69,23 @@ export default function ReportsCreate() {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedSampleId, setSelectedSampleId] = useState("");
-  const [submitMode, setSubmitMode] = useState<"immediate" | "draft">("immediate");
+  const [submitMode, setSubmitMode] = useState<"immediate" | "draft">(
+    "immediate",
+  );
   const [samples, setSamples] = useState<Sample[]>([]);
   const [sampleDetail, setSampleDetail] = useState<SampleDetail | null>(null);
-  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>({});
-  const [requirements, setRequirements] = useState<StageRequirementDefinition[]>([]);
-  const [measuredValues, setMeasuredValues] = useState<Record<string, string>>({});
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
+  const [experimentLogMap, setExperimentLogMap] = useState<
+    Record<string, string>
+  >({});
+  const [requirements, setRequirements] = useState<
+    StageRequirementDefinition[]
+  >([]);
+  const [measuredValues, setMeasuredValues] = useState<Record<string, string>>(
+    {},
+  );
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(
+    null,
+  );
 
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingSampleDetail, setLoadingSampleDetail] = useState(false);
@@ -92,14 +103,16 @@ export default function ReportsCreate() {
       setLoadingInitial(true);
       try {
         const [sampleRes, experimentRes] = await Promise.all([
-          axiosInstance.get<SampleApiResponse>("/api/samples?pageNo=1&pageSize=1000"),
+          axiosInstance.get<SampleApiResponse>(
+            "/api/samples?pageNo=1&pageSize=1000",
+          ),
           axiosInstance.get<ExperimentLogApiResponse>(
-            "/api/experiment-logs?pageNo=1&pageSize=1000"
+            "/api/experiment-logs?pageNo=1&pageSize=1000",
           ),
         ]);
 
         const inProgressSamples = (sampleRes.data.data ?? []).filter((sample) =>
-          isInProgressSample(sample.status)
+          isInProgressSample(sample.status),
         );
 
         const logMap: Record<string, string> = {};
@@ -137,23 +150,27 @@ export default function ReportsCreate() {
 
       try {
         const sampleDetailRes = await axiosInstance.get<SampleDetail>(
-          `/api/samples/${selectedSampleId}`
+          `/api/samples/${selectedSampleId}`,
         );
 
-        const detail = (sampleDetailRes.data as { value?: SampleDetail }).value ?? sampleDetailRes.data;
+        const detail =
+          (sampleDetailRes.data as { value?: SampleDetail }).value ??
+          sampleDetailRes.data;
         setSampleDetail(detail);
 
-        const sampleStageDefinitionId =
-          getCurrentSampleStage(detail.sampleStageDto)?.sampleStageDefinition?.id;
+        const sampleStageDefinitionId = getCurrentSampleStage(
+          detail.sampleStageDto,
+        )?.sampleStageDefinition?.id;
         if (!sampleStageDefinitionId) {
           setRequirements([]);
           setLoadingRequirements(false);
           return;
         }
 
-        const requirementRes = await axiosInstance.get<StageRequirementApiResponse>(
-          `/api/stage-requirement-definition?pageNo=1&pageSize=1000&sampleStageId=${sampleStageDefinitionId}`
-        );
+        const requirementRes =
+          await axiosInstance.get<StageRequirementApiResponse>(
+            `/api/stage-requirement-definition?pageNo=1&pageSize=1000&sampleStageId=${sampleStageDefinitionId}`,
+          );
 
         const reqData = requirementRes.data.data ?? [];
         setRequirements(reqData);
@@ -161,7 +178,9 @@ export default function ReportsCreate() {
         console.error("Failed to load selected sample detail", error);
         setSampleDetail(null);
         setRequirements([]);
-        enqueueSnackbar("Không thể tải thông tin mẫu đã chọn", { variant: "error" });
+        enqueueSnackbar("Không thể tải thông tin mẫu đã chọn", {
+          variant: "error",
+        });
       } finally {
         setLoadingSampleDetail(false);
         setLoadingRequirements(false);
@@ -182,16 +201,13 @@ export default function ReportsCreate() {
         maxValue: req.maxValue,
         expectedValue: req.expectedValue,
       })),
-    [requirements]
+    [requirements],
   );
 
-  const stageNameMap: Record<string, string> = {
-    coppice: "Chồi",
-    tissue: "Mầm",
-    tree: "Cây hoàn chỉnh",
-  };
-
-  const handleMeasuredValueChange = (stageRequirementDefinitionId: string, value: string) => {
+  const handleMeasuredValueChange = (
+    stageRequirementDefinitionId: string,
+    value: string,
+  ) => {
     setMeasuredValues((prev) => ({
       ...prev,
       [stageRequirementDefinitionId]: value,
@@ -222,11 +238,6 @@ export default function ReportsCreate() {
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
-      // Add sampleStageId if available
-      const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
-      if (currentSampleStage?.id) {
-        formData.append("sampleStageId", currentSampleStage.id);
-      }
 
       const response = await axiosInstance.post<AnalysisResponse>(
         "/api/monitoring-log/analysis",
@@ -235,7 +246,7 @@ export default function ReportsCreate() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       setAnalysisResult(response.data);
@@ -254,11 +265,16 @@ export default function ReportsCreate() {
     if (!name.trim()) return "Vui lòng nhập tên báo cáo";
     if (!selectedSampleId) return "Vui lòng chọn sample";
 
-    const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
+    const currentSampleStage = getCurrentSampleStage(
+      sampleDetail?.sampleStageDto ?? null,
+    );
     const sampleStageId = currentSampleStage?.id;
     if (!sampleStageId) return "Sample hiện tại chưa có sample stage";
 
-    if (!analysisResult?.analyticResult?.id || analysisResult?.disease?.id == null) {
+    if (
+      !analysisResult?.analyticResult?.id ||
+      analysisResult?.disease?.id == null
+    ) {
       return "Vui lòng phân tích bệnh để lấy analytic result trước khi lưu";
     }
 
@@ -286,10 +302,14 @@ export default function ReportsCreate() {
       return;
     }
 
-    const currentSampleStage = getCurrentSampleStage(sampleDetail?.sampleStageDto ?? null);
+    const currentSampleStage = getCurrentSampleStage(
+      sampleDetail?.sampleStageDto ?? null,
+    );
 
     if (!currentSampleStage?.id || !analysisResult) {
-      enqueueSnackbar("Thiếu dữ liệu để tạo monitoring log", { variant: "error" });
+      enqueueSnackbar("Thiếu dữ liệu để tạo monitoring log", {
+        variant: "error",
+      });
       return;
     }
 
@@ -312,20 +332,20 @@ export default function ReportsCreate() {
       const res = await axiosInstance.post(
         `/api/monitoring-log?submitImmediately=${submitImmediately ? "true" : "false"}`,
         payload,
-        { responseType: "text" }
+        { responseType: "text" },
       );
       const responseText = res.data as string;
       // Cắt chuỗi lấy ID dạng GUID
       // Ví dụ: "Tạo và gửi báo cáo thành công. ID: 123e4567-e89b-12d3-a456-426614174000"
       let monitoringLogId = "";
-      const idMatch = responseText.match(/ID:\s*([0-9a-fA-F\-]{32,})/);
-      if (idMatch && idMatch[1]) {
-        monitoringLogId = idMatch[1];
-      }
+      const idMatch = /ID:\s*([0-9a-fA-F-]{32,})/u.exec(responseText);
+      monitoringLogId = idMatch?.[1] ?? "";
 
       // Nếu có ảnh đã gửi phân tích thì gửi tiếp lên /api/images
       if (analysisImagePreview && monitoringLogId) {
-        const imageBlob = await fetch(analysisImagePreview).then(r => r.blob());
+        const imageBlob = await fetch(analysisImagePreview).then((r) =>
+          r.blob(),
+        );
         const imageForm = new FormData();
         imageForm.append("image", imageBlob, "monitoring-log-image.png");
         imageForm.append("targetType", "MonitoringLog");
@@ -344,7 +364,7 @@ export default function ReportsCreate() {
         submitImmediately
           ? t("monitoringLog.createSuccessSubmitted")
           : t("monitoringLog.createSuccessDraft"),
-        { variant: "success" }
+        { variant: "success" },
       );
       void navigate("/technician/reports");
     } catch (error) {
@@ -354,7 +374,9 @@ export default function ReportsCreate() {
         message?: string;
       };
       const message =
-        apiError.response?.data ?? apiError.message ?? "Tạo báo cáo giám sát thất bại";
+        apiError.response?.data ??
+        apiError.message ??
+        "Tạo báo cáo giám sát thất bại";
       enqueueSnackbar(message, { variant: "error" });
     } finally {
       setSubmitting(false);
@@ -383,9 +405,12 @@ export default function ReportsCreate() {
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tạo báo cáo giám sát mới</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Tạo báo cáo giám sát mới
+            </h1>
             <p className="text-sm text-gray-600 mt-1">
-              Điền thông tin báo cáo, chọn sample đang xử lý, nhập chỉ số và phân tích bệnh.
+              Điền thông tin báo cáo, chọn sample đang xử lý, nhập chỉ số và
+              phân tích bệnh.
             </p>
           </div>
         </div>
@@ -405,7 +430,9 @@ export default function ReportsCreate() {
           }}
         >
           <section className="space-y-4 border border-gray-200 rounded-lg p-5">
-            <h2 className="text-lg font-semibold text-gray-900">1. Thông tin báo cáo</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              1. Thông tin báo cáo
+            </h2>
             <div>
               <label className={fieldLabelClass}>Tên báo cáo</label>
               <input
@@ -428,16 +455,22 @@ export default function ReportsCreate() {
           </section>
 
           <section className="space-y-4 border border-gray-200 rounded-lg p-5">
-            <h2 className="text-lg font-semibold text-gray-900">2. {t("monitoringLog.createForm.selectSampleTitle")}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              2. {t("monitoringLog.createForm.selectSampleTitle")}
+            </h2>
             <div>
-              <label className={fieldLabelClass}>{t("monitoringLog.createForm.sampleName")}</label>
+              <label className={fieldLabelClass}>
+                {t("monitoringLog.createForm.sampleName")}
+              </label>
               <select
                 value={selectedSampleId}
                 onChange={(e) => setSelectedSampleId(e.target.value)}
                 className={inputClass}
                 required
               >
-                <option value="">{t("monitoringLog.createForm.selectSamplePlaceholder")}</option>
+                <option value="">
+                  {t("monitoringLog.createForm.selectSamplePlaceholder")}
+                </option>
                 {samples.map((sample) => (
                   <option key={sample.id} value={sample.id}>
                     {sample.name}
@@ -445,7 +478,8 @@ export default function ReportsCreate() {
                 ))}
               </select>
               <p className="text-sm text-gray-500 mt-1">
-                {t("monitoringLog.createForm.onlyInProgressSamples")} ({t("monitoringLog.createForm.inProgressStatus")}).
+                {t("monitoringLog.createForm.onlyInProgressSamples")} (
+                {t("monitoringLog.createForm.inProgressStatus")}).
               </p>
             </div>
 
@@ -454,24 +488,38 @@ export default function ReportsCreate() {
             ) : sampleDetail ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="text-sm text-gray-500">{t("monitoringLog.createForm.sampleName")}</div>
-                  <div className="font-medium text-gray-900">{sampleDetail.name}</div>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="text-sm text-gray-500">{t("monitoringLog.createForm.experimentLogName")}</div>
+                  <div className="text-sm text-gray-500">
+                    {t("monitoringLog.createForm.sampleName")}
+                  </div>
                   <div className="font-medium text-gray-900">
-                    {experimentLogMap[sampleDetail.experimentLogId] ?? sampleDetail.experimentLogId}
+                    {sampleDetail.name}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="text-sm text-gray-500">{t("monitoringLog.createForm.currentSampleStage")}</div>
+                  <div className="text-sm text-gray-500">
+                    {t("monitoringLog.createForm.experimentLogName")}
+                  </div>
                   <div className="font-medium text-gray-900">
-                    {getCurrentSampleStage(sampleDetail.sampleStageDto)?.sampleStageDefinition?.name ?? "-"}
+                    {experimentLogMap[sampleDetail.experimentLogId] ??
+                      sampleDetail.experimentLogId}
                   </div>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
-                  <div className="text-sm text-gray-500">{t("monitoringLog.createForm.sampleNote")}</div>
-                  <div className="font-medium text-gray-900">{sampleDetail.notes ?? "-"}</div>
+                  <div className="text-sm text-gray-500">
+                    {t("monitoringLog.createForm.currentSampleStage")}
+                  </div>
+                  <div className="font-medium text-gray-900">
+                    {getCurrentSampleStage(sampleDetail.sampleStageDto)
+                      ?.sampleStageDefinition?.name ?? "-"}
+                  </div>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                  <div className="text-sm text-gray-500">
+                    {t("monitoringLog.createForm.sampleNote")}
+                  </div>
+                  <div className="font-medium text-gray-900">
+                    {sampleDetail.notes ?? "-"}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -480,34 +528,67 @@ export default function ReportsCreate() {
           </section>
 
           <section className="space-y-4 border border-gray-200 rounded-lg p-5">
-            <h2 className="text-lg font-semibold text-gray-900">3. {t("monitoringLog.createForm.stageRequirementTitle")}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              3. {t("monitoringLog.createForm.stageRequirementTitle")}
+            </h2>
             {loadingRequirements ? (
               <p className="text-gray-600">Đang tải requirement...</p>
             ) : requirementRows.length === 0 ? (
-              <p className="text-gray-500">Không có requirement cho sample stage này.</p>
+              <p className="text-gray-500">
+                Không có requirement cho sample stage này.
+              </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-left border border-gray-200 rounded-lg overflow-hidden">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="p-3 text-sm font-semibold text-gray-700">{t("monitoringLog.createForm.requirementName")}</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">Mô tả</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">Đơn vị</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">{t("monitoringLog.createForm.min")}</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">{t("monitoringLog.createForm.max")}</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">{t("monitoringLog.createForm.expected")}</th>
-                      <th className="p-3 text-sm font-semibold text-gray-700">{t("monitoringLog.createForm.measuredValue")}</th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        {t("monitoringLog.createForm.requirementName")}
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        Mô tả
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        Đơn vị
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        {t("monitoringLog.createForm.min")}
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        {t("monitoringLog.createForm.max")}
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        {t("monitoringLog.createForm.expected")}
+                      </th>
+                      <th className="p-3 text-sm font-semibold text-gray-700">
+                        {t("monitoringLog.createForm.measuredValue")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {requirementRows.map((req) => (
-                      <tr key={req.id} className="border-b border-gray-100 last:border-b-0 hover:bg-green-50/40">
-                        <td className="p-3 text-sm text-gray-900 font-medium">{req.name}</td>
-                        <td className="p-3 text-sm text-gray-600">{req.description}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.unit || "-"}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.minValue}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.maxValue}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.expectedValue}</td>
+                      <tr
+                        key={req.id}
+                        className="border-b border-gray-100 last:border-b-0 hover:bg-green-50/40"
+                      >
+                        <td className="p-3 text-sm text-gray-900 font-medium">
+                          {req.name}
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {req.description}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.unit || "-"}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.minValue}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.maxValue}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.expectedValue}
+                        </td>
                         <td className="p-3">
                           <input
                             type="number"
@@ -530,7 +611,9 @@ export default function ReportsCreate() {
           </section>
 
           <section className="space-y-4 border border-gray-200 rounded-lg p-5">
-            <h2 className="text-lg font-semibold text-gray-900">4. Phân tích bệnh</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              4. Phân tích bệnh
+            </h2>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -541,13 +624,17 @@ export default function ReportsCreate() {
                 Chọn ảnh và phân tích
               </button>
               {!sampleDetail && (
-                <p className="text-sm text-gray-500">Vui lòng chọn sample trước khi phân tích bệnh.</p>
+                <p className="text-sm text-gray-500">
+                  Vui lòng chọn sample trước khi phân tích bệnh.
+                </p>
               )}
             </div>
 
             {analysisResult ? (
               <div className="border rounded-lg p-4 bg-green-50 border-green-200 space-y-3">
-                <p className="font-semibold text-green-800">Đã có kết quả phân tích bệnh</p>
+                <p className="font-semibold text-green-800">
+                  Đã có kết quả phân tích bệnh
+                </p>
                 {/* Hiển thị ảnh đã gửi phân tích nếu có */}
                 {analysisImagePreview && (
                   <div className="w-full flex justify-center mb-3">
@@ -558,65 +645,44 @@ export default function ReportsCreate() {
                     />
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-500">{t("sample.stageName")}: </span>
-                    <span className="font-medium">
-                      {stageNameMap[analysisResult.stageName?.toLowerCase?.() ?? ""] ??
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                    <div className="text-xs text-gray-500 mb-1">Giai đoạn</div>
+                    <div className="font-semibold text-gray-900">
+                      {(
+                        {
+                          Tissue: "Giai đoạn mầm",
+                          Coppice: "Giai đoạn chồi",
+                          Tree: "Giai đoạn cây hoàn chỉnh",
+                        } as Record<string, string>
+                      )[analysisResult.stageName] ??
                         analysisResult.stageName ??
-                        "-"}
-                    </span>
+                        "—"}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">{t("sample.diseaseName")}: </span>
-                    <span className="font-medium">{analysisResult.disease.name || "-"}</span>
+                  <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                    <div className="text-xs text-gray-500 mb-1">
+                      Kết quả phân tích
+                    </div>
+                    <div className="font-semibold text-gray-900">
+                      {analysisResult.disease.name || "—"}
+                    </div>
                   </div>
-                </div>
-
-                <div className="text-sm">
-                  <span className="text-gray-500">{t("sample.diseaseDescription")}: </span>
-                  <span className="font-medium text-gray-800">{analysisResult.disease.description || "-"}</span>
-                </div>
-
-                <div>
-                  <p className="font-medium mb-2">Xác suất từng bệnh</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {[
-                      { key: "healthy", label: t("sample.healthy") },
-                      { key: "anthracnose", label: t("sample.anthracnose") },
-                      { key: "bacterialWilt", label: t("sample.bacterialWilt") },
-                      { key: "blackrot", label: t("sample.blackrot") },
-                      { key: "brownspots", label: t("sample.brownspots") },
-                      { key: "moldBacterial", label: t("sample.moldBacterial") },
-                      { key: "moldFungus", label: t("sample.moldFungus") },
-                      { key: "softRot", label: t("sample.softRot") },
-                      { key: "stemRot", label: t("sample.stemRot") },
-                      { key: "witheredYellowRoot", label: t("sample.witheredYellowRoot") },
-                      { key: "oxidation", label: t("sample.oxidation") },
-                      { key: "virus", label: t("sample.virus") },
-                    ].map((item) => {
-                      const value = analysisResult.analyticResult[
-                        item.key as keyof typeof analysisResult.analyticResult
-                      ];
-
-                      return (
-                        <div
-                          key={item.key}
-                          className="flex justify-between items-center bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                        >
-                          <span>{item.label}</span>
-                          <span className="font-semibold text-blue-700">
-                            {typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "-"}
-                          </span>
-                        </div>
-                      );
-                    })}
+                  <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                    <div className="text-xs text-gray-500 mb-1">Độ tin cậy</div>
+                    <div className="font-bold text-blue-700 text-lg">
+                      {(analysisResult.analyticResult.confidence * 100).toFixed(
+                        1,
+                      )}
+                      %
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-                Chưa có kết quả phân tích bệnh. Bạn cần phân tích bệnh trước khi lưu báo cáo.
+                Chưa có kết quả phân tích bệnh. Bạn cần phân tích bệnh trước khi
+                lưu báo cáo.
               </p>
             )}
           </section>
@@ -658,8 +724,8 @@ export default function ReportsCreate() {
               {submitting
                 ? t("monitoringLog.submitting")
                 : submitMode === "immediate"
-                ? t("monitoringLog.createAndSubmit")
-                : t("monitoringLog.saveDraft")}
+                  ? t("monitoringLog.createAndSubmit")
+                  : t("monitoringLog.saveDraft")}
             </button>
           </div>
         </form>
@@ -669,7 +735,9 @@ export default function ReportsCreate() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden">
             <div className="border-b p-5 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Phân tích bệnh</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Phân tích bệnh
+              </h3>
               <button
                 type="button"
                 onClick={() => {
@@ -707,7 +775,9 @@ export default function ReportsCreate() {
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 cursor-pointer hover:bg-gray-50 transition">
-                  <span className="text-gray-600 text-sm">Nhấn để chọn ảnh</span>
+                  <span className="text-gray-600 text-sm">
+                    Nhấn để chọn ảnh
+                  </span>
                   <input
                     type="file"
                     accept="image/*"

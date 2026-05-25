@@ -569,64 +569,68 @@ export default function MonitoringLogDetail() {
                   "Kết quả Phân tích AI"}
               </h2>
             </div>
-            <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(log.analyticResult)
-                .filter(([key]) => key !== "id")
-                .sort(([, a], [, b]) => Number(b) - Number(a)) // Sort by percentage DESC
-                .map(([diseaseKey, percentage], index) => {
-                  const decimalValue = Number(percentage);
-                  const percentValue = decimalValue * 100;
-                  const isHealthy = diseaseKey === "healthy";
-                  const isHighRisk = percentValue > 50 && !isHealthy;
-                  const displayValue =
-                    percentValue < 0.01 ? "0.00" : percentValue.toFixed(2);
-
-                  // Khối dự đoán cao nhất (index 0) sẽ có màu chủ đạo
-                  const isTopPrediction = index === 0;
-
-                  return (
-                    <div
-                      key={diseaseKey}
-                      className={`p-4 rounded-xl border transition-all hover:shadow-sm ${
-                        isHealthy
-                          ? "bg-[#E4F0E8] border-[#DDEEE0]"
-                          : isHighRisk
-                            ? "bg-rose-50 border-rose-200 scale-[1.02] shadow-md shadow-rose-100"
-                            : isTopPrediction
-                              ? "bg-[#E4F0E8] border-[#DDEEE0] rounded-xl shadow-sm"
-                              : "bg-white border-slate-200"
-                      }`}
-                    >
-                      <div
-                        className={`text-xs font-bold uppercase tracking-wider mb-1 truncate ${
-                          isHealthy
-                            ? "text-[#2D5A27]"
-                            : isHighRisk
-                              ? "text-rose-700"
-                              : isTopPrediction
-                                ? "text-[#2D5A27]"
-                                : "text-slate-500"
-                        }`}
-                        title={t(`diseases.${diseaseKey}`)}
-                      >
-                        {t(`diseases.${diseaseKey}`)}
+            <div className="p-6">
+              {(() => {
+                const ar = log.analyticResult;
+                if (!ar) return null;
+                const isHealthyLog =
+                  String(ar.topDisease ?? "").toLowerCase() === "healthy" ||
+                  (log.diseaseName ?? "").toLowerCase().includes("khỏe");
+                return (
+                  <div
+                    className={`p-5 rounded-xl border ${
+                      isHealthyLog
+                        ? "bg-[#E4F0E8] border-[#DDEEE0]"
+                        : "bg-rose-50 border-rose-200"
+                    } flex items-center justify-between gap-4`}
+                  >
+                    <div className="space-y-3 flex-1">
+                      <div>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          Giai đoạn
+                        </span>
+                        <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
+                          {log.sampleStageDefinitionName ?? "—"}
+                        </p>
                       </div>
-                      <div
-                        className={`text-2xl font-black ${
-                          isHealthy
-                            ? "text-[#1e3e1c]"
-                            : isHighRisk
-                              ? "text-rose-800"
-                              : isTopPrediction
-                                ? "text-[#1e3e1c]"
-                                : "text-slate-800"
-                        }`}
-                      >
-                        {displayValue}%
+                      <div>
+                        <span
+                          className={`text-xs font-semibold uppercase tracking-wide ${
+                            isHealthyLog ? "text-[#2D5A27]" : "text-rose-600"
+                          }`}
+                        >
+                          Kết quả chẩn đoán
+                        </span>
+                        <p
+                          className={`text-xl font-black mt-0.5 ${
+                            isHealthyLog ? "text-[#1e3e1c]" : "text-rose-800"
+                          }`}
+                        >
+                          {log.diseaseName ?? "—"}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
+                    <div
+                      className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
+                        isHealthyLog ? "border-[#C9E7D2]" : "border-rose-200"
+                      }`}
+                    >
+                      <span
+                        className={`text-xl font-black leading-none ${
+                          isHealthyLog ? "text-[#2D5A27]" : "text-rose-600"
+                        }`}
+                      >
+                        {ar.confidence != null
+                          ? `${(ar.confidence * 100).toFixed(1)}%`
+                          : "—"}
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-1">
+                        độ tin cậy
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </motion.div>
         )}

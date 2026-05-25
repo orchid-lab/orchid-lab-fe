@@ -122,22 +122,6 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
 
-/**
- * Lấy value từ analyticResult theo disease.code
- * API trả về code dạng "disease_anthracnose", key trong analyticResult là "anthracnose"
- * → Strip prefix "disease_" rồi tìm case-insensitive
- */
-const getAnalyticValueByDiseaseCode = (
-  analyticResult: AnalysisResponse["analyticResult"],
-  diseaseCode: string,
-): number => {
-  const stripped = diseaseCode.replace(/^disease_/i, "").toLowerCase();
-  const entry = Object.entries(analyticResult).find(
-    ([k]) => k.toLowerCase() === stripped,
-  );
-  return Number(entry?.[1] ?? 0);
-};
-
 /* ─── Animation Variants ─── */
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
@@ -146,22 +130,6 @@ const staggerContainer: Variants = {
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
-// Label map for analyticResult keys → Vietnamese display names
-const ANALYTIC_KEY_LABEL: Record<string, string> = {
-  anthracnose: "Thán thư",
-  bacterialWilt: "Héo rũ do vi khuẩn",
-  blackrot: "Thối đen",
-  brownspots: "Đốm nâu",
-  moldBacterial: "Mốc vi khuẩn",
-  moldFungus: "Mốc nấm",
-  softRot: "Thối mềm",
-  stemRot: "Thối thân",
-  witheredYellowRoot: "Vàng héo rễ",
-  healthy: "Khỏe mạnh",
-  oxidation: "Oxy hoá",
-  virus: "Virus",
 };
 
 export default function TechDetailSample() {
@@ -418,19 +386,8 @@ export default function TechDetailSample() {
 
   const isHealthyAnalysis = useMemo(() => {
     if (!analysisResult) return true;
-    const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
-    const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
-    if (
-      diseaseCode.includes("healthy") ||
-      diseaseName.includes("healthy") ||
-      diseaseName.includes("khỏe")
-    )
-      return true;
-    const values = Object.entries(analysisResult.analyticResult)
-      .filter(([key]) => key !== "healthy" && key !== "id")
-      .map(([, value]) => value as number);
-    const maxNonHealthy = values.length > 0 ? Math.max(...values) : 0;
-    return analysisResult.analyticResult.healthy >= maxNonHealthy;
+    const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
+    return topDisease.toLowerCase() === "healthy";
   }, [analysisResult]);
 
   const handleDestroySample = async () => {
@@ -573,24 +530,6 @@ export default function TechDetailSample() {
       };
     });
   }, [sampleStages, t]);
-
-  // Prepare sorted analytic rows (exclude "id" field), sorted descending by value
-  const analyticRows = useMemo(() => {
-    if (!analysisResult) return [];
-    const diseaseCodeKey = analysisResult.disease.code
-      .replace(/^disease_/i, "")
-      .toLowerCase();
-    return Object.entries(analysisResult.analyticResult)
-      .filter(([k]) => k !== "id")
-      .map(([key, value]) => ({
-        key,
-        label: ANALYTIC_KEY_LABEL[key] ?? key,
-        value: Number(value),
-        isTopDisease: key.toLowerCase() === diseaseCodeKey,
-        isHealthy: key === "healthy",
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [analysisResult]);
 
   if (loading) {
     return (
@@ -1213,135 +1152,56 @@ export default function TechDetailSample() {
               </div>
 
               <div className="p-6 space-y-6">
-                {/* ── Top Disease Banner ── */}
+                {/* ── Result Summary ── */}
                 <div
-                  className={`flex items-center justify-between p-5 rounded-xl border ${isHealthyAnalysis ? "bg-[#E4F0E8] border-[#DDEEE0]" : "bg-rose-50 border-rose-200"}`}
+                  className={`p-5 rounded-xl border ${isHealthyAnalysis ? "bg-[#E4F0E8] border-[#DDEEE0]" : "bg-rose-50 border-rose-200"}`}
                 >
-                  <div>
-                    <span
-                      className={`text-xs font-bold uppercase tracking-wider ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-3 flex-1">
+                      <div>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                          Giai đoạn
+                        </span>
+                        <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
+                          {(
+                            {
+                              Tissue: "Giai đoạn mầm",
+                              Coppice: "Giai đoạn chồi",
+                              Tree: "Giai đoạn cây hoàn chỉnh",
+                            } as Record<string, string>
+                          )[analysisResult.stageName] ??
+                            analysisResult.stageName ??
+                            "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <span
+                          className={`text-xs font-semibold uppercase tracking-wide ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
+                        >
+                          Kết quả phân tích
+                        </span>
+                        <p
+                          className={`text-xl font-black mt-0.5 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
+                        >
+                          {analysisResult.disease.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${isHealthyAnalysis ? "border-[#C9E7D2]" : "border-rose-200"}`}
                     >
-                      Dự đoán bệnh cao nhất
-                    </span>
-                    <h4
-                      className={`text-2xl font-black mt-1 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
-                    >
-                      {analysisResult.disease.name}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                      {analysisResult.disease.description}
-                    </p>
-                  </div>
-                  {/* ── Fixed: use getAnalyticValueByDiseaseCode instead of direct key lookup ── */}
-                  <div
-                    className={`w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 ${isHealthyAnalysis ? "bg-white border-[#C9E7D2]" : "bg-white border-rose-200"}`}
-                  >
-                    <span
-                      className={`text-lg font-black leading-none ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
-                    >
-                      {(
-                        getAnalyticValueByDiseaseCode(
-                          analysisResult.analyticResult,
-                          analysisResult.disease.code,
-                        ) * 100
-                      ).toFixed(0)}
-                      %
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">
-                      độ tin
-                    </span>
-                  </div>
-                </div>
-
-                {/* ── Analytic Result Table ── */}
-                <div>
-                  <h5 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">
-                    Xác suất tất cả các bệnh
-                  </h5>
-                  <div className="rounded-xl border border-slate-200 overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                            Loại bệnh
-                          </th>
-                          <th className="px-4 py-3 text-right font-semibold text-slate-600 w-20">
-                            Xác suất
-                          </th>
-                          <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                            Mức độ
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {analyticRows.map(
-                          ({ key, label, value, isTopDisease, isHealthy }) => {
-                            const pct = value * 100;
-                            // Bar color logic
-                            const barColor =
-                              isTopDisease && !isHealthy
-                                ? "bg-rose-500"
-                                : isHealthy
-                                  ? "bg-emerald-500"
-                                  : pct >= 5
-                                    ? "bg-amber-400"
-                                    : "bg-slate-300";
-                            const rowBg =
-                              isTopDisease && !isHealthy
-                                ? "bg-rose-50"
-                                : isTopDisease && isHealthy
-                                  ? "bg-emerald-50"
-                                  : "hover:bg-slate-50";
-                            return (
-                              <tr
-                                key={key}
-                                className={`border-b border-slate-100 transition-colors ${rowBg}`}
-                              >
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center gap-2">
-                                    {isTopDisease && !isHealthy && (
-                                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
-                                    )}
-                                    {isHealthy && (
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                                    )}
-                                    <span
-                                      className={`font-medium ${isTopDisease && !isHealthy ? "text-rose-700 font-bold" : isHealthy ? "text-emerald-700" : "text-slate-700"}`}
-                                    >
-                                      {label}
-                                    </span>
-                                    {isTopDisease && (
-                                      <span
-                                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isHealthy ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}
-                                      >
-                                        Cao nhất
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <span
-                                    className={`font-bold tabular-nums ${isTopDisease && !isHealthy ? "text-rose-600" : isHealthy ? "text-emerald-600" : pct >= 5 ? "text-amber-600" : "text-slate-500"}`}
-                                  >
-                                    {pct.toFixed(1)}%
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                    <div
-                                      className={`h-2 rounded-full transition-all ${barColor}`}
-                                      style={{
-                                        width: `${Math.min(pct, 100)}%`,
-                                      }}
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          },
-                        )}
-                      </tbody>
-                    </table>
+                      <span
+                        className={`text-xl font-black leading-none ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
+                      >
+                        {(
+                          analysisResult.analyticResult.confidence * 100
+                        ).toFixed(1)}
+                        %
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-1">
+                        độ tin cậy
+                      </span>
+                    </div>
                   </div>
                 </div>
 

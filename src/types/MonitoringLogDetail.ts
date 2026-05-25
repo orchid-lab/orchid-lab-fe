@@ -1,17 +1,9 @@
 export interface AnalyticResult {
   id: string;
-  anthracnose: number;
-  bacterialWilt: number;
-  blackrot: number;
-  brownspots: number;
-  moldBacterial: number;
-  moldFungus: number;
-  softRot: number;
-  stemRot: number;
-  witheredYellowRoot: number;
-  healthy: number;
-  oxidation: number;
-  virus: number;
+  predictions: Record<string, number>;
+  topDisease: string;
+  confidence: number;
+  analyzedAt: string;
 }
 
 export interface LogDetail {
