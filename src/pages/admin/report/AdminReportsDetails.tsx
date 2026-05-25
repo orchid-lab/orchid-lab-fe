@@ -411,7 +411,7 @@ export default function AdminMonitoringLogDetails() {
 
           {/* Cột phải: Kết quả AI */}
           <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 p-6 flex flex-col h-full">
-            <h4 className="text-base font-bold text-slate-800 mb-4 border-b border-rose-50 pb-3">
+            <h4 className="text-base font-bold text-[#9f1239] mb-4 border-b border-rose-50 pb-3">
               Kết quả chẩn đoán AI
             </h4>
 
@@ -437,10 +437,18 @@ export default function AdminMonitoringLogDetails() {
                 >
                   <div className="space-y-3 flex-1">
                     <div>
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <span
+                        className={`text-xs font-semibold uppercase tracking-wide ${
+                          isHealthyLog ? "text-emerald-700" : "text-rose-600"
+                        }`}
+                      >
                         Giai đoạn
                       </span>
-                      <p className="text-base font-bold text-slate-800 mt-0.5">
+                      <p
+                        className={`text-lg font-black mt-0.5 ${
+                          isHealthyLog ? "text-emerald-800" : "text-[#9f1239]"
+                        }`}
+                      >
                         {data.sampleStageDefinitionName ?? "—"}
                       </p>
                     </div>
