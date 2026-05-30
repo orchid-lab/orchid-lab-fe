@@ -6,6 +6,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import {
   ArrowLeft,
   FileText,
@@ -90,6 +91,7 @@ export default function AdminMonitoringLogDetails() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MonitoringLog | null>(null);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const onnxNameMap = useDiseaseMap();
 
   // Fetch data từ API thật
   useEffect(() => {
@@ -488,6 +490,89 @@ export default function AdminMonitoringLogDetails() {
                     </span>
                   </div>
                 </div>
+
+                {/* Predictions Breakdown */}
+                {data.analyticResult.predictions &&
+                  Object.keys(data.analyticResult.predictions).length > 0 && (
+                    <div className="rounded-xl border border-slate-200 overflow-hidden mt-4">
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                        <Activity className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Phân bố xác suất bệnh
+                        </span>
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {Object.entries(data.analyticResult.predictions)
+                          .filter(([onnxKey]) => onnxKey in onnxNameMap)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([onnxKey, prob]) => {
+                            const name = onnxNameMap[onnxKey] ?? onnxKey;
+                            const isTop =
+                              onnxKey === data.analyticResult!.topDisease;
+                            const pct = prob * 100;
+                            return (
+                              <div
+                                key={onnxKey}
+                                className={`flex items-center gap-3 px-4 py-3 ${
+                                  isTop
+                                    ? isHealthyLog
+                                      ? "bg-emerald-50/60"
+                                      : "bg-rose-50/60"
+                                    : ""
+                                }`}
+                              >
+                                <span
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                    isTop
+                                      ? isHealthyLog
+                                        ? "bg-emerald-500"
+                                        : "bg-rose-500"
+                                      : "bg-slate-300"
+                                  }`}
+                                />
+                                <span
+                                  className={`flex-1 text-sm truncate ${
+                                    isTop
+                                      ? isHealthyLog
+                                        ? "font-semibold text-emerald-800"
+                                        : "font-semibold text-[#9f1239]"
+                                      : "font-medium text-slate-500"
+                                  }`}
+                                  title={name}
+                                >
+                                  {name}
+                                </span>
+                                <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                      style={{ width: `${pct.toFixed(1)}%` }}
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        isTop
+                                          ? isHealthyLog
+                                            ? "bg-emerald-500"
+                                            : "bg-rose-500"
+                                          : "bg-slate-200"
+                                      }`}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`text-xs font-bold w-11 text-right ${
+                                      isTop
+                                        ? isHealthyLog
+                                          ? "text-emerald-700"
+                                          : "text-rose-600"
+                                        : "text-slate-400"
+                                    }`}
+                                  >
+                                    {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
               </motion.div>
             )}
           </section>

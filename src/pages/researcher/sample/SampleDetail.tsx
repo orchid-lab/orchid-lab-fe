@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, Microscope, X } from "lucide-react";
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -266,6 +267,8 @@ export default function SampleDetail() {
     const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
     return topDisease.toLowerCase() === "healthy";
   }, [analysisResult]);
+
+  const onnxNameMap = useDiseaseMap();
 
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
@@ -1129,6 +1132,91 @@ export default function SampleDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* Predictions Breakdown */}
+              {Object.keys(analysisResult.analyticResult.predictions ?? {})
+                .length > 0 && (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                    <Microscope className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Phân bố xác suất bệnh
+                    </span>
+                  </div>
+                  {/* Rows */}
+                  <div className="divide-y divide-slate-100">
+                    {Object.entries(analysisResult.analyticResult.predictions)
+                      .filter(([onnxKey]) => onnxKey in onnxNameMap)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([onnxKey, prob]) => {
+                        const name = onnxNameMap[onnxKey] ?? onnxKey;
+                        const isTop =
+                          onnxKey === analysisResult.analyticResult.topDisease;
+                        const pct = prob * 100;
+                        return (
+                          <div
+                            key={onnxKey}
+                            className={`flex items-center gap-3 px-4 py-3 ${
+                              isTop
+                                ? isHealthyAnalysis
+                                  ? "bg-[#f0f8f2]"
+                                  : "bg-rose-50/60"
+                                : ""
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                isTop
+                                  ? isHealthyAnalysis
+                                    ? "bg-[#2D5A27]"
+                                    : "bg-rose-500"
+                                  : "bg-slate-300"
+                              }`}
+                            />
+                            <span
+                              className={`flex-1 text-sm truncate ${
+                                isTop
+                                  ? isHealthyAnalysis
+                                    ? "font-semibold text-[#1e3e1c]"
+                                    : "font-semibold text-rose-800"
+                                  : "font-medium text-slate-500"
+                              }`}
+                              title={name}
+                            >
+                              {name}
+                            </span>
+                            <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  style={{ width: `${pct.toFixed(1)}%` }}
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    isTop
+                                      ? isHealthyAnalysis
+                                        ? "bg-[#2D5A27]"
+                                        : "bg-rose-500"
+                                      : "bg-slate-200"
+                                  }`}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-bold w-11 text-right ${
+                                  isTop
+                                    ? isHealthyAnalysis
+                                      ? "text-[#2D5A27]"
+                                      : "text-rose-600"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
 
               {/* Destroy Warning */}
               {!isHealthyAnalysis && (

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import type {
   AnalysisResponse,
   ExperimentLogApiResponse,
@@ -215,6 +216,8 @@ export default function ReportsCreate() {
       [stageRequirementDefinitionId]: value,
     }));
   };
+
+  const onnxNameMap = useDiseaseMap();
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -680,6 +683,72 @@ export default function ReportsCreate() {
                     </div>
                   </div>
                 </div>
+                {/* Predictions Breakdown */}
+                {Object.keys(analysisResult.analyticResult.predictions ?? {})
+                  .length > 0 && (
+                  <div className="rounded-xl border border-green-200 overflow-hidden mt-1">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-green-100/60 border-b border-green-200">
+                      <span className="text-xs font-semibold text-green-800 uppercase tracking-wider">
+                        Phân bố xác suất bệnh
+                      </span>
+                    </div>
+                    {/* Rows */}
+                    <div className="divide-y divide-slate-100 bg-white">
+                      {Object.entries(analysisResult.analyticResult.predictions)
+                        .filter(([onnxKey]) => onnxKey in onnxNameMap)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([onnxKey, prob]) => {
+                          const name = onnxNameMap[onnxKey] ?? onnxKey;
+                          const isTop =
+                            onnxKey ===
+                            analysisResult.analyticResult.topDisease;
+                          const pct = prob * 100;
+                          return (
+                            <div
+                              key={onnxKey}
+                              className={`flex items-center gap-3 px-4 py-3 ${
+                                isTop ? "bg-green-50" : ""
+                              }`}
+                            >
+                              <span
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  isTop ? "bg-green-600" : "bg-slate-300"
+                                }`}
+                              />
+                              <span
+                                className={`flex-1 text-sm truncate ${
+                                  isTop
+                                    ? "font-semibold text-green-900"
+                                    : "font-medium text-slate-500"
+                                }`}
+                                title={name}
+                              >
+                                {name}
+                              </span>
+                              <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                  <div
+                                    style={{ width: `${pct.toFixed(1)}%` }}
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                      isTop ? "bg-green-600" : "bg-slate-200"
+                                    }`}
+                                  />
+                                </div>
+                                <span
+                                  className={`text-xs font-bold w-11 text-right ${
+                                    isTop ? "text-green-700" : "text-slate-400"
+                                  }`}
+                                >
+                                  {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
