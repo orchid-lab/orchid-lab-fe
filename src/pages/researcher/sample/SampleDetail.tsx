@@ -261,11 +261,50 @@ export default function SampleDetail() {
     setImagePreview("");
   };
 
+  // Kiểm tra kết quả healthy: topDisease là "healthy", hoặc unknown nhưng rawTopDisease cũng là healthy
   const isHealthyAnalysis = useMemo(() => {
     if (!analysisResult) return true;
+    const topDisease = String(analysisResult.analyticResult.topDisease ?? "").toLowerCase();
+    if (topDisease === "healthy") return true;
+    // Nếu topDisease là "unknown" do bệnh inactive, kiểm tra rawTopDisease
+    if (topDisease === "unknown") {
+      const rawTop = String(analysisResult.rawTopDisease ?? "").toLowerCase();
+      if (rawTop === "healthy") return true;
+    }
+    return false;
+  }, [analysisResult]);
 
-    const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
-    return topDisease.toLowerCase() === "healthy";
+  // Kiểm tra trường hợp bệnh phát hiện nhưng chưa active trong hệ thống
+  const isInactiveDisease = useMemo(() => {
+    if (!analysisResult) return false;
+    return (
+      analysisResult.isRawTopDiseaseActive === false &&
+      String(analysisResult.analyticResult.topDisease ?? "").toLowerCase() === "unknown"
+    );
+  }, [analysisResult]);
+
+  // Tính confidence hiển thị: nếu confidence = 0 do bệnh inactive, lấy từ predictions
+  const displayConfidence = useMemo(() => {
+    if (!analysisResult) return 0;
+    if (analysisResult.analyticResult.confidence > 0) {
+      return analysisResult.analyticResult.confidence;
+    }
+    // Confidence = 0 có thể do bệnh inactive — tìm giá trị từ predictions theo rawTopDisease
+    if (analysisResult.rawTopDisease) {
+      const rawNormalized = analysisResult.rawTopDisease
+        .replace(/_/g, "")
+        .toLowerCase();
+      const matchedKey = Object.keys(
+        analysisResult.analyticResult.predictions ?? {},
+      ).find((k) =>
+        k.replace(/\s*\(inactive\)\s*/gi, "").replace(/_/g, "").toLowerCase() ===
+        rawNormalized,
+      );
+      if (matchedKey) {
+        return analysisResult.analyticResult.predictions[matchedKey] ?? 0;
+      }
+    }
+    return 0;
   }, [analysisResult]);
 
   const onnxNameMap = useDiseaseMap();
@@ -475,8 +514,6 @@ export default function SampleDetail() {
       setIsChangingStage(false);
     }
   };
-
-  // Đã chuyển lên trên, không khai báo lại ở đây nữa
 
   if (loading) {
     return (
@@ -1073,7 +1110,9 @@ export default function SampleDetail() {
                 className={`p-5 rounded-xl border ${
                   isHealthyAnalysis
                     ? "bg-[#E4F0E8] border-[#DDEEE0]"
-                    : "bg-rose-50 border-rose-200"
+                    : isInactiveDisease
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-rose-50 border-rose-200"
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -1097,34 +1136,56 @@ export default function SampleDetail() {
                     <div>
                       <span
                         className={`text-xs font-semibold uppercase tracking-wide ${
-                          isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"
+                          isHealthyAnalysis
+                            ? "text-[#2D5A27]"
+                            : isInactiveDisease
+                              ? "text-amber-700"
+                              : "text-rose-600"
                         }`}
                       >
                         Kết quả phân tích
                       </span>
                       <p
                         className={`text-xl font-black mt-0.5 ${
-                          isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"
+                          isHealthyAnalysis
+                            ? "text-[#1e3e1c]"
+                            : isInactiveDisease
+                              ? "text-amber-900"
+                              : "text-rose-800"
                         }`}
                       >
-                        {analysisResult.disease.name}
+                        {/* Hiển thị tên bệnh: nếu inactive thì dùng rawTopDisease thay vì "Unknown" */}
+                        {isInactiveDisease && analysisResult.rawTopDisease
+                          ? analysisResult.rawTopDisease.replace(/_/g, " ")
+                          : analysisResult.disease.name}
                       </p>
+                      {/* Badge chưa kích hoạt */}
+                      {isInactiveDisease && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
+                          Chưa kích hoạt trong hệ thống
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div
                     className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
-                      isHealthyAnalysis ? "border-[#C9E7D2]" : "border-rose-200"
+                      isHealthyAnalysis
+                        ? "border-[#C9E7D2]"
+                        : isInactiveDisease
+                          ? "border-amber-200"
+                          : "border-rose-200"
                     }`}
                   >
                     <span
                       className={`text-xl font-black leading-none ${
-                        isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"
+                        isHealthyAnalysis
+                          ? "text-[#2D5A27]"
+                          : isInactiveDisease
+                            ? "text-amber-600"
+                            : "text-rose-600"
                       }`}
                     >
-                      {(analysisResult.analyticResult.confidence * 100).toFixed(
-                        1,
-                      )}
-                      %
+                      {(displayConfidence * 100).toFixed(1)}%
                     </span>
                     <span className="text-[10px] text-slate-400 mt-1">
                       độ tin cậy
@@ -1147,13 +1208,36 @@ export default function SampleDetail() {
                   {/* Rows */}
                   <div className="divide-y divide-slate-100">
                     {Object.entries(analysisResult.analyticResult.predictions)
-                      .filter(([onnxKey]) => onnxKey in onnxNameMap)
                       .sort(([, a], [, b]) => b - a)
                       .map(([onnxKey, prob]) => {
-                        const name = onnxNameMap[onnxKey] ?? onnxKey;
+                        // Chuẩn hóa key: bỏ hậu tố "(inactive)" để tra cứu tên hiển thị
+                        const baseKey = onnxKey
+                          .replace(/\s*\(inactive\)\s*/gi, "")
+                          .trim();
+                        const name =
+                          onnxNameMap[onnxKey] ??
+                          onnxNameMap[baseKey] ??
+                          baseKey;
+
+                        // Xác định đây có phải kết quả top không:
+                        // So khớp với topDisease (active) hoặc rawTopDisease (inactive)
+                        const rawNormalized = String(
+                          analysisResult.rawTopDisease ?? "",
+                        )
+                          .replace(/_/g, "")
+                          .toLowerCase();
+                        const keyNormalized = baseKey
+                          .replace(/_/g, "")
+                          .toLowerCase();
                         const isTop =
-                          onnxKey === analysisResult.analyticResult.topDisease;
+                          onnxKey ===
+                            analysisResult.analyticResult.topDisease ||
+                          keyNormalized === rawNormalized;
+
+                        const isInactiveKey =
+                          /\(inactive\)/i.test(onnxKey);
                         const pct = prob * 100;
+
                         return (
                           <div
                             key={onnxKey}
@@ -1161,7 +1245,9 @@ export default function SampleDetail() {
                               isTop
                                 ? isHealthyAnalysis
                                   ? "bg-[#f0f8f2]"
-                                  : "bg-rose-50/60"
+                                  : isInactiveDisease
+                                    ? "bg-amber-50/60"
+                                    : "bg-rose-50/60"
                                 : ""
                             }`}
                           >
@@ -1170,7 +1256,9 @@ export default function SampleDetail() {
                                 isTop
                                   ? isHealthyAnalysis
                                     ? "bg-[#2D5A27]"
-                                    : "bg-rose-500"
+                                    : isInactiveDisease
+                                      ? "bg-amber-500"
+                                      : "bg-rose-500"
                                   : "bg-slate-300"
                               }`}
                             />
@@ -1179,12 +1267,19 @@ export default function SampleDetail() {
                                 isTop
                                   ? isHealthyAnalysis
                                     ? "font-semibold text-[#1e3e1c]"
-                                    : "font-semibold text-rose-800"
+                                    : isInactiveDisease
+                                      ? "font-semibold text-amber-800"
+                                      : "font-semibold text-rose-800"
                                   : "font-medium text-slate-500"
                               }`}
                               title={name}
                             >
                               {name}
+                              {isInactiveKey && (
+                                <span className="ml-1.5 text-[10px] font-normal text-amber-500 border border-amber-300 rounded px-1 py-0.5">
+                                  inactive
+                                </span>
+                              )}
                             </span>
                             <div className="flex items-center gap-2 w-44 flex-shrink-0">
                               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -1194,7 +1289,9 @@ export default function SampleDetail() {
                                     isTop
                                       ? isHealthyAnalysis
                                         ? "bg-[#2D5A27]"
-                                        : "bg-rose-500"
+                                        : isInactiveDisease
+                                          ? "bg-amber-500"
+                                          : "bg-rose-500"
                                       : "bg-slate-200"
                                   }`}
                                 />
@@ -1204,11 +1301,16 @@ export default function SampleDetail() {
                                   isTop
                                     ? isHealthyAnalysis
                                       ? "text-[#2D5A27]"
-                                      : "text-rose-600"
+                                      : isInactiveDisease
+                                        ? "text-amber-600"
+                                        : "text-rose-600"
                                     : "text-slate-400"
                                 }`}
                               >
-                                {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                {pct.toFixed(1) === "0.0"
+                                  ? "~0.0"
+                                  : pct.toFixed(1)}
+                                %
                               </span>
                             </div>
                           </div>
@@ -1218,14 +1320,37 @@ export default function SampleDetail() {
                 </div>
               )}
 
-              {/* Destroy Warning */}
-              {!isHealthyAnalysis && (
+              {/* Warning: bệnh inactive — chưa kích hoạt, không cho tiêu hủy */}
+              {isInactiveDisease && (
+                <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-amber-800">
+                        Phát hiện dấu hiệu bệnh nhưng chưa thể xác nhận
+                      </p>
+                      <p className="text-sm text-amber-700">
+                        Bệnh{" "}
+                        <span className="font-semibold">
+                          {analysisResult.rawTopDisease?.replace(/_/g, " ")}
+                        </span>{" "}
+                        hiện chưa được kích hoạt trong hệ thống. Vui lòng liên
+                        hệ quản trị viên để xem xét và kích hoạt bệnh này trước
+                        khi tiến hành tiêu hủy.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Destroy Warning — chỉ hiển thị khi bệnh active và không healthy */}
+              {!isHealthyAnalysis && !isInactiveDisease && (
                 <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
                     <p className="text-sm font-bold text-rose-800">
-                      Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu ngay
-                      lập tức!
+                      Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu
+                      ngay lập tức!
                     </p>
                   </div>
                   {!showDestroyForm ? (
