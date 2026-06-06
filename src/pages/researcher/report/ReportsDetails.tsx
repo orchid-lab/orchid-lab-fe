@@ -6,6 +6,7 @@ import axiosInstance from "../../../api/axiosInstance";
 import { useAuth } from "../../../context/AuthContext";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import "./ReportsDetails.css";
 
 interface Sample {
@@ -37,25 +38,12 @@ export default function ReportsDetails() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(null);
+  const [analyzeResult, setAnalyzeResult] = useState<AnalyzeResult | null>(
+    null,
+  );
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<string>("");
-
-  // Disease names - keep in Vietnamese as they're technical terms
-  const diseaseNameMap: Record<string, string> = {
-    Anthracnose: "Thán thư",
-    "Bacterial Wilt": "Héo vi khuẩn",
-    Blackrot: "Thối đen",
-    Brownspots: "Đốm nâu",
-    "Mold Bacterial": "Mốc vi khuẩn",
-    "Mold Fungus": "Mốc nấm",
-    "Soft Rot": "Thối mềm",
-    "Stem Rot": "Thối thân",
-    "Withered Yellow Root": "Vàng rễ héo",
-    healthy: "Khỏe mạnh",
-    Oxidation: "Oxy hóa",
-    Virus: "Virus",
-  };
+  const onnxNameMap = useDiseaseMap();
 
   const stageNameMap: Record<string, string> = {
     coppice: "Giai đoạn chồi",
@@ -94,7 +82,7 @@ export default function ReportsDetails() {
 
         if (data.value?.sample) {
           const sampleRes = await axiosInstance.get(
-            `/api/sample/${data.value.sample}?id=${data.value.sample}`
+            `/api/sample/${data.value.sample}?id=${data.value.sample}`,
           );
           const sampleData = sampleRes.data as { value: Sample };
           setSample(sampleData.value || null);
@@ -170,7 +158,9 @@ export default function ReportsDetails() {
         reviewReportText: evaluation,
       });
 
-      setReport((prev) => (prev ? { ...prev, reviewReport: evaluation } : prev));
+      setReport((prev) =>
+        prev ? { ...prev, reviewReport: evaluation } : prev,
+      );
       enqueueSnackbar(t("report.evaluationSent"), { variant: "success" });
     } catch (error) {
       console.error("Error sending review:", error);
@@ -179,7 +169,9 @@ export default function ReportsDetails() {
         message?: string;
       };
       const backendMessage =
-        apiError.response?.data ?? apiError.message ?? t("report.evaluationFailed");
+        apiError.response?.data ??
+        apiError.message ??
+        t("report.evaluationFailed");
 
       enqueueSnackbar(backendMessage, {
         variant: "error",
@@ -207,7 +199,7 @@ export default function ReportsDetails() {
             void navigate(
               user?.roleId === 3
                 ? `/technician/reports?page=${page}`
-                : `/researcher/reports`
+                : `/researcher/reports`,
             )
           }
         >
@@ -241,7 +233,9 @@ export default function ReportsDetails() {
                     : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                {report?.status === "Seen" ? t("report.seen") : t("report.notSeen")}
+                {report?.status === "Seen"
+                  ? t("report.seen")
+                  : t("report.notSeen")}
               </span>
             </div>
 
@@ -307,7 +301,9 @@ export default function ReportsDetails() {
                   src={img}
                   alt={`report-img-${idx}`}
                   className={`w-32 h-32 object-cover rounded border cursor-pointer transition ${
-                    selectedImg === img ? "border-4 border-green-600 scale-105" : "border"
+                    selectedImg === img
+                      ? "border-4 border-green-600 scale-105"
+                      : "border"
                   }`}
                   onClick={() => setSelectedImg(img)}
                 />
@@ -321,37 +317,176 @@ export default function ReportsDetails() {
                   disabled={!selectedImg || analyzeLoading}
                   onClick={() => void analyzeImageFromUrl(selectedImg)}
                 >
-                  {analyzeLoading ? t("report.analyzing") : t("report.analyzeDisease")}
+                  {analyzeLoading
+                    ? t("report.analyzing")
+                    : t("report.analyzeDisease")}
                 </button>
               </div>
             )}
             {analyzeResult && (
-              <div className="mt-4 bg-gray-50 p-4 rounded">
-                <div className="font-semibold mb-2 text-green-700">
-                  {t("report.analysisResult")}
-                </div>
-                <div className="mb-2">
-                  <span className="font-semibold">{t("experimentLog.stage")}:</span>{" "}
-                  {stageNameMap[analyzeResult.stage] || analyzeResult.stage}
-                </div>
-                <div className="mb-2">
-                  <span className="font-semibold">{t("report.diseasePrediction")}:</span>{" "}
-                  {getPredictVietnamese(analyzeResult.disease.predict)}
-                </div>
-                <div>
-                  <span className="font-semibold">{t("report.diseaseProbability")}:</span>
-                  <ul className="mt-2">
-                    {Object.entries(analyzeResult.disease.probability)
-                      .filter(([, value]) => value > 0.0001)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([key, value]) => (
-                        <li key={key} className="flex justify-between">
-                          <span>{diseaseNameMap[key] || key}</span>
-                          <span>{(value * 100).toFixed(2)}%</span>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
+              <div className="mt-4">
+                {(() => {
+                  const topProb =
+                    analyzeResult.disease.probability[
+                      analyzeResult.disease.predict
+                    ] ??
+                    Math.max(
+                      ...Object.values(analyzeResult.disease.probability),
+                    );
+                  const predictName = getPredictVietnamese(
+                    analyzeResult.disease.predict,
+                  );
+                  const isHealthyResult =
+                    analyzeResult.disease.predict === "healthy";
+                  return (
+                    <div className="space-y-4">
+                      <div
+                        className={`p-5 rounded-xl border ${
+                          isHealthyResult
+                            ? "bg-[#E4F0E8] border-[#DDEEE0]"
+                            : "bg-rose-50 border-rose-200"
+                        } flex items-center justify-between gap-4`}
+                      >
+                        <div className="space-y-3 flex-1">
+                          <div>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                              Giai đoạn
+                            </span>
+                            <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
+                              {stageNameMap[analyzeResult.stage] ||
+                                analyzeResult.stage}
+                            </p>
+                          </div>
+                          <div>
+                            <span
+                              className={`text-xs font-semibold uppercase tracking-wide ${
+                                isHealthyResult
+                                  ? "text-[#2D5A27]"
+                                  : "text-rose-600"
+                              }`}
+                            >
+                              Kết quả chẩn đoán
+                            </span>
+                            <p
+                              className={`text-xl font-black mt-0.5 ${
+                                isHealthyResult
+                                  ? "text-[#1e3e1c]"
+                                  : "text-rose-800"
+                              }`}
+                            >
+                              {predictName}
+                            </p>
+                          </div>
+                        </div>
+                        <div
+                          className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
+                            isHealthyResult
+                              ? "border-[#C9E7D2]"
+                              : "border-rose-200"
+                          }`}
+                        >
+                          <span
+                            className={`text-xl font-black leading-none ${
+                              isHealthyResult
+                                ? "text-[#2D5A27]"
+                                : "text-rose-600"
+                            }`}
+                          >
+                            {(topProb * 100).toFixed(1)}%
+                          </span>
+                          <span className="text-[10px] text-slate-400 mt-1">
+                            độ tin cậy
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Predictions Breakdown */}
+                      {Object.keys(analyzeResult.disease.probability).length >
+                        0 && (
+                        <div className="rounded-xl border border-slate-200 overflow-hidden">
+                          <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                              Phân bố xác suất bệnh
+                            </span>
+                          </div>
+                          <div className="divide-y divide-slate-100">
+                            {Object.entries(analyzeResult.disease.probability)
+                              .filter(([key]) => key in onnxNameMap)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([key, prob]) => {
+                                const name =
+                                  onnxNameMap[key] ?? getPredictVietnamese(key);
+                                const isTop =
+                                  key === analyzeResult.disease.predict;
+                                const pct = prob * 100;
+                                return (
+                                  <div
+                                    key={key}
+                                    className={`flex items-center gap-3 px-4 py-3 ${
+                                      isTop
+                                        ? isHealthyResult
+                                          ? "bg-[#f0f8f2]"
+                                          : "bg-rose-50/60"
+                                        : ""
+                                    }`}
+                                  >
+                                    <span
+                                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                        isTop
+                                          ? isHealthyResult
+                                            ? "bg-[#2D5A27]"
+                                            : "bg-rose-500"
+                                          : "bg-slate-300"
+                                      }`}
+                                    />
+                                    <span
+                                      className={`flex-1 text-sm truncate ${
+                                        isTop
+                                          ? isHealthyResult
+                                            ? "font-semibold text-[#1e3e1c]"
+                                            : "font-semibold text-rose-800"
+                                          : "font-medium text-slate-500"
+                                      }`}
+                                      title={name}
+                                    >
+                                      {name}
+                                    </span>
+                                    <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                          style={{
+                                            width: `${pct.toFixed(1)}%`,
+                                          }}
+                                          className={`h-full rounded-full transition-all duration-500 ${
+                                            isTop
+                                              ? isHealthyResult
+                                                ? "bg-[#2D5A27]"
+                                                : "bg-rose-500"
+                                              : "bg-slate-200"
+                                          }`}
+                                        />
+                                      </div>
+                                      <span
+                                        className={`text-xs font-bold w-11 text-right ${
+                                          isTop
+                                            ? isHealthyResult
+                                              ? "text-[#2D5A27]"
+                                              : "text-rose-600"
+                                            : "text-slate-400"
+                                        }`}
+                                      >
+                                        {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -373,7 +508,9 @@ export default function ReportsDetails() {
                 <div className="font-semibold text-gray-700 mb-1">
                   {t("common.createdAt")}
                 </div>
-                <div>{sample.dob ? new Date(sample.dob).toLocaleDateString() : ""}</div>
+                <div>
+                  {sample.dob ? new Date(sample.dob).toLocaleDateString() : ""}
+                </div>
               </div>
               <div>
                 <div className="font-semibold text-gray-700 mb-1">
@@ -384,10 +521,10 @@ export default function ReportsDetails() {
                     sample.statusEnum === "Process"
                       ? "bg-yellow-100 text-yellow-800"
                       : sample.statusEnum === "Suspended"
-                      ? "bg-green-100 text-gray-800"
-                      : sample.statusEnum === "Destroyed"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
+                        ? "bg-green-100 text-gray-800"
+                        : sample.statusEnum === "Destroyed"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {getStatusDisplay(sample.statusEnum)}

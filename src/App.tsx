@@ -61,6 +61,8 @@ import AdminSeedlings from "./pages/admin/seeding/AdminSeedlings";
 import AdminSeedlingDetail from "./pages/admin/seeding/AdminSeedlingDetail";
 import AdminMethodDetail from "./pages/admin/method/AdminMethodDetail";
 import AdminMethod from "./pages/admin/method/AdminMethod";
+import AdminDisease from "./pages/admin/disease/AdminDisease";
+import AdminDiseaseDetail from "./pages/admin/disease/AdminDiseaseDetail";
 import AdminReport from "./pages/admin/report/AdminReports";
 import AdminReportsDetails from "./pages/admin/report/AdminReportsDetails";
 import AdminElement from "./pages/admin/element/AdminElement";
@@ -525,6 +527,22 @@ function AppLayout() {
               element={
                 <ProtectedRoute requiredRole="Admin">
                   <AdminMethodDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disease"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminDisease />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disease/:id"
+              element={
+                <ProtectedRoute requiredRole="Admin">
+                  <AdminDiseaseDetail />
                 </ProtectedRoute>
               }
             />

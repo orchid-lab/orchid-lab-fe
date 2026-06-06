@@ -5,12 +5,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, X, FlaskConical, Layers, TestTube2 } from "lucide-react";
+import { Search, X, FlaskConical, Layers } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "../../../api/axiosInstance";
-import AdminMethodSuccessRate from "./AdminMethodSuccessRate"; 
+import AdminMethodSuccessRate from "./AdminMethodSuccessRate";
 import "./AdminMethod.css";
 
 const PAGE_SIZE = 5;
@@ -57,7 +57,11 @@ const tableRow: Variants = {
   visible: (i = 0) => ({
     opacity: 1,
     x: 0,
-    transition: { duration: 0.32, delay: (i as number) * 0.045, ease: EASE_OUT },
+    transition: {
+      duration: 0.32,
+      delay: (i as number) * 0.045,
+      ease: EASE_OUT,
+    },
   }),
   exit: { opacity: 0, x: 14, transition: { duration: 0.18 } },
 };
@@ -82,7 +86,11 @@ export default function AdminMethod() {
   const runProgress = () => {
     if (!progressRef.current) return;
     gsap.set(progressRef.current, { scaleX: 0, opacity: 1 });
-    gsap.to(progressRef.current, { scaleX: 1, duration: 0.9, ease: "power3.out" });
+    gsap.to(progressRef.current, {
+      scaleX: 1,
+      duration: 0.9,
+      ease: "power3.out",
+    });
     gsap.to(progressRef.current, { opacity: 0, duration: 0.4, delay: 1.1 });
   };
 
@@ -96,10 +104,15 @@ export default function AdminMethod() {
       setLoading(true);
       runProgress();
       try {
-        const res = await axiosInstance.get("/api/methods?pageNumber=1&pageSize=1000");
+        const res = await axiosInstance.get(
+          "/api/methods?pageNumber=1&pageSize=1000",
+        );
         const json = res.data as MethodApiResponse;
         const list =
-          json.data ?? json.value ?? json.items ?? (Array.isArray(res.data) ? res.data : []);
+          json.data ??
+          json.value ??
+          json.items ??
+          (Array.isArray(res.data) ? res.data : []);
         setAllMethods((list as Method[]).reverse());
       } catch {
         setAllMethods([]);
@@ -124,7 +137,10 @@ export default function AdminMethod() {
 
   const totalPages = Math.ceil(filteredMethods.length / PAGE_SIZE);
   const startIndex = (page - 1) * PAGE_SIZE;
-  const currentMethods = filteredMethods.slice(startIndex, startIndex + PAGE_SIZE);
+  const currentMethods = filteredMethods.slice(
+    startIndex,
+    startIndex + PAGE_SIZE,
+  );
   const hasActiveFilter = searchTerm.trim().length > 0;
 
   useEffect(() => {
@@ -141,21 +157,11 @@ export default function AdminMethod() {
     setSearchTerm("");
   };
 
-  /* ── Stats helpers ── */
-  const getStageCount = (m: Method) => m.methodStages?.length ?? 0;
-  const getMaterialCount = (m: Method) =>
-    (m.methodStages ?? []).reduce((acc, s) => acc + (s.materials?.length ?? 0), 0);
-  const getChemicalCount = (m: Method) =>
-    (m.methodStages ?? []).reduce((acc, s) => acc + (s.chemicals?.length ?? 0), 0);
-
   const tableHeaders = [
     t("sample.number"),
     t("method.nameLabel") || "Tên phương pháp",
     t("method.descriptionLabel") || "Mô tả",
     t("method.totalDurationLabel") || "Tổng thời gian",
-    t("method.stageCountLabel") || "Giai đoạn",
-    t("method.materialCountLabel") || "Vật tư",
-    t("method.chemicalCountLabel") || "Hoá chất",
   ];
 
   /* ── Tab config ── */
@@ -174,7 +180,6 @@ export default function AdminMethod() {
 
   return (
     <main className="admin-method-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] text-slate-900">
-
       {/* ── GSAP progress bar ── */}
       <div
         ref={progressRef}
@@ -183,7 +188,6 @@ export default function AdminMethod() {
       />
 
       <div className="p-6 space-y-6">
-
         {/* ── Header card ── */}
         <motion.div
           variants={fadeUp}
@@ -243,7 +247,6 @@ export default function AdminMethod() {
               transition={{ duration: 0.22, ease: EASE_OUT }}
               className="space-y-6"
             >
-
               {/* ── Filter card ── */}
               <motion.div
                 variants={fadeUp}
@@ -326,7 +329,11 @@ export default function AdminMethod() {
                             key={i}
                             initial={{ opacity: 0, y: -8 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + i * 0.05, duration: 0.3, ease: EASE_OUT }}
+                            transition={{
+                              delay: 0.3 + i * 0.05,
+                              duration: 0.3,
+                              ease: EASE_OUT,
+                            }}
                             className="text-center p-4 font-semibold text-gray-900"
                           >
                             {h}
@@ -352,8 +359,14 @@ export default function AdminMethod() {
                           </motion.tr>
                         ))
                       ) : currentMethods.length === 0 ? (
-                        <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                          <td colSpan={7} className="text-center p-12 text-gray-500">
+                        <motion.tr
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <td
+                            colSpan={7}
+                            className="text-center p-12 text-gray-500"
+                          >
                             <div className="text-6xl mb-4">🧪</div>
                             <div className="text-lg font-medium">
                               {t("common.noData") || "Không có dữ liệu"}
@@ -376,7 +389,9 @@ export default function AdminMethod() {
                                 transition: { duration: 0.15 },
                               }}
                               className="border-b border-rose-50 cursor-pointer"
-                              onClick={() => navigate(`/admin/method/${m.id}?page=${page}`)}
+                              onClick={() =>
+                                navigate(`/admin/method/${m.id}?page=${page}`)
+                              }
                             >
                               {/* # */}
                               <td className="p-4 text-center text-gray-500 text-sm">
@@ -390,7 +405,10 @@ export default function AdminMethod() {
 
                               {/* Description */}
                               <td className="p-4 text-center text-gray-600 text-sm max-w-[260px]">
-                                <span className="line-clamp-2 block" title={m.description}>
+                                <span
+                                  className="line-clamp-2 block"
+                                  title={m.description}
+                                >
                                   {m.description || "-"}
                                 </span>
                               </td>
@@ -399,30 +417,6 @@ export default function AdminMethod() {
                               <td className="p-4 text-center">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-[#9f1239] border border-rose-100">
                                   {m.totalDurationDays ?? "-"} ngày
-                                </span>
-                              </td>
-
-                              {/* Stages */}
-                              <td className="p-4 text-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200">
-                                  <FlaskConical className="w-3 h-3" />
-                                  {getStageCount(m)}
-                                </span>
-                              </td>
-
-                              {/* Materials */}
-                              <td className="p-4 text-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                  <Layers className="w-3 h-3" />
-                                  {getMaterialCount(m)}
-                                </span>
-                              </td>
-
-                              {/* Chemicals */}
-                              <td className="p-4 text-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
-                                  <TestTube2 className="w-3 h-3" />
-                                  {getChemicalCount(m)}
                                 </span>
                               </td>
                             </motion.tr>
@@ -462,29 +456,33 @@ export default function AdminMethod() {
                               ←
                             </motion.button>
                           )}
-                          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                            let pageNum: number;
-                            if (totalPages <= 5) pageNum = i + 1;
-                            else if (page <= 3) pageNum = i + 1;
-                            else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
-                            else pageNum = page - 2 + i;
-                            return (
-                              <motion.button
-                                key={pageNum}
-                                type="button"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => handlePageChange(pageNum)}
-                                className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
-                                  page === pageNum
-                                    ? "bg-[#9f1239] text-white"
-                                    : "bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300"
-                                }`}
-                              >
-                                {pageNum}
-                              </motion.button>
-                            );
-                          })}
+                          {Array.from(
+                            { length: Math.min(totalPages, 5) },
+                            (_, i) => {
+                              let pageNum: number;
+                              if (totalPages <= 5) pageNum = i + 1;
+                              else if (page <= 3) pageNum = i + 1;
+                              else if (page >= totalPages - 2)
+                                pageNum = totalPages - 4 + i;
+                              else pageNum = page - 2 + i;
+                              return (
+                                <motion.button
+                                  key={pageNum}
+                                  type="button"
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  onClick={() => handlePageChange(pageNum)}
+                                  className={`px-4 py-2 rounded-lg font-medium shadow-sm transition-colors ${
+                                    page === pageNum
+                                      ? "bg-[#9f1239] text-white"
+                                      : "bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300"
+                                  }`}
+                                >
+                                  {pageNum}
+                                </motion.button>
+                              );
+                            },
+                          )}
                           {page < totalPages && (
                             <motion.button
                               type="button"
@@ -502,7 +500,6 @@ export default function AdminMethod() {
                   )}
                 </AnimatePresence>
               </motion.div>
-
             </motion.div>
           ) : (
             <motion.div
@@ -516,7 +513,6 @@ export default function AdminMethod() {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
     </main>
   );

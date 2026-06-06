@@ -6,10 +6,19 @@ import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useTranslation } from "react-i18next";
 import { motion, type Variants } from "framer-motion";
-import { 
-  ArrowLeft, FileText, Activity, AlertCircle, 
-  Ruler, Microscope, Clock, ShieldAlert,
-  ThermometerSun, XCircle, CheckCircle2
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
+import {
+  ArrowLeft,
+  FileText,
+  Activity,
+  AlertCircle,
+  Ruler,
+  Microscope,
+  Clock,
+  ShieldAlert,
+  ThermometerSun,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 /* ─── Interfaces Khớp Với API Thật ─── */
@@ -46,19 +55,10 @@ interface ImageDto {
 
 interface AnalyticResult {
   id: string;
-  anthracnose: number;
-  bacterialWilt: number;
-  blackrot: number;
-  brownspots: number;
-  moldBacterial: number;
-  moldFungus: number;
-  softRot: number;
-  stemRot: number;
-  witheredYellowRoot: number;
-  healthy: number;
-  oxidation: number;
-  virus: number;
-  [key: string]: string | number; // Cho phép index signature để loop
+  predictions: Record<string, number>;
+  topDisease: string;
+  confidence: number;
+  analyzedAt: string;
 }
 
 interface MonitoringLog {
@@ -91,6 +91,7 @@ export default function AdminMonitoringLogDetails() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MonitoringLog | null>(null);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
+  const onnxNameMap = useDiseaseMap();
 
   // Fetch data từ API thật
   useEffect(() => {
@@ -111,21 +112,6 @@ export default function AdminMonitoringLogDetails() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const diseaseNameMap: Record<string, string> = {
-    anthracnose: t("diseases.anthracnose") ?? "Thán thư",
-    bacterialWilt: t("diseases.bacterialWilt") ?? "Héo vi khuẩn",
-    blackrot: t("diseases.blackrot") ?? "Thối đen",
-    brownspots: t("diseases.brownspots") ?? "Đốm nâu",
-    moldBacterial: t("diseases.moldBacterial") ?? "Mốc vi khuẩn",
-    moldFungus: t("diseases.moldFungus") ?? "Mốc nấm",
-    softRot: t("diseases.softRot") ?? "Thối mềm",
-    stemRot: t("diseases.stemRot") ?? "Thối thân",
-    witheredYellowRoot: t("diseases.witheredYellowRoot") ?? "Vàng rễ héo",
-    healthy: t("diseases.healthy") ?? "Khỏe mạnh",
-    oxidation: t("diseases.oxidation") ?? "Oxy hóa",
-    virus: t("diseases.virus") ?? "Virus",
-  };
-
   function formatDate(iso?: string | null) {
     if (!iso) return "—";
     return new Date(iso).toLocaleString("vi-VN");
@@ -134,18 +120,48 @@ export default function AdminMonitoringLogDetails() {
   const getStatusDisplay = (status?: string) => {
     if (!status) return "—";
     // Fix lỗi `any` bằng cách gán type `React.ElementType` cho thuộc tính icon
-    const statusMap: Record<string, { label: string; bg: string; text: string; icon: React.ElementType }> = {
-      Created: { label: "Mới tạo", bg: "bg-sky-50", text: "text-sky-700", icon: FileText },
-      Process: { label: "Đang xử lý", bg: "bg-amber-50", text: "text-amber-700", icon: Activity },
-      Approved: { label: "Đã duyệt", bg: "bg-emerald-50", text: "text-emerald-700", icon: CheckCircle2 },
-      Rejected: { label: "Bị từ chối", bg: "bg-rose-50", text: "text-rose-700", icon: XCircle },
+    const statusMap: Record<
+      string,
+      { label: string; bg: string; text: string; icon: React.ElementType }
+    > = {
+      Created: {
+        label: "Mới tạo",
+        bg: "bg-sky-50",
+        text: "text-sky-700",
+        icon: FileText,
+      },
+      Process: {
+        label: "Đang xử lý",
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        icon: Activity,
+      },
+      Approved: {
+        label: "Đã duyệt",
+        bg: "bg-emerald-50",
+        text: "text-emerald-700",
+        icon: CheckCircle2,
+      },
+      Rejected: {
+        label: "Bị từ chối",
+        bg: "bg-rose-50",
+        text: "text-rose-700",
+        icon: XCircle,
+      },
     };
-    
+
     // Fix lỗi `||` bằng nullish coalescing `??`
-    const config = statusMap[status] ?? { label: status, bg: "bg-gray-50", text: "text-gray-700", icon: FileText };
+    const config = statusMap[status] ?? {
+      label: status,
+      bg: "bg-gray-50",
+      text: "text-gray-700",
+      icon: FileText,
+    };
     const Icon = config.icon;
     return (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-current/20 ${config.bg} ${config.text}`}>
+      <span
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-current/20 ${config.bg} ${config.text}`}
+      >
         <Icon className="w-4 h-4" />
         {config.label}
       </span>
@@ -157,7 +173,9 @@ export default function AdminMonitoringLogDetails() {
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] flex items-center justify-center">
         <div className="flex flex-col items-center text-rose-500 animate-pulse">
           <FileText className="w-10 h-10 mb-4 animate-bounce" />
-          <p className="font-medium">{t("common.loadingData") ?? "Đang tải báo cáo..."}</p>
+          <p className="font-medium">
+            {t("common.loadingData") ?? "Đang tải báo cáo..."}
+          </p>
         </div>
       </main>
     );
@@ -169,44 +187,42 @@ export default function AdminMonitoringLogDetails() {
         <div className="text-slate-500 text-center">
           <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
           <p>Không tìm thấy dữ liệu Monitoring Log.</p>
-          <button type="button" onClick={() => navigate(-1)} className="mt-4 text-[#9f1239] hover:underline">Quay lại</button>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mt-4 text-[#9f1239] hover:underline"
+          >
+            Quay lại
+          </button>
         </div>
       </main>
     );
   }
 
-  // Lọc xác suất các loại bệnh từ API (bỏ id)
-  const probabilities = data.analyticResult 
-    ? Object.entries(data.analyticResult)
-        .filter(([key]) => key !== "id")
-        .map(([key, val]) => ({ key, value: Number(val) }))
-        .sort((a, b) => b.value - a.value)
-    : [];
-
-  const topPrediction = probabilities.length > 0 ? probabilities[0] : null;
-  // Dùng diseaseName từ API nếu có, không thì lấy cái cao nhất từ analyticResult
-  const finalDiseaseName = data.diseaseName 
-    ? (diseaseNameMap[data.diseaseName] ?? data.diseaseName)
-    : topPrediction 
-      ? (diseaseNameMap[topPrediction.key] ?? topPrediction.key) 
-      : "Chưa phân tích";
+  const isHealthyLog =
+    (data.analyticResult?.topDisease ?? "").toLowerCase() === "healthy" ||
+    (data.diseaseName ?? "").toLowerCase().includes("khỏe");
 
   // Animation (Fix lỗi type Variants)
-  const staggerContainer: Variants = { 
-    hidden: { opacity: 0 }, 
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } } 
+  const staggerContainer: Variants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
-  const fadeInUp: Variants = { 
-    hidden: { opacity: 0, y: 20 }, 
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } 
+  const fadeInUp: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
   };
 
   return (
     <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-[#fffbfb] p-6 lg:p-8 text-slate-800">
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-6xl mx-auto space-y-6">
-        
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="max-w-6xl mx-auto space-y-6"
+      >
         {/* Nút quay lại */}
-        <motion.button 
+        <motion.button
           variants={fadeInUp}
           type="button"
           onClick={() => navigate(-1)}
@@ -217,7 +233,10 @@ export default function AdminMonitoringLogDetails() {
         </motion.button>
 
         {/* Header */}
-        <motion.div variants={fadeInUp} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <motion.div
+          variants={fadeInUp}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#9f1239] flex items-center gap-3">
               <FileText className="w-8 h-8 p-1.5 bg-rose-100 text-rose-600 rounded-xl" />
@@ -225,40 +244,51 @@ export default function AdminMonitoringLogDetails() {
             </h1>
             <div className="text-sm text-slate-500 mt-2 flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              {formatDate(data.createdDate)} <span className="mx-1">•</span> Tạo bởi: {data.createdBy}
+              {formatDate(data.createdDate)} <span className="mx-1">•</span> Tạo
+              bởi: {data.createdBy}
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
             {getStatusDisplay(data.status)}
             <div className="px-3 py-1.5 bg-white border border-rose-100 rounded-lg shadow-sm text-xs font-medium text-slate-500">
-              Log ID: <span className="text-[#9f1239] font-bold">{data.id}</span>
+              Log ID:{" "}
+              <span className="text-[#9f1239] font-bold">{data.id}</span>
             </div>
           </div>
         </motion.div>
 
         {/* Cảnh báo từ chối (nếu có) */}
         {data.status === "Rejected" && data.rejectionReason && (
-          <motion.div variants={fadeInUp} className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800">
+          <motion.div
+            variants={fadeInUp}
+            className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-rose-800"
+          >
             <ShieldAlert className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <div>
               <h4 className="font-bold">Lý do từ chối:</h4>
               <p className="text-sm mt-1">{data.rejectionReason}</p>
-              <p className="text-xs text-rose-600 mt-2">Từ chối lúc: {formatDate(data.rejectedDate)}</p>
+              <p className="text-xs text-rose-600 mt-2">
+                Từ chối lúc: {formatDate(data.rejectedDate)}
+              </p>
             </div>
           </motion.div>
         )}
 
         {/* Sample summary */}
-        <motion.section variants={fadeInUp} className="w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+        <motion.section
+          variants={fadeInUp}
+          className="w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 overflow-hidden"
+        >
           <div className="p-6 md:p-8">
             <div className="flex flex-col lg:flex-row gap-8">
-              
               {/* Left Column: Sample Info */}
               <div className="flex-1 space-y-6">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800">Mẫu: {data.sampleName ?? "—"}</h2>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    Mẫu: {data.sampleName ?? "—"}
+                  </h2>
                   <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-                    Giai đoạn: 
+                    Giai đoạn:
                     <span className="inline-flex items-center px-2.5 py-1 rounded-md font-medium bg-[#fff1f2] text-[#9f1239] border border-rose-100">
                       {data.sampleStageDefinitionName ?? "—"}
                     </span>
@@ -268,14 +298,20 @@ export default function AdminMonitoringLogDetails() {
                 <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-3 text-sm text-slate-600">
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span>Trạng thái dữ liệu:</span>
-                    <strong className={data.isNewest ? "text-emerald-600" : "text-amber-600"}>
+                    <strong
+                      className={
+                        data.isNewest ? "text-emerald-600" : "text-amber-600"
+                      }
+                    >
                       {data.isNewest ? "Mới nhất" : "Cũ"}
                     </strong>
                   </div>
                   <div className="flex justify-between pb-1">
                     <span>Cập nhật lần cuối:</span>
                     {/* Sử dụng nullish coalescing để phòng trường hợp updatedDate null */}
-                    <strong>{formatDate(data.updatedDate ?? data.createdDate)}</strong>
+                    <strong>
+                      {formatDate(data.updatedDate ?? data.createdDate)}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -286,15 +322,21 @@ export default function AdminMonitoringLogDetails() {
                   <ThermometerSun className="w-5 h-5 text-rose-500" />
                   Chỉ số đo đạc thực tế
                 </h4>
-                
+
                 {data.logDetails && data.logDetails.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {data.logDetails.map((detail) => (
-                      <MetricRow 
+                      <MetricRow
                         key={detail.id}
-                        label={detail.stageRequirementDefinitionDto.sampleRequirementDefinitionDto.name}
+                        label={
+                          detail.stageRequirementDefinitionDto
+                            .sampleRequirementDefinitionDto.name
+                        }
                         value={detail.measuredValue}
-                        unit={detail.stageRequirementDefinitionDto.sampleRequirementDefinitionDto.unit}
+                        unit={
+                          detail.stageRequirementDefinitionDto
+                            .sampleRequirementDefinitionDto.unit
+                        }
                         minValue={detail.stageRequirementDefinitionDto.minValue}
                         maxValue={detail.stageRequirementDefinitionDto.maxValue}
                         isMatch={detail.isMatch}
@@ -307,21 +349,22 @@ export default function AdminMonitoringLogDetails() {
                   </div>
                 )}
               </div>
-
             </div>
           </div>
         </motion.section>
 
         {/* Hình ảnh & Phân tích AI */}
-        <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+        <motion.div
+          variants={fadeInUp}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
           {/* Cột trái: Hình ảnh */}
           <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 p-6 flex flex-col h-full">
             <h4 className="text-base font-bold text-[#9f1239] mb-4 flex items-center gap-2">
               <Microscope className="w-5 h-5" />
               Hình ảnh đính kèm
             </h4>
-            
+
             {data.images && data.images.length > 0 ? (
               <>
                 <div className="w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-4 flex-1 min-h-[300px] relative group">
@@ -331,7 +374,13 @@ export default function AdminMonitoringLogDetails() {
                     className="w-full h-full object-cover absolute inset-0"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button type="button" onClick={() => window.open(selectedImg ?? data.images[0].url, '_blank')} className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white border border-white/50 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.open(selectedImg ?? data.images[0].url, "_blank")
+                      }
+                      className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white border border-white/50 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors"
+                    >
                       Mở ảnh gốc
                     </button>
                   </div>
@@ -345,7 +394,11 @@ export default function AdminMonitoringLogDetails() {
                       onClick={() => setSelectedImg(img.url)}
                       className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === img.url ? "border-rose-500 shadow-md scale-105" : "border-transparent opacity-70 hover:opacity-100"}`}
                     >
-                      <img src={img.url} alt="thumb" className="w-full h-full object-cover" />
+                      <img
+                        src={img.url}
+                        alt="thumb"
+                        className="w-full h-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
@@ -360,7 +413,7 @@ export default function AdminMonitoringLogDetails() {
 
           {/* Cột phải: Kết quả AI */}
           <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-rose-100 p-6 flex flex-col h-full">
-            <h4 className="text-base font-bold text-slate-800 mb-4 border-b border-rose-50 pb-3">
+            <h4 className="text-base font-bold text-[#9f1239] mb-4 border-b border-rose-50 pb-3">
               Kết quả chẩn đoán AI
             </h4>
 
@@ -368,52 +421,161 @@ export default function AdminMonitoringLogDetails() {
               <div className="h-full flex flex-col items-center justify-center text-slate-400 py-8">
                 <Microscope className="w-12 h-12 mb-3 text-slate-200" />
                 <p className="text-sm text-center max-w-[250px]">
-                  Báo cáo này chưa được phân tích AI hoặc không có dữ liệu chẩn đoán.
+                  Báo cáo này chưa được phân tích AI hoặc không có dữ liệu chẩn
+                  đoán.
                 </p>
               </div>
             ) : (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
-                <div className="flex items-center justify-between p-4 bg-rose-50 rounded-xl border border-rose-100">
-                  <div>
-                    <div className="text-xs text-rose-500 font-semibold uppercase tracking-wider mb-1">Dự đoán cao nhất</div>
-                    <div className="text-xl font-bold text-[#9f1239]">
-                      {finalDiseaseName}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <div
+                  className={`p-5 rounded-xl border ${
+                    isHealthyLog
+                      ? "bg-emerald-50 border-emerald-200"
+                      : "bg-rose-50 border-rose-200"
+                  } flex items-center justify-between gap-4`}
+                >
+                  <div className="space-y-3 flex-1">
+                    <div>
+                      <span
+                        className={`text-xs font-semibold uppercase tracking-wide ${
+                          isHealthyLog ? "text-emerald-700" : "text-rose-600"
+                        }`}
+                      >
+                        Giai đoạn
+                      </span>
+                      <p
+                        className={`text-lg font-black mt-0.5 ${
+                          isHealthyLog ? "text-emerald-800" : "text-[#9f1239]"
+                        }`}
+                      >
+                        {data.sampleStageDefinitionName ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span
+                        className={`text-xs font-semibold uppercase tracking-wide ${
+                          isHealthyLog ? "text-emerald-700" : "text-rose-600"
+                        }`}
+                      >
+                        Kết quả chẩn đoán
+                      </span>
+                      <p
+                        className={`text-xl font-black mt-0.5 ${
+                          isHealthyLog ? "text-emerald-800" : "text-[#9f1239]"
+                        }`}
+                      >
+                        {data.diseaseName ?? "—"}
+                      </p>
                     </div>
                   </div>
-                  {topPrediction && (
-                    <div className="w-14 h-14 bg-white rounded-full flex flex-col items-center justify-center shadow-sm text-rose-600 font-bold border border-rose-100 leading-tight">
-                      <span>{Math.round(topPrediction.value * 100)}%</span>
-                    </div>
-                  )}
+                  <div
+                    className={`w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
+                      isHealthyLog ? "border-emerald-200" : "border-rose-200"
+                    }`}
+                  >
+                    <span
+                      className={`text-lg font-black leading-none ${
+                        isHealthyLog ? "text-emerald-700" : "text-rose-600"
+                      }`}
+                    >
+                      {data.analyticResult.confidence != null
+                        ? `${(data.analyticResult.confidence * 100).toFixed(1)}%`
+                        : "—"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1">
+                      độ tin cậy
+                    </span>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="text-sm font-semibold text-slate-700 mb-3">Xác suất các loại bệnh:</div>
-                  <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                    {probabilities.map((prob, idx) => (
-                      <div key={prob.key} className="flex items-center gap-3">
-                        <div className="w-28 text-sm font-medium text-slate-600 truncate" title={diseaseNameMap[prob.key] ?? prob.key}>
-                          {diseaseNameMap[prob.key] ?? prob.key}
-                        </div>
-                        <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${prob.value * 100}%` }}
-                            transition={{ duration: 0.8, delay: idx * 0.05 }}
-                            className={`h-full rounded-full ${idx === 0 ? "bg-[#9f1239]" : "bg-rose-300"}`}
-                          />
-                        </div>
-                        <div className="w-12 text-right text-xs font-semibold text-slate-500">
-                          {(prob.value * 100).toFixed(1)}%
-                        </div>
+                {/* Predictions Breakdown */}
+                {data.analyticResult.predictions &&
+                  Object.keys(data.analyticResult.predictions).length > 0 && (
+                    <div className="rounded-xl border border-slate-200 overflow-hidden mt-4">
+                      <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                        <Activity className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Phân bố xác suất bệnh
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <div className="divide-y divide-slate-100">
+                        {Object.entries(data.analyticResult.predictions)
+                          .filter(([onnxKey]) => onnxKey in onnxNameMap)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([onnxKey, prob]) => {
+                            const name = onnxNameMap[onnxKey] ?? onnxKey;
+                            const isTop =
+                              onnxKey === data.analyticResult!.topDisease;
+                            const pct = prob * 100;
+                            return (
+                              <div
+                                key={onnxKey}
+                                className={`flex items-center gap-3 px-4 py-3 ${
+                                  isTop
+                                    ? isHealthyLog
+                                      ? "bg-emerald-50/60"
+                                      : "bg-rose-50/60"
+                                    : ""
+                                }`}
+                              >
+                                <span
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                    isTop
+                                      ? isHealthyLog
+                                        ? "bg-emerald-500"
+                                        : "bg-rose-500"
+                                      : "bg-slate-300"
+                                  }`}
+                                />
+                                <span
+                                  className={`flex-1 text-sm truncate ${
+                                    isTop
+                                      ? isHealthyLog
+                                        ? "font-semibold text-emerald-800"
+                                        : "font-semibold text-[#9f1239]"
+                                      : "font-medium text-slate-500"
+                                  }`}
+                                  title={name}
+                                >
+                                  {name}
+                                </span>
+                                <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                      style={{ width: `${pct.toFixed(1)}%` }}
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        isTop
+                                          ? isHealthyLog
+                                            ? "bg-emerald-500"
+                                            : "bg-rose-500"
+                                          : "bg-slate-200"
+                                      }`}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`text-xs font-bold w-11 text-right ${
+                                      isTop
+                                        ? isHealthyLog
+                                          ? "text-emerald-700"
+                                          : "text-rose-600"
+                                        : "text-slate-400"
+                                    }`}
+                                  >
+                                    {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
               </motion.div>
             )}
           </section>
-
         </motion.div>
       </motion.div>
     </main>
@@ -421,13 +583,23 @@ export default function AdminMonitoringLogDetails() {
 }
 
 /* Helper Component vẽ Bar cho Số liệu (Log Details) */
-function MetricRow({ 
-  label, value, unit, minValue, maxValue, isMatch 
-}: { 
-  label: string, value: number, unit: string, minValue: number, maxValue: number, isMatch: boolean 
+function MetricRow({
+  label,
+  value,
+  unit,
+  minValue,
+  maxValue,
+  isMatch,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  minValue: number;
+  maxValue: number;
+  isMatch: boolean;
 }) {
-  const colorClass = isMatch 
-    ? "text-emerald-700 bg-emerald-50 border-emerald-200" 
+  const colorClass = isMatch
+    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
     : "text-rose-700 bg-[#fff1f2] border-rose-200";
 
   return (
@@ -441,7 +613,9 @@ function MetricRow({
           Chuẩn: {minValue} - {maxValue} {unit}
         </span>
       </div>
-      <div className={`min-w-[4rem] text-center px-2.5 py-1.5 rounded-lg text-sm font-bold border ${colorClass}`}>
+      <div
+        className={`min-w-[4rem] text-center px-2.5 py-1.5 rounded-lg text-sm font-bold border ${colorClass}`}
+      >
         {value} {unit}
       </div>
     </div>

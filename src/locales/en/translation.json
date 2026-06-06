@@ -117,6 +117,7 @@
     "technician": "Technician",
     "labRoom": "Lab Room",
     "method": "Method",
+    "disease": "Disease",
     "seedling": "Seedling",
     "task": "Task",
     "report": "Report",
@@ -133,6 +134,12 @@
     "materialsLabel": "Materials",
     "mechicalCountLabel": "Mechanical Count",
     "methodManagementDesc": "Create and manage propagation methods for orchid cultivation"
+  },
+  "adminDisease": {
+    "diseaseManagement": "Disease Management",
+    "diseaseManagementDesc": "Track and manage orchid disease profiles in the system",
+    "searchPlaceholder": "Search by disease name, code or ONNX class...",
+    "noDiseases": "No diseases found"
   },
   "auth": {
     "username": "Username",

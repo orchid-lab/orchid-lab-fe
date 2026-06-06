@@ -4,6 +4,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Loader2, Microscope, X } from "lucide-react";
+import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -72,7 +74,7 @@ const formatDate = (value?: string | null): string => {
 };
 
 const normalizeStageList = (
-  sampleStageDto: SampleDetail["sampleStageDto"]
+  sampleStageDto: SampleDetail["sampleStageDto"],
 ): SampleStageDetail[] => {
   if (!sampleStageDto) return [];
   if (Array.isArray(sampleStageDto)) return sampleStageDto;
@@ -86,11 +88,14 @@ const resolveImageUrl = (imageUrl?: string | null): string => {
   }
 
   const baseUrl = axiosInstance.defaults.baseURL ?? "";
-  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-  const normalizedImageUrl = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  const normalizedBaseUrl = baseUrl.endsWith("/")
+    ? baseUrl.slice(0, -1)
+    : baseUrl;
+  const normalizedImageUrl = imageUrl.startsWith("/")
+    ? imageUrl
+    : `/${imageUrl}`;
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 };
-
 
 export default function SampleDetail() {
   const navigate = useNavigate();
@@ -101,17 +106,22 @@ export default function SampleDetail() {
   const { user } = useAuth();
 
   // Get navigation source from location state
-  const navigationSource = location.state as { from?: 'researcherExperimentLogDetail'; experimentLogId?: string } | null;
+  const navigationSource = location.state as {
+    from?: "researcherExperimentLogDetail";
+    experimentLogId?: string;
+  } | null;
 
   const [sample, setSample] = useState<SampleDetail | null>(null);
-  const [experimentLogMap, setExperimentLogMap] = useState<Record<string, string>>(
-    {}
-  );
+  const [experimentLogMap, setExperimentLogMap] = useState<
+    Record<string, string>
+  >({});
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(
+    null,
+  );
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -130,27 +140,22 @@ export default function SampleDetail() {
     description: "",
   });
 
-  const stageNameMap: Record<string, string> = {
-    "coppice": "Chồi",
-    "tissue": "Mầm",
-    "tree": "Cây hoàn chỉnh"
-  };
-
   const loadSampleDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
 
     try {
-      const [sampleResponse, experimentLogsResponse, usersResponse] = await Promise.all([
-        axiosInstance.get(`/api/samples/${id}`),
-        axiosInstance.get<ExperimentLogApiResponse>(
-          "/api/experiment-logs?PageNo=1&PageSize=1000"
-        ),
-        axiosInstance.get<UserApiResponse>(
-          "/api/user?PageNumber=1&PageSize=1000"
-        ),
-      ]);
+      const [sampleResponse, experimentLogsResponse, usersResponse] =
+        await Promise.all([
+          axiosInstance.get(`/api/samples/${id}`),
+          axiosInstance.get<ExperimentLogApiResponse>(
+            "/api/experiment-logs?PageNo=1&PageSize=1000",
+          ),
+          axiosInstance.get<UserApiResponse>(
+            "/api/user?PageNumber=1&PageSize=1000",
+          ),
+        ]);
 
       const sampleData = (sampleResponse?.data?.value ??
         sampleResponse?.data) as SampleDetail;
@@ -184,8 +189,13 @@ export default function SampleDetail() {
 
   const handleBack = () => {
     // Navigate back to researcher experiment log detail
-    if (navigationSource?.from === 'researcherExperimentLogDetail' && navigationSource.experimentLogId) {
-      navigate(`/researcher/experiment-log/${navigationSource.experimentLogId}`);
+    if (
+      navigationSource?.from === "researcherExperimentLogDetail" &&
+      navigationSource.experimentLogId
+    ) {
+      navigate(
+        `/researcher/experiment-log/${navigationSource.experimentLogId}`,
+      );
     } else {
       // Default fallback to experiment logs list
       navigate("/researcher/experiment-log");
@@ -225,7 +235,7 @@ export default function SampleDetail() {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       const analysisEnd = performance.now();
       const analysisTime = Math.round(analysisEnd - analysisStart);
@@ -251,28 +261,59 @@ export default function SampleDetail() {
     setImagePreview("");
   };
 
+  // Kiểm tra kết quả healthy: topDisease là "healthy", hoặc unknown nhưng rawTopDisease cũng là healthy
   const isHealthyAnalysis = useMemo(() => {
     if (!analysisResult) return true;
-
-    const diseaseCode = analysisResult.disease?.code?.toLowerCase() ?? "";
-    const diseaseName = analysisResult.disease?.name?.toLowerCase() ?? "";
-
-    if (diseaseCode.includes("healthy") ?? diseaseName.includes("healthy") ?? diseaseName.includes("khỏe")) {
-      return true;
+    const topDisease = String(analysisResult.analyticResult.topDisease ?? "").toLowerCase();
+    if (topDisease === "healthy") return true;
+    // Nếu topDisease là "unknown" do bệnh inactive, kiểm tra rawTopDisease
+    if (topDisease === "unknown") {
+      const rawTop = String(analysisResult.rawTopDisease ?? "").toLowerCase();
+      if (rawTop === "healthy") return true;
     }
-
-    const values = Object.entries(analysisResult.analyticResult)
-      .filter(([key]) => key !== "healthy")
-      .map(([, value]) => value as number);
-    const maxNonHealthy = values.length > 0 ? Math.max(...values) : 0;
-
-    return analysisResult.analyticResult.healthy >= maxNonHealthy;
+    return false;
   }, [analysisResult]);
+
+  // Kiểm tra trường hợp bệnh phát hiện nhưng chưa active trong hệ thống
+  const isInactiveDisease = useMemo(() => {
+    if (!analysisResult) return false;
+    return (
+      analysisResult.isRawTopDiseaseActive === false &&
+      String(analysisResult.analyticResult.topDisease ?? "").toLowerCase() === "unknown"
+    );
+  }, [analysisResult]);
+
+  // Tính confidence hiển thị: nếu confidence = 0 do bệnh inactive, lấy từ predictions
+  const displayConfidence = useMemo(() => {
+    if (!analysisResult) return 0;
+    if (analysisResult.analyticResult.confidence > 0) {
+      return analysisResult.analyticResult.confidence;
+    }
+    // Confidence = 0 có thể do bệnh inactive — tìm giá trị từ predictions theo rawTopDisease
+    if (analysisResult.rawTopDisease) {
+      const rawNormalized = analysisResult.rawTopDisease
+        .replace(/_/g, "")
+        .toLowerCase();
+      const matchedKey = Object.keys(
+        analysisResult.analyticResult.predictions ?? {},
+      ).find((k) =>
+        k.replace(/\s*\(inactive\)\s*/gi, "").replace(/_/g, "").toLowerCase() ===
+        rawNormalized,
+      );
+      if (matchedKey) {
+        return analysisResult.analyticResult.predictions[matchedKey] ?? 0;
+      }
+    }
+    return 0;
+  }, [analysisResult]);
+
+  const onnxNameMap = useDiseaseMap();
 
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
 
-    const finalReason = destroyReason.trim() ?? `Mẫu vật nhiễm ${analysisResult.disease.name}`;
+    const finalReason =
+      destroyReason.trim() ?? `Mẫu vật nhiễm ${analysisResult.disease.name}`;
     setIsDestroying(true);
 
     try {
@@ -296,8 +337,13 @@ export default function SampleDetail() {
   const handleConvertToSeedling = async () => {
     if (!id || isConverting) return;
 
-    if (!convertFormData.localName.trim() || !convertFormData.scientificName.trim()) {
-      enqueueSnackbar("Vui lòng nhập đầy đủ Tên địa phương và Tên khoa học", { variant: "warning" });
+    if (
+      !convertFormData.localName.trim() ||
+      !convertFormData.scientificName.trim()
+    ) {
+      enqueueSnackbar("Vui lòng nhập đầy đủ Tên địa phương và Tên khoa học", {
+        variant: "warning",
+      });
       return;
     }
 
@@ -309,18 +355,24 @@ export default function SampleDetail() {
         description: convertFormData.description.trim() || undefined,
       });
 
-      enqueueSnackbar("Chuyển mẫu vật thành cây giống thành công", { variant: "success" });
+      enqueueSnackbar("Chuyển mẫu vật thành cây giống thành công", {
+        variant: "success",
+      });
       setShowConvertForm(false);
-      
+
       // Reset form
-      setConvertFormData({ localName: "", scientificName: "", description: "" });
-      
+      setConvertFormData({
+        localName: "",
+        scientificName: "",
+        description: "",
+      });
+
       // Reload để cập nhật trạng thái mới
       await loadSampleDetail();
     } catch (error) {
       enqueueSnackbar(
         getApiErrorMessage(error, "Không thể chuyển đổi thành cây giống"),
-        { variant: "error" }
+        { variant: "error" },
       );
     } finally {
       setIsConverting(false);
@@ -333,9 +385,11 @@ export default function SampleDetail() {
       [SampleStatusValue.InProgressed]: t("sample.statusInProgressed"),
       [SampleStatusValue.Completed]: t("sample.statusCompleted"),
       [SampleStatusValue.ExecutedBecauseOfDisease]: t(
-        "sample.statusExecutedBecauseOfDisease"
+        "sample.statusExecutedBecauseOfDisease",
       ),
-      [SampleStatusValue.ConvertedToSeedling]: t("sample.statusConvertedToSeedling"),
+      [SampleStatusValue.ConvertedToSeedling]: t(
+        "sample.statusConvertedToSeedling",
+      ),
     };
     return statusMap[status] ?? status;
   };
@@ -344,22 +398,33 @@ export default function SampleDetail() {
     if (!sample) return [];
 
     return [
-      { label: t("sample.createdBy"), value: userMap[sample.createdBy ?? ""] ?? sample.createdBy ?? "" },
+      {
+        label: t("sample.createdBy"),
+        value: userMap[sample.createdBy ?? ""] ?? sample.createdBy ?? "",
+      },
       { label: t("sample.createdDate"), value: formatDate(sample.createdDate) },
-      { label: t("sample.updatedBy"), value: userMap[sample.updatedBy ?? ""] ?? sample.updatedBy ?? "" },
+      {
+        label: t("sample.updatedBy"),
+        value: userMap[sample.updatedBy ?? ""] ?? sample.updatedBy ?? "",
+      },
       { label: t("sample.updatedDate"), value: formatDate(sample.updatedDate) },
-      { label: t("sample.executionDate"), value: formatDate(sample.executionDate) },
+      {
+        label: t("sample.executionDate"),
+        value: formatDate(sample.executionDate),
+      },
     ].filter((item) => item.value);
   }, [sample, userMap, t]);
 
   const sampleStages = useMemo(
     () => normalizeStageList(sample?.sampleStageDto ?? null),
-    [sample?.sampleStageDto]
+    [sample?.sampleStageDto],
   );
 
   const latestStage = useMemo(() => {
     if (sampleStages.length === 0) return null;
-    const inProgressStage = sampleStages.find((stage) => stage.status === SampleStatusValue.InProgressed);
+    const inProgressStage = sampleStages.find(
+      (stage) => stage.status === SampleStatusValue.InProgressed,
+    );
     if (inProgressStage) return inProgressStage;
     return sampleStages[sampleStages.length - 1];
   }, [sampleStages]);
@@ -369,17 +434,24 @@ export default function SampleDetail() {
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
   const hasApprovedLogForCurrentStage = reportRows.length > 0;
-  const isLastStage = latestStage?.sampleStageDefinition?.order === Math.max(...PREDEFINED_STAGES.map((s) => s.order));
+  const isLastStage =
+    latestStage?.sampleStageDefinition?.order ===
+    Math.max(...PREDEFINED_STAGES.map((s) => s.order));
   const lastStageOrder = Math.max(...PREDEFINED_STAGES.map((s) => s.order));
   const lastStage = sampleStages.find(
-    (stage) => stage.sampleStageDefinition?.order === lastStageOrder
+    (stage) => stage.sampleStageDefinition?.order === lastStageOrder,
   );
   const hasReportForLastStage = (lastStage?.logDetailDtos?.length ?? 0) > 0;
   const allStagesCompleted = PREDEFINED_STAGES.every((pre) => {
-    const stage = sampleStages.find((s) => s.sampleStageDefinition?.order === pre.order && s.status === SampleStatusValue.Completed);
+    const stage = sampleStages.find(
+      (s) =>
+        s.sampleStageDefinition?.order === pre.order &&
+        s.status === SampleStatusValue.Completed,
+    );
     return stage && (stage.logDetailDtos?.length ?? 0) > 0;
   });
-  const canChangeStage = user?.roleId === 2 &&
+  const canChangeStage =
+    user?.roleId === 2 &&
     sample?.status !== SampleStatusValue.ConvertedToSeedling &&
     sample?.status !== SampleStatusValue.ExecutedBecauseOfDisease &&
     hasApprovedLogForCurrentStage;
@@ -393,7 +465,7 @@ export default function SampleDetail() {
   const stageProgressRows = useMemo(() => {
     return sampleStages.map((stage) => {
       const predefinedStage = PREDEFINED_STAGES.find(
-        (pre) => pre.order === stage.sampleStageDefinition?.order
+        (pre) => pre.order === stage.sampleStageDefinition?.order,
       );
       const hasReport = (stage.logDetailDtos?.length ?? 0) > 0;
       const stageImageUrl = resolveImageUrl(stage.latestImageUrl);
@@ -429,19 +501,19 @@ export default function SampleDetail() {
     setIsChangingStage(true);
     try {
       await axiosInstance.put(`/api/samples/${id}/stage`);
-      enqueueSnackbar("Chuyển giai đoạn mẫu thành công", { variant: "success" });
+      enqueueSnackbar("Chuyển giai đoạn mẫu thành công", {
+        variant: "success",
+      });
       await loadSampleDetail();
     } catch (error) {
       enqueueSnackbar(
         getApiErrorMessage(error, "Không thể chuyển giai đoạn mẫu"),
-        { variant: "error" }
+        { variant: "error" },
       );
     } finally {
       setIsChangingStage(false);
     }
   };
-
-  // Đã chuyển lên trên, không khai báo lại ở đây nữa
 
   if (loading) {
     return (
@@ -458,7 +530,9 @@ export default function SampleDetail() {
     return (
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error ?? "Không tìm thấy dữ liệu"}</p>
+          <p className="text-red-600 mb-4">
+            {error ?? "Không tìm thấy dữ liệu"}
+          </p>
           <button
             onClick={handleBack}
             className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
@@ -474,7 +548,9 @@ export default function SampleDetail() {
     <main className="sample-detail-page ml-64 mt-16 min-h-[calc(100vh-64px)] bg-gray-100 flex flex-col items-center py-10 px-6 lg:px-8">
       <div className="bg-white rounded-xl px-8 pt-8 pb-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] w-full max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Chi tiết mẫu thí nghiệm: {sample.name}</h2>
+          <h2 className="text-2xl font-semibold">
+            Chi tiết mẫu thí nghiệm: {sample.name}
+          </h2>
           <div className="flex gap-3">
             {/* Ẩn CHỈ nút chuyển giai đoạn/hoàn thành mẫu vật nếu giai đoạn cuối đã hoàn thành */}
             {canConvertToSeedling && (
@@ -487,7 +563,9 @@ export default function SampleDetail() {
                 Chuyển thành cây giống
               </button>
             )}
-            {!(isLastStage && latestStage?.status === SampleStatusValue.Completed) && (
+            {!(
+              isLastStage && latestStage?.status === SampleStatusValue.Completed
+            ) && (
               <button
                 type="button"
                 onClick={() => void handleChangeStage()}
@@ -500,7 +578,7 @@ export default function SampleDetail() {
               >
                 {isChangingStage
                   ? "Đang chuyển..."
-                  : (isLastStage && hasReportForLastStage)
+                  : isLastStage && hasReportForLastStage
                     ? "Hoàn thành mẫu vật"
                     : "Chuyển giai đoạn"}
               </button>
@@ -558,11 +636,14 @@ export default function SampleDetail() {
             <div className="flex flex-col">
               <label className="font-medium mb-1.5">Thí nghiệm</label>
               <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                {experimentLogMap[sample.experimentLogId] ?? sample.experimentLogId}
+                {experimentLogMap[sample.experimentLogId] ??
+                  sample.experimentLogId}
               </div>
             </div>
             <div className="flex flex-col">
-              <label className="font-medium mb-1.5">Giai đoạn phát triển hiện tại</label>
+              <label className="font-medium mb-1.5">
+                Giai đoạn phát triển hiện tại
+              </label>
               <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
                 {currentStageLabel}
               </div>
@@ -577,7 +658,9 @@ export default function SampleDetail() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.stageProgress.title")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.stageProgress.title")}
+          </h3>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {stageProgressRows.map((row, idx) => {
               const {
@@ -591,7 +674,10 @@ export default function SampleDetail() {
               } = row;
               if (!predefinedStage) return null;
               return (
-                <article key={predefinedStage.order ?? idx} className="border border-gray-200 rounded-lg p-4 bg-white h-full">
+                <article
+                  key={predefinedStage.order ?? idx}
+                  className="border border-gray-200 rounded-lg p-4 bg-white h-full"
+                >
                   <div className="flex items-start justify-between gap-2 mb-2 min-h-[64px]">
                     <h4 className="font-semibold text-gray-900 leading-6 pr-2 min-h-[48px]">
                       {predefinedStage.order}. {t(predefinedStage.nameKey)}
@@ -603,7 +689,9 @@ export default function SampleDetail() {
                     </span>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">{t(predefinedStage.descriptionKey)}</p>
+                  <p className="text-sm text-gray-600 mb-3 min-h-[56px]">
+                    {t(predefinedStage.descriptionKey)}
+                  </p>
 
                   <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
                     {hasImage ? (
@@ -622,33 +710,54 @@ export default function SampleDetail() {
 
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.standardDuration")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.standardDuration")}
+                      </span>
                       <span className="text-gray-800 font-medium">
-                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays} {t("common.days")}
+                        {predefinedStage.minDurationDays} -{" "}
+                        {predefinedStage.maxDurationDays} {t("common.days")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.actualStartDate")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.actualStartDate")}
+                      </span>
                       <span className="text-gray-800 font-medium">
                         {formatDate(matchedStage?.startAt) ?? "-"}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.report")}</span>
-                      <span className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}>
-                        {hasReport ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.report")}
+                      </span>
+                      <span
+                        className={`font-medium ${hasReport ? "text-green-700" : "text-gray-500"}`}
+                      >
+                        {hasReport
+                          ? t("sample.stageProgress.available")
+                          : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.stageImage")}</span>
-                      <span className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}>
-                        {hasImage ? t("sample.stageProgress.available") : t("sample.stageProgress.notAvailable")}
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.stageImage")}
+                      </span>
+                      <span
+                        className={`font-medium ${hasImage ? "text-green-700" : "text-gray-500"}`}
+                      >
+                        {hasImage
+                          ? t("sample.stageProgress.available")
+                          : t("sample.stageProgress.notAvailable")}
                       </span>
                     </div>
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t("sample.stageProgress.systemStatus")}</span>
+                      <span className="text-gray-500">
+                        {t("sample.stageProgress.systemStatus")}
+                      </span>
                       <span className="text-gray-800 font-medium">
-                        {matchedStage?.status ? getStatusLabel(matchedStage.status) : "-"}
+                        {matchedStage?.status
+                          ? getStatusLabel(matchedStage.status)
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -659,7 +768,9 @@ export default function SampleDetail() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.latestImageTitle")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.latestImageTitle")}
+          </h3>
           {!latestImageUrl ? (
             <p className="text-sm text-gray-500">{t("sample.noLatestImage")}</p>
           ) : (
@@ -679,7 +790,9 @@ export default function SampleDetail() {
         </section>
 
         <section className="mb-6 border border-gray-200 rounded-lg p-5">
-          <h3 className="text-lg font-semibold mb-4">{t("sample.currentStageReportTitle")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("sample.currentStageReportTitle")}
+          </h3>
           {reportRows.length === 0 ? (
             <p className="text-sm text-gray-500">Không có dữ liệu báo cáo</p>
           ) : (
@@ -687,13 +800,27 @@ export default function SampleDetail() {
               <table className="w-full min-w-[760px]">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">STT</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Chỉ số</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Giá trị đo</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Kỳ vọng</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Khoảng chuẩn</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Đơn vị</th>
-                    <th className="text-left p-3 text-sm font-semibold text-gray-900">Kết quả</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      STT
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Chỉ số
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Giá trị đo
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Kỳ vọng
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Khoảng chuẩn
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Đơn vị
+                    </th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-900">
+                      Kết quả
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -703,14 +830,24 @@ export default function SampleDetail() {
 
                     return (
                       <tr key={row.id} className="border-b">
-                        <td className="p-3 text-sm text-gray-800">{index + 1}</td>
-                        <td className="p-3 text-sm text-gray-800">{sampleReq.name}</td>
-                        <td className="p-3 text-sm text-gray-800">{row.measuredValue}</td>
-                        <td className="p-3 text-sm text-gray-800">{req.expectedValue}</td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {index + 1}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {sampleReq.name}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {row.measuredValue}
+                        </td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {req.expectedValue}
+                        </td>
                         <td className="p-3 text-sm text-gray-800">
                           {req.minValue} - {req.maxValue}
                         </td>
-                        <td className="p-3 text-sm text-gray-800">{sampleReq.unit ?? "-"}</td>
+                        <td className="p-3 text-sm text-gray-800">
+                          {sampleReq.unit ?? "-"}
+                        </td>
                         <td className="p-3 text-sm">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -756,7 +893,7 @@ export default function SampleDetail() {
                 ×
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">
@@ -765,7 +902,12 @@ export default function SampleDetail() {
                 <input
                   type="text"
                   value={convertFormData.localName}
-                  onChange={(e) => setConvertFormData({ ...convertFormData, localName: e.target.value })}
+                  onChange={(e) =>
+                    setConvertFormData({
+                      ...convertFormData,
+                      localName: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="VD: Lan hồ điệp trắng F1"
                 />
@@ -777,16 +919,28 @@ export default function SampleDetail() {
                 <input
                   type="text"
                   value={convertFormData.scientificName}
-                  onChange={(e) => setConvertFormData({ ...convertFormData, scientificName: e.target.value })}
+                  onChange={(e) =>
+                    setConvertFormData({
+                      ...convertFormData,
+                      scientificName: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="VD: Phalaenopsis amabilis var. F1"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Mô tả</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Mô tả
+                </label>
                 <textarea
                   value={convertFormData.description}
-                  onChange={(e) => setConvertFormData({ ...convertFormData, description: e.target.value })}
+                  onChange={(e) =>
+                    setConvertFormData({
+                      ...convertFormData,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Mô tả cây giống..."
@@ -806,9 +960,15 @@ export default function SampleDetail() {
               <button
                 type="button"
                 onClick={handleConvertToSeedling}
-                disabled={isConverting || !convertFormData.localName.trim() || !convertFormData.scientificName.trim()}
+                disabled={
+                  isConverting ||
+                  !convertFormData.localName.trim() ||
+                  !convertFormData.scientificName.trim()
+                }
                 className={`px-4 py-2 text-sm rounded-lg text-white font-medium transition-colors ${
-                  !convertFormData.localName.trim() || !convertFormData.scientificName.trim() || isConverting
+                  !convertFormData.localName.trim() ||
+                  !convertFormData.scientificName.trim() ||
+                  isConverting
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-purple-600 hover:bg-purple-700"
                 }`}
@@ -822,10 +982,12 @@ export default function SampleDetail() {
 
       {/* MODAL: Phân tích bệnh */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-[#DDEEE0]">
             <div className="border-b p-6 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">{t("sample.selectImage")}</h3>
+              <h3 className="text-lg font-semibold">
+                {t("sample.selectImage")}
+              </h3>
               <button
                 onClick={handleCancelImageModal}
                 disabled={analyzing}
@@ -875,7 +1037,9 @@ export default function SampleDetail() {
                         d="M12 4v16m8-8H4"
                       />
                     </svg>
-                    <span className="text-sm text-gray-600">{t("common.uploadImage")}</span>
+                    <span className="text-sm text-gray-600">
+                      {t("common.uploadImage")}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -916,97 +1080,300 @@ export default function SampleDetail() {
 
       {/* MODAL: Kết quả phân tích */}
       {showAnalysisModal && analysisResult && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">{t("sample.analysisResults")}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => !isDestroying && setShowAnalysisModal(false)}
+          />
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto relative z-10 border border-[#DDEEE0]">
+            {/* Header */}
+            <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
+              <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2">
+                <Microscope className="w-6 h-6" /> Kết quả AI
+              </h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowAnalysisModal(false);
                   setShowDestroyForm(false);
                   setDestroyReason("");
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-slate-400 hover:text-rose-600 p-1"
               >
-                ×
+                <X className="w-6 h-6" />
               </button>
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-medium text-sm text-gray-600">Giai đoạn</label>
-                  <p className="mt-1 text-gray-900">{stageNameMap[analysisResult.stageName] ?? analysisResult.stageName}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-sm text-gray-600">Tên bệnh</label>
-                  <p className="mt-1 text-gray-900">{analysisResult.disease.name}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-medium text-sm text-gray-600">Mô tả bệnh</label>
-                <p className="mt-1 text-gray-900">{analysisResult.disease.description}</p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3">Kết quả phân tích chi tiết</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    { key: "healthy", label: t("sample.healthy") },
-                    { key: "anthracnose", label: t("sample.anthracnose") },
-                    { key: "bacterialWilt", label: t("sample.bacterialWilt") },
-                    { key: "blackrot", label: t("sample.blackrot") },
-                    { key: "brownspots", label: t("sample.brownspots") },
-                    { key: "moldBacterial", label: t("sample.moldBacterial") },
-                    { key: "moldFungus", label: t("sample.moldFungus") },
-                    { key: "softRot", label: t("sample.softRot") },
-                    { key: "stemRot", label: t("sample.stemRot") },
-                    { key: "witheredYellowRoot", label: t("sample.witheredYellowRoot") },
-                    { key: "oxidation", label: t("sample.oxidation") },
-                    { key: "virus", label: t("sample.virus") },
-                  ].map((item) => (
-                    <div key={item.key} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-800">{item.label}</span>
-                      <span className="font-semibold text-blue-600">
-                        {((analysisResult.analyticResult[item.key as keyof typeof analysisResult.analyticResult] as number) * 100).toFixed(1)}%
+              {/* Result Summary */}
+              <div
+                className={`p-5 rounded-xl border ${
+                  isHealthyAnalysis
+                    ? "bg-[#E4F0E8] border-[#DDEEE0]"
+                    : isInactiveDisease
+                      ? "bg-amber-50 border-amber-200"
+                      : "bg-rose-50 border-rose-200"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-3 flex-1">
+                    <div>
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        Giai đoạn
                       </span>
+                      <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
+                        {(
+                          {
+                            Tissue: "Giai đoạn mầm",
+                            Coppice: "Giai đoạn chồi",
+                            Tree: "Giai đoạn cây hoàn chỉnh",
+                          } as Record<string, string>
+                        )[analysisResult.stageName] ??
+                          analysisResult.stageName ??
+                          "—"}
+                      </p>
                     </div>
-                  ))}
+                    <div>
+                      <span
+                        className={`text-xs font-semibold uppercase tracking-wide ${
+                          isHealthyAnalysis
+                            ? "text-[#2D5A27]"
+                            : isInactiveDisease
+                              ? "text-amber-700"
+                              : "text-rose-600"
+                        }`}
+                      >
+                        Kết quả phân tích
+                      </span>
+                      <p
+                        className={`text-xl font-black mt-0.5 ${
+                          isHealthyAnalysis
+                            ? "text-[#1e3e1c]"
+                            : isInactiveDisease
+                              ? "text-amber-900"
+                              : "text-rose-800"
+                        }`}
+                      >
+                        {/* Hiển thị tên bệnh: nếu inactive thì dùng rawTopDisease thay vì "Unknown" */}
+                        {isInactiveDisease && analysisResult.rawTopDisease
+                          ? analysisResult.rawTopDisease.replace(/_/g, " ")
+                          : analysisResult.disease.name}
+                      </p>
+                      {/* Badge chưa kích hoạt */}
+                      {isInactiveDisease && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
+                          Chưa kích hoạt trong hệ thống
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
+                      isHealthyAnalysis
+                        ? "border-[#C9E7D2]"
+                        : isInactiveDisease
+                          ? "border-amber-200"
+                          : "border-rose-200"
+                    }`}
+                  >
+                    <span
+                      className={`text-xl font-black leading-none ${
+                        isHealthyAnalysis
+                          ? "text-[#2D5A27]"
+                          : isInactiveDisease
+                            ? "text-amber-600"
+                            : "text-rose-600"
+                      }`}
+                    >
+                      {(displayConfidence * 100).toFixed(1)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-1">
+                      độ tin cậy
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {!isHealthyAnalysis && (
-                <div className="border border-red-200 bg-red-50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-red-700 font-medium">
-                      Mẫu vật có dấu hiệu bệnh. Bạn có thể tiêu hủy mẫu vật này.
-                    </p>
-                    {!showDestroyForm && (
-                      <button
-                        type="button"
-                        onClick={() => setShowDestroyForm(true)}
-                        className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                      >
-                        Tiêu hủy mẫu vật
-                      </button>
-                    )}
+              {/* Predictions Breakdown */}
+              {Object.keys(analysisResult.analyticResult.predictions ?? {})
+                .length > 0 && (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                    <Microscope className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Phân bố xác suất bệnh
+                    </span>
                   </div>
+                  {/* Rows */}
+                  <div className="divide-y divide-slate-100">
+                    {Object.entries(analysisResult.analyticResult.predictions)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([onnxKey, prob]) => {
+                        // Chuẩn hóa key: bỏ hậu tố "(inactive)" để tra cứu tên hiển thị
+                        const baseKey = onnxKey
+                          .replace(/\s*\(inactive\)\s*/gi, "")
+                          .trim();
+                        const name =
+                          onnxNameMap[onnxKey] ??
+                          onnxNameMap[baseKey] ??
+                          baseKey;
 
-                  {showDestroyForm && (
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">Lý do tiêu hủy (có thể để trống)</label>
-                        <textarea
-                          value={destroyReason}
-                          onChange={(e) => setDestroyReason(e.target.value)}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-200"
-                          placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
-                        />
-                      </div>
+                        // Xác định đây có phải kết quả top không:
+                        // So khớp với topDisease (active) hoặc rawTopDisease (inactive)
+                        const rawNormalized = String(
+                          analysisResult.rawTopDisease ?? "",
+                        )
+                          .replace(/_/g, "")
+                          .toLowerCase();
+                        const keyNormalized = baseKey
+                          .replace(/_/g, "")
+                          .toLowerCase();
+                        const isTop =
+                          onnxKey ===
+                            analysisResult.analyticResult.topDisease ||
+                          keyNormalized === rawNormalized;
 
-                      <div className="flex justify-end gap-2">
+                        const isInactiveKey =
+                          /\(inactive\)/i.test(onnxKey);
+                        const pct = prob * 100;
+
+                        return (
+                          <div
+                            key={onnxKey}
+                            className={`flex items-center gap-3 px-4 py-3 ${
+                              isTop
+                                ? isHealthyAnalysis
+                                  ? "bg-[#f0f8f2]"
+                                  : isInactiveDisease
+                                    ? "bg-amber-50/60"
+                                    : "bg-rose-50/60"
+                                : ""
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                isTop
+                                  ? isHealthyAnalysis
+                                    ? "bg-[#2D5A27]"
+                                    : isInactiveDisease
+                                      ? "bg-amber-500"
+                                      : "bg-rose-500"
+                                  : "bg-slate-300"
+                              }`}
+                            />
+                            <span
+                              className={`flex-1 text-sm truncate ${
+                                isTop
+                                  ? isHealthyAnalysis
+                                    ? "font-semibold text-[#1e3e1c]"
+                                    : isInactiveDisease
+                                      ? "font-semibold text-amber-800"
+                                      : "font-semibold text-rose-800"
+                                  : "font-medium text-slate-500"
+                              }`}
+                              title={name}
+                            >
+                              {name}
+                              {isInactiveKey && (
+                                <span className="ml-1.5 text-[10px] font-normal text-amber-500 border border-amber-300 rounded px-1 py-0.5">
+                                  inactive
+                                </span>
+                              )}
+                            </span>
+                            <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  style={{ width: `${pct.toFixed(1)}%` }}
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    isTop
+                                      ? isHealthyAnalysis
+                                        ? "bg-[#2D5A27]"
+                                        : isInactiveDisease
+                                          ? "bg-amber-500"
+                                          : "bg-rose-500"
+                                      : "bg-slate-200"
+                                  }`}
+                                />
+                              </div>
+                              <span
+                                className={`text-xs font-bold w-11 text-right ${
+                                  isTop
+                                    ? isHealthyAnalysis
+                                      ? "text-[#2D5A27]"
+                                      : isInactiveDisease
+                                        ? "text-amber-600"
+                                        : "text-rose-600"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {pct.toFixed(1) === "0.0"
+                                  ? "~0.0"
+                                  : pct.toFixed(1)}
+                                %
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
+              {/* Warning: bệnh inactive — chưa kích hoạt, không cho tiêu hủy */}
+              {isInactiveDisease && (
+                <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-amber-800">
+                        Phát hiện dấu hiệu bệnh nhưng chưa thể xác nhận
+                      </p>
+                      <p className="text-sm text-amber-700">
+                        Bệnh{" "}
+                        <span className="font-semibold">
+                          {analysisResult.rawTopDisease?.replace(/_/g, " ")}
+                        </span>{" "}
+                        hiện chưa được kích hoạt trong hệ thống. Vui lòng liên
+                        hệ quản trị viên để xem xét và kích hoạt bệnh này trước
+                        khi tiến hành tiêu hủy.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Destroy Warning — chỉ hiển thị khi bệnh active và không healthy */}
+              {!isHealthyAnalysis && !isInactiveDisease && (
+                <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
+                    <p className="text-sm font-bold text-rose-800">
+                      Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu
+                      ngay lập tức!
+                    </p>
+                  </div>
+                  {!showDestroyForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDestroyForm(true)}
+                      className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors"
+                    >
+                      Tiến hành Tiêu Hủy
+                    </button>
+                  ) : (
+                    <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                      <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Lý do tiêu hủy:
+                      </label>
+                      <textarea
+                        value={destroyReason}
+                        onChange={(e) => setDestroyReason(e.target.value)}
+                        rows={2}
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                        placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
+                      />
+                      <div className="flex justify-end gap-2 mt-3">
                         <button
                           type="button"
                           onClick={() => {
@@ -1014,7 +1381,7 @@ export default function SampleDetail() {
                             setDestroyReason("");
                           }}
                           disabled={isDestroying}
-                          className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                          className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
                           Hủy
                         </button>
@@ -1022,28 +1389,18 @@ export default function SampleDetail() {
                           type="button"
                           onClick={() => void handleDestroySample()}
                           disabled={isDestroying}
-                          className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                          className="px-5 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg disabled:opacity-50 flex items-center gap-2"
                         >
-                          {isDestroying ? "Đang xử lý..." : "Xác nhận tiêu hủy"}
+                          {isDestroying && (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          )}
+                          {isDestroying ? "Đang xử lý..." : "Xác nhận Tiêu hủy"}
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
               )}
-            </div>
-
-            <div className="border-t p-6 flex justify-end">
-              <button
-                onClick={() => {
-                  setShowAnalysisModal(false);
-                  setShowDestroyForm(false);
-                  setDestroyReason("");
-                }}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                {t("common.close")}
-              </button>
             </div>
           </div>
         </div>

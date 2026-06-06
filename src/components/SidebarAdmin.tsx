@@ -11,6 +11,7 @@ import {
   FaSignOutAlt,
   FaSearch,
   FaCog,
+  FaVirus,
 } from "react-icons/fa";
 import { PiBlueprintFill } from "react-icons/pi";
 import { GiMicroscope } from "react-icons/gi";
@@ -65,6 +66,7 @@ export default function SidebarAdmin() {
     { path: "/admin/tissue-culture-batches", icon: FaVials, labelKey: "navigation.tissueCultureBatch" },
     { path: "/admin/report", icon: FaChartBar, labelKey: "navigation.report" },
     { path: "/admin/method", icon: PiBlueprintFill, labelKey: "navigation.method" },
+    { path: "/admin/disease", icon: FaVirus, labelKey: "navigation.disease" },
     { path: "/admin/seedling", icon: FaSeedling, labelKey: "navigation.seedling" },
     { path: "/admin/element", icon: FaFlask, labelKey: "navigation.element" },
     { path: "/admin/config", icon: FaCog, labelKey: "navigation.config" },
