@@ -29,8 +29,14 @@ export function useDiseaseMap(): Record<string, string> {
   const onnxNameMap = useMemo(() => {
     const map: Record<string, string> = {};
     diseaseList.forEach((d) => {
+      const normalizedOnnx = d.onnxClassName.replace(/_/g, " ").trim();
+      const lowerOnnx = d.onnxClassName.toLowerCase();
+      const lowerNormalized = normalizedOnnx.toLowerCase();
+
       map[d.onnxClassName] = d.name;
-      map[d.onnxClassName.toLowerCase()] = d.name;
+      map[lowerOnnx] = d.name;
+      map[normalizedOnnx] = d.name;
+      map[lowerNormalized] = d.name;
     });
     return map;
   }, [diseaseList]);

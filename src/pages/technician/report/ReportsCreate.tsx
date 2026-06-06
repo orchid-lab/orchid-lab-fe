@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/prefer-regexp-exec */
-/* eslint-disable @typescript-eslint/prefer-optional-chain */
 /* eslint-disable @typescript-eslint/array-type */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";

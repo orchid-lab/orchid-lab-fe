@@ -107,6 +107,7 @@ export interface SampleDetail {
 
 // Disease analysis types
 export interface Disease {
+  onnxClassName: string;
   id: number;
   name: string;
   code: string;
