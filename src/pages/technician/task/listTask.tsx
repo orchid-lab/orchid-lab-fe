@@ -788,7 +788,6 @@ export default function ListTask() {
                   <tr>
                     {[
                       t("task.taskName"),
-                      t("task.targetType"),
                       t("technicianTask.technicianName"),
                       t("technicianTask.targetName"),
                       t("task.deadline"),
@@ -814,7 +813,7 @@ export default function ListTask() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <td colSpan={7} className="p-12 text-center text-gray-500">
+                        <td colSpan={6} className="p-12 text-center text-gray-500">
                           {t("task.noTasks")}
                         </td>
                       </motion.tr>
@@ -831,7 +830,6 @@ export default function ListTask() {
                           onClick={() => { void navigate(`/technician/tasks/${task.id}`); }}
                         >
                           <td className="px-6 py-4 font-medium text-gray-900">{task.name}</td>
-                          <td className="px-6 py-4 text-gray-600">{task.taskTargetType ?? "-"}</td>
                           <td className="px-6 py-4 text-gray-600 max-w-[160px] truncate">
                             {(task as TaskItem & { technicianName?: string }).technicianName ?? "-"}
                           </td>
