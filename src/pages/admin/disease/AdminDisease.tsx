@@ -5,7 +5,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import gsap from "gsap";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,7 @@ export default function AdminDisease() {
   const [loading, setLoading] = useState(false);
   const [allDiseases, setAllDiseases] = useState<Disease[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const progressRef = useRef<HTMLDivElement>(null);
   const runProgress = () => {
@@ -93,6 +94,29 @@ export default function AdminDisease() {
     };
     void fetchData();
   }, []);
+
+  const handleToggleActive = async (e: React.MouseEvent, disease: Disease) => {
+    // Ngăn click row navigate sang detail
+    e.stopPropagation();
+    if (togglingId !== null) return;
+
+    setTogglingId(disease.id);
+    try {
+      await axiosInstance.patch(`/api/diseases/${disease.id}/active`, {
+        isActive: !disease.isActive,
+      });
+      // Cập nhật local state, không cần fetch lại
+      setAllDiseases((prev) =>
+        prev.map((d) =>
+          d.id === disease.id ? { ...d, isActive: !d.isActive } : d,
+        ),
+      );
+    } catch {
+      // Giữ nguyên nếu lỗi
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const filteredDiseases = allDiseases.filter((d) => {
     if (searchTerm.trim()) {
@@ -315,24 +339,52 @@ export default function AdminDisease() {
                             {d.description ?? "-"}
                           </span>
                         </td>
-                        <td className="p-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                              d.isActive
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-slate-50 text-slate-500 border-slate-200"
-                            }`}
-                          >
+
+                        {/* ── Status + Toggle ── */}
+                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-2">
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                d.isActive ? "bg-emerald-500" : "bg-slate-400"
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                d.isActive
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : "bg-slate-50 text-slate-500 border-slate-200"
                               }`}
-                            />
-                            {d.isActive
-                              ? t("status.active") || "Active"
-                              : t("status.inactive") || "Inactive"}
-                          </span>
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  d.isActive ? "bg-emerald-500" : "bg-slate-400"
+                                }`}
+                              />
+                              {d.isActive
+                                ? t("status.active") || "Active"
+                                : t("status.inactive") || "Inactive"}
+                            </span>
+
+                            {/* Toggle switch */}
+                            <button
+                              type="button"
+                              disabled={togglingId === d.id}
+                              onClick={(e) => handleToggleActive(e, d)}
+                              title={d.isActive ? "Vô hiệu hóa" : "Kích hoạt"}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed ${
+                                d.isActive
+                                  ? "bg-emerald-500 focus:ring-emerald-400"
+                                  : "bg-slate-300 focus:ring-slate-400"
+                              }`}
+                            >
+                              {togglingId === d.id ? (
+                                <Loader2 className="w-3 h-3 text-white animate-spin mx-auto" />
+                              ) : (
+                                <span
+                                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                    d.isActive ? "translate-x-[18px]" : "translate-x-[3px]"
+                                  }`}
+                                />
+                              )}
+                            </button>
+                          </div>
                         </td>
+
                         <td className="p-4 text-center text-slate-500 text-sm">
                           {formatDate(d.createdAt)}
                         </td>
