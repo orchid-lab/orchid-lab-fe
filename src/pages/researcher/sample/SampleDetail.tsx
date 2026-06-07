@@ -271,7 +271,8 @@ export default function SampleDetail() {
 
   const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
-  const isInactiveDisease = !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
+  const isInactiveDisease =
+    !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
   const displayConfidence = analysisResult?.analyticResult.confidence ?? 0;
 
   const handleDestroySample = async () => {

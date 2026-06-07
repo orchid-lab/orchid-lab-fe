@@ -409,9 +409,12 @@ export default function TechDetailSample() {
 
   const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
-  const isTopDiseaseInactive = !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
+  const isTopDiseaseInactive =
+    !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
   const detectedDiseaseName = isTopDiseaseInactive
-    ? (codeNameMap[analysisResult?.rawTopDisease ?? ""] ?? analysisResult?.rawTopDisease ?? "")
+    ? (codeNameMap[analysisResult?.rawTopDisease ?? ""] ??
+      analysisResult?.rawTopDisease ??
+      "")
     : (analysisResult?.disease.name ?? "");
 
   const handleDestroySample = async () => {
@@ -1321,7 +1324,10 @@ export default function TechDetailSample() {
                               /\s*\(inactive\)\s*$/i,
                               "",
                             );
-                            const viName = onnxNameMap[displayName] ?? onnxNameMap[displayName.toLowerCase()] ?? displayName;
+                            const viName =
+                              onnxNameMap[displayName] ??
+                              onnxNameMap[displayName.toLowerCase()] ??
+                              displayName;
                             const isInactiveEntry = /\(inactive\)/i.test(
                               predKey,
                             );
