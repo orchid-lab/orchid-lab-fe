@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable react-dom/no-missing-button-type */
@@ -389,11 +390,12 @@ export default function TechDetailSample() {
   };
 
   // ── Healthy: only when AI explicitly says "Healthy"
-  const isHealthyAnalysis = useMemo(() => {
-    if (!analysisResult) return true;
-    const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
-    return topDisease.toLowerCase() === "healthy";
-  }, [analysisResult]);
+const isHealthyAnalysis = useMemo(() => {
+  if (!analysisResult) return true;
+  if (analysisResult.isRawTopDiseaseActive === false) return false;
+  const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
+  return topDisease.toLowerCase() === "healthy";
+}, [analysisResult]);
 
   // ── Whether the top detected disease is inactive in the system
   const onnxNameMap = useDiseaseMap();
@@ -417,23 +419,23 @@ export default function TechDetailSample() {
     );
   };
 
+
   const isTopDiseaseInactive = useMemo(() => {
     if (!analysisResult) return false;
     return analysisResult.isRawTopDiseaseActive === false;
   }, [analysisResult]);
 
   // ── Display label for the detected disease
-  const detectedDiseaseLabel = useMemo(() => {
-    if (!analysisResult) return "";
-    if (isTopDiseaseInactive) {
-      const rawLabel = getDiseaseLabelFromKey(analysisResult.rawTopDisease);
-      return rawLabel || "Bệnh không rõ";
-    }
-    return (
-      analysisResult.disease.name ||
-      getDiseaseLabelFromKey(analysisResult.analyticResult.topDisease)
-    );
-  }, [analysisResult, isTopDiseaseInactive, getDiseaseLabelFromKey]);
+const detectedDiseaseLabel = useMemo(() => {
+  if (!analysisResult) return "";
+  if (isTopDiseaseInactive) {
+    return "Không rõ";
+  }
+  return (
+    analysisResult.disease.name ||
+    getDiseaseLabelFromKey(analysisResult.analyticResult.topDisease)
+  );
+}, [analysisResult, isTopDiseaseInactive]);
 
   // ── Active predictions only (filter out any "(inactive)" entries)
   const activePredictions = useMemo(() => {
@@ -595,7 +597,7 @@ export default function TechDetailSample() {
       <main className="ml-64 mt-16 min-h-[calc(100vh-64px)] bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center text-emerald-600 animate-pulse">
           <Leaf className="w-12 h-12 mb-4 animate-bounce" />
-          <p className="font-medium text-lg">Đang tải dữ liệu mẫu...</p>
+          <p className="font-medium text-lg">{t("sample.loadingData")}</p>
         </div>
       </main>
     );
@@ -607,13 +609,13 @@ export default function TechDetailSample() {
         <div className="text-center max-w-md bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           <AlertTriangle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
           <p className="text-rose-600 font-semibold text-lg mb-6">
-            {error ?? "Không tìm thấy dữ liệu"}
+            {error ?? t("sample.noSampleData")}
           </p>
           <button
             onClick={handleBack}
             className="px-6 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium"
           >
-            Quay lại danh sách
+            {t("common.back")}
           </button>
         </div>
       </main>
@@ -634,7 +636,7 @@ export default function TechDetailSample() {
           onClick={handleBack}
           className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 transition-colors mb-2 font-medium w-fit"
         >
-          <ArrowLeft className="w-4 h-4" /> Quay lại
+          <ArrowLeft className="w-4 h-4" /> {t("common.back")}
         </motion.button>
 
         {/* Header & Actions */}
@@ -667,7 +669,7 @@ export default function TechDetailSample() {
               onClick={handleOpenEditModal}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#2D5A27] text-[#2D5A27] bg-white hover:bg-[#E4F0E8] transition-colors font-semibold shadow-sm"
             >
-              <Pencil className="w-4 h-4" /> Sửa
+              <Pencil className="w-4 h-4" /> {t("common.edit")}
             </button>
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease &&
               incidents.some(
@@ -703,13 +705,13 @@ export default function TechDetailSample() {
             <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
               <Info className="w-5 h-5 text-[#2D5A27]" />
               <h3 className="text-lg font-bold text-[#1e3e1c]">
-                Thông tin mẫu
+                {t("sample.infoTitle")}
               </h3>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Thí nghiệm
+                  {t("sample.experimentLogLabel")}
                 </span>
                 <div className="text-base font-medium text-slate-800 flex items-center gap-2">
                   <Beaker className="w-4 h-4 text-emerald-600" />
@@ -719,7 +721,7 @@ export default function TechDetailSample() {
               </div>
               <div>
                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Giai đoạn hiện tại
+                  {t("sample.currentStageLabel")}
                 </span>
                 <div className="text-base font-medium text-slate-800 flex items-center gap-2">
                   <Activity className="w-4 h-4 text-amber-500" />
@@ -728,12 +730,12 @@ export default function TechDetailSample() {
               </div>
               <div className="sm:col-span-2">
                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Ghi chú mẫu
+                  {t("sample.sampleNotesLabel")}
                 </span>
                 <div className="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   {sample.notes ?? (
                     <span className="italic text-slate-400">
-                      Không có ghi chú
+                      {t("sample.noNotes")}
                     </span>
                   )}
                 </div>
@@ -748,13 +750,13 @@ export default function TechDetailSample() {
             <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
               <User className="w-5 h-5 text-[#2D5A27]" />
               <h3 className="text-lg font-bold text-[#1e3e1c]">
-                Người thực hiện
+                {t("sample.performedByTitle")}
               </h3>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Người tạo
+                  {t("sample.createdBy")}
                 </span>
                 <div className="text-sm font-bold text-[#2D5A27]">
                   {userMap[sample.createdBy ?? ""] ?? sample.createdBy ?? "—"}
@@ -765,7 +767,7 @@ export default function TechDetailSample() {
               </div>
               <div className="pt-3 border-t border-[#DDEEE0]">
                 <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Cập nhật lần cuối
+                  {t("sample.updatedAtLabel")}
                 </span>
                 <div className="text-sm font-bold text-[#1e3e1c]">
                   {userMap[sample.updatedBy ?? ""] ?? sample.updatedBy ?? "—"}
@@ -786,7 +788,7 @@ export default function TechDetailSample() {
           <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
             <CalendarClock className="w-5 h-5 text-[#2D5A27]" />
             <h3 className="text-lg font-bold text-[#1e3e1c]">
-              {t("sample.stageProgress.title") ?? "Tiến trình nuôi cấy"}
+              {t("sample.stageProgress.title")}
             </h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -808,7 +810,10 @@ export default function TechDetailSample() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <h4 className="font-bold text-[#1e3e1c] leading-tight">
-                      Giai đoạn {predefinedStage.order}:<br />
+                      {t("sample.stageProgress.stageNumber", {
+                        stage: predefinedStage.order,
+                      })}
+                      <br />
                       <span className="text-[#2D5A27]">
                         {t(predefinedStage.nameKey)}
                       </span>
@@ -841,24 +846,29 @@ export default function TechDetailSample() {
 
                   <div className="space-y-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100">
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Chuẩn (ngày):</span>
+                      <span className="text-slate-500">
+                        {t("sample.stageProgress.standardDuration")}
+                      </span>
                       <span className="font-semibold text-slate-700">
-                        {predefinedStage.minDurationDays} -{" "}
-                        {predefinedStage.maxDurationDays}
+                        {predefinedStage.minDurationDays} - {predefinedStage.maxDurationDays}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Ngày bắt đầu:</span>
+                      <span className="text-slate-500">
+                        {t("sample.stageProgress.actualStartDate")}
+                      </span>
                       <span className="font-semibold text-slate-700">
                         {formatDate(matchedStage?.startAt)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Báo cáo:</span>
+                      <span className="text-slate-500">
+                        {t("sample.stageProgress.report")}
+                      </span>
                       <span
                         className={`font-semibold ${hasReport ? "text-[#2D5A27]" : "text-slate-400"}`}
                       >
-                        {hasReport ? "Có dữ liệu" : "Chưa có"}
+                        {hasReport ? t("sample.stageProgress.hasData") : t("sample.stageProgress.noData")}
                       </span>
                     </div>
                   </div>
@@ -877,7 +887,7 @@ export default function TechDetailSample() {
             <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
               <Camera className="w-5 h-5 text-[#2D5A27]" />
               <h3 className="text-lg font-bold text-[#1e3e1c]">
-                Hình ảnh mới nhất
+                {t("sample.latestImageTitle")}
               </h3>
             </div>
             <div className="p-6">
@@ -885,7 +895,7 @@ export default function TechDetailSample() {
                 <div className="h-48 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400">
                   <Camera className="w-8 h-8 mb-2 opacity-50" />
                   <p className="text-sm">
-                    {t("sample.noLatestImage") ?? "Chưa có ảnh"}
+                    {t("sample.noLatestImage")}
                   </p>
                 </div>
               ) : (
@@ -909,23 +919,23 @@ export default function TechDetailSample() {
             <div className="px-6 py-4 border-b border-[#DDEEE0] bg-[#F4F7F4] flex items-center gap-3">
               <ClipboardList className="w-5 h-5 text-[#2D5A27]" />
               <h3 className="text-lg font-bold text-[#1e3e1c]">
-                Báo cáo giai đoạn hiện tại
+                {t("sample.currentStageReportTitle")}
               </h3>
             </div>
             <div className="p-0">
               {reportRows.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 italic">
-                  Chưa có dữ liệu đo đạc cho giai đoạn này.
+                  {t("sample.noReportData")}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-3">Chỉ số</th>
-                        <th className="px-6 py-3">Đo được</th>
-                        <th className="px-6 py-3">Chuẩn (Min-Max)</th>
-                        <th className="px-6 py-3 text-center">Kết quả</th>
+                        <th className="px-6 py-3">{t("sample.report.metric")}</th>
+                        <th className="px-6 py-3">{t("sample.report.measured")}</th>
+                        <th className="px-6 py-3">{t("sample.report.standardRange")}</th>
+                        <th className="px-6 py-3 text-center">{t("sample.report.result")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -941,8 +951,7 @@ export default function TechDetailSample() {
                               {sampleReq.name}
                             </td>
                             <td className="px-6 py-4 font-bold text-[#2D5A27]">
-                              {row.measuredValue}{" "}
-                              <span className="text-xs text-slate-500 font-normal">
+                              {row.measuredValue} <span className="text-xs text-slate-500 font-normal">
                                 {sampleReq.unit}
                               </span>
                             </td>
@@ -953,7 +962,7 @@ export default function TechDetailSample() {
                               <span
                                 className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold border ${row.isMatch ? "bg-[#E4F0E8] text-[#2D5A27] border-[#C9E7D2]" : "bg-rose-100 text-rose-700 border-rose-200"}`}
                               >
-                                {row.isMatch ? "Đạt" : "Không đạt"}
+                                {row.isMatch ? t("sample.report.pass") : t("sample.report.fail")}
                               </span>
                             </td>
                           </tr>
@@ -977,14 +986,14 @@ export default function TechDetailSample() {
               <div className="flex items-center gap-3">
                 <ShieldAlert className="w-5 h-5 text-rose-600" />
                 <h3 className="text-lg font-bold text-[#1e3e1c]">
-                  {t("diseaseIncident.title") ?? "Cảnh báo Bệnh AI"}
+                  {t("diseaseIncident.title")}
                 </h3>
                 {incidents.some(
                   (inc) => inc.status === DiseaseIncidentStatus.AIDetected,
                 ) && (
                   <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />{" "}
-                    Mới phát hiện
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                    {t("diseaseIncident.newlyDetected")}
                   </span>
                 )}
               </div>
@@ -999,7 +1008,7 @@ export default function TechDetailSample() {
                 className="border border-[#DDEEE0] bg-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50"
               >
                 <option value="">
-                  {t("diseaseIncident.filterAll") ?? "Tất cả trạng thái"}
+                  {t("diseaseIncident.filterAll")}
                 </option>
                 <option value={DiseaseIncidentStatus.AIDetected}>
                   {t("diseaseIncident.statusAIDetected")}
@@ -1029,17 +1038,17 @@ export default function TechDetailSample() {
               ) : incidents.length === 0 ? (
                 <div className="p-8 text-center text-[#4B6C54] italic flex flex-col items-center gap-2">
                   <CheckCircle2 className="w-8 h-8 text-[#DDEEE0]" />
-                  Mẫu hiện không có cảnh báo bệnh nào.
+                  {t("diseaseIncident.noIncidents")}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-sm text-left">
                     <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                       <tr>
-                        <th className="px-6 py-4">Tên Bệnh (AI)</th>
-                        <th className="px-6 py-4">Độ tự tin</th>
-                        <th className="px-6 py-4">Trạng thái</th>
-                        <th className="px-6 py-4 text-right">Thao tác</th>
+                        <th className="px-6 py-4">{t("diseaseIncident.tableHeaderDisease")}</th>
+                        <th className="px-6 py-4">{t("diseaseIncident.tableHeaderConfidence")}</th>
+                        <th className="px-6 py-4">{t("diseaseIncident.tableHeaderStatus")}</th>
+                        <th className="px-6 py-4 text-right">{t("diseaseIncident.tableHeaderAction")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1134,14 +1143,14 @@ export default function TechDetailSample() {
                       disabled={analyzing}
                       className="w-full py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
                     >
-                      Chọn ảnh khác
+                      {t("sample.changeImage")}
                     </button>
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-[#2D5A27]/30 rounded-xl bg-[#F4F7F4] hover:bg-[#E4F0E8] cursor-pointer transition-colors text-[#2D5A27]">
                     <Camera className="w-10 h-10 mb-3 opacity-70" />
                     <span className="font-semibold">
-                      {t("common.uploadImage") ?? "Tải ảnh lên"}
+                      {t("common.uploadImage")}
                     </span>
                     <input
                       type="file"
@@ -1197,7 +1206,7 @@ export default function TechDetailSample() {
               {/* Modal Header */}
               <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
                 <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2">
-                  <Microscope className="w-6 h-6" /> Kết quả AI
+                  <Microscope className="w-6 h-6" /> {t("sample.analysisResultTitle")}
                 </h3>
                 <button
                   onClick={() => {
@@ -1219,33 +1228,33 @@ export default function TechDetailSample() {
                     <div className="space-y-3 flex-1">
                       <div>
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                          Giai đoạn
+                          {t("sample.analysis.stageLabel")}
                         </span>
                         <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
-                          {(
-                            {
-                              Tissue: "Giai đoạn mầm",
-                              Coppice: "Giai đoạn chồi",
-                              Tree: "Giai đoạn cây hoàn chỉnh",
-                            } as Record<string, string>
-                          )[analysisResult.stageName] ??
-                            analysisResult.stageName ??
-                            "—"}
+                          {getStageLabel(analysisResult.stageName) || "—"}
                         </p>
                       </div>
                       <div>
-                        <span
-                          className={`text-xs font-semibold uppercase tracking-wide ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
-                        >
-                          Kết quả phân tích
-                        </span>
-                        {/* Disease name: "Bệnh không rõ" when inactive, actual name when active */}
-                        <p
-                          className={`text-xl font-black mt-0.5 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
-                        >
-                          {detectedDiseaseLabel}
-                        </p>
-                      </div>
+  <span
+    className={`text-xs font-semibold uppercase tracking-wide ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
+  >
+    {t("sample.analysis.summaryLabel")}
+  </span>
+  <p
+    className={`text-xl font-black mt-0.5 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
+  >
+    {detectedDiseaseLabel}
+  </p>
+{isTopDiseaseInactive && analysisResult.disease.onnxClassName && (
+  <p className="text-sm text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
+    {t("sample.analysis.inactiveDiseaseWarning", {
+      disease:
+        getDiseaseLabelFromKey(analysisResult.disease.onnxClassName) ||
+        analysisResult.disease.onnxClassName.replace(/_/g, " "),
+    })}
+  </p>
+)}
+</div>
                     </div>
 
                     {/* Confidence circle */}
@@ -1290,7 +1299,7 @@ export default function TechDetailSample() {
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
                       <Activity className="w-3.5 h-3.5 text-slate-400" />
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Phân bố xác suất bệnh
+                        {t("sample.analysis.probabilityDistribution")}
                       </span>
                     </div>
                     <div className="divide-y divide-slate-100">
@@ -1334,7 +1343,7 @@ export default function TechDetailSample() {
                               title={predKey}
                             >
                               {isHealthyEntry
-                                ? "Khỏe mạnh"
+                                ? t("sample.healthy")
                                 : getDiseaseLabelFromKey(predKey)}
                             </span>
                             <div className="flex items-center gap-2 w-44 flex-shrink-0">

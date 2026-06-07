@@ -1145,20 +1145,17 @@ export default function SampleDetail() {
                       >
                         Kết quả phân tích
                       </span>
-                      <p
-                        className={`text-xl font-black mt-0.5 ${
-                          isHealthyAnalysis
-                            ? "text-[#1e3e1c]"
-                            : isInactiveDisease
-                              ? "text-amber-900"
-                              : "text-rose-800"
-                        }`}
-                      >
-                        {/* Hiển thị tên bệnh: nếu inactive thì dùng rawTopDisease thay vì "Unknown" */}
-                        {isInactiveDisease && analysisResult.rawTopDisease
-                          ? analysisResult.rawTopDisease.replace(/_/g, " ")
-                          : analysisResult.disease.name}
-                      </p>
+<p
+  className={`text-xl font-black mt-0.5 ${
+    isHealthyAnalysis
+      ? "text-[#1e3e1c]"
+      : isInactiveDisease
+        ? "text-amber-900"
+        : "text-rose-800"
+  }`}
+>
+  {isInactiveDisease ? "Không rõ" : analysisResult.disease.name}
+</p>
                       {/* Badge chưa kích hoạt */}
                       {isInactiveDisease && (
                         <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
