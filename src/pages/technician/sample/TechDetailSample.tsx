@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-misused-promises */
@@ -226,8 +227,8 @@ export default function TechDetailSample() {
         setUserMap(userMapping);
         setSample(sampleData);
       } catch {
-        setError("Không thể tải chi tiết mẫu thí nghiệm");
-        enqueueSnackbar("Lỗi khi tải dữ liệu", { variant: "error" });
+        setError(t("sample.detailLoadError"));
+        enqueueSnackbar(t("sample.detailLoadFailed"), { variant: "error" });
       } finally {
         setLoading(false);
       }
@@ -419,6 +420,22 @@ const isHealthyAnalysis = useMemo(() => {
     );
   };
 
+  const getDisplayDiseaseLabel = (
+    diseaseName?: string | null,
+    diseaseKey?: string | null,
+  ): string => {
+    const labelFromName = getDiseaseLabelFromKey(diseaseName);
+    if (labelFromName) return labelFromName;
+
+    const labelFromKey = getDiseaseLabelFromKey(diseaseKey);
+    if (labelFromKey) return labelFromKey;
+
+    if (diseaseName && diseaseName.toLowerCase() !== "unknown") {
+      return normalizeDiseaseKey(diseaseName);
+    }
+
+    return normalizeDiseaseKey(diseaseKey);
+  };
 
   const isTopDiseaseInactive = useMemo(() => {
     if (!analysisResult) return false;
@@ -429,13 +446,14 @@ const isHealthyAnalysis = useMemo(() => {
 const detectedDiseaseLabel = useMemo(() => {
   if (!analysisResult) return "";
   if (isTopDiseaseInactive) {
-    return "Không rõ";
+    return t("sample.analysis.unknown");
   }
-  return (
-    analysisResult.disease.name ||
-    getDiseaseLabelFromKey(analysisResult.analyticResult.topDisease)
+
+  return getDisplayDiseaseLabel(
+    analysisResult.disease.name,
+    analysisResult.analyticResult.topDisease,
   );
-}, [analysisResult, isTopDiseaseInactive]);
+}, [analysisResult, isTopDiseaseInactive, t]);
 
   // ── Active predictions only (filter out any "(inactive)" entries)
   const activePredictions = useMemo(() => {
@@ -454,19 +472,20 @@ const detectedDiseaseLabel = useMemo(() => {
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
     const finalReason =
-      destroyReason.trim() || `Mẫu vật nhiễm ${detectedDiseaseLabel}`;
+      destroyReason.trim() ||
+      t("sample.defaultDestroyReason", { disease: detectedDiseaseLabel });
     setIsDestroying(true);
     try {
       await axiosInstance.delete(`/api/samples/${id}`, {
         data: { reason: finalReason },
       });
-      enqueueSnackbar("Tiêu hủy mẫu vật thành công", { variant: "success" });
+      enqueueSnackbar(t("sample.destroySuccess"), { variant: "success" });
       setShowDestroyForm(false);
       setDestroyReason("");
       setShowAnalysisModal(false);
       handleBack();
     } catch {
-      enqueueSnackbar("Không thể tiêu hủy mẫu vật", { variant: "error" });
+      enqueueSnackbar(t("sample.destroyFailed"), { variant: "error" });
     } finally {
       setIsDestroying(false);
     }
@@ -479,12 +498,12 @@ const detectedDiseaseLabel = useMemo(() => {
       await axiosInstance.delete(`/api/samples/${sample.id}`, {
         data: { reason: deleteReason },
       });
-      enqueueSnackbar(t("common.success") ?? "Xóa thành công", {
+      enqueueSnackbar(t("common.success"), {
         variant: "success",
       });
       handleBack();
     } catch {
-      enqueueSnackbar(t("common.error") ?? "Lỗi khi xóa", { variant: "error" });
+      enqueueSnackbar(t("common.error"), { variant: "error" });
     } finally {
       setIsDeleting(false);
       setShowConfirmDeleteModal(false);
@@ -680,7 +699,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-colors font-semibold shadow-sm"
                 >
                   <Trash2 className="w-4 h-4" />{" "}
-                  {t("sample.destroySample") ?? "Hủy mẫu"}
+                  {t("sample.destroySample")}
                 </button>
               )}
             {sample.status !== SampleStatusValue.ExecutedBecauseOfDisease && (
@@ -1082,7 +1101,7 @@ const detectedDiseaseLabel = useMemo(() => {
                                 onClick={() => openReviewModal(inc)}
                                 className="px-4 py-1.5 rounded-lg bg-[#2D5A27] text-white hover:bg-[#1e3e1c] font-semibold shadow-sm transition-colors"
                               >
-                                {t("diseaseIncident.review") ?? "Đánh giá"}
+                                {t("diseaseIncident.review")}
                               </button>
                             )}
                           </td>
@@ -1117,7 +1136,7 @@ const detectedDiseaseLabel = useMemo(() => {
             >
               <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex justify-between items-center rounded-t-2xl">
                 <h3 className="text-lg font-bold text-[#1e3e1c]">
-                  {t("sample.selectImage") ?? "Chọn ảnh phân tích"}
+                  {t("sample.selectImage")}
                 </h3>
                 <button
                   onClick={handleCancelImageModal}
@@ -1168,7 +1187,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   disabled={analyzing}
                   className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 transition-colors"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleUploadAndAnalyze}
@@ -1230,31 +1249,42 @@ const detectedDiseaseLabel = useMemo(() => {
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                           {t("sample.analysis.stageLabel")}
                         </span>
-                        <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
-                          {getStageLabel(analysisResult.stageName) || "—"}
-                        </p>
-                      </div>
+                          <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
+                            {(
+                              {
+                                Tissue: "Giai đoạn mầm",
+                                Coppice: "Giai đoạn chồi",
+                                Tree: "Giai đoạn cây hoàn chỉnh",
+                              } as Record<string, string>
+                            )[analysisResult.stageName] ??
+                              analysisResult.stageName ??
+                              "—"}
+                          </p>
+                        </div>
                       <div>
-  <span
-    className={`text-xs font-semibold uppercase tracking-wide ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
-  >
-    {t("sample.analysis.summaryLabel")}
-  </span>
-  <p
-    className={`text-xl font-black mt-0.5 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
-  >
-    {detectedDiseaseLabel}
-  </p>
+                        <span
+                          className={`text-xs font-semibold uppercase tracking-wide ${isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"}`}
+                        >
+                          {t("sample.analysis.summaryLabel")}
+                        </span>
+                        <p
+                          className={`text-xl font-black mt-0.5 ${isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"}`}
+                        >
+                          {detectedDiseaseLabel}
+                        </p>
 {isTopDiseaseInactive && analysisResult.disease.onnxClassName && (
   <p className="text-sm text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
-    {t("sample.analysis.inactiveDiseaseWarning", {
-      disease:
-        getDiseaseLabelFromKey(analysisResult.disease.onnxClassName) ||
-        analysisResult.disease.onnxClassName.replace(/_/g, " "),
-    })}
+    Bệnh{" "}
+    <span className="font-semibold">
+      {getDisplayDiseaseLabel(
+        analysisResult.disease.name,
+        analysisResult.disease.onnxClassName,
+      )}
+    </span>{" "}
+    hiện chưa được kích hoạt trong hệ thống.
   </p>
 )}
-</div>
+                      </div>
                     </div>
 
                     {/* Confidence circle */}
@@ -1388,8 +1418,8 @@ const detectedDiseaseLabel = useMemo(() => {
                       <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
                       <p className="text-sm font-bold text-rose-800">
                         {isTopDiseaseInactive
-                          ? "Phát hiện dấu hiệu bệnh chưa xác định. Cân nhắc xử lý tiêu hủy mẫu nếu cần thiết."
-                          : "Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu ngay lập tức!"}
+                          ? t("sample.analysis.inactiveWarning")
+                          : t("sample.analysis.activeWarning")}
                       </p>
                     </div>
                     {!showDestroyForm ? (
@@ -1397,19 +1427,21 @@ const detectedDiseaseLabel = useMemo(() => {
                         onClick={() => setShowDestroyForm(true)}
                         className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors"
                       >
-                        Tiến hành Tiêu Hủy
+                        {t("sample.destroyConfirm")}
                       </button>
                     ) : (
                       <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
                         <label className="block text-sm font-bold text-slate-700 mb-2">
-                          Lý do tiêu hủy:
+                          {t("sample.deleteReason")}
                         </label>
                         <textarea
                           value={destroyReason}
                           onChange={(e) => setDestroyReason(e.target.value)}
                           rows={2}
                           className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                          placeholder={`Mặc định: Mẫu vật nhiễm ${detectedDiseaseLabel}`}
+                          placeholder={t("sample.destroyReasonPlaceholder", {
+                            disease: detectedDiseaseLabel,
+                          })}
                         />
                         <div className="flex justify-end gap-2 mt-3">
                           <button
@@ -1417,7 +1449,7 @@ const detectedDiseaseLabel = useMemo(() => {
                             disabled={isDestroying}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
                           >
-                            Hủy
+                            {t("common.cancel")}
                           </button>
                           <button
                             onClick={handleDestroySample}
@@ -1428,8 +1460,8 @@ const detectedDiseaseLabel = useMemo(() => {
                               <Loader2 className="w-4 h-4 animate-spin" />
                             )}
                             {isDestroying
-                              ? "Đang xử lý..."
-                              : "Xác nhận Tiêu hủy"}
+                              ? t("common.deleting")
+                              : t("sample.confirmDestroy")}
                           </button>
                         </div>
                       </div>
@@ -1459,8 +1491,7 @@ const detectedDiseaseLabel = useMemo(() => {
             >
               <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex justify-between items-center rounded-t-2xl">
                 <h3 className="text-lg font-bold text-[#1e3e1c]">
-                  {t("diseaseIncident.reviewModalTitle") ??
-                    "Đánh giá cảnh báo AI"}
+                  {t("diseaseIncident.reviewModalTitle")}
                 </h3>
                 <button
                   onClick={closeReviewModal}
@@ -1473,19 +1504,19 @@ const detectedDiseaseLabel = useMemo(() => {
               <div className="p-6 space-y-5">
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Mẫu:</span>
+                    <span className="text-slate-500">{t("diseaseIncident.sample")}</span>
                     <span className="font-bold text-[#1e3e1c]">
                       {reviewingIncident.sampleName}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Bệnh phát hiện:</span>
+                    <span className="text-slate-500">{t("diseaseIncident.detectedDisease")}</span>
                     <span className="font-bold text-rose-600">
                       {reviewingIncident.diseaseName}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">AI Tự tin:</span>
+                    <span className="text-slate-500">{t("diseaseIncident.aiConfidence")}</span>
                     <span className="font-bold text-amber-600">
                       {(reviewingIncident.aiConfidence * 100).toFixed(1)}%
                     </span>
@@ -1494,7 +1525,7 @@ const detectedDiseaseLabel = useMemo(() => {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-3">
-                    Quyết định của Kỹ thuật viên:
+                    {t("diseaseIncident.reviewDecision")}
                   </label>
                   <div className="flex gap-4">
                     <label
@@ -1514,7 +1545,7 @@ const detectedDiseaseLabel = useMemo(() => {
                       <span
                         className={`text-sm font-bold ${reviewIsConfirmed ? "text-[#2D5A27]" : "text-slate-500"}`}
                       >
-                        Xác nhận Bệnh
+                        {t("diseaseIncident.reviewConfirm")}
                       </span>
                     </label>
                     <label
@@ -1534,7 +1565,7 @@ const detectedDiseaseLabel = useMemo(() => {
                       <span
                         className={`text-sm font-bold ${!reviewIsConfirmed ? "text-slate-700" : "text-slate-500"}`}
                       >
-                        Bác bỏ AI
+                        {t("diseaseIncident.reviewDismiss")}
                       </span>
                     </label>
                   </div>
@@ -1542,7 +1573,7 @@ const detectedDiseaseLabel = useMemo(() => {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Ghi chú thêm:
+                    {t("diseaseIncident.reviewNote")}
                   </label>
                   <textarea
                     value={reviewNote}
@@ -1550,7 +1581,7 @@ const detectedDiseaseLabel = useMemo(() => {
                     rows={3}
                     disabled={reviewSubmitting}
                     className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50 shadow-sm"
-                    placeholder="Nhập ghi chú hoặc lý do đánh giá..."
+                    placeholder={t("diseaseIncident.reviewNotePlaceholder")}
                   />
                 </div>
               </div>
@@ -1561,7 +1592,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   disabled={reviewSubmitting}
                   className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 shadow-sm disabled:opacity-50"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="button"
@@ -1573,8 +1604,8 @@ const detectedDiseaseLabel = useMemo(() => {
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Save className="w-4 h-4" />
-                  )}{" "}
-                  Lên báo cáo
+                  )}
+                  {t("diseaseIncident.submitReview")}
                 </button>
               </div>
             </motion.div>
@@ -1599,7 +1630,7 @@ const detectedDiseaseLabel = useMemo(() => {
             >
               <div className="px-6 py-5 border-b border-[#DDEEE0] bg-[#F4F7F4] flex justify-between items-center rounded-t-2xl">
                 <h3 className="text-lg font-bold text-[#1e3e1c] flex items-center gap-2">
-                  <Pencil className="w-5 h-5 text-[#2D5A27]" /> Chỉnh sửa mẫu
+                  <Pencil className="w-5 h-5 text-[#2D5A27]" /> {t("sample.editModalTitle")}
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -1612,7 +1643,7 @@ const detectedDiseaseLabel = useMemo(() => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                    Tên mẫu
+                    {t("sample.editNameLabel")}
                   </label>
                   <input
                     type="text"
@@ -1620,12 +1651,12 @@ const detectedDiseaseLabel = useMemo(() => {
                     onChange={(e) => setEditName(e.target.value)}
                     disabled={isEditing}
                     className="w-full px-4 py-2.5 bg-white border border-[#DDEEE0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50 disabled:opacity-60"
-                    placeholder="Nhập tên mẫu..."
+                    placeholder={t("sample.editNamePlaceholder")}
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                    Ghi chú
+                    {t("sample.editNotesLabel")}
                   </label>
                   <textarea
                     value={editNotes}
@@ -1633,12 +1664,12 @@ const detectedDiseaseLabel = useMemo(() => {
                     disabled={isEditing}
                     rows={2}
                     className="w-full px-4 py-2.5 bg-white border border-[#DDEEE0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50 resize-none disabled:opacity-60"
-                    placeholder="Nhập ghi chú..."
+                    placeholder={t("sample.editNotesPlaceholder")}
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                    Điều kiện ban đầu
+                    {t("sample.editInitialConditionLabel")}
                   </label>
                   <textarea
                     value={editInitialCondition}
@@ -1646,7 +1677,7 @@ const detectedDiseaseLabel = useMemo(() => {
                     disabled={isEditing}
                     rows={2}
                     className="w-full px-4 py-2.5 bg-white border border-[#DDEEE0] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D5A27]/50 resize-none disabled:opacity-60"
-                    placeholder="Nhập điều kiện ban đầu của mẫu..."
+                    placeholder={t("sample.editInitialConditionPlaceholder")}
                   />
                 </div>
               </div>
@@ -1657,7 +1688,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   disabled={isEditing}
                   className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 shadow-sm disabled:opacity-50"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="button"
@@ -1670,7 +1701,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  {isEditing ? "Đang lưu..." : "Lưu thay đổi"}
+                  {isEditing ? t("common.saving") : t("sample.editSave")}
                 </button>
               </div>
             </motion.div>
@@ -1695,7 +1726,7 @@ const detectedDiseaseLabel = useMemo(() => {
             >
               <div className="px-6 py-5 border-b border-rose-50 flex justify-between items-center bg-rose-50/30 rounded-t-2xl">
                 <h3 className="text-lg font-bold text-rose-800 flex items-center gap-2">
-                  <Trash2 className="w-5 h-5" /> Xác nhận hủy mẫu
+                  <Trash2 className="w-5 h-5" /> {t("sample.deleteConfirmTitle")}
                 </h3>
                 <button
                   onClick={() => setShowConfirmDeleteModal(false)}
@@ -1707,12 +1738,12 @@ const detectedDiseaseLabel = useMemo(() => {
               </div>
               <div className="p-6 space-y-4">
                 <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm text-rose-700 font-medium">
-                  Hành động này không thể hoàn tác. Mẫu sẽ bị đánh dấu là đã
-                  tiêu hủy vĩnh viễn.
+                  {t("sample.deleteConfirmDescription")}
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Lý do hủy (bắt buộc):
+                    {t("sample.deleteReason")}
+                    <span className="text-rose-600"> *</span>
                   </label>
                   <textarea
                     value={deleteReason}
@@ -1720,7 +1751,7 @@ const detectedDiseaseLabel = useMemo(() => {
                     rows={3}
                     disabled={isDeleting}
                     className="w-full px-4 py-3 bg-white border border-rose-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-sm"
-                    placeholder="VD: Mẫu bị nhiễm khuẩn nặng..."
+                    placeholder={t("sample.deleteReasonPlaceholder")}
                   />
                 </div>
               </div>
@@ -1731,7 +1762,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   disabled={isDeleting}
                   className="px-5 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-100 shadow-sm"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="button"
@@ -1740,7 +1771,7 @@ const detectedDiseaseLabel = useMemo(() => {
                   className="px-6 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 shadow-sm disabled:opacity-50 flex items-center gap-2"
                 >
                   {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isDeleting ? "Đang xóa..." : "Xác nhận Hủy"}
+                  {isDeleting ? t("common.deleting") : t("sample.confirmDeleteButton")}
                 </button>
               </div>
             </motion.div>

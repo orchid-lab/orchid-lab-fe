@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Loader2, Microscope, X } from "lucide-react";
+import { AlertTriangle, Loader2, Microscope, X, Activity } from "lucide-react";
 import { useDiseaseMap } from "../../../utils/useDiseaseMap";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
@@ -23,6 +23,13 @@ import type {
 } from "../../../types/Sample";
 import { SampleStatus as SampleStatusValue } from "../../../types/Sample";
 import type { UserApiResponse } from "../../../types/Auth";
+
+// ── Extended AnalysisResponse to include new API fields (đồng bộ với TechDetailSample) ──
+type ExtendedAnalysisResponse = AnalysisResponse & {
+  rawTopDisease?: string;
+  selectedDisease?: string;
+  isRawTopDiseaseActive?: boolean;
+};
 
 type PredefinedStage = {
   order: number;
@@ -119,9 +126,8 @@ export default function SampleDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(
-    null,
-  );
+  const [analysisResult, setAnalysisResult] =
+    useState<ExtendedAnalysisResponse | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -188,7 +194,6 @@ export default function SampleDetail() {
   }, [loadSampleDetail]);
 
   const handleBack = () => {
-    // Navigate back to researcher experiment log detail
     if (
       navigationSource?.from === "researcherExperimentLogDetail" &&
       navigationSource.experimentLogId
@@ -197,7 +202,6 @@ export default function SampleDetail() {
         `/researcher/experiment-log/${navigationSource.experimentLogId}`,
       );
     } else {
-      // Default fallback to experiment logs list
       navigate("/researcher/experiment-log");
     }
   };
@@ -223,12 +227,10 @@ export default function SampleDetail() {
 
     setAnalyzing(true);
     try {
-      // Perform analysis
       const analysisFormData = new FormData();
       analysisFormData.append("image", selectedImage);
 
-      const analysisStart = performance.now();
-      const result = await axiosInstance.post<AnalysisResponse>(
+      const result = await axiosInstance.post<ExtendedAnalysisResponse>(
         "/api/monitoring-log/analysis",
         analysisFormData,
         {
@@ -237,9 +239,6 @@ export default function SampleDetail() {
           },
         },
       );
-      const analysisEnd = performance.now();
-      const analysisTime = Math.round(analysisEnd - analysisStart);
-      console.log(`Analysis took ${analysisTime}ms`);
 
       setAnalysisResult(result.data);
       setShowAnalysisModal(true);
@@ -261,59 +260,93 @@ export default function SampleDetail() {
     setImagePreview("");
   };
 
-  // Kiểm tra kết quả healthy: topDisease là "healthy", hoặc unknown nhưng rawTopDisease cũng là healthy
+  // ── Healthy: chỉ khi AI nói rõ "Healthy" VÀ bệnh top đang active
+  // (đồng bộ hoàn toàn với TechDetailSample)
   const isHealthyAnalysis = useMemo(() => {
     if (!analysisResult) return true;
-    const topDisease = String(analysisResult.analyticResult.topDisease ?? "").toLowerCase();
-    if (topDisease === "healthy") return true;
-    // Nếu topDisease là "unknown" do bệnh inactive, kiểm tra rawTopDisease
-    if (topDisease === "unknown") {
-      const rawTop = String(analysisResult.rawTopDisease ?? "").toLowerCase();
-      if (rawTop === "healthy") return true;
-    }
-    return false;
+    if (analysisResult.isRawTopDiseaseActive === false) return false;
+    const topDisease = String(analysisResult.analyticResult.topDisease ?? "");
+    return topDisease.toLowerCase() === "healthy";
   }, [analysisResult]);
 
-  // Kiểm tra trường hợp bệnh phát hiện nhưng chưa active trong hệ thống
-  const isInactiveDisease = useMemo(() => {
+  // ── Bệnh top có inactive trong hệ thống không
+  const isTopDiseaseInactive = useMemo(() => {
     if (!analysisResult) return false;
-    return (
-      analysisResult.isRawTopDiseaseActive === false &&
-      String(analysisResult.analyticResult.topDisease ?? "").toLowerCase() === "unknown"
-    );
+    return analysisResult.isRawTopDiseaseActive === false;
   }, [analysisResult]);
 
-  // Tính confidence hiển thị: nếu confidence = 0 do bệnh inactive, lấy từ predictions
-  const displayConfidence = useMemo(() => {
-    if (!analysisResult) return 0;
-    if (analysisResult.analyticResult.confidence > 0) {
-      return analysisResult.analyticResult.confidence;
-    }
-    // Confidence = 0 có thể do bệnh inactive — tìm giá trị từ predictions theo rawTopDisease
-    if (analysisResult.rawTopDisease) {
-      const rawNormalized = analysisResult.rawTopDisease
-        .replace(/_/g, "")
-        .toLowerCase();
-      const matchedKey = Object.keys(
-        analysisResult.analyticResult.predictions ?? {},
-      ).find((k) =>
-        k.replace(/\s*\(inactive\)\s*/gi, "").replace(/_/g, "").toLowerCase() ===
-        rawNormalized,
-      );
-      if (matchedKey) {
-        return analysisResult.analyticResult.predictions[matchedKey] ?? 0;
-      }
-    }
-    return 0;
-  }, [analysisResult]);
-
+  // ── Disease map để tra label
   const onnxNameMap = useDiseaseMap();
+
+  const normalizeDiseaseKey = (value?: string | null): string =>
+    value?.replace(/_/g, " ").trim() ?? "";
+
+  const getDiseaseLabelFromKey = (key?: string | null): string => {
+    if (!key) return "";
+    const rawKey = key.trim();
+    if (!rawKey) return "";
+
+    const exactMatch = onnxNameMap[rawKey] ?? onnxNameMap[rawKey.toLowerCase()];
+    if (exactMatch) return exactMatch;
+
+    const normalized = normalizeDiseaseKey(rawKey);
+    return (
+      onnxNameMap[normalized] ??
+      onnxNameMap[normalized.toLowerCase()] ??
+      normalized
+    );
+  };
+
+  const getDisplayDiseaseLabel = (
+    diseaseName?: string | null,
+    diseaseKey?: string | null,
+  ): string => {
+    const labelFromName = getDiseaseLabelFromKey(diseaseName);
+    if (labelFromName) return labelFromName;
+
+    const labelFromKey = getDiseaseLabelFromKey(diseaseKey);
+    if (labelFromKey) return labelFromKey;
+
+    if (diseaseName && diseaseName.toLowerCase() !== "unknown") {
+      return normalizeDiseaseKey(diseaseName);
+    }
+
+    return normalizeDiseaseKey(diseaseKey);
+  };
+
+  // ── Label hiển thị cho bệnh phát hiện (đồng bộ TechDetailSample)
+  const detectedDiseaseLabel = useMemo(() => {
+    if (!analysisResult) return "";
+    if (isTopDiseaseInactive) {
+      return t("sample.analysis.unknown");
+    }
+
+    return getDisplayDiseaseLabel(
+      analysisResult.disease.name,
+      analysisResult.analyticResult.topDisease,
+    );
+  }, [analysisResult, isTopDiseaseInactive, t]);
+
+  // ── Chỉ giữ các predictions active (bỏ key có "(inactive)") — đồng bộ TechDetailSample
+  const activePredictions = useMemo(() => {
+    if (!analysisResult) return [];
+    return Object.entries(analysisResult.analyticResult.predictions ?? {})
+      .filter(([key]) => !/\(inactive\)/i.test(key))
+      .sort(([, a], [, b]) => b - a);
+  }, [analysisResult]);
+
+  // ── Key của entry dẫn đầu trong danh sách active
+  const topActivePredictionKey = useMemo(() => {
+    if (activePredictions.length === 0) return null;
+    return activePredictions[0][0];
+  }, [activePredictions]);
 
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
 
     const finalReason =
-      destroyReason.trim() ?? `Mẫu vật nhiễm ${analysisResult.disease.name}`;
+      destroyReason.trim() ||
+      t("sample.defaultDestroyReason", { disease: detectedDiseaseLabel });
     setIsDestroying(true);
 
     try {
@@ -360,14 +393,12 @@ export default function SampleDetail() {
       });
       setShowConvertForm(false);
 
-      // Reset form
       setConvertFormData({
         localName: "",
         scientificName: "",
         description: "",
       });
 
-      // Reload để cập nhật trạng thái mới
       await loadSampleDetail();
     } catch (error) {
       enqueueSnackbar(
@@ -429,7 +460,6 @@ export default function SampleDetail() {
     return sampleStages[sampleStages.length - 1];
   }, [sampleStages]);
 
-  // Lấy currentStageLabel từ sample.currentSampleStage
   const currentStageLabel = sample?.currentSampleStage ?? "-";
   const latestImageUrl = resolveImageUrl(latestStage?.latestImageUrl);
   const reportRows: SampleLogDetail[] = latestStage?.logDetailDtos ?? [];
@@ -461,7 +491,6 @@ export default function SampleDetail() {
     sample?.status !== SampleStatusValue.ConvertedToSeedling &&
     sample?.status !== SampleStatusValue.ExecutedBecauseOfDisease;
 
-  // Tiến trình giai đoạn nuôi cấy: không sort, lấy đúng thứ tự sampleStages từ API
   const stageProgressRows = useMemo(() => {
     return sampleStages.map((stage) => {
       const predefinedStage = PREDEFINED_STAGES.find(
@@ -470,7 +499,6 @@ export default function SampleDetail() {
       const hasReport = (stage.logDetailDtos?.length ?? 0) > 0;
       const stageImageUrl = resolveImageUrl(stage.latestImageUrl);
       const hasImage = Boolean(stageImageUrl);
-      // Status lấy trực tiếp từ stage.status
       let progressLabel = t("sample.stageProgress.future");
       let progressClass = "bg-blue-100 text-blue-800";
       if (stage.status === SampleStatusValue.Completed) {
@@ -552,7 +580,6 @@ export default function SampleDetail() {
             Chi tiết mẫu thí nghiệm: {sample.name}
           </h2>
           <div className="flex gap-3">
-            {/* Ẩn CHỈ nút chuyển giai đoạn/hoàn thành mẫu vật nếu giai đoạn cuối đã hoàn thành */}
             {canConvertToSeedling && (
               <button
                 type="button"
@@ -980,7 +1007,7 @@ export default function SampleDetail() {
         </div>
       )}
 
-      {/* MODAL: Phân tích bệnh */}
+      {/* MODAL: Phân tích bệnh — chọn ảnh */}
       {showImageModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-[#DDEEE0]">
@@ -1078,7 +1105,7 @@ export default function SampleDetail() {
         </div>
       )}
 
-      {/* MODAL: Kết quả phân tích */}
+      {/* MODAL: Kết quả phân tích — đồng bộ hoàn toàn với TechDetailSample */}
       {showAnalysisModal && analysisResult && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -1089,7 +1116,7 @@ export default function SampleDetail() {
             {/* Header */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-[#DDEEE0] px-6 py-5 flex justify-between items-center z-20">
               <h3 className="text-xl font-bold text-[#1e3e1c] flex items-center gap-2">
-                <Microscope className="w-6 h-6" /> Kết quả AI
+                <Microscope className="w-6 h-6" /> {t("sample.analysisResultTitle")}
               </h3>
               <button
                 type="button"
@@ -1105,21 +1132,19 @@ export default function SampleDetail() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Result Summary */}
+              {/* ── Result Summary — giống TechDetailSample ── */}
               <div
                 className={`p-5 rounded-xl border ${
                   isHealthyAnalysis
                     ? "bg-[#E4F0E8] border-[#DDEEE0]"
-                    : isInactiveDisease
-                      ? "bg-amber-50 border-amber-200"
-                      : "bg-rose-50 border-rose-200"
+                    : "bg-rose-50 border-rose-200"
                 }`}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-3 flex-1">
                     <div>
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                        Giai đoạn
+                        {t("sample.analysis.stageLabel")}
                       </span>
                       <p className="text-base font-bold text-[#1e3e1c] mt-0.5">
                         {(
@@ -1136,218 +1161,170 @@ export default function SampleDetail() {
                     <div>
                       <span
                         className={`text-xs font-semibold uppercase tracking-wide ${
-                          isHealthyAnalysis
-                            ? "text-[#2D5A27]"
-                            : isInactiveDisease
-                              ? "text-amber-700"
-                              : "text-rose-600"
+                          isHealthyAnalysis ? "text-[#2D5A27]" : "text-rose-600"
                         }`}
                       >
-                        Kết quả phân tích
+                        {t("sample.analysis.summaryLabel")}
                       </span>
-<p
-  className={`text-xl font-black mt-0.5 ${
-    isHealthyAnalysis
-      ? "text-[#1e3e1c]"
-      : isInactiveDisease
-        ? "text-amber-900"
-        : "text-rose-800"
-  }`}
->
-  {isInactiveDisease ? "Không rõ" : analysisResult.disease.name}
-</p>
-                      {/* Badge chưa kích hoạt */}
-                      {isInactiveDisease && (
-                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
-                          Chưa kích hoạt trong hệ thống
-                        </span>
-                      )}
+                      <p
+                        className={`text-xl font-black mt-0.5 ${
+                          isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"
+                        }`}
+                      >
+                        {detectedDiseaseLabel}
+                      </p>
+                      {/* Badge bệnh inactive — giống TechDetailSample */}
+                      {isTopDiseaseInactive &&
+                        analysisResult.disease.onnxClassName && (
+                          <p className="text-sm text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-snug">
+                            Bệnh{" "}
+                            <span className="font-semibold">
+                              {getDisplayDiseaseLabel(
+                                analysisResult.disease.name,
+                                analysisResult.disease.onnxClassName,
+                              )}
+                            </span>{" "}
+                            hiện chưa được kích hoạt trong hệ thống.
+                          </p>
+                        )}
                     </div>
                   </div>
+
+                  {/* Confidence circle — giống TechDetailSample */}
                   <div
                     className={`w-24 h-24 rounded-full border-4 flex flex-col items-center justify-center shadow-sm flex-shrink-0 bg-white ${
-                      isHealthyAnalysis
-                        ? "border-[#C9E7D2]"
-                        : isInactiveDisease
-                          ? "border-amber-200"
-                          : "border-rose-200"
+                      isHealthyAnalysis ? "border-[#C9E7D2]" : "border-rose-200"
                     }`}
                   >
-                    <span
-                      className={`text-xl font-black leading-none ${
-                        isHealthyAnalysis
-                          ? "text-[#2D5A27]"
-                          : isInactiveDisease
-                            ? "text-amber-600"
-                            : "text-rose-600"
-                      }`}
-                    >
-                      {(displayConfidence * 100).toFixed(1)}%
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-1">
-                      độ tin cậy
-                    </span>
+                    {isTopDiseaseInactive ? (
+                      <>
+                        <span className="text-xl font-black leading-none text-amber-600">
+                          {activePredictions.length > 0
+                            ? (activePredictions[0][1] * 100).toFixed(1)
+                            : "0.0"}
+                          %
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1 text-center leading-tight px-1">
+                          xác suất cao nhất
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          className={`text-xl font-black leading-none ${
+                            isHealthyAnalysis
+                              ? "text-[#2D5A27]"
+                              : "text-rose-600"
+                          }`}
+                        >
+                          {(
+                            analysisResult.analyticResult.confidence * 100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1">
+                          độ tin cậy
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Predictions Breakdown */}
-              {Object.keys(analysisResult.analyticResult.predictions ?? {})
-                .length > 0 && (
+              {/* ── Predictions Breakdown — chỉ hiển thị active, giống TechDetailSample ── */}
+              {activePredictions.length > 0 && (
                 <div className="rounded-xl border border-slate-200 overflow-hidden">
-                  {/* Header */}
                   <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                    <Microscope className="w-3.5 h-3.5 text-slate-400" />
+                    <Activity className="w-3.5 h-3.5 text-slate-400" />
                     <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                      Phân bố xác suất bệnh
+                      {t("sample.analysis.probabilityDistribution")}
                     </span>
                   </div>
-                  {/* Rows */}
                   <div className="divide-y divide-slate-100">
-                    {Object.entries(analysisResult.analyticResult.predictions)
-                      .sort(([, a], [, b]) => b - a)
-                      .map(([onnxKey, prob]) => {
-                        // Chuẩn hóa key: bỏ hậu tố "(inactive)" để tra cứu tên hiển thị
-                        const baseKey = onnxKey
-                          .replace(/\s*\(inactive\)\s*/gi, "")
-                          .trim();
-                        const name =
-                          onnxNameMap[onnxKey] ??
-                          onnxNameMap[baseKey] ??
-                          baseKey;
+                    {activePredictions.map(([predKey, prob]) => {
+                      const pct = prob * 100;
+                      const isTop = predKey === topActivePredictionKey;
+                      const isHealthyEntry =
+                        predKey.toLowerCase() === "healthy";
 
-                        // Xác định đây có phải kết quả top không:
-                        // So khớp với topDisease (active) hoặc rawTopDisease (inactive)
-                        const rawNormalized = String(
-                          analysisResult.rawTopDisease ?? "",
-                        )
-                          .replace(/_/g, "")
-                          .toLowerCase();
-                        const keyNormalized = baseKey
-                          .replace(/_/g, "")
-                          .toLowerCase();
-                        const isTop =
-                          onnxKey ===
-                            analysisResult.analyticResult.topDisease ||
-                          keyNormalized === rawNormalized;
-
-                        const isInactiveKey =
-                          /\(inactive\)/i.test(onnxKey);
-                        const pct = prob * 100;
-
-                        return (
-                          <div
-                            key={onnxKey}
-                            className={`flex items-center gap-3 px-4 py-3 ${
+                      return (
+                        <div
+                          key={predKey}
+                          className={`flex items-center gap-3 px-4 py-3 ${
+                            isTop
+                              ? isHealthyAnalysis
+                                ? "bg-[#f0f8f2]"
+                                : "bg-rose-50/60"
+                              : ""
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
                               isTop
-                                ? isHealthyAnalysis
-                                  ? "bg-[#f0f8f2]"
-                                  : isInactiveDisease
-                                    ? "bg-amber-50/60"
-                                    : "bg-rose-50/60"
-                                : ""
+                                ? isHealthyEntry
+                                  ? "bg-[#2D5A27]"
+                                  : "bg-rose-500"
+                                : "bg-slate-300"
                             }`}
+                          />
+                          <span
+                            className={`flex-1 text-sm truncate ${
+                              isTop
+                                ? isHealthyEntry
+                                  ? "font-semibold text-[#1e3e1c]"
+                                  : "font-semibold text-rose-800"
+                                : "font-medium text-slate-500"
+                            }`}
+                            title={predKey}
                           >
-                            <span
-                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                isTop
-                                  ? isHealthyAnalysis
-                                    ? "bg-[#2D5A27]"
-                                    : isInactiveDisease
-                                      ? "bg-amber-500"
-                                      : "bg-rose-500"
-                                  : "bg-slate-300"
-                              }`}
-                            />
-                            <span
-                              className={`flex-1 text-sm truncate ${
-                                isTop
-                                  ? isHealthyAnalysis
-                                    ? "font-semibold text-[#1e3e1c]"
-                                    : isInactiveDisease
-                                      ? "font-semibold text-amber-800"
-                                      : "font-semibold text-rose-800"
-                                  : "font-medium text-slate-500"
-                              }`}
-                              title={name}
-                            >
-                              {name}
-                              {isInactiveKey && (
-                                <span className="ml-1.5 text-[10px] font-normal text-amber-500 border border-amber-300 rounded px-1 py-0.5">
-                                  inactive
-                                </span>
-                              )}
-                            </span>
-                            <div className="flex items-center gap-2 w-44 flex-shrink-0">
-                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  style={{ width: `${pct.toFixed(1)}%` }}
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    isTop
-                                      ? isHealthyAnalysis
-                                        ? "bg-[#2D5A27]"
-                                        : isInactiveDisease
-                                          ? "bg-amber-500"
-                                          : "bg-rose-500"
-                                      : "bg-slate-200"
-                                  }`}
-                                />
-                              </div>
-                              <span
-                                className={`text-xs font-bold w-11 text-right ${
+                            {isHealthyEntry
+                              ? t("sample.healthy")
+                              : getDiseaseLabelFromKey(predKey)}
+                          </span>
+                          <div className="flex items-center gap-2 w-44 flex-shrink-0">
+                            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                style={{ width: `${pct.toFixed(1)}%` }}
+                                className={`h-full rounded-full transition-all duration-500 ${
                                   isTop
-                                    ? isHealthyAnalysis
-                                      ? "text-[#2D5A27]"
-                                      : isInactiveDisease
-                                        ? "text-amber-600"
-                                        : "text-rose-600"
-                                    : "text-slate-400"
+                                    ? isHealthyEntry
+                                      ? "bg-[#2D5A27]"
+                                      : "bg-rose-500"
+                                    : "bg-slate-200"
                                 }`}
-                              >
-                                {pct.toFixed(1) === "0.0"
-                                  ? "~0.0"
-                                  : pct.toFixed(1)}
-                                %
-                              </span>
+                              />
                             </div>
+                            <span
+                              className={`text-xs font-bold w-11 text-right ${
+                                isTop
+                                  ? isHealthyEntry
+                                    ? "text-[#2D5A27]"
+                                    : "text-rose-600"
+                                  : "text-slate-400"
+                              }`}
+                            >
+                              {pct.toFixed(1) === "0.0"
+                                ? "~0.0"
+                                : pct.toFixed(1)}
+                              %
+                            </span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* Warning: bệnh inactive — chưa kích hoạt, không cho tiêu hủy */}
-              {isInactiveDisease && (
-                <div className="p-5 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-amber-800">
-                        Phát hiện dấu hiệu bệnh nhưng chưa thể xác nhận
-                      </p>
-                      <p className="text-sm text-amber-700">
-                        Bệnh{" "}
-                        <span className="font-semibold">
-                          {analysisResult.rawTopDisease?.replace(/_/g, " ")}
-                        </span>{" "}
-                        hiện chưa được kích hoạt trong hệ thống. Vui lòng liên
-                        hệ quản trị viên để xem xét và kích hoạt bệnh này trước
-                        khi tiến hành tiêu hủy.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Destroy Warning — chỉ hiển thị khi bệnh active và không healthy */}
-              {!isHealthyAnalysis && !isInactiveDisease && (
+              {/* ── Destroy Warning — giống TechDetailSample ── */}
+              {!isHealthyAnalysis && (
                 <div className="p-5 bg-rose-50 border border-rose-200 rounded-xl space-y-4">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-rose-600 flex-shrink-0" />
                     <p className="text-sm font-bold text-rose-800">
-                      Phát hiện bệnh lây nhiễm. Yêu cầu xử lý tiêu hủy mẫu
-                      ngay lập tức!
+                      {isTopDiseaseInactive
+                        ? t("sample.analysis.inactiveWarning")
+                        : t("sample.analysis.activeWarning")}
                     </p>
                   </div>
                   {!showDestroyForm ? (
@@ -1356,19 +1333,21 @@ export default function SampleDetail() {
                       onClick={() => setShowDestroyForm(true)}
                       className="w-full py-2.5 bg-rose-600 text-white rounded-xl font-bold shadow-sm hover:bg-rose-700 transition-colors"
                     >
-                      Tiến hành Tiêu Hủy
+                      {t("sample.destroyConfirm")}
                     </button>
                   ) : (
                     <div className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
                       <label className="block text-sm font-bold text-slate-700 mb-2">
-                        Lý do tiêu hủy:
+                        {t("sample.deleteReason")}
                       </label>
                       <textarea
                         value={destroyReason}
                         onChange={(e) => setDestroyReason(e.target.value)}
                         rows={2}
                         className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                        placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease.name}`}
+                        placeholder={t("sample.destroyReasonPlaceholder", {
+                          disease: detectedDiseaseLabel,
+                        })}
                       />
                       <div className="flex justify-end gap-2 mt-3">
                         <button
@@ -1380,7 +1359,7 @@ export default function SampleDetail() {
                           disabled={isDestroying}
                           className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
                         >
-                          Hủy
+                          {t("common.cancel")}
                         </button>
                         <button
                           type="button"
@@ -1391,7 +1370,9 @@ export default function SampleDetail() {
                           {isDestroying && (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           )}
-                          {isDestroying ? "Đang xử lý..." : "Xác nhận Tiêu hủy"}
+                          {isDestroying
+                            ? t("common.deleting")
+                            : t("sample.confirmDestroy")}
                         </button>
                       </div>
                     </div>

@@ -17,7 +17,7 @@ export function useDiseaseMap(): Record<string, string> {
 
   useEffect(() => {
     axiosInstance
-      .get<{ value: DiseaseItem[] }>("/api/diseases?pageNo=1&pageSize=1000")
+      .get<{ value: DiseaseItem[] }>("/api/diseases?pageNo=1&pageSize=1000&isActive=false")
       .then((res) => {
         setDiseaseList(res.data.value ?? []);
       })
