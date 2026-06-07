@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosInstance from "../../../api/axiosInstance";
 import { useSnackbar } from "notistack";
@@ -398,37 +398,24 @@ export default function TechDetailSample() {
   // ── Whether the top detected disease is inactive in the system
   const onnxNameMap = useDiseaseMap();
 
-  const normalizeDiseaseKey = useCallback((value?: string | null): string =>
-    value?.replace(/_/g, " ").trim() ?? "",
-  [],
-  );
+  const normalizeDiseaseKey = (value?: string | null): string =>
+    value?.replace(/_/g, " ").trim() ?? "";
 
-  const getDiseaseLabelFromKey = useCallback(
-    (key?: string | null): string => {
-      if (!key) return "";
-      const rawKey = key.trim();
-      if (!rawKey) return "";
+  const getDiseaseLabelFromKey = (key?: string | null): string => {
+    if (!key) return "";
+    const rawKey = key.trim();
+    if (!rawKey) return "";
 
-      const exactMatch = onnxNameMap[rawKey] ?? onnxNameMap[rawKey.toLowerCase()];
-      if (exactMatch) return exactMatch;
+    const exactMatch = onnxNameMap[rawKey] ?? onnxNameMap[rawKey.toLowerCase()];
+    if (exactMatch) return exactMatch;
 
-      const normalized = normalizeDiseaseKey(rawKey);
-      const normalizedMatch =
-        onnxNameMap[normalized] ?? onnxNameMap[normalized.toLowerCase()];
-      if (normalizedMatch) return normalizedMatch;
-
-      const normalizedLower = normalized.toLowerCase();
-      const fallbackMatch = Object.entries(onnxNameMap).find(
-        ([mapKey]) =>
-          mapKey.replace(/_/g, " ").trim().toLowerCase() === normalizedLower ||
-          mapKey.replace(/\s+/g, " ").trim().toLowerCase() === normalizedLower,
-      );
-      if (fallbackMatch) return fallbackMatch[1];
-
-      return normalized;
-    },
-    [onnxNameMap, normalizeDiseaseKey],
-  );
+    const normalized = normalizeDiseaseKey(rawKey);
+    return (
+      onnxNameMap[normalized] ??
+      onnxNameMap[normalized.toLowerCase()] ??
+      normalized
+    );
+  };
 
   const isTopDiseaseInactive = useMemo(() => {
     if (!analysisResult) return false;
