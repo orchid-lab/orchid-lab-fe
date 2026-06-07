@@ -271,6 +271,9 @@ export default function SampleDetail() {
 
   const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
+  const isInactiveDisease = !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
+  const displayConfidence = analysisResult?.analyticResult.confidence ?? 0;
+
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
 
@@ -1200,6 +1203,9 @@ export default function SampleDetail() {
                         const isInactiveKey = /\(inactive\)/i.test(onnxKey);
                         const pct = prob * 100;
 
+                        // Ẩn dòng bệnh inactive khỏi danh sách
+                        if (isInactiveKey) return null;
+
                         return (
                           <div
                             key={onnxKey}
@@ -1269,10 +1275,6 @@ export default function SampleDetail() {
                                     : "text-slate-400"
                                 }`}
                               >
-                                {pct.toFixed(1) === "0.0"
-                                  ? "~0.0"
-                                  : pct.toFixed(1)}
-                                %
                                 {pct.toFixed(1) === "0.0"
                                   ? "~0.0"
                                   : pct.toFixed(1)}

@@ -409,6 +409,11 @@ export default function TechDetailSample() {
 
   const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
+  const isTopDiseaseInactive = !!analysisResult && analysisResult.isRawTopDiseaseActive === false;
+  const detectedDiseaseName = isTopDiseaseInactive
+    ? (codeNameMap[analysisResult?.rawTopDisease ?? ""] ?? analysisResult?.rawTopDisease ?? "")
+    : (analysisResult?.disease.name ?? "");
+
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
     // Use the raw disease name if inactive, otherwise use resolved disease name
@@ -1316,9 +1321,13 @@ export default function TechDetailSample() {
                               /\s*\(inactive\)\s*$/i,
                               "",
                             );
+                            const viName = onnxNameMap[displayName] ?? onnxNameMap[displayName.toLowerCase()] ?? displayName;
                             const isInactiveEntry = /\(inactive\)/i.test(
                               predKey,
                             );
+
+                            // Ẩn dòng bệnh inactive khỏi danh sách
+                            if (isInactiveEntry) return null;
 
                             return (
                               <div
@@ -1348,9 +1357,9 @@ export default function TechDetailSample() {
                                         : "font-semibold text-rose-800"
                                       : "font-medium text-slate-500"
                                   }`}
-                                  title={displayName}
+                                  title={viName}
                                 >
-                                  {displayName}
+                                  {viName}
                                   {isInactiveEntry && (
                                     <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
                                       chưa active
@@ -1379,10 +1388,6 @@ export default function TechDetailSample() {
                                         : "text-slate-400"
                                     }`}
                                   >
-                                    {pct.toFixed(1) === "0.0"
-                                      ? "~0.0"
-                                      : pct.toFixed(1)}
-                                    %
                                     {pct.toFixed(1) === "0.0"
                                       ? "~0.0"
                                       : pct.toFixed(1)}
