@@ -43,7 +43,7 @@ export default function ReportsDetails() {
   );
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<string>("");
-  const onnxNameMap = useDiseaseMap();
+  const { onnxNameMap, isMapLoaded } = useDiseaseMap();
 
   const stageNameMap: Record<string, string> = {
     coppice: "Giai đoạn chồi",
@@ -374,7 +374,7 @@ export default function ReportsDetails() {
                                   : "text-rose-800"
                               }`}
                             >
-                              {predictName}
+                              {isMapLoaded && !isHealthyResult && !(analyzeResult.disease.predict in onnxNameMap) ? "Không rõ" : predictName}
                             </p>
                           </div>
                         </div>

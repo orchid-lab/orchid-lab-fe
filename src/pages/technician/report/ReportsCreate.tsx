@@ -217,7 +217,7 @@ export default function ReportsCreate() {
     }));
   };
 
-  const onnxNameMap = useDiseaseMap();
+  const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -670,8 +670,13 @@ export default function ReportsCreate() {
                       Kết quả phân tích
                     </div>
                     <div className="font-semibold text-gray-900">
-                      {analysisResult.disease.name || "—"}
+                      {analysisResult.isRawTopDiseaseActive ? (analysisResult.disease.name || "—") : "Không rõ"}
                     </div>
+                    {!analysisResult.isRawTopDiseaseActive && (
+                      <p className="text-xs text-amber-700 mt-1">
+                        Bệnh &apos;{codeNameMap[analysisResult.rawTopDisease] ?? analysisResult.rawTopDisease}&apos; hiện chưa hoạt động trong hệ thống.
+                      </p>
+                    )}
                   </div>
                   <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
                     <div className="text-xs text-gray-500 mb-1">Độ tin cậy</div>

@@ -91,7 +91,7 @@ export default function AdminMonitoringLogDetails() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MonitoringLog | null>(null);
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const onnxNameMap = useDiseaseMap();
+  const { onnxNameMap, isMapLoaded } = useDiseaseMap();
 
   // Fetch data từ API thật
   useEffect(() => {
@@ -467,7 +467,7 @@ export default function AdminMonitoringLogDetails() {
                           isHealthyLog ? "text-emerald-800" : "text-[#9f1239]"
                         }`}
                       >
-                        {data.diseaseName ?? "—"}
+                        {isMapLoaded && !isHealthyLog && !(data.analyticResult!.topDisease in onnxNameMap) ? "Không rõ" : (data.diseaseName ?? "—")}
                       </p>
                     </div>
                   </div>

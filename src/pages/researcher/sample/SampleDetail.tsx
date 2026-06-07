@@ -268,7 +268,7 @@ export default function SampleDetail() {
     return topDisease.toLowerCase() === "healthy";
   }, [analysisResult]);
 
-  const onnxNameMap = useDiseaseMap();
+  const { onnxNameMap, codeNameMap } = useDiseaseMap();
 
   const handleDestroySample = async () => {
     if (!id || !analysisResult || isDestroying) return;
@@ -1107,8 +1107,13 @@ export default function SampleDetail() {
                           isHealthyAnalysis ? "text-[#1e3e1c]" : "text-rose-800"
                         }`}
                       >
-                        {analysisResult.disease.name}
+                        {analysisResult.isRawTopDiseaseActive ? analysisResult.disease.name : "Không rõ"}
                       </p>
+                      {!analysisResult.isRawTopDiseaseActive && (
+                        <p className="text-xs text-amber-700 mt-1">
+                          Bệnh &apos;{codeNameMap[analysisResult.rawTopDisease] ?? analysisResult.rawTopDisease}&apos; hiện chưa hoạt động trong hệ thống.
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div

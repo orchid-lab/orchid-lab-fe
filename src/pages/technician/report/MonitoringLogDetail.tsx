@@ -61,7 +61,7 @@ export default function MonitoringLogDetail() {
   >({});
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const onnxNameMap = useDiseaseMap();
+  const { onnxNameMap, isMapLoaded } = useDiseaseMap();
 
   // Phân quyền
   const isResearcher = user?.roleId === 2;
@@ -491,7 +491,7 @@ export default function MonitoringLogDetail() {
                     <span
                       className={`text-lg font-bold ${log.diseaseName === "Khỏe mạnh" ? "text-green-800" : "text-rose-800"}`}
                     >
-                      {log.diseaseName}
+                      {log.analyticResult && isMapLoaded && !(String(log.analyticResult.topDisease ?? "").toLowerCase() === "healthy") && !(log.analyticResult.topDisease in onnxNameMap) ? "Không rõ" : log.diseaseName}
                     </span>
                   </div>
                 </div>
@@ -609,7 +609,7 @@ export default function MonitoringLogDetail() {
                               isHealthyLog ? "text-[#1e3e1c]" : "text-rose-800"
                             }`}
                           >
-                            {log.diseaseName ?? "—"}
+                          {isMapLoaded && !isHealthyLog && !(ar.topDisease in onnxNameMap) ? "Không rõ" : (log.diseaseName ?? "—")}
                           </p>
                         </div>
                       </div>
