@@ -14,7 +14,11 @@ interface DiseaseItem {
  * onnxClassName → Vietnamese disease name.
  * Keys are stored in both original case and lowercase for flexible matching.
  */
-export function useDiseaseMap(): { onnxNameMap: Record<string, string>; codeNameMap: Record<string, string>; isMapLoaded: boolean } {
+export function useDiseaseMap(): {
+  onnxNameMap: Record<string, string>;
+  codeNameMap: Record<string, string>;
+  isMapLoaded: boolean;
+} {
   const [diseaseList, setDiseaseList] = useState<DiseaseItem[]>([]);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 

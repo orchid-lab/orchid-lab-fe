@@ -467,7 +467,11 @@ export default function AdminMonitoringLogDetails() {
                           isHealthyLog ? "text-emerald-800" : "text-[#9f1239]"
                         }`}
                       >
-                        {isMapLoaded && !isHealthyLog && !(data.analyticResult!.topDisease in onnxNameMap) ? "Không rõ" : (data.diseaseName ?? "—")}
+                        {isMapLoaded &&
+                        !isHealthyLog &&
+                        !(data.analyticResult!.topDisease in onnxNameMap)
+                          ? "Không rõ"
+                          : (data.diseaseName ?? "—")}
                       </p>
                     </div>
                   </div>
@@ -564,7 +568,10 @@ export default function AdminMonitoringLogDetails() {
                                         : "text-slate-400"
                                     }`}
                                   >
-                                    {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                    {pct.toFixed(1) === "0.0"
+                                      ? "~0.0"
+                                      : pct.toFixed(1)}
+                                    %
                                   </span>
                                 </div>
                               </div>

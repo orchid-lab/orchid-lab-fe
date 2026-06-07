@@ -670,11 +670,16 @@ export default function ReportsCreate() {
                       Kết quả phân tích
                     </div>
                     <div className="font-semibold text-gray-900">
-                      {analysisResult.isRawTopDiseaseActive ? (analysisResult.disease.name || "—") : "Không rõ"}
+                      {analysisResult.isRawTopDiseaseActive
+                        ? analysisResult.disease.name || "—"
+                        : "Không rõ"}
                     </div>
                     {!analysisResult.isRawTopDiseaseActive && (
                       <p className="text-xs text-amber-700 mt-1">
-                        Bệnh &apos;{codeNameMap[analysisResult.rawTopDisease] ?? analysisResult.rawTopDisease}&apos; hiện chưa hoạt động trong hệ thống.
+                        Bệnh &apos;
+                        {codeNameMap[analysisResult.rawTopDisease] ??
+                          analysisResult.rawTopDisease}
+                        &apos; hiện chưa hoạt động trong hệ thống.
                       </p>
                     )}
                   </div>
@@ -745,7 +750,10 @@ export default function ReportsCreate() {
                                     isTop ? "text-green-700" : "text-slate-400"
                                   }`}
                                 >
-                                  {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                  {pct.toFixed(1) === "0.0"
+                                    ? "~0.0"
+                                    : pct.toFixed(1)}
+                                  %
                                 </span>
                               </div>
                             </div>

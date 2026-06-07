@@ -491,7 +491,16 @@ export default function MonitoringLogDetail() {
                     <span
                       className={`text-lg font-bold ${log.diseaseName === "Khỏe mạnh" ? "text-green-800" : "text-rose-800"}`}
                     >
-                      {log.analyticResult && isMapLoaded && !(String(log.analyticResult.topDisease ?? "").toLowerCase() === "healthy") && !(log.analyticResult.topDisease in onnxNameMap) ? "Không rõ" : log.diseaseName}
+                      {log.analyticResult &&
+                      isMapLoaded &&
+                      !(
+                        String(
+                          log.analyticResult.topDisease ?? "",
+                        ).toLowerCase() === "healthy"
+                      ) &&
+                      !(log.analyticResult.topDisease in onnxNameMap)
+                        ? "Không rõ"
+                        : log.diseaseName}
                     </span>
                   </div>
                 </div>
@@ -609,7 +618,11 @@ export default function MonitoringLogDetail() {
                               isHealthyLog ? "text-[#1e3e1c]" : "text-rose-800"
                             }`}
                           >
-                          {isMapLoaded && !isHealthyLog && !(ar.topDisease in onnxNameMap) ? "Không rõ" : (log.diseaseName ?? "—")}
+                            {isMapLoaded &&
+                            !isHealthyLog &&
+                            !(ar.topDisease in onnxNameMap)
+                              ? "Không rõ"
+                              : (log.diseaseName ?? "—")}
                           </p>
                         </div>
                       </div>
@@ -707,7 +720,10 @@ export default function MonitoringLogDetail() {
                                             : "text-slate-400"
                                         }`}
                                       >
-                                        {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                        {pct.toFixed(1) === "0.0"
+                                          ? "~0.0"
+                                          : pct.toFixed(1)}
+                                        %
                                       </span>
                                     </div>
                                   </div>

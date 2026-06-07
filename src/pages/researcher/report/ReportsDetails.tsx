@@ -374,7 +374,11 @@ export default function ReportsDetails() {
                                   : "text-rose-800"
                               }`}
                             >
-                              {isMapLoaded && !isHealthyResult && !(analyzeResult.disease.predict in onnxNameMap) ? "Không rõ" : predictName}
+                              {isMapLoaded &&
+                              !isHealthyResult &&
+                              !(analyzeResult.disease.predict in onnxNameMap)
+                                ? "Không rõ"
+                                : predictName}
                             </p>
                           </div>
                         </div>
@@ -475,7 +479,10 @@ export default function ReportsDetails() {
                                             : "text-slate-400"
                                         }`}
                                       >
-                                        {pct.toFixed(1) === "0.0" ? "~0.0" : pct.toFixed(1)}%
+                                        {pct.toFixed(1) === "0.0"
+                                          ? "~0.0"
+                                          : pct.toFixed(1)}
+                                        %
                                       </span>
                                     </div>
                                   </div>
