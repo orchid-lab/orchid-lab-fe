@@ -333,9 +333,9 @@ export default function ReportsDetails() {
                     Math.max(
                       ...Object.values(analyzeResult.disease.probability),
                     );
-                  const predictName = getPredictVietnamese(
-                    analyzeResult.disease.predict,
-                  );
+                  const predictName =
+                    onnxNameMap[analyzeResult.disease.predict] ??
+                    getPredictVietnamese(analyzeResult.disease.predict);
                   const isHealthyResult =
                     analyzeResult.disease.predict === "healthy";
                   return (
